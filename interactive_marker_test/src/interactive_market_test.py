@@ -1,34 +1,5 @@
 #!/usr/bin/env python
 
-"""
-Copyright (c) 2011, Willow Garage, Inc.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the Willow Garage, Inc. nor the names of its
-      contributors may be used to endorse or promote products derived from
-      this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES LOSS OF USE, DATA, OR PROFITS OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-"""
-
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
@@ -195,6 +166,42 @@ if __name__ == "__main__":
     rospy.Timer(rospy.Duration(0.01), frameCallback)
 
     robot_description = rospy.get_param('/robot_description')
+
+    from urdf_parser_py.urdf import URDF
+    # 1. Parse a string containing the robot description in URDF.
+    # Pro: no need to have a roscore running.
+    # Cons: n/a
+    # Note: it is rare to receive the robot model as a string.
+    # robot = URDF.from_xml_string("<robot name='myrobot'></robot>")
+
+    # - OR -
+
+    # 2. Load the module from a file.
+    # Pro: no need to have a roscore running.
+    # Cons: using hardcoded file location is not portable.
+    # robot = URDF.from_xml_file()
+
+    # - OR -
+
+    # 3. Load the module from the parameter server.
+    # Pro: automatic, no arguments are needed, consistent
+    #      with other ROS nodes.
+    # Cons: need roscore to be running and the parameter to
+    #      to be set beforehand (through a roslaunch file for
+    #      instance).
+    robot = URDF.from_parameter_server()
+
+    # Print the robot
+    # print(robot)
+
+    print(robot.links)
+    for link in robot.links:
+        print(link)
+        print("\n\n\n")
+
+    # print(robot.sensors)
+
+    exit(0)
 
     # parsing of robot description
     server = InteractiveMarkerServer("basic_controls_with_menu")
