@@ -22,3 +22,11 @@ $ rosrun interactive_marker_test interactive_market_test.py
 ```
 
 Now you can move the green markers and see the position (and orientation) of any of them at any time.
+
+# Known problems
+
+## urdf model not showing on rviz
+
+See 
+
+https://answers.ros.org/question/312706/rviz-does-not-show-3d-objects-from-urdf/
