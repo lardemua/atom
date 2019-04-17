@@ -108,6 +108,7 @@ def make6DofMarker(interaction_mode, position, name, show_6dof = 0):
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = "base_link"
     int_marker.pose.position = position
+    #int_marker.pose.orientation = orientation
     int_marker.scale = 0.2
 
     int_marker.name = name
@@ -229,6 +230,13 @@ if __name__ == "__main__":
                                                                                                        + 1): second_space2]),
                          float(robot_description[(second_space + 1): last_space]) + float(robot_description[(
                                                                                                              second_space2 + 1): last_space2]))
+
+        # orientation =  Point(float(robot_description[(ind_pos1 + 5): first_space]) + float(robot_description[(ind_pos2 + 5):
+        #                                                                                           first_space2]),
+        #                  float(robot_description[(first_space + 1): second_space]) + float(robot_description[(first_space2
+        #                                                                                                + 1): second_space2]),
+        #                  float(robot_description[(second_space + 1): last_space]) + float(robot_description[(
+        #                                                                                                      second_space2 + 1): last_space2]))
         make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, "Marker" + str(count), 1)
 
     while start < len(robot_description):

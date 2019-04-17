@@ -6,26 +6,26 @@ First , add this package to your catkin workspace.
 
 Run roscore 
 ```
-$ roscore
+roscore
 ```
 
 Then, in a new terminal:
 ```
-$ roslaunch interactive_marker_test rviz.launch
+roslaunch interactive_marker_test rviz.launch
 ```
 
 Now rviz will open, and you will be able to see the robot with the red markers.
 
 Then, in a new terminal:
 ```
-$ rosrun interactive_marker_test interactive_market_test.py 
+rosrun interactive_marker_test interactive_market_test.py 
 ```
 
 Now you can move the green markers and see the position (and orientation) of any of them at any time.
 
 # Known problems
 
-## urdf model not showing on rviz
+## urdf model not showing on rviz add to bashc
 
 See 
 
