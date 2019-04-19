@@ -194,14 +194,14 @@ if __name__ == "__main__":
     # Print the robot
     # print(robot)
 
-    print(robot.links)
-    for link in robot.links:
-        print(link)
-        print("\n\n\n")
-
-    # print(robot.sensors)
-
-    exit(0)
+    # print(robot.links)
+    # for link in robot.links:
+    #     print(link)
+    #     print("\n\n\n")
+    #
+    # # print(robot.sensors)
+    #
+    # exit(0)
 
     # parsing of robot description
     server = InteractiveMarkerServer("basic_controls_with_menu")
