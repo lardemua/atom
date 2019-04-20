@@ -190,84 +190,41 @@
     <origin xyz="0.1814 0 0.1414"/>
   </joint>
 
-  <link name="marker1">
-    <visual>
-      <geometry>
-        <cylinder length="0.1" radius="0.05"/>
-      </geometry>
-      <origin rpy="0.7853981634 0 0 " xyz="0.15 0 0"/>
-    </visual>
-  </link>
-
-  <joint name="right_marker" type="fixed">
+  <sensor name="sensor1" update_rate="20">
     <parent link="base_link"/>
-    <child link="marker1"/>
-    <origin rpy="0 0 0" xyz="0 -0.22 0.2"/>
-  </joint>
+    <origin xyz="0.15 -0.22 0.2" rpy="0.7853981634 0 0"/>
+    <camera>
+      <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
+    </camera>
+  </sensor>
 
-  <link name="marker2">
-    <visual>
-      <geometry>
-        <cylinder length="0.1" radius="0.05"/>
-      </geometry>
-      <origin rpy="-0.7853981634 0 0 " xyz="0.15 0 0"/>
-    </visual>
-  </link>
-
-  <joint name="left_marker" type="fixed">
+  <sensor name="sensor2" update_rate="20">
     <parent link="base_link"/>
-    <child link="marker2"/>
-    <origin rpy="0 0 0" xyz="0 0.22 0.2"/>
-  </joint>
+    <origin xyz="0.15 0.22 0.2" rpy="-0.7853981634 0 0"/>
+    <camera>
+      <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
+    </camera>
+  </sensor>
 
-  <link name="marker3">
-    <visual>
-      <geometry>
-        <cylinder length="0.1" radius="0.05"/>
-      </geometry>
-      <origin rpy="0 0 0 " xyz="0 0 0"/>
-    </visual>
-  </link>
-
-  <joint name="central_marker" type="fixed">
+  <sensor name="sensor3" update_rate="20">
     <parent link="base_link"/>
-    <child link="marker3"/>
-    <origin rpy="0 0 0" xyz="0.4 0 0.2"/>
-  </joint>
+    <origin xyz="0 0 0.55" rpy="0 0 0"/>
+    <camera>
+      <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
+    </camera>
+  </sensor>
 
-    <link name="marker4">
-    <visual>
-      <geometry>
-        <cylinder length="0.1" radius="0.05"/>
-      </geometry>
-      <origin rpy="1.5707963268 0 0 " xyz="0 0 0"/>
-    </visual>
-  </link>
-
-  <joint name="left_side_marker" type="fixed">
+  <sensor name="sensor4" update_rate="20">
     <parent link="base_link"/>
-    <child link="marker4"/>
-    <origin rpy="0 0 0" xyz="0 0.32 -0.25"/>
-  </joint>
+    <origin xyz="0 0.32 -0.25" rpy="1.5707963268 0 0"/>
+    <camera>
+      <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
+    </camera>
+  </sensor>
 
-      <link name="marker5">
-    <visual>
-      <geometry>
-        <cylinder length="0.1" radius="0.05"/>
-      </geometry>
-      <origin rpy="1.5707963268 0 0 " xyz="0 0 0"/>
-    </visual>
-  </link>
-
-  <joint name="right_side_marker" type="fixed">
+  <sensor name="sensor5" update_rate="20">
     <parent link="base_link"/>
-    <child link="marker5"/>
-    <origin rpy="0 0 0" xyz="0 -0.32 -0.25"/>
-  </joint>
-
-  <sensor name="my_test_sensor" update_rate="20">
-    <parent link="marker5"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 -0.32 -0.25" rpy="1.5707963268 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
     </camera>

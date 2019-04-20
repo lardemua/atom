@@ -25,7 +25,7 @@ Now you can move the green markers and see the position (and orientation) of any
 
 # Known problems
 
-## urdf model not showing on rviz add to bashc
+## urdf model not showing on rviz add to bashrc
 
 See 
 
