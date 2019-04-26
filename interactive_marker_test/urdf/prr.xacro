@@ -10,6 +10,10 @@
   <material name="white">
     <color rgba="1 1 1 1"/>
   </material>
+  <material name="Kinect2Grey">
+      <color rgba="0.15 0.15 0.15 1.0"/>
+  </material>
+
 
   <link name="base_link">
     <visual>
@@ -192,42 +196,128 @@
 
   <sensor name="sensor1" update_rate="20">
     <parent link="base_link"/>
-    <origin xyz="0.15 -0.22 0.2" rpy="0.7853981634 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
     </camera>
   </sensor>
+
+  <link name="sensor1">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <!-- these meshes were exported in mm, so scale back to m -->
+          <mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Kinect2Grey"/>
+      </visual>
+  </link>
+
+  <joint name="base_to_sensor1" type="fixed">
+    <parent link="base_link"/>
+    <child link="sensor1"/>
+    <origin rpy="0.7853981634 0 0" xyz="0.15 -0.22 0.2"/>
+  </joint>
 
   <sensor name="sensor2" update_rate="20">
     <parent link="base_link"/>
-    <origin xyz="0.15 0.22 0.2" rpy="-0.7853981634 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
     </camera>
   </sensor>
+
+  <link name="sensor2">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <!-- these meshes were exported in mm, so scale back to m -->
+          <mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Kinect2Grey"/>
+      </visual>
+  </link>
+
+  <joint name="base_to_sensor2" type="fixed">
+    <parent link="base_link"/>
+    <child link="sensor2"/>
+    <origin rpy="-0.7853981634 0 0" xyz="0.15 0.22 0.2"/>
+  </joint>
 
   <sensor name="sensor3" update_rate="20">
     <parent link="base_link"/>
-    <origin xyz="0 0 0.55" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
     </camera>
   </sensor>
+
+  <link name="sensor3">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <!-- these meshes were exported in mm, so scale back to m -->
+          <mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Kinect2Grey"/>
+      </visual>
+  </link>
+
+  <joint name="base_to_sensor3" type="fixed">
+    <parent link="base_link"/>
+    <child link="sensor3"/>
+    <origin rpy="0 0 0" xyz="0 0 0.55"/>
+  </joint>
 
   <sensor name="sensor4" update_rate="20">
     <parent link="base_link"/>
-    <origin xyz="0 0.32 -0.25" rpy="1.5707963268 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
     </camera>
   </sensor>
 
+  <link name="sensor4">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <!-- these meshes were exported in mm, so scale back to m -->
+          <mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Kinect2Grey"/>
+      </visual>
+  </link>
+
+  <joint name="base_to_sensor4" type="fixed">
+    <parent link="base_link"/>
+    <child link="sensor4"/>
+    <origin rpy="1.5707963268 0 0" xyz="0 0.32 -0.25"/>
+  </joint>
+
   <sensor name="sensor5" update_rate="20">
     <parent link="base_link"/>
-    <origin xyz="0 -0.32 -0.25" rpy="1.5707963268 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
     </camera>
   </sensor>
+
+  <link name="sensor5">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <!-- these meshes were exported in mm, so scale back to m -->
+          <mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Kinect2Grey"/>
+      </visual>
+  </link>
+
+  <joint name="base_to_sensor5" type="fixed">
+    <parent link="base_link"/>
+    <child link="sensor5"/>
+    <origin rpy="1.5707963268 0 0" xyz="0 -0.32 -0.25"/>
+  </joint>
+
 
 </robot>

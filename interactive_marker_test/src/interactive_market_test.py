@@ -4,54 +4,43 @@ from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from geometry_msgs.msg import Point
+from geometry_msgs.msg import Quaternion
 from tf.broadcaster import TransformBroadcaster
-from random import random
-from math import sin
+from tf.listener import TransformListener
 
 server = None
 menu_handler = MenuHandler()
-br = None
-counter = 0
 h_first_entry = 0
 
 
 def frameCallback(msg):
-    global counter, br
-    time = rospy.Time.now()
-    br.sendTransform((0, 0, sin(counter / 140.0) * 2.0), (0, 0, 0, 1.0), time, "base_link", "moving_frame")
-    counter += 1
+    rospy.Time.now()
+
 
 def processFeedback(feedback):
-    global handle
-
-    handle = feedback.menu_entry_id
-    if handle == 1:
-        print(feedback.marker_name)
-        print("position: " + str(feedback.pose.position.x) + " , " + str(
-            feedback.pose.position.y) + " , " + str(feedback.pose.position.z))
-        print("orientation: " + str(feedback.pose.orientation.x) + " , " + str(
-            feedback.pose.orientation.y) + " , " + str(feedback.pose.orientation.z))
-        print(" in frame " + feedback.header.frame_id)
 
     menu_handler.reApply(server)
 
     server.applyChanges()
 
-def alignMarker(feedback):
-    pose = feedback.pose
+def callBack(data):
+    global markersinfo
+    markersinfo = data
 
-    pose.position.x = round(pose.position.x - 0.5) + 0.5
-    pose.position.y = round(pose.position.y - 0.5) + 0.5
+def menuFeedback(feedback):
+    global handle
+    handle = feedback.menu_entry_id
+    if handle == 1:
+        rospy.Subscriber("/basic_controls_with_menu/update_full", InteractiveMarkerInit, callBack)
+    rospy.sleep(0.2)
+    for marker in markersinfo.markers:
+        print(str(marker.name) + ":")
+        print("     Position: (" + str(marker.pose.position.x) + ", " + str(marker.pose.position.y) + ", " + str(
+            marker.pose.position.z) + ")")
+        print("     Orientation: (" + str(marker.pose.orientation.x) + ", " + str(marker.pose.orientation.y) + ", " + str(
+            marker.pose.orientation.z) + ", " + str(marker.pose.orientation.w) + ")")
+        print('\n')
 
-    rospy.loginfo(feedback.marker_name + ": aligning position = " + str(feedback.pose.position.x) + "," + str(
-        feedback.pose.position.y) + "," + str(feedback.pose.position.z) + " to " +
-                  str(pose.position.x) + "," + str(pose.position.y) + "," + str(pose.position.z))
-
-    server.setPose(feedback.marker_name, pose)
-    server.applyChanges()
-
-def rand(min_, max_):
-    return min_ + random() * (max_ - min_)
 
 def makeBox(msg, r, g, b):
     marker = Marker()
@@ -67,6 +56,7 @@ def makeBox(msg, r, g, b):
 
     return marker
 
+
 def makeBoxControl(msg, r, g, b):
     control = InteractiveMarkerControl()
     control.always_visible = True
@@ -74,11 +64,12 @@ def makeBoxControl(msg, r, g, b):
     msg.controls.append(control)
     return control
 
-def make6DofMarker(interaction_mode, position, name, show_6dof = 0):
+
+def make6DofMarker(interaction_mode, position, orientation, name, show_6dof = 0):
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = "base_link"
     int_marker.pose.position = position
-    #int_marker.pose.orientation = orientation
+    int_marker.pose.orientation = orientation
     int_marker.scale = 0.2
 
     int_marker.name = name
@@ -155,14 +146,16 @@ def make6DofMarker(interaction_mode, position, name, show_6dof = 0):
 
 def initMenu():
     global h_first_entry
-    h_first_entry = menu_handler.insert("Position & Orientation", callback=processFeedback)
+    h_first_entry = menu_handler.insert("Get updated markers pose", callback=menuFeedback)
+
 
 if __name__ == "__main__":
+
     rospy.init_node("basic_controls_with_menu")
     br = TransformBroadcaster()
+    listener = TransformListener()
 
-    # create a timer to update the published transforms
-    rospy.Timer(rospy.Duration(0.01), frameCallback)
+    rate = rospy.Rate(10.0)  # 10 Hz
 
     robot_description = rospy.get_param('/robot_description')
 
@@ -171,20 +164,22 @@ if __name__ == "__main__":
     robot = URDF.from_parameter_server()
 
     server = InteractiveMarkerServer("basic_controls_with_menu")
+
+    # create a timer to update the published transforms
+    rospy.Timer(rospy.Duration(0.01), frameCallback)
+
     count = 0
 
     # parsing of robot description
     for sensor in robot.sensors:
-        ind = str(sensor.origin.xyz).index(', ')
-        ind2 = str(sensor.origin.xyz)[(ind + 1):len(str(sensor.origin.xyz))].index(', ')
-        x = str(sensor.origin.xyz)[1:ind]
-        y = str(sensor.origin.xyz)[(ind + 2):(ind + ind2 + 1)]
-        z = str(sensor.origin.xyz)[(ind + ind2 + 3):(len(str(sensor.origin.xyz)) - 1)]
+        while not rospy.is_shutdown():
+            (trans, rot) = listener.lookupTransform('base_link', str(sensor.name), rospy.Time(0))
+            orientation = Quaternion(float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3]))
+            position = Point(float(trans[0]), float(trans[1]), float(trans[2]))
+            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, "Marker" + str(count+1), 1)
+            break
 
-        position = Point(float(x), float(y), float(z))
         count = count + 1
-        make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, "Marker" + str(count), 1)
-
 
     print('Number of sensors: ' + str(count))
 

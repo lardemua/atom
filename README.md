@@ -25,8 +25,24 @@ Now you can move the green markers and see the position (and orientation) of any
 
 # Known problems
 
-## urdf model not showing on rviz add to bashrc
+## urdf model not showing on rviz
 
-See 
+If you can't see the robot on rviz, run this command before everything:
 
-https://answers.ros.org/question/312706/rviz-does-not-show-3d-objects-from-urdf/
+```
+export LC_NUMERIC="en_US.UTF-8"
+```
+
+If this worked out, you must run always this command at the first place. To avoid this constant work, you can always
+add this command to your bashrc file (copy and paste at the end of the bashrc document).
+Now you don't have to worry about this anymore!
+
+# TODO
+
+- [ ] Listen the broadcaster (/robot_state_publisher) to get the position of the sensors
+
+- [ ] Create interactive markers on that positions
+
+- [ ] Publish the pose of all interactive markers when they move
+
+- [ ] Listen de new pose of all interactive markers
