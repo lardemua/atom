@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot
+    xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:macro name="car" params="prefix">
+        <link name="${prefix}base_link">
+            <visual>
+                <origin xyz="-0.9 0 -0.5" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://interactive_marker_test/meshes/mitsubishi_miev.dae" />
+                </geometry>
+            </visual>
+        </link>
+    </xacro:macro>
+
+</robot>
