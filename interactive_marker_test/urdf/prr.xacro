@@ -194,8 +194,9 @@
     <origin xyz="0.1814 0 0.1414"/>
   </joint>
 
-  <sensor name="sensor1" update_rate="20">
-    <parent link="base_link"/>
+  <sensor name="sensor1_aaa" update_rate="20">
+    <!--<parent link="base_link"/>-->
+    <parent link="sensor1"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <camera>
       <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>

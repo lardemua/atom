@@ -1,14 +1,23 @@
 <launch>
 
+    <!--<arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/basic_cntrls_wit_menu_and_robot.rviz" />-->
+    <arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/rviz.rviz" />
+    <arg name="read_first_guess" default="false" />
+
+    <group if="$(arg read_first_guess)">
+        <arg name="model" default="$(find interactive_marker_test)/urdf/atlas_macro_first_guess.urdf.xacro"/>
+        <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
+    </group>
+
+    <group unless="$(arg read_first_guess)">
+        <arg name="model" default="$(find interactive_marker_test)/urdf/atlas.urdf.xacro"/>
+        <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
+    </group>
+
+
   <!--<arg name="model" default="$(find interactive_marker_test)/urdf/prr.xacro"/>-->
-  <arg name="model" default="$(find interactive_marker_test)/urdf/atlas.urdf.xacro"/>
+
   <!--<arg name="model" default="$(find interactive_marker_test)/urdf/prr_simple.xacro"/>-->
-
-
-  <arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/basic_cntrls_wit_menu_and_robot.rviz" />
-  <!--<arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/rviz.rviz" />-->
-
-  <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
   <!--<node name="interactive_marker_test" pkg="interactive_marker_test" type="interactive_marker_test.py" />-->

@@ -27,6 +27,11 @@
 
         <xacro:sick_lms1xx frame="${prefix}frontal_laser_left" />
 
+         <sensor name="${prefix}frontal_laser_left" update_rate="20">
+             <parent link="${prefix}frontal_laser_left"/>
+             <origin xyz="0 0 0" rpy="0 0 0"/>
+         </sensor>
+
         <joint name="${prefix}base_link_to_${prefix}frontal_laser_left" type="fixed">
             <origin xyz="0.6 0 0" rpy="0 0 ${-pi/3}" />
             <parent link="${prefix}base_link" />

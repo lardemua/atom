@@ -9,6 +9,8 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import Quaternion
 from tf.broadcaster import TransformBroadcaster
 from tf.listener import TransformListener
+from urdf_parser_py.urdf import URDF
+import rospkg
 
 server = None
 menu_handler = MenuHandler()
@@ -188,31 +190,54 @@ if __name__ == "__main__":
 
     robot_description = rospy.get_param('/robot_description')
 
-    from urdf_parser_py.urdf import URDF
+    # get an instance of RosPack with the default search paths
+    rospack = rospkg.RosPack()
 
     robot = URDF.from_parameter_server()
+
+    # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
 
     server = InteractiveMarkerServer("basic_controls_with_menu")
 
     # create a timer to update the published transforms
     rospy.Timer(rospy.Duration(0.1), publishTFsCallback)
 
+    rospy.sleep(0.5)
+
     count = 0
+    print(robot)
 
     # parsing of robot description
     for sensor in robot.sensors:
         while not rospy.is_shutdown():
-            (trans, rot) = listener.lookupTransform('base_link', str(sensor.name), rospy.Time(0))
+            print('Looking for transform from ' + 'base_link' + ' to ' + sensor.parent)
+            (trans, rot) = listener.lookupTransform('base_link', str(sensor.parent), rospy.Time(0))
             orientation = Quaternion(float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3]))
             position = Point(float(trans[0]), float(trans[1]), float(trans[2]))
-            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, "Marker" + str(count + 1), 1)
-            mp = MarkerPoseC(position, orientation, 'base_link', 'Marker' + str(count + 1))
+            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, sensor.name + "_first_guess", 1)
+            mp = MarkerPoseC(position, orientation, 'base_link', sensor.name + "_first_guess")
             marker_poses.append(mp)
             break
 
         count = count + 1
 
     print('Number of sensors: ' + str(count))
+
+    for joint in robot.joints:
+        if joint.child == 'frontal_laser_left':
+            joint.origin.xyz[0] += 3
+
+
+
+    xml_string = robot.to_xml_string()
+
+
+
+
+
+    f = open(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro_first_guess.urdf.xacro", "w")
+    f.write(xml_string)
+    f.close()
 
     initMenu()
 
