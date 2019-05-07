@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+import collections
 
+import tf
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
@@ -10,37 +12,65 @@ from tf.listener import TransformListener
 
 server = None
 menu_handler = MenuHandler()
-h_first_entry = 0
+# h_first_entry = 0
+br = tf.TransformBroadcaster()
+marker_poses = []
+
+# MarkerPoseT = collections.namedtuple('MarkerPoseT', 'position orientation frame_id child_frame_id')
 
 
-def frameCallback(msg):
-    rospy.Time.now()
+class MarkerPoseC:
+    def __init__(self, position, orientation, frame_id, child_frame_id):
+        self.position = position
+        self.orientation = orientation
+        self.frame_id = frame_id
+        self.child_frame_id = child_frame_id
+
+    def __str__(self):
+        return str(self.position) + "\n" + str(self.orientation)
+
+    __repr__ = __str__
+
+
+def publishTFsCallback(msg):
+    global br, marker_poses
+
+    for mp in marker_poses:
+        br.sendTransform((mp.position.x, mp.position.y, mp.position.z),
+                         (mp.orientation.x, mp.orientation.y, mp.orientation.z,
+                          mp.orientation.w),
+                         rospy.Time.now(), mp.child_frame_id, mp.frame_id)
+
+    # rospy.Time.now()
 
 
 def processFeedback(feedback):
+    # print("feedback" + str(feedback))
+
+    global marker_poses
+    # print(marker_poses)
+
+    for mp in marker_poses:
+        if feedback.marker_name == mp.child_frame_id:
+            mp.position = feedback.pose.position
+            mp.orientation = feedback.pose.orientation
+            break
 
     menu_handler.reApply(server)
 
     server.applyChanges()
 
-def callBack(data):
-    global markersinfo
-    markersinfo = data
-
 def menuFeedback(feedback):
-    global handle
+    global handle, marker_poses
     handle = feedback.menu_entry_id
+    listener2 = TransformListener()
+    rospy.sleep(1)
     if handle == 1:
-        rospy.Subscriber("/basic_controls_with_menu/update_full", InteractiveMarkerInit, callBack)
-    rospy.sleep(0.2)
-    for marker in markersinfo.markers:
-        print(str(marker.name) + ":")
-        print("     Position: (" + str(marker.pose.position.x) + ", " + str(marker.pose.position.y) + ", " + str(
-            marker.pose.position.z) + ")")
-        print("     Orientation: (" + str(marker.pose.orientation.x) + ", " + str(marker.pose.orientation.y) + ", " + str(
-            marker.pose.orientation.z) + ", " + str(marker.pose.orientation.w) + ")")
-        print('\n')
-
+        for mp in marker_poses:
+            (trans, rot) = listener2.lookupTransform('base_link', mp.child_frame_id, rospy.Time(0))
+            print(mp.child_frame_id + ":")
+            print("   Position: " + str(trans))
+            print("   Orientation: (" + str(rot))
 
 def makeBox(msg, r, g, b):
     marker = Marker()
@@ -65,7 +95,7 @@ def makeBoxControl(msg, r, g, b):
     return control
 
 
-def make6DofMarker(interaction_mode, position, orientation, name, show_6dof = 0):
+def make6DofMarker(interaction_mode, position, orientation, name, show_6dof=0):
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = "base_link"
     int_marker.pose.position = position
@@ -145,14 +175,13 @@ def make6DofMarker(interaction_mode, position, orientation, name, show_6dof = 0)
 
 
 def initMenu():
-    global h_first_entry
-    h_first_entry = menu_handler.insert("Get updated markers pose", callback=menuFeedback)
+    menu_handler.insert("Get updated markers pose", callback=menuFeedback)
 
 
 if __name__ == "__main__":
 
     rospy.init_node("basic_controls_with_menu")
-    br = TransformBroadcaster()
+    # br = TransformBroadcaster()
     listener = TransformListener()
 
     rate = rospy.Rate(10.0)  # 10 Hz
@@ -166,7 +195,7 @@ if __name__ == "__main__":
     server = InteractiveMarkerServer("basic_controls_with_menu")
 
     # create a timer to update the published transforms
-    rospy.Timer(rospy.Duration(0.01), frameCallback)
+    rospy.Timer(rospy.Duration(0.1), publishTFsCallback)
 
     count = 0
 
@@ -176,7 +205,9 @@ if __name__ == "__main__":
             (trans, rot) = listener.lookupTransform('base_link', str(sensor.name), rospy.Time(0))
             orientation = Quaternion(float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3]))
             position = Point(float(trans[0]), float(trans[1]), float(trans[2]))
-            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, "Marker" + str(count+1), 1)
+            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, "Marker" + str(count + 1), 1)
+            mp = MarkerPoseC(position, orientation, 'base_link', 'Marker' + str(count + 1))
+            marker_poses.append(mp)
             break
 
         count = count + 1
@@ -188,4 +219,3 @@ if __name__ == "__main__":
     server.applyChanges()
 
     rospy.spin()
-
