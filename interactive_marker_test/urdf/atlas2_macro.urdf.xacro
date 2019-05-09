@@ -70,9 +70,8 @@
             <child link="${prefix}front_laser_mount_link" />
         </joint>
 
-         <sensor name="${prefix}front_laser_mount_link" update_rate="20">
+         <sensor name="${prefix}front_laser" update_rate="20">
              <parent link="${prefix}front_laser_mount_link"/>
-             <blablabla name="tozeneves"/>
              <origin xyz="0 0 0" rpy="0 0 0"/>
          </sensor>
 

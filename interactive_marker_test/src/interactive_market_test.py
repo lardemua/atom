@@ -16,7 +16,7 @@ menu_handler = MenuHandler()
 br = tf.TransformBroadcaster()
 marker_poses = []
 robot = []
-main_link = ""
+optimization_parent_link = ""
 
 
 class MarkerPoseC:
@@ -62,7 +62,7 @@ def processFeedback(feedback):
 
 
 def menuFeedback(feedback):
-    global handle, robot, main_link
+    global handle, robot, optimization_parent_link
     handle = feedback.menu_entry_id
     listener2 = TransformListener()
     rospy.sleep(1)
@@ -70,9 +70,9 @@ def menuFeedback(feedback):
         for joint in robot.joints:
             for sensor in robot.sensors:
                 if sensor.parent == joint.child:
-                    main_link = joint.parent
+                    optimization_parent_link = joint.parent
             for mp in marker_poses:
-                (trans, rot) = listener2.lookupTransform(main_link, mp.child_frame_id, rospy.Time(0))
+                (trans, rot) = listener2.lookupTransform(optimization_parent_link, mp.child_frame_id, rospy.Time(0))
                 if joint.child + "_first_guess" == mp.child_frame_id:
                     joint.origin.xyz[0] = trans[0]
                     joint.origin.xyz[1] = trans[1]
@@ -112,10 +112,10 @@ def makeBoxControl(msg, r, g, b):
 
 
 def make6DofMarker(interaction_mode, position, orientation, name, show_6dof=0):
-    global main_link
+    global optimization_parent_link
 
     int_marker = InteractiveMarker()
-    int_marker.header.frame_id = main_link
+    int_marker.header.frame_id = optimization_parent_link
     int_marker.pose.position = position
     int_marker.pose.orientation = orientation
     int_marker.scale = 0.2
@@ -223,18 +223,30 @@ if __name__ == "__main__":
 
     # parsing of robot description
     for sensor in robot.sensors:
-        if sensor.name == "front_laser_mount_link":
-            print(sensor)
+
+        print('\n\nSensor name is ' + sensor.name)
+
+        print('Sensor data reference frame is ' + sensor.name)
+
+
+        print('Optimization child is ' + sensor.parent)
+
         for joint in robot.joints:
             if sensor.parent == joint.child:
-                main_link = joint.parent
+                optimization_parent_link = joint.parent
+
+        print('Optimization parent  ' + optimization_parent_link)
+
+        pre_transforms = []
+
+
 
         while not rospy.is_shutdown():
-            (trans, rot) = listener.lookupTransform(main_link, str(sensor.parent), rospy.Time(0))
+            (trans, rot) = listener.lookupTransform(optimization_parent_link, str(sensor.parent), rospy.Time(0))
             orientation = Quaternion(float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3]))
             position = Point(float(trans[0]), float(trans[1]), float(trans[2]))
             make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, sensor.name + "_first_guess", 1)
-            mp = MarkerPoseC(position, orientation, main_link, sensor.name + "_first_guess")
+            mp = MarkerPoseC(position, orientation, optimization_parent_link, sensor.name + "_first_guess")
             marker_poses.append(mp)
             break
 
