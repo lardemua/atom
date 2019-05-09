@@ -18,7 +18,7 @@ Now rviz will open, and you will be able to see the robot with the red markers.
 
 Then, in a new terminal:
 ```
-rosrun interactive_marker_test interactive_market_test.py 
+rosrun interactive_marker_test interactive_market_test.py -f car_center
 ```
 
 Now you can move the green markers and see the position (and orientation) of any of them at any time.

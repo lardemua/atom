@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import collections
 
 import tf
@@ -197,6 +198,13 @@ def initMenu():
 
 
 if __name__ == "__main__":
+
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-f", "--common_frame", help='Name of the reference frame wich is common to all sensors. Usually '
+                                                 'it is the world or base_link.', type=str, required=True)
+    args = vars(ap.parse_args())
+
     rospy.init_node("sensors_first_guess")
     # br = TransformBroadcaster()
     listener = TransformListener()
@@ -228,7 +236,6 @@ if __name__ == "__main__":
 
         print('Sensor data reference frame is ' + sensor.name)
 
-
         print('Optimization child is ' + sensor.parent)
 
         for joint in robot.joints:
@@ -239,13 +246,12 @@ if __name__ == "__main__":
 
         pre_transforms = []
 
-
-
         while not rospy.is_shutdown():
             (trans, rot) = listener.lookupTransform(optimization_parent_link, str(sensor.parent), rospy.Time(0))
             orientation = Quaternion(float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3]))
             position = Point(float(trans[0]), float(trans[1]), float(trans[2]))
-            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, sensor.name + "_first_guess", 1)
+            make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, sensor.name + "_first_guess",
+                           1)
             mp = MarkerPoseC(position, orientation, optimization_parent_link, sensor.name + "_first_guess")
             marker_poses.append(mp)
             break
