@@ -7,18 +7,16 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Quaternion
-from tf.broadcaster import TransformBroadcaster
 from tf.listener import TransformListener
 from urdf_parser_py.urdf import URDF
 import rospkg
 
 server = None
 menu_handler = MenuHandler()
-# h_first_entry = 0
 br = tf.TransformBroadcaster()
 marker_poses = []
-
-# MarkerPoseT = collections.namedtuple('MarkerPoseT', 'position orientation frame_id child_frame_id')
+robot = []
+main_link = ""
 
 
 class MarkerPoseC:
@@ -62,17 +60,33 @@ def processFeedback(feedback):
 
     server.applyChanges()
 
+
 def menuFeedback(feedback):
-    global handle, marker_poses
+    global handle, robot, main_link
     handle = feedback.menu_entry_id
     listener2 = TransformListener()
     rospy.sleep(1)
     if handle == 1:
-        for mp in marker_poses:
-            (trans, rot) = listener2.lookupTransform('base_link', mp.child_frame_id, rospy.Time(0))
-            print(mp.child_frame_id + ":")
-            print("   Position: " + str(trans))
-            print("   Orientation: (" + str(rot))
+        for joint in robot.joints:
+            for sensor in robot.sensors:
+                if sensor.parent == joint.child:
+                    main_link = joint.parent
+            for mp in marker_poses:
+                (trans, rot) = listener2.lookupTransform(main_link, mp.child_frame_id, rospy.Time(0))
+                if joint.child + "_first_guess" == mp.child_frame_id:
+                    joint.origin.xyz[0] = trans[0]
+                    joint.origin.xyz[1] = trans[1]
+                    joint.origin.xyz[2] = trans[2]
+                    joint.origin.rpy[0] = rot[0]
+                    joint.origin.rpy[1] = rot[1]
+                    joint.origin.rpy[2] = rot[2]
+
+    xml_string = robot.to_xml_string()
+
+    f = open(rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro", "w")
+    f.write(xml_string)
+    f.close()
+
 
 def makeBox(msg, r, g, b):
     marker = Marker()
@@ -98,8 +112,10 @@ def makeBoxControl(msg, r, g, b):
 
 
 def make6DofMarker(interaction_mode, position, orientation, name, show_6dof=0):
+    global main_link
+
     int_marker = InteractiveMarker()
-    int_marker.header.frame_id = "base_link"
+    int_marker.header.frame_id = main_link
     int_marker.pose.position = position
     int_marker.pose.orientation = orientation
     int_marker.scale = 0.2
@@ -177,12 +193,11 @@ def make6DofMarker(interaction_mode, position, orientation, name, show_6dof=0):
 
 
 def initMenu():
-    menu_handler.insert("Get updated markers pose", callback=menuFeedback)
+    menu_handler.insert("Save sensors configuration", callback=menuFeedback)
 
 
 if __name__ == "__main__":
-
-    rospy.init_node("basic_controls_with_menu")
+    rospy.init_node("sensors_first_guess")
     # br = TransformBroadcaster()
     listener = TransformListener()
 
@@ -197,7 +212,7 @@ if __name__ == "__main__":
 
     # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
 
-    server = InteractiveMarkerServer("basic_controls_with_menu")
+    server = InteractiveMarkerServer("sensors_first_guess")
 
     # create a timer to update the published transforms
     rospy.Timer(rospy.Duration(0.1), publishTFsCallback)
@@ -205,39 +220,27 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 
     count = 0
-    print(robot)
 
     # parsing of robot description
     for sensor in robot.sensors:
+        if sensor.name == "front_laser_mount_link":
+            print(sensor)
+        for joint in robot.joints:
+            if sensor.parent == joint.child:
+                main_link = joint.parent
+
         while not rospy.is_shutdown():
-            print('Looking for transform from ' + 'base_link' + ' to ' + sensor.parent)
-            (trans, rot) = listener.lookupTransform('base_link', str(sensor.parent), rospy.Time(0))
+            (trans, rot) = listener.lookupTransform(main_link, str(sensor.parent), rospy.Time(0))
             orientation = Quaternion(float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3]))
             position = Point(float(trans[0]), float(trans[1]), float(trans[2]))
             make6DofMarker(InteractiveMarkerControl.MOVE_ROTATE_3D, position, orientation, sensor.name + "_first_guess", 1)
-            mp = MarkerPoseC(position, orientation, 'base_link', sensor.name + "_first_guess")
+            mp = MarkerPoseC(position, orientation, main_link, sensor.name + "_first_guess")
             marker_poses.append(mp)
             break
 
         count = count + 1
 
     print('Number of sensors: ' + str(count))
-
-    for joint in robot.joints:
-        if joint.child == 'frontal_laser_left':
-            joint.origin.xyz[0] += 3
-
-
-
-    xml_string = robot.to_xml_string()
-
-
-
-
-
-    f = open(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro_first_guess.urdf.xacro", "w")
-    f.write(xml_string)
-    f.close()
 
     initMenu()
 
