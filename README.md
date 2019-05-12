@@ -37,7 +37,7 @@ Now rviz will open, and you will be able to see the atlas car model with the sen
 
 Then, in a new terminal:
 ```
-rosrun interactive_marker_test interactive_market_test.py -f car_center
+rosrun interactive_marker_test create_first_guess.py -f car_center
 ```
 
 Now you can move the green markers and save the new sensors configuration.
