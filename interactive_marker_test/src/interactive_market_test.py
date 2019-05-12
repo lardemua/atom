@@ -33,6 +33,42 @@ class MarkerPoseC:
     __repr__ = __str__
 
 
+class Transform:
+    def __init__(self, translation, rotation, parent_link, child_link):
+        self.translation = translation
+        self.rotation = rotation
+        self.parent_link = parent_link
+        self.child_link = child_link
+
+    def __str__(self):
+        return "tf from " + str(self.parent_link) + " to " + str(self.child_link)
+    __repr__ = __str__
+
+
+class SensorTFs:
+    def __init__(self, sensor_name, pre_tfs, pos_tfs):
+        self.sensor_name = sensor_name
+        self.pre_tfs = pre_tfs
+        self.pos_tfs = pos_tfs
+
+    def __str__(self):
+        return "\n\n" + str(self.sensor_name) + ":\npre_tfs: " + str(self.pre_tfs) + "\npos_tfs: " + str(self.pos_tfs)
+
+    __repr__ = __str__
+
+
+class InitialGuess:
+    def __init__(self, sensor_name, position, orientation):
+        self.sensor_name = sensor_name
+        self.position = position
+        self.orientation = orientation
+
+    def __str__(self):
+        return "\n\n" + str(self.sensor_name) + ":\nposition: " + str(self.position) + "\norientation: " + str(self.orientation)
+
+    __repr__ = __str__
+
+
 def publishTFsCallback(msg):
     global br, marker_poses
 
@@ -46,19 +82,14 @@ def publishTFsCallback(msg):
 
 
 def processFeedback(feedback):
-    # print("feedback" + str(feedback))
-
-    global marker_poses
-    # print(marker_poses)
+    global marker_pos
 
     for mp in marker_poses:
         if feedback.marker_name == mp.child_frame_id:
             mp.position = feedback.pose.position
             mp.orientation = feedback.pose.orientation
             break
-
     menu_handler.reApply(server)
-
     server.applyChanges()
 
 
@@ -68,6 +99,7 @@ def menuFeedback(feedback):
     listener2 = TransformListener()
     rospy.sleep(1)
     if handle == 1:
+        all_initial_guess = []
         for joint in robot.joints:
             for sensor in robot.sensors:
                 if sensor.parent == joint.child:
@@ -81,12 +113,16 @@ def menuFeedback(feedback):
                     joint.origin.rpy[0] = rot[0]
                     joint.origin.rpy[1] = rot[1]
                     joint.origin.rpy[2] = rot[2]
+                    ig = InitialGuess(joint.child, Point(float(trans[0]), float(trans[1]), float(trans[2])), Quaternion(
+                        float(rot[0]), float(rot[1]), float(rot[2]), float(rot[3])))
+                    all_initial_guess.append(ig)
 
     xml_string = robot.to_xml_string()
 
     f = open(rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro", "w")
     f.write(xml_string)
     f.close()
+    print(all_initial_guess)
 
 
 def makeBox(msg, r, g, b):
@@ -205,8 +241,9 @@ if __name__ == "__main__":
                                                  'it is the world or base_link.', type=str, required=True)
     args = vars(ap.parse_args())
 
+    # print(args['common_frame'])
+
     rospy.init_node("sensors_first_guess")
-    # br = TransformBroadcaster()
     listener = TransformListener()
 
     rate = rospy.Rate(10.0)  # 10 Hz
@@ -218,8 +255,6 @@ if __name__ == "__main__":
 
     robot = URDF.from_parameter_server()
 
-    # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
-
     server = InteractiveMarkerServer("sensors_first_guess")
 
     # create a timer to update the published transforms
@@ -228,13 +263,13 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 
     count = 0
-
+    all_sensors_tfs = []
     # parsing of robot description
     for sensor in robot.sensors:
 
         print('\n\nSensor name is ' + sensor.name)
 
-        print('Sensor data reference frame is ' + sensor.name)
+        print('Sensor data reference frame is ' + sensor.parent)
 
         print('Optimization child is ' + sensor.parent)
 
@@ -245,6 +280,43 @@ if __name__ == "__main__":
         print('Optimization parent  ' + optimization_parent_link)
 
         pre_transforms = []
+        found_master_link = 0
+        for joint2 in robot.joints:
+            if joint2.parent == optimization_parent_link and optimization_parent_link != args['common_frame']:
+                last_joint = joint2
+                while found_master_link == 0:
+                    for joint3 in robot.joints:
+                        if joint3.child == last_joint.parent:
+                            (trans, rot) = listener.lookupTransform(joint3.parent, joint3.child, rospy.Time(0))
+                            pre_tf = Transform(trans, rot, joint3.parent, joint3.child)
+                            pre_transforms.append(pre_tf)
+                            last_joint = joint3
+                            if joint3.parent == args['common_frame']:
+                                found_master_link = 1
+                            break
+                break
+        # print(pre_transforms)
+
+        pos_transforms = []
+        found_final_link = 0
+        for joint2 in robot.joints:
+            if joint2.child == sensor.parent:  # and joint2.child != sensor.parent:
+                last_joint = joint2
+                while found_final_link == 0:
+                    for joint3 in robot.joints:
+                        if joint3.parent == last_joint.child:
+                            (trans, rot) = listener.lookupTransform(joint3.parent, joint3.child, rospy.Time(0))
+                            pos_tf = Transform(trans, rot, joint3.parent, joint3.child)
+                            pos_transforms.append(pos_tf)
+                            last_joint = joint3
+                            if joint3.child == sensor.name:
+                                found_final_link = 1
+                            break
+                    break
+                break
+        # print(pos_transforms)
+        sensor_tfs = SensorTFs(sensor.name, pre_transforms, pos_transforms)
+        all_sensors_tfs.append(sensor_tfs)
 
         while not rospy.is_shutdown():
             (trans, rot) = listener.lookupTransform(optimization_parent_link, str(sensor.parent), rospy.Time(0))
@@ -258,7 +330,8 @@ if __name__ == "__main__":
 
         count = count + 1
 
-    print('Number of sensors: ' + str(count))
+    print('\n\nNumber of sensors: ' + str(count))
+    print("\n" + str(all_sensors_tfs))
 
     initMenu()
 
