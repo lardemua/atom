@@ -31,24 +31,6 @@ optimization_parent_link = ""
 
 def menuFeedback(feedback):
     print('called menu')
-    # global handle, robot, optimization_parent_link
-    # handle = feedback.menu_entry_id
-    # listener2 = TransformListener()
-    # rospy.sleep(1)
-    # if handle == 1:
-    #     for joint in robot.joints:
-    #         for sensor in robot.sensors:
-    #             if sensor.parent == joint.child:
-    #                 optimization_parent_link = joint.parent
-    #         for mp in marker_poses:
-    #             (trans, rot) = listener2.lookupTransform(optimization_parent_link, mp.child_frame_id, rospy.Time(0))
-    #             if joint.child + "_first_guess" == mp.child_frame_id:
-    #                 joint.origin.xyz[0] = trans[0]
-    #                 joint.origin.xyz[1] = trans[1]
-    #                 joint.origin.xyz[2] = trans[2]
-    #                 joint.origin.rpy[0] = rot[0]
-    #                 joint.origin.rpy[1] = rot[1]
-    #                 joint.origin.rpy[2] = rot[2]
 
     for sensor in sensors:
         for joint in robot.joints:  # find corresponding joint for this sensor
