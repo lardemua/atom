@@ -8,6 +8,7 @@ from interactive_markers.interactive_marker_server import *
 from urdf_parser_py.urdf import URDF
 import rospkg
 from Sensor import *
+from colorama import Fore, Back, Style
 
 # ------------------------
 #      BASE CLASSES      #
@@ -62,7 +63,6 @@ def menuFeedback(feedback):
                 joint.origin.rpy[1] = euler[1]
                 joint.origin.rpy[2] = euler[2]
 
-
     xml_string = robot.to_xml_string()
     filename = rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro"
     f = open(filename, "w")
@@ -104,10 +104,25 @@ if __name__ == "__main__":
     # parsing of robot description
     for robot_sensor in robot.sensors:
 
-        print('\n\nSensor name is ' + robot_sensor.name)
+        print(Fore.BLUE + '\n\nSensor name is ' + robot_sensor.name + Style.RESET_ALL)
 
-        # if not robot_sensor.name == 'right_laser':
-        #     continue
+        # Check if we have all the information needed. Abort if not.
+        if robot_sensor.parent is None:
+            raise ValueError('Element parent for sensor ' + robot_sensor.name + ' must be specified in the urdf/xacro.')
+        else:
+            print('parent link is ' + str(robot_sensor.parent))
+
+        if robot_sensor.calibration_parent is None:
+            raise ValueError(
+                'Element calibration_parent for sensor ' + robot_sensor.name + ' must be specified in the urdf/xacro.')
+        else:
+            print('calibration_parent is ' + str(robot_sensor.calibration_parent))
+
+        if robot_sensor.calibration_child is None:
+            raise ValueError(
+                'Element calibration_child for sensor ' + robot_sensor.name + ' must be specified in the urdf/xacro.')
+        else:
+            print('calibration_child is ' + str(robot_sensor.calibration_child))
 
         sensor_link = robot_sensor.name
         print('Sensor data reference frame is ' + sensor_link)
@@ -130,4 +145,3 @@ if __name__ == "__main__":
     print('Changes applied ...')
 
     rospy.spin()
-
