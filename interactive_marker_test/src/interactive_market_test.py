@@ -82,7 +82,7 @@ def publishTFsCallback(msg):
 
 
 def processFeedback(feedback):
-    global marker_pos
+    global marker_poses
 
     for mp in marker_poses:
         if feedback.marker_name == mp.child_frame_id:
