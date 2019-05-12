@@ -100,6 +100,7 @@ class MarkerPoseC:
 
     __repr__ = __str__
 
+
 class Sensor:
 
     def __init__(self, name, server, menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_sensor):
