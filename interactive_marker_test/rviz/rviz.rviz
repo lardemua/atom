@@ -180,7 +180,7 @@ Visualization Manager:
       TF Prefix: ""
       Update Interval: 0
       Value: true
-      Visual Enabled: false
+      Visual Enabled: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: visualization_marker_array
@@ -259,10 +259,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.11979864537715912
+      Pitch: 0.39479851722717285
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.167226314544678
+      Yaw: 5.2672247886657715
     Saved: ~
 Window Geometry:
   Camera:
