@@ -4,11 +4,17 @@
 #    IMPORT MODULES      #
 # ------------------------
 import argparse
+import matplotlib
+
+import networkx as nx
 from interactive_markers.interactive_marker_server import *
+from matplotlib import cm
 from urdf_parser_py.urdf import URDF
 import rospkg
 from Sensor import *
 from colorama import Fore, Back, Style
+import matplotlib.pyplot as plt  # Library to do plots 2D
+from graphviz import Digraph
 
 # ------------------------
 #      BASE CLASSES      #
@@ -20,10 +26,6 @@ from colorama import Fore, Back, Style
 
 server = None
 menu_handler = MenuHandler()
-br = tf.TransformBroadcaster()
-marker_poses = []
-robot = []
-optimization_parent_link = ""
 
 
 # ------------------------
@@ -33,8 +35,9 @@ optimization_parent_link = ""
 def menuFeedback(feedback):
     print('called menu')
 
+    # Update
     for sensor in sensors:
-        for joint in robot.joints:  # find corresponding joint for this sensor
+        for joint in xml_robot.joints:  # find corresponding joint for this sensor
             if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
                 trans = sensor.optT.getTranslation()
                 euler = sensor.optT.getEulerAngles()
@@ -45,7 +48,7 @@ def menuFeedback(feedback):
                 joint.origin.rpy[1] = euler[1]
                 joint.origin.rpy[2] = euler[2]
 
-    xml_string = robot.to_xml_string()
+    xml_string = xml_robot.to_xml_string()
     filename = rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro"
     f = open(filename, "w")
     f.write(xml_string)
@@ -57,6 +60,26 @@ def initMenu():
     menu_handler.insert("Save sensors configuration", callback=menuFeedback)
 
 
+# from graphviz import Digraph
+#
+# g = Digraph('G', filename='cluster_edge.gv')
+# # g.attr(compound='true')
+#
+# with g.subgraph(name='cluster0') as c:
+#     c.edges(['ab', 'ac', 'bd', 'cd'])
+#
+# # with g.subgraph(name='cluster1') as c:
+# #     c.edges(['eg', 'ef'])
+#
+# # g.edge('b', 'f', lhead='cluster1')
+# # g.edge('d', 'e')
+# # g.edge('c', 'g', ltail='cluster0', lhead='cluster1')
+# # g.edge('c', 'e', ltail='cluster0')
+# # g.edge('d', 'h')
+#
+# g.view()
+# exit(0)
+
 if __name__ == "__main__":
 
     # Parse command line arguments
@@ -67,63 +90,74 @@ if __name__ == "__main__":
 
     # Initialize ROS stuff
     rospy.init_node("sensors_first_guess")
-    # br = TransformBroadcaster()
-    listener = TransformListener()
-    rate = rospy.Rate(10.0)  # 10 Hz
-    robot_description = rospy.get_param('/robot_description')
     rospack = rospkg.RosPack()  # get an instance of RosPack with the default search paths
     server = InteractiveMarkerServer("sensors_first_guess")
+    robot_description = rospy.get_param('/robot_description')
     rospy.sleep(0.5)
 
-    # Read robot description from param /robot_description
-    robot = URDF.from_parameter_server()
+    # Parse robot description from param /robot_description
+    xml_robot = URDF.from_parameter_server()
     # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
 
     # Process robot description and create an instance of class Sensor for each sensor
     number_of_sensors = 0
     sensors = []
 
-    # parsing of robot description
-    for robot_sensor in robot.sensors:
+    g = Digraph('G', filename='calibration_transformations.gv')
 
-        print(Fore.BLUE + '\n\nSensor name is ' + robot_sensor.name + Style.RESET_ALL)
+    print('Number of sensors: ' + str(len(xml_robot.sensors)))
+    cmap = cm.Set3(np.linspace(0, 1, len(xml_robot.sensors)))
+
+    # parsing of robot description
+    for i, xml_sensor in enumerate(xml_robot.sensors):
+
+        print(Fore.BLUE + '\n\nSensor name is ' + xml_sensor.name + Style.RESET_ALL)
 
         # Check if we have all the information needed. Abort if not.
-        if robot_sensor.parent is None:
-            raise ValueError('Element parent for sensor ' + robot_sensor.name + ' must be specified in the urdf/xacro.')
+        if xml_sensor.parent is None:
+            raise ValueError('Element parent for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
         else:
-            print('parent link is ' + str(robot_sensor.parent))
+            print('parent link is ' + str(xml_sensor.parent))
 
-        if robot_sensor.calibration_parent is None:
+        if xml_sensor.calibration_parent is None:
             raise ValueError(
-                'Element calibration_parent for sensor ' + robot_sensor.name + ' must be specified in the urdf/xacro.')
+                'Element calibration_parent for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
         else:
-            print('calibration_parent is ' + str(robot_sensor.calibration_parent))
+            print('calibration_parent is ' + str(xml_sensor.calibration_parent))
 
-        if robot_sensor.calibration_child is None:
+        if xml_sensor.calibration_child is None:
             raise ValueError(
-                'Element calibration_child for sensor ' + robot_sensor.name + ' must be specified in the urdf/xacro.')
+                'Element calibration_child for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
         else:
-            print('calibration_child is ' + str(robot_sensor.calibration_child))
+            print('calibration_child is ' + str(xml_sensor.calibration_child))
 
-        sensor_link = robot_sensor.name
-        print('Sensor data reference frame is ' + sensor_link)
 
-        opt_child_link = robot_sensor.parent
-        print('Optimization child is ' + opt_child_link)
+        def addEdge(g, parent, child, label, color='black'):
+            if not parent == child:
+                g.edge(parent, child, label=label, color=color, style='dashed')
 
-        for joint in robot.joints:
-            if robot_sensor.parent == joint.child:
-                opt_parent_link = joint.parent
 
-        print('Optimization parent ' + opt_parent_link)
+        rgb = cmap[i, 0:3]
+        # node_attr={'shape': 'box', 'color': 'blue'}
+        addEdge(g, args['world_link'], xml_sensor.calibration_parent, ' Pre-transform\\n' + xml_sensor.name, 'grey')
+        addEdge(g, xml_sensor.calibration_parent, xml_sensor.calibration_child,
+                ' Calibration\\n' + xml_sensor.name, color=matplotlib.colors.rgb2hex(rgb))
+        addEdge(g, xml_sensor.calibration_child, xml_sensor.parent, ' Post-transform\\n' + xml_sensor.name,
+                color=matplotlib.colors.rgb2hex(rgb))
+        # with g.subgraph(name='cluster_' + xml_sensor.name) as sg:
+        #     addEdge(sg, xml_sensor.calibration_child, xml_sensor.parent, ' ' + xml_sensor.name + ' (post)')
 
-        sensors.append(Sensor(robot_sensor.name, server, menu_handler, args['world_link'], opt_parent_link,
-                              opt_child_link, sensor_link))
+        #
+        #
+        # g.edge('b', 'f', lhead=xml_sensor.name)
 
-    print('Number of sensors: ' + str(len(sensors)))
+        # Append to the list of sensors
+        sensors.append(Sensor(xml_sensor.name, server, menu_handler, args['world_link'],
+                              xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.parent))
+
     initMenu()
     server.applyChanges()
     print('Changes applied ...')
 
+    g.view()
     rospy.spin()

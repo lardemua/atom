@@ -124,8 +124,26 @@ class Sensor:
         print('optT:\n' + str(self.optT))
         print('posT:\n' + str(self.posT))
 
+        self.optTInitial = copy.deepcopy(self.optT)
+
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
+
+    def resetToInitalPose(self):
+        self.optT.matrix = self.optTInitial.matrix
+
+        trans = self.optT.getTranslation()
+        self.marker.pose.position.x = trans[0]
+        self.marker.pose.position.y = trans[1]
+        self.marker.pose.position.z = trans[2]
+        quat = self.optT.getQuaternion()
+        self.marker.pose.orientation.x = quat[0]
+        self.marker.pose.orientation.y = quat[1]
+        self.marker.pose.orientation.z = quat[2]
+        self.marker.pose.orientation.w = quat[3]
+
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
 
     def publishTFCallback(self, _):
         trans = self.optT.getTranslation()
