@@ -1,4 +1,11 @@
 <launch>
+    Parameters
+    <arg name="bag" default="test_bag.bag"/>
+    <!--<param name="/use_sim_time" value="true"/>-->
+
+    <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="/home/$(env USER)/Desktop/$(arg bag) &#45;&#45;clock -r 1 -l"/>-->
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="/home/$(env USER)/Desktop/$(arg bag) -r 1 -l"/>
+
 
     <arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/rviz.rviz" />
 

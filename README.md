@@ -61,3 +61,11 @@ export LC_NUMERIC="en_US.UTF-8"
 If this worked out, you must run always this command at the first place. To avoid this constant work, you can always
 add this command to your bashrc file (copy and paste at the end of the bashrc document).
 Now you don't have to worry about this anymore!
+
+# Recording a bag file of the ATLASCAR2
+
+This should be echanced with the cameras.
+
+```
+rosbag record /left_laser/laserscan /right_laser/laser_scan
+```
