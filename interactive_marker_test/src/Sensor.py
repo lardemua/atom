@@ -208,9 +208,9 @@ class Sensor:
 
         marker_box = Marker()
         marker_box.type = Marker.SPHERE
-        marker_box.scale.x = self.marker.scale * 1.5
-        marker_box.scale.y = self.marker.scale * 1.5
-        marker_box.scale.z = self.marker.scale * 1.5
+        marker_box.scale.x = self.marker.scale * 0.7
+        marker_box.scale.y = self.marker.scale * 0.7
+        marker_box.scale.z = self.marker.scale * 0.7
         marker_box.color.r = 0
         marker_box.color.g = 1
         marker_box.color.b = 0

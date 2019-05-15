@@ -50,7 +50,7 @@ def menuFeedback(feedback):
                     joint.origin.rpy[2] = euler[2]
 
         xml_string = xml_robot.to_xml_string()
-        filename = rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro"
+        filename = rospack.get_path('interactive_marker_test') + "/urdf/macro_first_guess.urdf.xacro"
         f = open(filename, "w")
         f.write(xml_string)
         f.close()
