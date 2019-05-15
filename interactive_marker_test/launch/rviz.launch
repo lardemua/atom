@@ -13,12 +13,12 @@
 
     <group if="$(arg read_first_guess)">
         <arg name="model" default="$(find interactive_marker_test)/urdf/atlas2_macro_first_guess.urdf.xacro"/>
-        <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
+        <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
     </group>
 
     <group unless="$(arg read_first_guess)">
         <arg name="model" default="$(find atlas2_description)/urdf/atlas2.urdf.xacro"/>
-        <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
+        <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
     </group>
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
