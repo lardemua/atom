@@ -116,16 +116,15 @@ class Sensor:
         self.opt_parent_link = frame_opt_parent
         self.opt_child_link = frame_opt_child
         self.sensor_link = frame_sensor
-
         self.updateAll()  # update all the transformations
-        print('Collected pre, opt and pos transforms.')
-
-        print('preT:\n' + str(self.preT))
-        print('optT:\n' + str(self.optT))
-        print('posT:\n' + str(self.posT))
+        # print('Collected pre, opt and pos transforms.')
+        #
+        # print('preT:\n' + str(self.preT))
+        # print('optT:\n' + str(self.optT))
+        # print('posT:\n' + str(self.posT))
 
         self.optTInitial = copy.deepcopy(self.optT)
-
+        print('\n\n' + ' Acordei' + str(self.optTInitial))
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
 
@@ -142,6 +141,8 @@ class Sensor:
         self.marker.pose.orientation.z = quat[2]
         self.marker.pose.orientation.w = quat[3]
 
+        self.optTInitial = copy.deepcopy(self.optT)
+
         self.menu_handler.reApply(self.server)
         self.server.applyChanges()
 
@@ -153,7 +154,7 @@ class Sensor:
                      rospy.Time.now(), self.opt_child_link, self.opt_parent_link)
 
     def markerFeedback(self, feedback):
-        print(' sensor ' + self.name + ' received feedback')
+        # print(' sensor ' + self.name + ' received feedback')
 
         self.optT.setTranslationFromPosePosition(feedback.pose.position)
         self.optT.setQuaternionFromPoseQuaternion(feedback.pose.orientation)
@@ -207,9 +208,9 @@ class Sensor:
 
         marker_box = Marker()
         marker_box.type = Marker.SPHERE
-        marker_box.scale.x = self.marker.scale * 0.5
-        marker_box.scale.y = self.marker.scale * 0.5
-        marker_box.scale.z = self.marker.scale * 0.5
+        marker_box.scale.x = self.marker.scale * 1.5
+        marker_box.scale.y = self.marker.scale * 1.5
+        marker_box.scale.z = self.marker.scale * 1.5
         marker_box.color.r = 0
         marker_box.color.g = 1
         marker_box.color.b = 0

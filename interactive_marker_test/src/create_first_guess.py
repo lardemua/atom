@@ -6,7 +6,7 @@
 import argparse
 import matplotlib
 
-import networkx as nx
+# import network as nx
 from interactive_markers.interactive_marker_server import *
 from matplotlib import cm
 from urdf_parser_py.urdf import URDF
@@ -14,7 +14,7 @@ import rospkg
 from Sensor import *
 from colorama import Fore, Back, Style
 import matplotlib.pyplot as plt  # Library to do plots 2D
-from graphviz import Digraph
+# from graphviz import Digraph
 
 # ------------------------
 #      BASE CLASSES      #
@@ -33,31 +33,36 @@ menu_handler = MenuHandler()
 # ------------------------
 
 def menuFeedback(feedback):
-    print('called menu')
-
+    # print('called menu')
+    handle = feedback.menu_entry_id
     # Update
-    for sensor in sensors:
-        for joint in xml_robot.joints:  # find corresponding joint for this sensor
-            if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
-                trans = sensor.optT.getTranslation()
-                euler = sensor.optT.getEulerAngles()
-                joint.origin.xyz[0] = trans[0]
-                joint.origin.xyz[1] = trans[1]
-                joint.origin.xyz[2] = trans[2]
-                joint.origin.rpy[0] = euler[0]
-                joint.origin.rpy[1] = euler[1]
-                joint.origin.rpy[2] = euler[2]
+    if handle == 1:
+        for sensor in sensors:
+            for joint in xml_robot.joints:  # find corresponding joint for this sensor
+                if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
+                    trans = sensor.optT.getTranslation()
+                    euler = sensor.optT.getEulerAngles()
+                    joint.origin.xyz[0] = trans[0]
+                    joint.origin.xyz[1] = trans[1]
+                    joint.origin.xyz[2] = trans[2]
+                    joint.origin.rpy[0] = euler[0]
+                    joint.origin.rpy[1] = euler[1]
+                    joint.origin.rpy[2] = euler[2]
 
-    xml_string = xml_robot.to_xml_string()
-    filename = rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro"
-    f = open(filename, "w")
-    f.write(xml_string)
-    f.close()
-    print('Saved first guess to file ' + filename)
+        xml_string = xml_robot.to_xml_string()
+        filename = rospack.get_path('interactive_marker_test') + "/urdf/atlas2_macro_first_guess.urdf.xacro"
+        f = open(filename, "w")
+        f.write(xml_string)
+        f.close()
+        print('Saved first guess to file ' + filename)
+    if handle == 2:
+        for sensor in sensors:
+            Sensor.resetToInitalPose(sensor)
 
 
 def initMenu():
     menu_handler.insert("Save sensors configuration", callback=menuFeedback)
+    menu_handler.insert("Reset to initial configuration", callback=menuFeedback)
 
 
 # from graphviz import Digraph
@@ -103,10 +108,10 @@ if __name__ == "__main__":
     number_of_sensors = 0
     sensors = []
 
-    g = Digraph('G', filename='calibration_transformations.gv')
+    # g = Digraph('G', filename='calibration_transformations.gv')
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
-    cmap = cm.Set3(np.linspace(0, 1, len(xml_robot.sensors)))
+    # cmap = cm.Set3(np.linspace(0, 1, len(xml_robot.sensors)))
 
     # parsing of robot description
     for i, xml_sensor in enumerate(xml_robot.sensors):
@@ -132,18 +137,18 @@ if __name__ == "__main__":
             print('calibration_child is ' + str(xml_sensor.calibration_child))
 
 
-        def addEdge(g, parent, child, label, color='black'):
-            if not parent == child:
-                g.edge(parent, child, label=label, color=color, style='dashed')
+        # def addEdge(g, parent, child, label, color='black'):
+        #     if not parent == child:
+        #         g.edge(parent, child, label=label, color=color, style='dashed')
 
 
-        rgb = cmap[i, 0:3]
-        # node_attr={'shape': 'box', 'color': 'blue'}
-        addEdge(g, args['world_link'], xml_sensor.calibration_parent, ' Pre-transform\\n' + xml_sensor.name, 'grey')
-        addEdge(g, xml_sensor.calibration_parent, xml_sensor.calibration_child,
-                ' Calibration\\n' + xml_sensor.name, color=matplotlib.colors.rgb2hex(rgb))
-        addEdge(g, xml_sensor.calibration_child, xml_sensor.parent, ' Post-transform\\n' + xml_sensor.name,
-                color=matplotlib.colors.rgb2hex(rgb))
+        # rgb = cmap[i, 0:3]
+        # # node_attr={'shape': 'box', 'color': 'blue'}
+        # addEdge(g, args['world_link'], xml_sensor.calibration_parent, ' Pre-transform\\n' + xml_sensor.name, 'grey')
+        # addEdge(g, xml_sensor.calibration_parent, xml_sensor.calibration_child,
+        #         ' Calibration\\n' + xml_sensor.name, color=matplotlib.colors.rgb2hex(rgb))
+        # addEdge(g, xml_sensor.calibration_child, xml_sensor.parent, ' Post-transform\\n' + xml_sensor.name,
+        #         color=matplotlib.colors.rgb2hex(rgb))
         # with g.subgraph(name='cluster_' + xml_sensor.name) as sg:
         #     addEdge(sg, xml_sensor.calibration_child, xml_sensor.parent, ' ' + xml_sensor.name + ' (post)')
 
@@ -159,5 +164,5 @@ if __name__ == "__main__":
     server.applyChanges()
     print('Changes applied ...')
 
-    g.view()
+    # g.view()
     rospy.spin()
