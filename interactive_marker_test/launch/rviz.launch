@@ -6,13 +6,11 @@
     <!--&lt;!&ndash;<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="/home/$(env USER)/Desktop/$(arg bag) &#45;&#45;clock -r 1 -l"/>&ndash;&gt;-->
     <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="/home/$(env USER)/Desktop/$(arg bag) -r 1 -l"/>-->
 
-
-    <arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/rviz.rviz" /
     <arg name="car_model" default="false" />
     <arg name="read_first_guess" default="false" />
+   <arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/rviz.rviz"/>
 
     <group if = "$(arg car_model)">
-
     <group if="$(arg read_first_guess)">
         <arg name="model" default="$(find interactive_marker_test)/urdf/macro_first_guess.urdf.xacro"/>
         <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
