@@ -31,7 +31,7 @@
     </group>
 
     <group unless="$(arg read_first_guess)">
-        <arg name="model" default="$(find pr2_description)/robots/pr2.urdf.xacro"/>
+        <arg name="model" default="$(find interactive_marker_test)/urdf/pr2_no_arms.urdf.xacro"/>
         <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
     </group>
 

@@ -4,10 +4,15 @@
 #    IMPORT MODULES      #
 # ------------------------
 import argparse
+from _elementtree import ElementTree
 
+import matplotlib
 
 from interactive_markers.interactive_marker_server import *
+from matplotlib import cm
 from urdf_parser_py.urdf import URDF
+# from urdfdom_py.urdf import URDF
+# import urdfdom_py
 import rospkg
 from Sensor import *
 from colorama import Fore, Back, Style
@@ -21,46 +26,9 @@ from graphviz import Digraph
 #      GLOBAL VARS       #
 # ------------------------
 
-server = None
-menu_handler = MenuHandler()
-
-
 # ------------------------
 #      FUNCTIONS         #
 # ------------------------
-
-def menuFeedback(feedback):
-    # print('called menu')
-    handle = feedback.menu_entry_id
-    # Update
-    if handle == 1:
-        for sensor in sensors:
-            for joint in xml_robot.joints:  # find corresponding joint for this sensor
-                if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
-                    trans = sensor.optT.getTranslation()
-                    euler = sensor.optT.getEulerAngles()
-                    joint.origin.xyz[0] = trans[0]
-                    joint.origin.xyz[1] = trans[1]
-                    joint.origin.xyz[2] = trans[2]
-                    joint.origin.rpy[0] = euler[0]
-                    joint.origin.rpy[1] = euler[1]
-                    joint.origin.rpy[2] = euler[2]
-
-        xml_string = xml_robot.to_xml_string()
-        filename = rospack.get_path('interactive_marker_test') + "/urdf/macro_first_guess.urdf.xacro"
-        f = open(filename, "w")
-        f.write(xml_string)
-        f.close()
-        print('Saved first guess to file ' + filename)
-    if handle == 2:
-        for sensor in sensors:
-            Sensor.resetToInitalPose(sensor)
-
-
-def initMenu():
-    menu_handler.insert("Save sensors configuration", callback=menuFeedback)
-    menu_handler.insert("Reset to initial configuration", callback=menuFeedback)
-
 
 if __name__ == "__main__":
 
@@ -71,11 +39,11 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff
-    rospy.init_node("sensors_first_guess")
+    rospy.init_node("draw_calibration_graph")
     rospack = rospkg.RosPack()  # get an instance of RosPack with the default search paths
-    server = InteractiveMarkerServer("sensors_first_guess")
     robot_description = rospy.get_param('/robot_description')
-    rospy.sleep(0.5)
+
+    g = Digraph('G', filename='calibration_transformations.gv')
 
     # Parse robot description from param /robot_description
     xml_robot = URDF.from_parameter_server()
@@ -85,7 +53,20 @@ if __name__ == "__main__":
     number_of_sensors = 0
     sensors = []
 
+
+    for joint in xml_robot.joints:
+        if 'caster' in joint.name:
+            continue
+        g.node(joint.parent,_attributes={'shape': 'ellipse'})
+        g.node(joint.child, _attributes={'shape': 'ellipse'})
+        g.edge(joint.parent, joint.child, color='black',style='dashed')
+
+
+
+
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
+    # cmap = cm.Set3(np.linspace(0, 1, len(xml_robot.sensors)))
+    cmap = cm.Pastel2(np.linspace(0, 1, len(xml_robot.sensors)))
 
     # parsing of robot description
     for i, xml_sensor in enumerate(xml_robot.sensors):
@@ -111,19 +92,23 @@ if __name__ == "__main__":
             print('calibration_child is ' + str(xml_sensor.calibration_child))
 
 
-        def addEdge(g, parent, child, label, color='black'):
-            if not parent == child:
-                # g.attr('node', shape='box')
-                g.node(parent, label, _attributes={'shape': 'ellipse'})
-                g.node(child, label, _attributes={'shape': 'ellipse'})
-                g.edge(parent, child, label=label, color=color, style='dashed')
+        rgb = matplotlib.colors.rgb2hex(cmap[i, 0:3])
 
-        # Append to the list of sensors
-        sensors.append(Sensor(xml_sensor.name, server, menu_handler, args['world_link'],
-                              xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.parent))
+        g.edge(args['world_link'], xml_sensor.calibration_parent, xml_sensor.name + '\\n(pre-transform)',
+               color=rgb, style='solid', _attributes={'penwidth':'4'})
 
-    initMenu()
-    server.applyChanges()
-    print('Changes applied ...')
+        g.edge(xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.name + '\\n(to be calibrated)',
+               color=rgb, style='solid', _attributes={'penwidth':'4'})
 
+        g.edge(xml_sensor.calibration_child, xml_sensor.parent, xml_sensor.name + '\\n(post-transform)',
+               color=rgb, style='solid', _attributes={'penwidth':'4'})
+
+
+        g.node(xml_sensor.parent, xml_sensor.parent, _attributes={'penwidth': '4', 'color':rgb})
+
+        # with g.subgraph(name='cluster_' + xml_sensor.name) as sg:
+        #     addEdge(sg, xml_sensor.calibration_child, xml_sensor.parent, ' ' + xml_sensor.name + ' (post)')
+
+
+    g.view()
     rospy.spin()

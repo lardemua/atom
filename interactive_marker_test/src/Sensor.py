@@ -25,6 +25,7 @@ class TransformationT():
         self.parent_frame_id = parent_frame_id
         self.frame_id = frame_id
         self.matrix = np.identity(4, dtype=np.float)
+
         self.stamp = rospy.Time.now()
 
     def __str__(self):
@@ -110,7 +111,6 @@ class Sensor:
         self.menu_handler = menu_handler
         self.listener = TransformListener()
         self.br = tf.TransformBroadcaster()
-        self.timer_callback = rospy.Timer(rospy.Duration(.1), self.publishTFCallback)  # to periodically broadcast
         # transforms
         self.world_link = frame_world
         self.opt_parent_link = frame_opt_parent
@@ -124,9 +124,11 @@ class Sensor:
         # print('posT:\n' + str(self.posT))
 
         self.optTInitial = copy.deepcopy(self.optT)
-        print('\n\n' + ' Acordei' + str(self.optTInitial))
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
+
+        #Start publishing now
+        self.timer_callback = rospy.Timer(rospy.Duration(.1), self.publishTFCallback)  # to periodically broadcast
 
     def resetToInitalPose(self):
         self.optT.matrix = self.optTInitial.matrix
@@ -177,8 +179,11 @@ class Sensor:
         self.posT = self.updateT(self.opt_child_link, self.sensor_link, rospy.Time.now())
 
     def updateT(self, parent_link, child_link, stamp):
-        self.listener.waitForTransform(parent_link, child_link, stamp, rospy.Duration(1.0))
-        (trans, quat) = self.listener.lookupTransform(parent_link, child_link, stamp)
+        # self.listener.waitForTransform(parent_link, child_link, stamp, rospy.Duration(3.0))
+        # (trans, quat) = self.listener.lookupTransform(parent_link, child_link, stamp)
+
+        self.listener.waitForTransform(parent_link, child_link, rospy.Time(), rospy.Duration(1.0))
+        (trans, quat) = self.listener.lookupTransform(parent_link, child_link, rospy.Time())
         T = TransformationT(parent_link, child_link)
         T.setTranslation(trans)
         T.setQuaternion(quat)
