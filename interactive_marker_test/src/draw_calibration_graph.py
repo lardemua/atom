@@ -43,30 +43,27 @@ if __name__ == "__main__":
     rospack = rospkg.RosPack()  # get an instance of RosPack with the default search paths
     robot_description = rospy.get_param('/robot_description')
 
-    g = Digraph('G', filename='calibration_transformations.gv')
-
     # Parse robot description from param /robot_description
     xml_robot = URDF.from_parameter_server()
     # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
 
-    # Process robot description and create an instance of class Sensor for each sensor
+    # ----------------------------------------------
+    # Create a full transformation graph annotated
+    # ----------------------------------------------
+    g = Digraph('G', filename='calibration_full')
     number_of_sensors = 0
     sensors = []
-
 
     for joint in xml_robot.joints:
         if 'caster' in joint.name:
             continue
-        g.node(joint.parent,_attributes={'shape': 'ellipse'})
+        g.node(joint.parent, _attributes={'shape': 'ellipse'})
         g.node(joint.child, _attributes={'shape': 'ellipse'})
-        g.edge(joint.parent, joint.child, color='black',style='dashed')
-
-
-
+        g.edge(joint.parent, joint.child, color='black', style='dashed')
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
-    # cmap = cm.Set3(np.linspace(0, 1, len(xml_robot.sensors)))
-    cmap = cm.Pastel2(np.linspace(0, 1, len(xml_robot.sensors)))
+    cmap = cm.Set1(np.linspace(0, 1, len(xml_robot.sensors)))
+    # cmap = cm.Pastel2(np.linspace(0, 1, len(xml_robot.sensors)))
 
     # parsing of robot description
     for i, xml_sensor in enumerate(xml_robot.sensors):
@@ -91,24 +88,58 @@ if __name__ == "__main__":
         else:
             print('calibration_child is ' + str(xml_sensor.calibration_child))
 
+        rgb = matplotlib.colors.rgb2hex(cmap[i, 0:3])
+        g.edge(args['world_link'], xml_sensor.calibration_parent, xml_sensor.name + '\\n(pre-transform)',
+               color=rgb, style='solid', _attributes={'penwidth': '2'})
+
+        g.edge(xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.name + '\\n(to be calibrated)',
+               color=rgb, style='solid', _attributes={'penwidth': '2'})
+
+        g.edge(xml_sensor.calibration_child, xml_sensor.parent, xml_sensor.name + '\\n(post-transform)',
+               color=rgb, style='solid', _attributes={'penwidth': '2'})
+        g.node(xml_sensor.parent, xml_sensor.parent, _attributes={'penwidth': '4', 'color': rgb})
+
+    g.view()
+
+    # ----------------------------------------------
+    # Draw transform chain for each Sensor
+    # ----------------------------------------------
+    listener = TransformListener()
+    rospy.sleep(2.0)
+    g2 = Digraph('G', filename='calibration_per_sensor')
+
+    for i, xml_sensor in enumerate(xml_robot.sensors):
+
+        print(Fore.BLUE + '\n\nSensor name is ' + xml_sensor.name + Style.RESET_ALL)
 
         rgb = matplotlib.colors.rgb2hex(cmap[i, 0:3])
 
-        g.edge(args['world_link'], xml_sensor.calibration_parent, xml_sensor.name + '\\n(pre-transform)',
-               color=rgb, style='solid', _attributes={'penwidth':'4'})
+        chain = listener.chain(xml_sensor.parent, rospy.Time(), args['world_link'], rospy.Time(), args['world_link'])
+        print('Complete chain is: ' + str(chain))
 
-        g.edge(xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.name + '\\n(to be calibrated)',
-               color=rgb, style='solid', _attributes={'penwidth':'4'})
-
-        g.edge(xml_sensor.calibration_child, xml_sensor.parent, xml_sensor.name + '\\n(post-transform)',
-               color=rgb, style='solid', _attributes={'penwidth':'4'})
-
-
-        g.node(xml_sensor.parent, xml_sensor.parent, _attributes={'penwidth': '4', 'color':rgb})
-
-        # with g.subgraph(name='cluster_' + xml_sensor.name) as sg:
-        #     addEdge(sg, xml_sensor.calibration_child, xml_sensor.parent, ' ' + xml_sensor.name + ' (post)')
+        for parent, child in zip(chain[0::], chain[1::]):
+            print(parent + '->' + child)
+            if parent == xml_sensor.calibration_parent and child == xml_sensor.calibration_child:
+                g2.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor':rgb},
+                    label=xml_sensor.name + '\\n calibration transform')
+            else:
+                g2.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1'})
 
 
-    g.view()
-    rospy.spin()
+
+
+    # get the type of this joint: fixed, revolute, prismatic, etc
+    for i, joint in enumerate(xml_robot.joints):
+        if joint.type == 'fixed':
+            g2.edge(joint.parent, joint.child, color='gray41', style='solid', _attributes={'penwidth': '1', 'fontcolor':'gray41'},
+                    label=joint.type + ' joint')
+        else:
+            g2.edge(joint.parent, joint.child, color='gray10', style='solid', _attributes={'penwidth': '1', 'fontcolor':'gray10'},
+                    label=joint.type + ' joint')
+
+
+    for i, xml_sensor in enumerate(xml_robot.sensors):
+        rgb = matplotlib.colors.rgb2hex(cmap[i, 0:3])
+        g2.node(xml_sensor.parent, xml_sensor.parent, _attributes={'penwidth': '4', 'color': rgb})
+
+    g2.view()
