@@ -4,7 +4,18 @@ Saving the markers final position and reopen the robot with the sensors at the u
 
 # Table of Contents
 
+- [AtlasCarCalibration](#atlascarcalibration)
+- [Table of Contents](#table-of-contents)
+- [Installation](#installation)
+  * [Using PR2 robot instead of AtlasCar2](#using-pr2-robot-instead-of-atlascar2)
+- [Usage Instructions](#usage-instructions)
+  * [For PR2 robot model](#for-pr2-robot-model)
+  * [Visualizing the calibration graphs](#visualizing-the-calibration-graphs)
+- [Known problems](#known-problems)
+  * [urdf model not showing on rviz or urdf model showed up misplaced](#urdf-model-not-showing-on-rviz-or-urdf-model-showed-up-misplaced)
+- [Recording a bag file of the ATLASCAR2](#recording-a-bag-file-of-the-atlascar2)
 
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 # Installation
 First, you need to uninstall urdfdom_py ros package and install the updated version of this package so that can be able to recognize sensor element.
