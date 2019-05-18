@@ -20,10 +20,8 @@ from graphviz import Digraph
 # ------------------------
 #      GLOBAL VARS       #
 # ------------------------
-
 server = None
 menu_handler = MenuHandler()
-
 
 # ------------------------
 #      FUNCTIONS         #
@@ -55,15 +53,11 @@ def menuFeedback(feedback):
     if handle == 2:
         for sensor in sensors:
             Sensor.resetToInitalPose(sensor)
-    if handle == 3: # collect snapshot
-        print('Collect snapshot selected')
 
 
 def initMenu():
     menu_handler.insert("Save sensors configuration", callback=menuFeedback)
     menu_handler.insert("Reset to initial configuration", callback=menuFeedback)
-    menu_handler.insert("Collect snapshot", callback=menuFeedback)
-
 
 
 if __name__ == "__main__":
@@ -71,8 +65,7 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-w", "--world_link", help='Name of the reference frame wich is common to all sensors. Usually '
-                    'it is the world or base_link.', type=str, required=True)
-    ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.1)
+                                               'it is the world or base_link.', type=str, required=True)
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff
@@ -98,13 +91,34 @@ if __name__ == "__main__":
         print(Fore.BLUE + '\n\nSensor name is ' + xml_sensor.name + Style.RESET_ALL)
 
         # Check if we have all the information needed. Abort if not.
-        for attr in ['parent', 'calibration_parent', 'calibration_child']:
-            if not hasattr(xml_sensor, attr):
-                raise ValueError('Element ' + attr + ' for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
+        if xml_sensor.parent is None:
+            raise ValueError('Element parent for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
+        else:
+            print('parent link is ' + str(xml_sensor.parent))
+
+        if xml_sensor.calibration_parent is None:
+            raise ValueError(
+                'Element calibration_parent for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
+        else:
+            print('calibration_parent is ' + str(xml_sensor.calibration_parent))
+
+        if xml_sensor.calibration_child is None:
+            raise ValueError(
+                'Element calibration_child for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
+        else:
+            print('calibration_child is ' + str(xml_sensor.calibration_child))
+
+
+        def addEdge(g, parent, child, label, color='black'):
+            if not parent == child:
+                # g.attr('node', shape='box')
+                g.node(parent, label, _attributes={'shape': 'ellipse'})
+                g.node(child, label, _attributes={'shape': 'ellipse'})
+                g.edge(parent, child, label=label, color=color, style='dashed')
 
         # Append to the list of sensors
         sensors.append(Sensor(xml_sensor.name, server, menu_handler, args['world_link'],
-                              xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.parent, marker_scale=args['marker_scale']))
+                              xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.parent))
 
     initMenu()
     server.applyChanges()

@@ -104,13 +104,14 @@ class MarkerPoseC:
 
 class Sensor:
 
-    def __init__(self, name, server, menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_sensor):
+    def __init__(self, name, server, menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_sensor, marker_scale):
         print('Creating a new sensor named ' + name)
         self.name = name
         self.server = server
         self.menu_handler = menu_handler
         self.listener = TransformListener()
         self.br = tf.TransformBroadcaster()
+        self.marker_scale = marker_scale
         # transforms
         self.world_link = frame_world
         self.opt_parent_link = frame_opt_parent
@@ -202,7 +203,7 @@ class Sensor:
         self.marker.pose.orientation.y = quat[1]
         self.marker.pose.orientation.z = quat[2]
         self.marker.pose.orientation.w = quat[3]
-        self.marker.scale = 0.2
+        self.marker.scale = self.marker_scale
 
         self.marker.name = self.name
         self.marker.description = self.name + '_control'
@@ -219,7 +220,7 @@ class Sensor:
         marker_box.color.r = 0
         marker_box.color.g = 1
         marker_box.color.b = 0
-        marker_box.color.a = 1.0
+        marker_box.color.a = 0.2
 
         control.markers.append(marker_box)
         self.marker.controls.append(control)
