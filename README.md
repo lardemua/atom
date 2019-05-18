@@ -2,6 +2,10 @@
 Reading the sensors starting position of a robot xacro file (atlas car sample) and create interactive markers associated to them.
 Saving the markers final position and reopen the robot with the sensors at the updated position.
 
+# Table of Contents
+
+
+
 # Installation
 First, you need to uninstall urdfdom_py ros package and install the updated version of this package so that can be able to recognize sensor element.
 To remove the old version, run the command:
@@ -74,7 +78,9 @@ rosrun interactive_marker_test draw_calibration_graph.py -w {world_frame}
 
 Annotated tf trees are displayed to better understand the calibration process. Here are some examples for the PR2 robot:
 
- 
+![calibration_full](https://github.com/lardemua/AtlasCarCalibration/blob/master/docs/calibration_full.png) 
+
+![calibration_per_sensor](https://github.com/lardemua/AtlasCarCalibration/blob/master/docs/calibration_per_sensor.png) 
 
 # Known problems
 
