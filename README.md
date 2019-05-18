@@ -64,6 +64,18 @@ roslaunch interactive_marker_test rviz.launch car_model:=false read_first_guess:
 ```
 You need to set Fixed Frame as 'base_footprint' in order to see the urdf robot model.
 
+## Visualizing the calibration graphs
+
+In order to visualize the calibration graphs you may run:
+
+```
+rosrun interactive_marker_test draw_calibration_graph.py -w {world_frame}
+```
+
+Annotated tf trees are displayed to better understand the calibration process. Here are some examples for the PR2 robot:
+
+ 
+
 # Known problems
 
 ## urdf model not showing on rviz or urdf model showed up misplaced
@@ -86,3 +98,4 @@ This should be echanced with the cameras.
 ```
 rosbag record /left_laser/laserscan /right_laser/laser_scan
 ```
+
