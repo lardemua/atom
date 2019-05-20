@@ -1,0 +1,32 @@
+path:        2011-01-21-09-01-36-d.bag
+version:     2.0
+duration:    3:42s (222s)
+start:       Jan 21 2011 12:01:36.64 (1295629296.64)
+end:         Jan 21 2011 12:05:18.65 (1295629518.65)
+size:        3.8 GB
+messages:    97219
+compression: none [4319/4319 chunks]
+types:       geometry_msgs/PoseWithCovarianceStamped     [953b798c0f514ff060a53a3498ce6246]
+             nav_msgs/Odometry                           [cd5e73d190d741a2f92e81eda573aca7]
+             pr2_mechanism_controllers/BaseOdometryState [8a483e137ebc37abafa4c26549091dd6]
+             pr2_mechanism_controllers/Odometer          [1f1d53743f4592ee455aa3eaf9019457]
+             sensor_msgs/CameraInfo                      [c9a58c1b0b154e0e6da7578cb991d214]
+             sensor_msgs/Image                           [060021388200f6f0f447d0fcd9c64743]
+             sensor_msgs/Imu                             [6a62c6daae103f4ff57a132d6f95cec2]
+             sensor_msgs/LaserScan                       [90c7ef2dc6895d81024acba2ac42f369]
+             std_msgs/Bool                               [8b94c1b53db61fb6aed406028ad6332a]
+             tf/tfMessage                                [94810edda583a504dfda3829e70d7eec]
+topics:      /base_odometry/odom              20990 msgs @ 43.7 kHz : nav_msgs/Odometry                          
+             /base_odometry/odometer            222 msgs @   1.0 Hz : pr2_mechanism_controllers/Odometer         
+             /base_odometry/state               222 msgs @   1.0 Hz : pr2_mechanism_controllers/BaseOdometryState
+             /base_scan                        4417 msgs @  20.0 Hz : sensor_msgs/LaserScan                      
+             /robot_pose_ekf/odom_combined     6303 msgs @  29.5 Hz : geometry_msgs/PoseWithCovarianceStamped    
+             /tf                              12454 msgs @  61.0 Hz : tf/tfMessage                               
+             /tilt_scan                        4458 msgs @  20.0 Hz : sensor_msgs/LaserScan                      
+             /torso_lift_imu/data             22202 msgs @ 100.0 Hz : sensor_msgs/Imu                            
+             /torso_lift_imu/is_calibrated        1 msg             : std_msgs/Bool                              
+             /wide_stereo/left/camera_info     6498 msgs @  29.4 Hz : sensor_msgs/CameraInfo                     
+             /wide_stereo/left/image_rect      6477 msgs @  29.4 Hz : sensor_msgs/Image                          
+             /wide_stereo/right/camera_info    6498 msgs @  29.4 Hz : sensor_msgs/CameraInfo                     
+             /wide_stereo/right/image_rect     6477 msgs @  29.4 Hz : sensor_msgs/Image
+

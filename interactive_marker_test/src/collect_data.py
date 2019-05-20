@@ -5,10 +5,11 @@
 # ------------------------
 import argparse
 
-
 from interactive_markers.interactive_marker_server import *
 from urdf_parser_py.urdf import URDF
 import rospkg
+
+from DataCollector import DataCollector
 from Sensor import *
 from colorama import Fore, Back, Style
 from graphviz import Digraph
@@ -23,45 +24,129 @@ from graphviz import Digraph
 server = None
 menu_handler = MenuHandler()
 
+
 # ------------------------
 #      FUNCTIONS         #
 # ------------------------
 
 def menuFeedback(feedback):
-    # print('called menu')
+    print('Menu feedback')
     handle = feedback.menu_entry_id
-    # Update
-    if handle == 1:
-        for sensor in sensors:
-            for joint in xml_robot.joints:  # find corresponding joint for this sensor
-                if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
-                    trans = sensor.optT.getTranslation()
-                    euler = sensor.optT.getEulerAngles()
-                    joint.origin.xyz[0] = trans[0]
-                    joint.origin.xyz[1] = trans[1]
-                    joint.origin.xyz[2] = trans[2]
-                    joint.origin.rpy[0] = euler[0]
-                    joint.origin.rpy[1] = euler[1]
-                    joint.origin.rpy[2] = euler[2]
-
-        xml_string = xml_robot.to_xml_string()
-        filename = rospack.get_path('interactive_marker_test') + "/urdf/macro_first_guess.urdf.xacro"
-        f = open(filename, "w")
-        f.write(xml_string)
-        f.close()
-        print('Saved first guess to file ' + filename)
-    if handle == 2:
-        for sensor in sensors:
-            Sensor.resetToInitalPose(sensor)
+    if handle == 1:  # collect snapshot
+        print('Collect snapshot selected')
+        data_collector.collectSnapshot()
 
 
 def initMenu():
-    menu_handler.insert("Save sensors configuration", callback=menuFeedback)
-    menu_handler.insert("Reset to initial configuration", callback=menuFeedback)
+    menu_handler.insert("Collect snapshot", callback=menuFeedback)
+
+
+def createInteractiveMarker():
+    marker = InteractiveMarker()
+    marker.header.frame_id = args['world_link']
+    trans = (1,0,1)
+    marker.pose.position.x = trans[0]
+    marker.pose.position.y = trans[1]
+    marker.pose.position.z = trans[2]
+    quat = (0,0,0,1)
+    marker.pose.orientation.x = quat[0]
+    marker.pose.orientation.y = quat[1]
+    marker.pose.orientation.z = quat[2]
+    marker.pose.orientation.w = quat[3]
+    marker.scale = 0.2
+
+    marker.name = 'menu'
+    marker.description = 'menu'
+
+    # insert a box
+    control = InteractiveMarkerControl()
+    control.always_visible = True
+
+    marker_box = Marker()
+    marker_box.type = Marker.SPHERE
+    marker_box.scale.x = marker.scale * 0.7
+    marker_box.scale.y = marker.scale * 0.7
+    marker_box.scale.z = marker.scale * 0.7
+    marker_box.color.r = 0
+    marker_box.color.g = 1
+    marker_box.color.b = 0
+    marker_box.color.a = 0.2
+
+    control.markers.append(marker_box)
+    marker.controls.append(control)
+
+    marker.controls[0].interaction_mode = InteractiveMarkerControl.MOVE_ROTATE_3D
+
+    control = InteractiveMarkerControl()
+    control.orientation.w = 1
+    control.orientation.x = 1
+    control.orientation.y = 0
+    control.orientation.z = 0
+    control.name = "rotate_x"
+    control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+    control.orientation_mode = InteractiveMarkerControl.FIXED
+    marker.controls.append(control)
+
+    control = InteractiveMarkerControl()
+    control.orientation.w = 1
+    control.orientation.x = 1
+    control.orientation.y = 0
+    control.orientation.z = 0
+    control.name = "move_x"
+    control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+    control.orientation_mode = InteractiveMarkerControl.FIXED
+    marker.controls.append(control)
+
+    control = InteractiveMarkerControl()
+    control.orientation.w = 1
+    control.orientation.x = 0
+    control.orientation.y = 1
+    control.orientation.z = 0
+    control.name = "rotate_z"
+    control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+    control.orientation_mode = InteractiveMarkerControl.FIXED
+    marker.controls.append(control)
+
+    control = InteractiveMarkerControl()
+    control.orientation.w = 1
+    control.orientation.x = 0
+    control.orientation.y = 1
+    control.orientation.z = 0
+    control.name = "move_z"
+    control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+    control.orientation_mode = InteractiveMarkerControl.FIXED
+    marker.controls.append(control)
+
+    control = InteractiveMarkerControl()
+    control.orientation.w = 1
+    control.orientation.x = 0
+    control.orientation.y = 0
+    control.orientation.z = 1
+    control.name = "rotate_y"
+    control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+    control.orientation_mode = InteractiveMarkerControl.FIXED
+    marker.controls.append(control)
+
+    control = InteractiveMarkerControl()
+    control.orientation.w = 1
+    control.orientation.x = 0
+    control.orientation.y = 0
+    control.orientation.z = 1
+    control.name = "move_y"
+    control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+    control.orientation_mode = InteractiveMarkerControl.FIXED
+    marker.controls.append(control)
+
+    server.insert(marker, markerFeedback)
+    menu_handler.apply(server, marker.name)
+
+
+
+def markerFeedback(feedback):
+    print('Received feedback')
 
 
 if __name__ == "__main__":
-
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-w", "--world_link", help='Name of the reference frame wich is common to all sensors. Usually '
@@ -84,43 +169,11 @@ if __name__ == "__main__":
     sensors = []
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
+    data_collector = DataCollector(args['world_link'])
 
-    # parsing of robot description
-    for i, xml_sensor in enumerate(xml_robot.sensors):
-
-        print(Fore.BLUE + '\n\nSensor name is ' + xml_sensor.name + Style.RESET_ALL)
-
-        # Check if we have all the information needed. Abort if not.
-        if xml_sensor.parent is None:
-            raise ValueError('Element parent for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
-        else:
-            print('parent link is ' + str(xml_sensor.parent))
-
-        if xml_sensor.calibration_parent is None:
-            raise ValueError(
-                'Element calibration_parent for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
-        else:
-            print('calibration_parent is ' + str(xml_sensor.calibration_parent))
-
-        if xml_sensor.calibration_child is None:
-            raise ValueError(
-                'Element calibration_child for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
-        else:
-            print('calibration_child is ' + str(xml_sensor.calibration_child))
-
-
-        def addEdge(g, parent, child, label, color='black'):
-            if not parent == child:
-                # g.attr('node', shape='box')
-                g.node(parent, label, _attributes={'shape': 'ellipse'})
-                g.node(child, label, _attributes={'shape': 'ellipse'})
-                g.edge(parent, child, label=label, color=color, style='dashed')
-
-        # Append to the list of sensors
-        sensors.append(Sensor(xml_sensor.name, server, menu_handler, args['world_link'],
-                              xml_sensor.calibration_parent, xml_sensor.calibration_child, xml_sensor.parent))
-
+    createInteractiveMarker()
     initMenu()
+    menu_handler.reApply(server)
     server.applyChanges()
     print('Changes applied ...')
 
