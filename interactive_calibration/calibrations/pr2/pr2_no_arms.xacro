@@ -24,7 +24,7 @@
   <xacro:include filename="$(find pr2_description)/urdf/materials.urdf.xacro" />
 
   <!--#TODO Added by Miguel-->
-  <xacro:include filename="$(find interactive_marker_test)/calibrations/pr2/pr2_calibration.xacro" />
+  <xacro:include filename="$(find interactive_calibration)/calibrations/pr2/pr2_calibration.xacro" />
 
    <xacro:pr2_calibration name="sensors"/>
 

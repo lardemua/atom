@@ -8,11 +8,11 @@
 
     <arg name="car_model" default="false" />
     <arg name="read_first_guess" default="false" />
-   <arg name="rvizconfig" default="$(find interactive_marker_test)/rviz/rviz.rviz"/>
+   <arg name="rvizconfig" default="$(find interactive_calibration)/rviz/rviz.rviz"/>
 
     <group if = "$(arg car_model)">
     <group if="$(arg read_first_guess)">
-        <arg name="model" default="$(find interactive_marker_test)/urdf/macro_first_guess.urdf.xacro"/>
+        <arg name="model" default="$(find interactive_calibration)/urdf/macro_first_guess.urdf.xacro"/>
         <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
     </group>
 
@@ -26,12 +26,12 @@
     <group unless = "$(arg car_model)">
 
     <group if="$(arg read_first_guess)">
-        <arg name="model" default="$(find interactive_marker_test)/urdf/macro_first_guess.urdf.xacro"/>
+        <arg name="model" default="$(find interactive_calibration)/urdf/macro_first_guess.urdf.xacro"/>
         <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
     </group>
 
     <group unless="$(arg read_first_guess)">
-        <arg name="model" default="$(find interactive_marker_test)/urdf/pr2_no_arms.urdf.xacro"/>
+        <arg name="model" default="$(find interactive_calibration)/urdf/pr2_no_arms.urdf.xacro"/>
         <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
     </group>
 

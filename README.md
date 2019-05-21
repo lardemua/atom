@@ -53,7 +53,7 @@ First , add this package to your catkin workspace source.
 
 Run the command:
 ```
-roslaunch interactive_marker_test rviz.launch car_model:=true read_first_guess:=false
+roslaunch interactive_calibration rviz.launch car_model:=true read_first_guess:=false
 ```
 
 Rviz will open, and you will need to set the Fixed Frame as 'ground'.
@@ -61,21 +61,21 @@ Now you are able to see the atlas car model with the sensors in their first posi
 
 Then, in a new terminal:
 ```
-rosrun interactive_marker_test create_first_guess.py -w car_center
+rosrun interactive_calibration create_first_guess.py -w car_center
 ```
 
 Now you can move the green markers and save the new sensors configuration.
 Kill the booth process in the terminals, and run:
 
 ```
-roslaunch interactive_marker_test rviz.launch car_model:=true read_first_guess:=true
+roslaunch interactive_calibration rviz.launch car_model:=true read_first_guess:=true
 ```
 Now you will see the atlas car model with the sensors in the updated position (don't forget to set Fixed Frame as 'ground').
 
 ## For PR2 robot model
 For seeing the PR2 model instead of the AtlasCar2, just run the command (it's the same but with the car_model argument set as false)
 ```
-roslaunch interactive_marker_test rviz.launch car_model:=false read_first_guess:=false
+roslaunch interactive_calibration rviz.launch car_model:=false read_first_guess:=false
 ```
 You need to set Fixed Frame as 'base_footprint' in order to see the urdf robot model.
 
@@ -84,7 +84,7 @@ You need to set Fixed Frame as 'base_footprint' in order to see the urdf robot m
 In order to visualize the calibration graphs you may run:
 
 ```
-rosrun interactive_marker_test draw_calibration_graph.py -w {world_frame}
+rosrun interactive_calibration draw_calibration_graph.py -w {world_frame}
 ```
 
 Annotated tf trees are displayed to better understand the calibration process. Here are some examples for the PR2 robot:

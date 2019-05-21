@@ -77,7 +77,7 @@
         <!--<origin rpy="0 0 0" xyz="0 0 0"/>-->
         <!--<geometry>-->
           <!--&lt;!&ndash; these meshes were exported in mm, so scale back to m &ndash;&gt;-->
-          <!--<mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>-->
+          <!--<mesh filename="package://interactive_calibration/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>-->
         <!--</geometry>-->
         <!--<material name="Kinect2Grey"/>-->
       <!--</visual>-->

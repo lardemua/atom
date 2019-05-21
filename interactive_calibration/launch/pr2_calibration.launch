@@ -3,11 +3,11 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Parameters-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <arg name="bag" default="$(find interactive_marker_test)/calibrations/pr2/2011-01-21-09-01-36.bag"/>
-    <!--<arg name="bag" default="$(find interactive_marker_test)/calibrations/pr2/2011-01-21-09-01-36_fixed.bag"/>-->
-    <arg name="xacro_file" default="$(find interactive_marker_test)/calibrations/pr2/pr2_no_arms.xacro"/>
-    <arg name="xacro_file_first_guess" default="$(find interactive_marker_test)/calibrations/pr2/pr2_no_arms_first_guess.xacro"/>
-    <arg name="rviz_config_file" default="$(find interactive_marker_test)/calibrations/pr2/config.rviz"/>
+    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/2011-01-21-09-01-36.bag"/>
+<!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/pr2_test.bag"/>-->
+    <arg name="xacro_file" default="$(find interactive_calibration)/calibrations/pr2/pr2_no_arms.xacro"/>
+    <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/pr2/pr2_no_arms_first_guess.xacro"/>
+    <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/pr2/config.rviz"/>
     <arg name="read_first_guess" default="false"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

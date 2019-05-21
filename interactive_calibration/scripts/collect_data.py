@@ -4,15 +4,14 @@
 #    IMPORT MODULES      #
 # ------------------------
 import argparse
-
 from interactive_markers.interactive_marker_server import *
+from interactive_markers.menu_handler import MenuHandler
 from urdf_parser_py.urdf import URDF
 import rospkg
 
-from DataCollector import DataCollector
-from Sensor import *
-from colorama import Fore, Back, Style
-from graphviz import Digraph
+# from AtlasCarCalibration.interactive_calibration.src.interactive_calibration.DataCollector import DataCollector
+# from AtlasCarCalibration.interactive_calibration.src.interactive_calibration.sensor import *
+import interactive_calibration.data_collector
 
 # ------------------------
 #      BASE CLASSES      #
@@ -21,6 +20,8 @@ from graphviz import Digraph
 # ------------------------
 #      GLOBAL VARS       #
 # ------------------------
+from visualization_msgs.msg import InteractiveMarkerControl, Marker
+
 server = None
 menu_handler = MenuHandler()
 
@@ -162,14 +163,14 @@ if __name__ == "__main__":
 
     # Parse robot description from param /robot_description
     xml_robot = URDF.from_parameter_server()
-    # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
+    # robot = URDF.from_xml_file(rospack.get_path('interactive_calibration') + "/urdf/atlas_macro.urdf.xacro")
 
     # Process robot description and create an instance of class Sensor for each sensor
     number_of_sensors = 0
     sensors = []
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
-    data_collector = DataCollector(args['world_link'])
+    data_collector = interactive_calibration.data_collector.DataCollector(args['world_link'])
 
     createInteractiveMarker()
     initMenu()

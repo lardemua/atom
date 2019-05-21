@@ -4,18 +4,14 @@
 #    IMPORT MODULES      #
 # ------------------------
 import argparse
-from _elementtree import ElementTree
-
+import numpy as np
 import matplotlib
-
-from interactive_markers.interactive_marker_server import *
+import rospy
 from matplotlib import cm
+from tf import TransformListener
 from urdf_parser_py.urdf import URDF
-# from urdfdom_py.urdf import URDF
-# import urdfdom_py
 import rospkg
-from Sensor import *
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 from graphviz import Digraph
 
 # ------------------------
@@ -45,7 +41,7 @@ if __name__ == "__main__":
 
     # Parse robot description from param /robot_description
     xml_robot = URDF.from_parameter_server()
-    # robot = URDF.from_xml_file(rospack.get_path('interactive_marker_test') + "/urdf/atlas_macro.urdf.xacro")
+    # robot = URDF.from_xml_file(rospack.get_path('interactive_calibration') + "/urdf/atlas_macro.urdf.xacro")
 
     # ----------------------------------------------
     # Create a full transformation graph annotated
@@ -124,9 +120,6 @@ if __name__ == "__main__":
                     label=xml_sensor.name + '\\n calibration transform')
             else:
                 g2.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1'})
-
-
-
 
     # get the type of this joint: fixed, revolute, prismatic, etc
     for i, joint in enumerate(xml_robot.joints):
