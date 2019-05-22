@@ -58,8 +58,10 @@ if __name__ == "__main__":
         g.edge(joint.parent, joint.child, color='black', style='dashed')
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
-    cmap = cm.Set1(np.linspace(0, 1, len(xml_robot.sensors)))
-    # cmap = cm.Pastel2(np.linspace(0, 1, len(xml_robot.sensors)))
+    # cmap = cm.Set3(np.linspace(0, 1, len(xml_robot.sensors)))
+    cmap = cm.Pastel2(np.linspace(0, 1, len(xml_robot.sensors)))
+    # cmap = cm.viridis(np.linspace(0, 1, len(xml_robot.sensors)))
+    # cmap = cm.brg(np.linspace(0, 1, len(xml_robot.sensors)))
 
     # parsing of robot description
     for i, xml_sensor in enumerate(xml_robot.sensors):
@@ -124,10 +126,10 @@ if __name__ == "__main__":
     # get the type of this joint: fixed, revolute, prismatic, etc
     for i, joint in enumerate(xml_robot.joints):
         if joint.type == 'fixed':
-            g2.edge(joint.parent, joint.child, color='gray41', style='solid', _attributes={'penwidth': '1', 'fontcolor':'gray41'},
+            g2.edge(joint.parent, joint.child, color='black', style='solid', _attributes={'penwidth': '1', 'fontcolor':'black'},
                     label=joint.type + ' joint')
         else:
-            g2.edge(joint.parent, joint.child, color='gray10', style='solid', _attributes={'penwidth': '1', 'fontcolor':'gray10'},
+            g2.edge(joint.parent, joint.child, color='black', style='solid', _attributes={'penwidth': '1', 'fontcolor':'black'},
                     label=joint.type + ' joint')
 
 
