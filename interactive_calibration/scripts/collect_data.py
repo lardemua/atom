@@ -150,8 +150,9 @@ def markerFeedback(feedback):
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-w", "--world_link", help='Name of the reference frame wich is common to all sensors. Usually '
+    ap.add_argument('-w', '--world_link', help='Name of the reference frame wich is common to all sensors. Usually '
                                                'it is the world or base_link.', type=str, required=True)
+    ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str, required=True)
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     sensors = []
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
-    data_collector = interactive_calibration.data_collector.DataCollector(args['world_link'])
+    data_collector = interactive_calibration.data_collector.DataCollector(args['world_link'], args['output_folder'])
 
     createInteractiveMarker()
     initMenu()
