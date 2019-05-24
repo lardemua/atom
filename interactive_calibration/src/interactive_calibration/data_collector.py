@@ -46,7 +46,7 @@ class DataCollector:
         self.world_link = world_link
         self.transforms = {}
         self.data_stamp = 0
-        self.data = {}
+        self.data = []
         self.bridge = CvBridge()
         rospy.sleep(0.5)
 
@@ -143,7 +143,8 @@ class DataCollector:
                 # Update the data dictionary for this data stamp
                 all_sensors_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
-        self.data[self.data_stamp] = all_sensors_dict
+        # self.data[self.data_stamp] = all_sensors_dict
+        self.data.append(all_sensors_dict)
 
         self.data_stamp += 1
 
