@@ -41,5 +41,6 @@
     <!--To put together the ros bag and the robot state publisher one must use sim_time=true and &#45;&#45;clock-->
     <param name="/use_sim_time" value="true"/>
     <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l /tf:=/tf_dev_null --clock"/>
+    <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l &#45;&#45;clock"/>-->
 
 </launch>

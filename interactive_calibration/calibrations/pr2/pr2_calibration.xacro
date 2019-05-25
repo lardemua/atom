@@ -10,19 +10,20 @@
             <!--<calibration_child link="narrow_stereo_link"/>-->
         <!--</sensor>-->
 
-        <!--<sensor name="wide_stereo_left" update_rate="20.0">-->
-            <!--<parent link="wide_stereo_optical_frame"/>-->
-            <!--<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>-->
-            <!--<calibration_parent link="double_stereo_link"/>-->
-            <!--<calibration_child link="wide_stereo_link"/>-->
-        <!--</sensor>-->
+        <sensor name="wide_stereo_left" update_rate="20.0">
+            <parent link="wide_stereo_optical_frame"/>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <calibration_parent link="double_stereo_link"/>
+            <calibration_child link="wide_stereo_link"/>
+            <topic topic="/wide_stereo/left/image_rect"/>
+        </sensor>
 
         <sensor name="wide_stereo_right" update_rate="20.0">
             <parent link="wide_stereo_optical_frame"/>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <calibration_parent link="double_stereo_link"/>
             <calibration_child link="wide_stereo_link"/>
-            <topic topic="/wide_stereo/left/image_rect"/>
+            <topic topic="/wide_stereo/right/image_rect"/>
 
         </sensor>
         <!--<sensor name="high_def" update_rate="20.0">-->

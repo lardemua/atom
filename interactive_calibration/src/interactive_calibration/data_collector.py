@@ -119,6 +119,7 @@ class DataCollector:
                 # Convert to opencv image and save image to disk
                 cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
                 filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
+                filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
                 print('Data ' + str(self.data_stamp) + ' from sensor ' + sensor['_name'] + ': saving image ' + filename)
                 cv2.imwrite(filename, cv_image)
                 # cv2.imshow('sensor', cv_image)
@@ -130,7 +131,7 @@ class DataCollector:
                 # Remove data field (which contains the image), and replace by "data_file" field which contains the
                 # full path to where the image was saved
                 del image_dict['data']
-                image_dict['data_file'] = filename
+                image_dict['data_file'] = filename_relative
 
                 # Update the data dictionary for this data stamp
                 all_sensors_dict[sensor['_name']] = image_dict

@@ -6,6 +6,7 @@
 import argparse
 import json
 import math
+import os
 from functools import partial
 import cv2
 import numpy as np
@@ -42,11 +43,12 @@ if __name__ == "__main__":
     ap.add_argument('-d', '--data_json', help='Output folder to where the collected data will be stored.', type=str,
                     required=True)
     args = vars(ap.parse_args())
+    args['dataset_folder'] = os.path.dirname(args['data_json'])
+    print('Inferred dataset folder to be: ' + args['dataset_folder'])
 
     # Reading json file
     fid = open(args['data_json'])
     dataset = json.load(fid)
-
     # print(json.dumps(dataset, indent=4, sort_keys=True))
     sensors = [i for i in dataset['sensors']]
     print('Dataset contains ' + str(len(sensors)) + ' sensors.')
@@ -82,7 +84,7 @@ if __name__ == "__main__":
 
             if sensor['msg_type'] == 'Image':
 
-                image = cv2.imread(sensor_data['data_file'])  # read image from disk
+                image = cv2.imread(args['dataset_folder'] + '/' + sensor_data['data_file'])  # read image from disk
                 # TODO cvtcolor only if image has 3 channels
                 image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 # cv2.imshow(window_name, cv_image)
