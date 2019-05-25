@@ -50,8 +50,8 @@ if __name__ == "__main__":
     fid = open(args['data_json'])
     dataset = json.load(fid)
     # print(json.dumps(dataset, indent=4, sort_keys=True))
-    sensors = [i for i in dataset['sensors']]
-    print('Dataset contains ' + str(len(sensors)) + ' sensors.')
+
+    print('Dataset contains ' + str(len(dataset['sensors'])) + ' sensors.')
 
 
     def pickCallback(event, sensor_name):
@@ -67,16 +67,24 @@ if __name__ == "__main__":
 
 
     # Cycle all data stamps and for each show all sensors
-    for data_idx, data in enumerate(dataset['data']):
-        print('Data stamp ' + str(data_idx))
+    collection_stamps = sorted([str(i) for i in dataset['collections']])
+    print('Sorted collection stamps is: ' + str(collection_stamps))
+
+    # for data_idx, data in enumerate(dataset['collections']) :
+    for collection_idx, collection_stamp in enumerate(collection_stamps):
+        collection = dataset['collections'][collection_stamp]
+        # for collection_key, collection in dataset['collections']:
+        #     print('Collection stamp ' + str(collection_key))
         labels = {}
 
         fig_handles = []
-        for sensor_idx, sensor in enumerate(sensors):
+        # for sensor_idx, sensor in enumerate(sensors):
+        # for sensor_idx, sensor in enumerate():
+        for sensor_idx, (sensor_key, sensor) in enumerate(dataset['sensors'].iteritems()):
             print('Sensor ' + str(sensor['_name']) + ' has msg type ' + sensor['msg_type'])
-            sensor_data = data[sensor['_name']]
+            sensor_data = collection['data'][sensor_key]
 
-            window_name = str(sensor['_name']) + ' - data stamp ' + str(data_idx)
+            window_name = str(sensor['_name']) + ' - data stamp ' + str(collection_stamp)
             fig = plt.figure(sensor_idx)
             fig_handles.append(fig)
             fig.canvas.set_window_title(window_name)

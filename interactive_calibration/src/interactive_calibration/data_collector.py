@@ -42,11 +42,15 @@ class DataCollector:
         self.output_folder = output_folder
 
         self.listener = TransformListener()
-        self.sensors = []
+        self.sensors = {}
         self.world_link = world_link
-        self.transforms = {}
+
         self.data_stamp = 0
-        self.data = []
+
+        # self.transforms = {}
+        # self.data = []
+        self.collections = {}
+
         self.bridge = CvBridge()
         rospy.sleep(0.5)
 
@@ -88,28 +92,29 @@ class DataCollector:
                 chain_list.append({'key': key, 'parent': parent, 'child': child})
 
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
-            self.sensors.append(sensor_dict)
+            self.sensors[xs.name] = sensor_dict
 
             print(Fore.BLUE + xs.name + Style.RESET_ALL + ':\n' + str(sensor_dict))
+
+            self.abstract_transforms = self.getAllTransforms()
 
     def collectSnapshot(self):
 
         # Collect transforms (for now collect all transforms even if they are fixed)
-        abstract_transforms = self.getAllTransforms()
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
 
-        for ab in abstract_transforms:  # Update all transformations
+        for ab in self.abstract_transforms:  # Update all transformations
             print(ab)
             self.listener.waitForTransform(ab['parent'], ab['child'], rospy.Time(), rospy.Duration(1.0))
             (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], rospy.Time())
             key = self.generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {'trans': trans, 'quat': quat}
 
-        self.transforms[self.data_stamp] = transforms_dict
+        # self.transforms[self.data_stamp] = transforms_dict
 
         # Collect sensor data (images, laser scans, etc)
         all_sensors_dict = {}
-        for sensor in self.sensors:
+        for sensor_name, sensor in self.sensors.iteritems():
 
             # TODO add exception also for point cloud and depht image
             if sensor['msg_type'] == 'Image':  #
@@ -145,20 +150,23 @@ class DataCollector:
                 all_sensors_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
         # self.data[self.data_stamp] = all_sensors_dict
-        self.data.append(all_sensors_dict)
+        # self.data.append(all_sensors_dict)
 
+        self.collections[self.data_stamp] = {'transforms': transforms_dict, 'data': all_sensors_dict}
         self.data_stamp += 1
 
         # Save to json file
-        D = {'sensors': self.sensors, 'transforms': self.transforms, 'data': self.data}
+
+        D = {'sensors': self.sensors, 'collections': self.collections}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
     def getAllTransforms(self):
 
         # Get a list of all transforms to collect
         transforms_list = []
-        for sensor in self.sensors:
-            transforms_list.extend(sensor['chain'])
+        for sensor_name, sensor in self.sensors.iteritems():
+            for transform in sensor['chain']:
+                transforms_list.append(transform)
 
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
         uniq_l = list(map(dict, frozenset(frozenset(i.items()) for i in transforms_list)))
