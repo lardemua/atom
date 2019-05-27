@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:macro name="atlascar2_calibration" params="prefix">
+
+        <!--<sensor name="wide_stereo_left" update_rate="20.0">-->
+            <!--<parent link="car_center"/>-->
+            <!--<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>-->
+            <!--<calibration_parent link="double_stereo_link"/>-->
+            <!--<calibration_child link="wide_stereo_link"/>-->
+            <!--<topic topic="/wide_stereo/left/image_rect"/>-->
+        <!--</sensor>-->
+
+        <sensor name="${prefix}frontal_camera" update_rate="20">
+            <parent link="${prefix}frontal_camera"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <calibration_parent link="${prefix}car_center"/>
+            <calibration_child link="${prefix}frontal_camera"/>
+        </sensor>
+
+        <!--<sensor name="${prefix}top_camera" update_rate="20">-->
+            <!--<parent link="${prefix}top_camera_optical"/>-->
+            <!--<origin xyz="0 0 0" rpy="0 0 0"/>-->
+            <!--<calibration_parent link="${prefix}car_center"/>-->
+            <!--<calibration_child link="${prefix}top_camera"/>-->
+        <!--</sensor>-->
+
+        <sensor name="${prefix}front_laser" update_rate="20">
+            <parent link="${prefix}front_laser"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <calibration_parent link="${prefix}car_center"/>
+            <calibration_child link="${prefix}front_laser_mount_link"/>
+        </sensor>
+
+        <sensor name="${prefix}left_laser" update_rate="20">
+            <parent link="${prefix}left_laser"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <calibration_parent link="${prefix}car_center"/>
+            <calibration_child link="${prefix}left_laser"/>
+        </sensor>
+
+        <sensor name="${prefix}right_laser" update_rate="20">
+            <parent link="${prefix}right_laser"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <calibration_parent link="${prefix}car_center"/>
+            <calibration_child link="${prefix}right_laser"/>
+        </sensor>
+
+
+    </xacro:macro>
+
+</robot>
