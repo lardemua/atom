@@ -60,7 +60,7 @@ class InteractiveDataLabeler:
 
     def timerCallback(self, event):
 
-        if not self.name == 'base_laser':
+        if not self.name == 'left_laser':
             return None
 
         print('callback')
@@ -68,7 +68,7 @@ class InteractiveDataLabeler:
         clusters = []
 
         ranges = self.msg.ranges
-        threshold = .5  # half a meter
+        threshold = .2  # half a meter
         cluster_counter = 0
         points = []
         xs, ys = interactive_calibration.utilities.laser_scan_msg_to_xy(self.msg)
