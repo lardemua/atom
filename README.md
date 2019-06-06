@@ -114,5 +114,16 @@ This should be echanced with the cameras.
 
 ```
 rosbag record /left_laser/laserscan /right_laser/laser_scan
+
+```
+# Run cos optimization first test
+
+```
+rosrun interactive_calibration first_optimization.py
 ```
 
+If it not works, run first 
+
+```
+chmod +xfirst_optimization.py
+```
