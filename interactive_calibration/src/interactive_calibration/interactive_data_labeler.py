@@ -45,6 +45,8 @@ class InteractiveDataLabeler:
         self.name = sensor_dict['_name']
         self.parent = sensor_dict['parent']
         self.topic = sensor_dict['topic']
+        self.received_first_msg = False
+        self.labels = {'detected': False, 'idxs': []}
 
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
@@ -64,6 +66,13 @@ class InteractiveDataLabeler:
         rospy.Timer(rospy.Duration(.1), self.timerCallback)
 
     def timerCallback(self, event):
+
+        if not self.received_first_msg:  # nothing to do if no msg received
+            return None
+
+        # if no chessboard is detected, the labels are empty
+        self.labels['detected'] = False
+        self.labels['idxs'] = []
 
         if self.msg_type_str == 'LaserScan':
 
@@ -129,6 +138,10 @@ class InteractiveDataLabeler:
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
+            # Update the dictionary with the labels
+            self.labels['detected'] = True
+            self.labels['idxs'] = clusters[idx_closest_cluster].idxs
+
             # Create point cloud message with the colored clusters (just for debugging)
             # cmap = cm.Pastel2(np.linspace(0, 1, num_clusters))
             # cmap = cm.Accent(np.linspace(0, 1, num_clusters))
@@ -187,19 +200,21 @@ class InteractiveDataLabeler:
             self.publisher.publish(msg_out)
 
             if self.found is True:
-
                 # print('Found chessboard for ' + self.name)
                 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
                 corners2 = cv2.cornerSubPix(image_gray, corners, (8, 6), (-1, -1), criteria)
                 corners2_d = []
-                # for i in corners2:
-                #     print i
-                #     corners2_d.append({'x':i[0][0], 'y':i[0][1]})
-                # sensor_labels[sensor['_name']] = corners2_d
+                for corner in corners2:
+                    corners2_d.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
+
+                # Update the dictionary with the labels
+                self.labels['detected'] = True
+                self.labels['idxs'] = corners2_d
 
 
     def sensorDataReceivedCallback(self, msg):
         self.msg = msg
+        self.received_first_msg = True
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')

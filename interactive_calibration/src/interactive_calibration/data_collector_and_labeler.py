@@ -20,6 +20,7 @@ from rospy_message_converter import message_converter
 
 from visualization_msgs.msg import *
 from tf.listener import TransformListener
+from sensor_msgs.msg import *
 from transformation_t import TransformationT
 from urdf_parser_py.urdf import URDF
 
@@ -41,7 +42,7 @@ class DataCollectorAndLabeler:
 
         self.listener = TransformListener()
         self.sensors = {}
-        self.sensor_labelers = []
+        self.sensor_labelers = {}
         self.world_link = world_link
         self.server = server
         self.menu_handler = menu_handler
@@ -96,7 +97,7 @@ class DataCollectorAndLabeler:
             self.sensors[xs.name] = sensor_dict
 
             sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict)
-            self.sensor_labelers.append(sensor_labeler)
+            self.sensor_labelers[xs.name] = sensor_labeler
 
             print(Fore.BLUE + xs.name + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
@@ -104,7 +105,9 @@ class DataCollectorAndLabeler:
 
     def collectSnapshot(self):
 
+        # --------------------------------------
         # Collect transforms (for now collect all transforms even if they are fixed)
+        # --------------------------------------
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
 
         for ab in self.abstract_transforms:  # Update all transformations
@@ -116,8 +119,10 @@ class DataCollectorAndLabeler:
 
         # self.transforms[self.data_stamp] = transforms_dict
 
+        # --------------------------------------
         # Collect sensor data (images, laser scans, etc)
-        all_sensors_dict = {}
+        # --------------------------------------
+        all_sensor_data_dict = {}
         for sensor_name, sensor in self.sensors.iteritems():
 
             # TODO add exception also for point cloud and depht image
@@ -143,7 +148,7 @@ class DataCollectorAndLabeler:
                 image_dict['data_file'] = filename_relative
 
                 # Update the data dictionary for this data stamp
-                all_sensors_dict[sensor['_name']] = image_dict
+                all_sensor_data_dict[sensor['_name']] = image_dict
 
             else:
                 # Get latest ros message on this topic
@@ -151,16 +156,35 @@ class DataCollectorAndLabeler:
                 msg = rospy.wait_for_message(sensor['topic'], eval(sensor['msg_type']))
 
                 # Update the data dictionary for this data stamp
-                all_sensors_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
+                all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
-        # self.data[self.data_stamp] = all_sensors_dict
-        # self.data.append(all_sensors_dict)
+        # self.data[self.data_stamp] = all_sensor_data_dict
+        # self.data.append(all_sensor_data_dict)
 
-        self.collections[self.data_stamp] = {'transforms': transforms_dict, 'data': all_sensors_dict}
+        # --------------------------------------
+        # Collect sensor labels
+        # --------------------------------------
+        all_sensor_labels_dict = {}
+        for sensor_name, sensor in self.sensors.iteritems():
+
+            if sensor['msg_type'] in ['Image','LaserScan']:
+                all_sensor_labels_dict[sensor['_name']] = self.sensor_labelers[sensor['_name']].labels
+            else:
+                #TODO put here a raise error
+                pass
+
+        print('----------------\nstarts here\n----------------')
+        print(all_sensor_labels_dict)
+        print('----------------\nends here\n----------------')
+        # --------------------------------------
+        # Add a new collection
+        # --------------------------------------
+        self.collections[self.data_stamp] = {'transforms': transforms_dict,
+                                             'data': all_sensor_data_dict,
+                                             'labels': all_sensor_labels_dict}
         self.data_stamp += 1
 
         # Save to json file
-
         D = {'sensors': self.sensors, 'collections': self.collections}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 

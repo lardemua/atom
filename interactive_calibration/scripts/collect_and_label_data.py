@@ -126,7 +126,7 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff
-    rospy.init_node("sensors_first_guess")
+    rospy.init_node("collect_and_label")
     rospack = rospkg.RosPack()  # get an instance of RosPack with the default search paths
     server = InteractiveMarkerServer("data_labeler")
     robot_description = rospy.get_param('/robot_description')
