@@ -12,7 +12,7 @@
         <!--</sensor>-->
 
         <sensor name="${prefix}frontal_camera" update_rate="20">
-            <parent link="${prefix}frontal_camera"/>
+            <parent link="${prefix}frontal_camera_optical"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <calibration_parent link="${prefix}car_center"/>
             <calibration_child link="${prefix}frontal_camera"/>
@@ -20,7 +20,7 @@
         </sensor>
 
         <sensor name="${prefix}top_right_camera" update_rate="20">
-            <parent link="${prefix}top_right_camera"/>
+            <parent link="${prefix}top_right_camera_optical"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <calibration_parent link="${prefix}car_center"/>
             <calibration_child link="${prefix}top_right_camera"/>
