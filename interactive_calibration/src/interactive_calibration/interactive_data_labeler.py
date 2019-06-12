@@ -188,28 +188,39 @@ class InteractiveDataLabeler:
 
             # TODO cvtcolor only if image has 3 channels
             image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            # cv2.imshow(window_name, cv_image)
 
             # Find chessboard corners
             self.found, corners = cv2.findChessboardCorners(image_gray, (8, 6))
             cv2.drawChessboardCorners(image, (8, 6), corners, self.found)  # Draw and display the corners
-
-            msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
-            msg_out.header.stamp = self.msg.header.stamp
-            msg_out.header.frame_id = self.msg.header.frame_id
-            self.publisher.publish(msg_out)
 
             if self.found is True:
                 # print('Found chessboard for ' + self.name)
                 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
                 corners2 = cv2.cornerSubPix(image_gray, corners, (8, 6), (-1, -1), criteria)
                 corners2_d = []
+                print(corners2_d)
                 for corner in corners2:
                     corners2_d.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
+
+                x = int(round(corners2_d[0]['x']))
+                y = int(round(corners2_d[0]['y']))
+                cv2.line(image, (x, y), (x, y), (0, 255, 255), 20)
+
+                # if self.name == 'top_right_camera':
+                #     print('corners2_d =\n' + str(corners2_d))
+
+                # cv2.imshow(self.name, image)
+                # cv2.imwrite('/tmp/img.png', image)
+                # cv2.waitKey(0)
 
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
                 self.labels['idxs'] = corners2_d
+
+            msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
+            msg_out.header.stamp = self.msg.header.stamp
+            msg_out.header.frame_id = self.msg.header.frame_id
+            self.publisher.publish(msg_out)
 
 
     def sensorDataReceivedCallback(self, msg):
