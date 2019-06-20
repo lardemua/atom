@@ -4,6 +4,7 @@
 #    IMPORT MODULES      #
 # ------------------------
 import math
+import threading
 from __builtin__ import enumerate
 from math import sqrt
 
@@ -47,6 +48,7 @@ class InteractiveDataLabeler:
         self.topic = sensor_dict['topic']
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
+        self.lock = threading.Lock()
 
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
@@ -70,6 +72,8 @@ class InteractiveDataLabeler:
         if not self.received_first_msg:  # nothing to do if no msg received
             return None
 
+        self.lock.acquire()
+
         # if no chessboard is detected, the labels are empty
         self.labels['detected'] = False
         self.labels['idxs'] = []
@@ -80,7 +84,7 @@ class InteractiveDataLabeler:
             clusters = []
 
             ranges = self.msg.ranges
-            threshold = .2  # half a meter
+            threshold = .10
             cluster_counter = 0
             points = []
             xs, ys = interactive_calibration.utilities.laser_scan_msg_to_xy(self.msg)
@@ -140,7 +144,14 @@ class InteractiveDataLabeler:
 
             # Update the dictionary with the labels
             self.labels['detected'] = True
-            self.labels['idxs'] = clusters[idx_closest_cluster].idxs
+
+            threshold_to_remove = 0.03  # remove 10% of data from each side
+            number_of_idxs = len(clusters[idx_closest_cluster].idxs)
+            idxs_to_remove = int(threshold_to_remove * float(number_of_idxs))
+            clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
+                                                          idxs_to_remove:number_of_idxs - idxs_to_remove]
+
+            self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
 
             # Create point cloud message with the colored clusters (just for debugging)
             # cmap = cm.Pastel2(np.linspace(0, 1, num_clusters))
@@ -161,7 +172,7 @@ class InteractiveDataLabeler:
 
             # Create point cloud message with the colored clusters (just for debugging)
             points = []
-            for idx in clusters[idx_closest_cluster].idxs:
+            for idx in clusters[idx_closest_cluster].idxs_filtered:
                 x_marker = xs[idx]
                 y_marker = ys[idx]
                 z_marker = 0
@@ -222,6 +233,7 @@ class InteractiveDataLabeler:
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher.publish(msg_out)
 
+        self.lock.release()
 
     def sensorDataReceivedCallback(self, msg):
         self.msg = msg

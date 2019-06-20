@@ -168,7 +168,9 @@ class DataCollectorAndLabeler:
         for sensor_name, sensor in self.sensors.iteritems():
 
             if sensor['msg_type'] in ['Image','LaserScan']:
+                self.sensor_labelers[sensor_name].lock.acquire()
                 all_sensor_labels_dict[sensor['_name']] = copy.deepcopy(self.sensor_labelers[sensor['_name']].labels)
+                self.sensor_labelers[sensor_name].lock.release()
                 # TODO check if more deepcopys are needed
             else:
                 #TODO put here a raise error
