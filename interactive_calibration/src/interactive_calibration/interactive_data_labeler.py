@@ -50,8 +50,7 @@ class InteractiveDataLabeler:
         self.labels = {'detected': False, 'idxs': []}
         self.lock = threading.Lock()
 
-        self.createInteractiveMarker()  # create interactive marker
-        print('Created interactive marker.')
+
 
         self.msg_type_str, self.msg_type = interactive_calibration.utilities.getMessageTypeFromTopic(self.topic)
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback)
@@ -59,6 +58,8 @@ class InteractiveDataLabeler:
         print('msg_type_str is = ' + str(self.msg_type_str))
         if self.msg_type_str in ['LaserScan', 'PointCloud2']:
             self.publisher = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2, queue_size=0)
+            self.createInteractiveMarker()  # create interactive marker
+            print('Created interactive marker.')
         elif self.msg_type_str in ['Image']:
             self.bridge = CvBridge()
             self.publisher = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image, queue_size=0)

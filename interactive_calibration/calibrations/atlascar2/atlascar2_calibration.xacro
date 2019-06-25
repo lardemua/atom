@@ -28,13 +28,13 @@
         </sensor>
 
 
-        <sensor name="${prefix}frontal_laser" update_rate="20">
-            <parent link="${prefix}frontal_laser"/>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-            <calibration_parent link="${prefix}car_center"/>
-            <calibration_child link="${prefix}frontal_laser_mount_link"/>
-            <topic topic="/frontal_laser/cloud"/>
-        </sensor>
+<!--        <sensor name="${prefix}frontal_laser" update_rate="20">-->
+<!--            <parent link="${prefix}frontal_laser"/>-->
+<!--            <origin xyz="0 0 0" rpy="0 0 0"/>-->
+<!--            <calibration_parent link="${prefix}car_center"/>-->
+<!--            <calibration_child link="${prefix}frontal_laser_mount_link"/>-->
+<!--            <topic topic="/frontal_laser/cloud"/>-->
+<!--        </sensor>-->
 
         <sensor name="${prefix}left_laser" update_rate="20">
             <parent link="${prefix}left_laser"/>
