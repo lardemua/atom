@@ -38,7 +38,7 @@ class LaserScanCluster:
 
 class InteractiveDataLabeler:
 
-    def __init__(self, server, menu_handler, sensor_dict):
+    def __init__(self, server, menu_handler, sensor_dict, marker_scale):
         print('Creating an InteractiveDataLabeler for sensor ' + str(sensor_dict['_name']))
 
         self.server = server
@@ -46,6 +46,7 @@ class InteractiveDataLabeler:
         self.name = sensor_dict['_name']
         self.parent = sensor_dict['parent']
         self.topic = sensor_dict['topic']
+        self.marker_scale = marker_scale
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
         self.lock = threading.Lock()
@@ -260,7 +261,7 @@ class InteractiveDataLabeler:
         self.marker.pose.orientation.y = 0
         self.marker.pose.orientation.z = 0
         self.marker.pose.orientation.w = 1
-        self.marker.scale = .5
+        self.marker.scale = self.marker_scale
 
         self.marker.name = self.name
         self.marker.description = self.name + '_labeler'

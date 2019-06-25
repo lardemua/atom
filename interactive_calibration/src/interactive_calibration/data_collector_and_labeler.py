@@ -32,7 +32,7 @@ import interactive_calibration.interactive_data_labeler
 
 class DataCollectorAndLabeler:
 
-    def __init__(self, world_link, output_folder, server, menu_handler):
+    def __init__(self, world_link, output_folder, server, menu_handler, marker_size):
 
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)  # Delete old folder
@@ -96,7 +96,7 @@ class DataCollectorAndLabeler:
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[xs.name] = sensor_dict
 
-            sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict)
+            sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size)
             self.sensor_labelers[xs.name] = sensor_labeler
 
             print(Fore.BLUE + xs.name + Style.RESET_ALL + ':\n' + str(sensor_dict))
