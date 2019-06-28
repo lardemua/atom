@@ -73,20 +73,22 @@ if __name__ == "__main__":
 
 
     # g.node('Reference Sensor', '<Reference Sensor \\n Parent Link - Sensor 1', _attributes={'penwidth': '1', 'color': black})
-    # g.node('Reference Link', '< Reference Link<BR /> <FONT POINT-SIZE="10" COLOR="' + str(rgb1) + '">Sensor 1 Calib Parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
+    # g.node('Reference Link', '< Reference Link<BR /> <FONT POINT-SIZE="12" COLOR="' + str(rgb1) + '">Sensor 1 parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
 
-    g.node('Reference Link', '< Reference Link<BR /> <FONT POINT-SIZE="10" COLOR="' + str(rgb1) + '">Sensor 1 Calib Parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
-    g.node('Link A', '<Link A<BR /> <FONT POINT-SIZE="10" COLOR="' +
-           str(rgb1) + '">Sensor 1 Calib Child</FONT> <BR /> <FONT POINT-SIZE="10" COLOR="' +
-           str(rgb2) + '">Sensor 2 Calib Parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
+    g.node('Reference Link', '< Reference Link<BR /> <FONT POINT-SIZE="12" COLOR="' + str(rgb1) + '">Sensor 1 parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
+    g.node('Link A', '<Link A<BR /> <FONT POINT-SIZE="12" COLOR="' +
+           str(rgb1) + '">Sensor 1 child</FONT> <BR /> <FONT POINT-SIZE="12" COLOR="' +
+           str(rgb2) + '">Sensor 2 parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
 
-    g.node('Sensor 2', '<Sensor 2<BR /> <FONT POINT-SIZE="10" COLOR="' +
-           str(rgb2) + '">Sensor 2 Calib Child</FONT> >', _attributes={'penwidth': '1', 'color': black})
+    g.node('Sensor 2', '<Sensor 2<BR /> <FONT POINT-SIZE="12" COLOR="' +
+           str(rgb2) + '">Sensor 2 child</FONT> >', _attributes={'penwidth': '3', 'color': rgb2})
 
-    g.node('Link B', '<Link B<BR /> <FONT POINT-SIZE="10" COLOR="' +
-           str(rgb3) + '">Sensor 3 Calib Parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
-    g.node('Sensor 3', '<Sensor 3<BR /> <FONT POINT-SIZE="10" COLOR="' +
-           str(rgb3) + '">Sensor 3 Calib Parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
+    g.node('Link B', '<Link B<BR /> <FONT POINT-SIZE="12" COLOR="' +
+           str(rgb3) + '">Sensor 3 parent</FONT> >', _attributes={'penwidth': '1', 'color': black})
+    g.node('Sensor 3', '<Sensor 3<BR /> <FONT POINT-SIZE="12" COLOR="' +
+           str(rgb3) + '">Sensor 3 child</FONT> >', _attributes={'penwidth': '3', 'color': rgb3})
+
+    g.node('Sensor 1', 'Sensor 1', _attributes={'penwidth': '3', 'color': rgb1})
 
     # g.edge('Sensor1', 'Sensor2', '',
     #        color=rgb, style='dashed', _attributes={'penwidth': '2'})
