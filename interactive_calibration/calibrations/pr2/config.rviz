@@ -475,7 +475,6 @@ Visualization Manager:
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point
-    - Class: rviz_visual_tools/KeyTool
   Value: true
   Views:
     Current:
