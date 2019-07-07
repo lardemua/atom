@@ -64,6 +64,8 @@ def menuFeedback(feedback):
     if handle == 3:  # collect snapshot
         print('Collect snapshot selected')
 
+        print('NEED REVIEW: THIS DOES NOT DO ANYTHING!!!')
+
 
 def initMenu():
     menu_handler.insert("Save sensors configuration", callback=menuFeedback)
