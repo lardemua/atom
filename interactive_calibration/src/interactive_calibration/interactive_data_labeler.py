@@ -86,7 +86,7 @@ class InteractiveDataLabeler:
             clusters = []
 
             ranges = self.msg.ranges
-            threshold = .10
+            threshold = .90
             cluster_counter = 0
             points = []
             xs, ys = interactive_calibration.utilities.laser_scan_msg_to_xy(self.msg)

@@ -5,9 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /TopRight-Camera1/Visibility1
       Splitter Ratio: 0.644501268863678
-    Tree Height: 527
+    Tree Height: 874
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -57,11 +56,11 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        car_center:
+        base_link:
           Value: true
-        frontal_camera:
+        frontal_laser:
           Value: true
-        frontal_camera_optical:
+        frontal_laser_mount_link:
           Value: true
         ground:
           Value: true
@@ -69,9 +68,11 @@ Visualization Manager:
           Value: true
         model:
           Value: true
-        moving_axis:
-          Value: true
         right_laser:
+          Value: true
+        top_left_camera:
+          Value: true
+        top_left_camera_optical:
           Value: true
         top_right_camera:
           Value: true
@@ -83,22 +84,24 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        ground:
-          car_center:
-            frontal_camera:
-              frontal_camera_optical:
-                {}
-            left_laser:
+        base_link:
+          frontal_laser_mount_link:
+            frontal_laser:
               {}
-            moving_axis:
-              {}
-            right_laser:
-              {}
-            top_right_camera:
-              top_right_camera_optical:
-                {}
+          ground:
+            {}
+          left_laser:
+            {}
           model:
             {}
+          right_laser:
+            {}
+          top_left_camera:
+            top_left_camera_optical:
+              {}
+          top_right_camera:
+            top_right_camera_optical:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -111,16 +114,16 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        car_center:
+        base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        frontal_camera:
+        frontal_laser:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        frontal_camera_optical:
+        frontal_laser_mount_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -138,15 +141,20 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        moving_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         right_laser:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        top_left_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_camera_optical:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         top_right_camera:
           Alpha: 1
           Show Axes: false
@@ -190,11 +198,11 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: false
-      Image Topic: /frontal_camera/image_color
+      Image Topic: /top_left_camera/image_color
       Max Value: 1
       Median window: 5
       Min Value: 0
-      Name: Frontal-Image
+      Name: TopLeft-Image
       Normalize Range: true
       Queue Size: 2
       Transport Hint: raw
@@ -212,36 +220,6 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: false
-    - Class: rviz/Camera
-      Enabled: false
-      Image Rendering: background and overlay
-      Image Topic: /top_right_camera/image_color
-      Name: FrontalCamera
-      Overlay Alpha: 1
-      Queue Size: 2
-      Transport Hint: raw
-      Unreliable: false
-      Value: false
-      Visibility:
-        DataLabeler-InteractiveMarkers: true
-        FirstGuess-InteractiveMarkers: true
-        FrontImage-Labeled: true
-        Frontal-Camera: true
-        Frontal-Image: true
-        FrontalLaser-PointCloud2: true
-        Grid: true
-        Left-LaserScan: true
-        LeftLaser-Labels: true
-        MarkerArray: true
-        Right-LaserScan: true
-        RightLaser-Labels: true
-        RobotModel: true
-        TF: true
-        TopRight-Camera: true
-        TopRight-Image: true
-        TopRightImage-Labeled: true
-        Value: true
-      Zoom Factor: 1
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -393,7 +371,7 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /frontal_camera/image_color/labeled
       Max Value: 1
       Median window: 5
@@ -403,9 +381,9 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /top_right_camera/image_color/labeled
       Max Value: 1
       Median window: 5
@@ -415,32 +393,31 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Camera
       Enabled: false
       Image Rendering: background and overlay
-      Image Topic: /frontal_camera/image_color
-      Name: Frontal-Camera
+      Image Topic: /top_left_camera/image_color
+      Name: TopLeft-Camera
       Overlay Alpha: 0.5
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
       Value: false
       Visibility:
-        DataLabeler-InteractiveMarkers: true
+        DataLabeler-InteractiveMarkers: false
         FirstGuess-InteractiveMarkers: true
         FrontImage-Labeled: true
-        Frontal-Image: true
-        FrontalCamera: true
         FrontalLaser-PointCloud2: true
         Grid: true
         Left-LaserScan: true
-        LeftLaser-Labels: true
-        MarkerArray: true
+        LeftLaser-Labels: false
+        MarkerArray: false
         Right-LaserScan: true
-        RightLaser-Labels: true
-        RobotModel: true
-        TF: true
+        RightLaser-Labels: false
+        RobotModel: false
+        TF: false
+        TopLeft-Image: true
         TopRight-Camera: true
         TopRight-Image: true
         TopRightImage-Labeled: true
@@ -460,9 +437,6 @@ Visualization Manager:
         DataLabeler-InteractiveMarkers: false
         FirstGuess-InteractiveMarkers: true
         FrontImage-Labeled: true
-        Frontal-Camera: false
-        Frontal-Image: true
-        FrontalCamera: true
         FrontalLaser-PointCloud2: true
         Grid: true
         Left-LaserScan: true
@@ -472,15 +446,17 @@ Visualization Manager:
         RightLaser-Labels: false
         RobotModel: false
         TF: false
+        TopLeft-Camera: true
+        TopLeft-Image: true
         TopRight-Image: true
         TopRightImage-Labeled: true
         Value: true
       Zoom Factor: 1
   Enabled: true
   Global Options:
-    Background Color: 255; 255; 255
+    Background Color: 211; 215; 207
     Default Light: true
-    Fixed Frame: car_center
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -505,25 +481,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.25044584274292
+      Distance: 4.830410003662109
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.7617541551589966
-        Y: 0.24986085295677185
-        Z: 0.9574312567710876
+        X: 0.6499055027961731
+        Y: -0.48593538999557495
+        Z: 0.7801053524017334
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5097966194152832
+      Pitch: 1.1947966814041138
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.8990172743797302
+      Yaw: 3.484029531478882
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
@@ -550,21 +526,19 @@ Window Geometry:
     collapsed: false
   FrontImage-Labeled:
     collapsed: false
-  Frontal-Camera:
-    collapsed: false
-  Frontal-Image:
-    collapsed: false
-  FrontalCamera:
-    collapsed: false
-  Height: 678
+  Height: 1025
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001890000024cfc020000000afb0000001200530065006c0065006300740069006f006e000000003d0000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000024c000000c900fffffffb0000000a0056006900650077007300000001aa000001d3000000a400fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e000001170000001600ffffff00000001000001920000024cfc020000000ffb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000001600fffffffb0000001e0054006f007000520069006700680074002d00430061006d006500720061000000003d0000024c0000001600fffffffb0000000c00430061006d006500720061010000003d000003860000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c00650064010000003d0000011c0000001600fffffffb0000002400460072006f006e00740049006d006100670065002d004c006100620065006c00650064010000015f0000012a0000001600fffffffb0000001a00460072006f006e00740061006c002d0049006d00610067006500000002c5000000f60000001600fffffffb0000001c0054006f007000520069006700680074002d0049006d0061006700650000000201000001ba0000001600fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065000000000000000780000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000002310000024c00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000189000003a7fc020000000bfb0000001200530065006c0065006300740069006f006e000000003d0000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000003a7000000c900fffffffb0000000a0056006900650077007300000001aa000001d3000000a400fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e000001170000000000000000fb0000001e0054006f007000520069006700680074002d00430061006d0065007200610000000319000000cb0000001600ffffff0000000100000192000003a7fc020000000ffb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000000000000000fb0000001c0054006f0070004c006500660074002d00430061006d006500720061000000003d0000024c0000001600fffffffb0000000c00430061006d006500720061010000003d000003860000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c00650064000000003d000001c70000001600fffffffb0000002400460072006f006e00740049006d006100670065002d004c006100620065006c00650064000000020a000001da0000001600fffffffb0000001a0054006f0070004c006500660074002d0049006d0061006700650000000159000000cb0000001600fffffffb0000001c0054006f007000520069006700680074002d0049006d00610067006500000001a90000023b0000001600fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065000000000000000780000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000005ae000003a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
     collapsed: false
   Tool Properties:
+    collapsed: false
+  TopLeft-Camera:
+    collapsed: false
+  TopLeft-Image:
     collapsed: false
   TopRight-Camera:
     collapsed: false
@@ -574,6 +548,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1368
-  X: 0
-  Y: 24
+  Width: 1853
+  X: 67
+  Y: 27

@@ -3,35 +3,26 @@
 
     <xacro:macro name="atlascar2_calibration" params="prefix">
 
-        <!--<sensor name="wide_stereo_left" update_rate="20.0">-->
-            <!--<parent link="car_center"/>-->
-            <!--<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>-->
-            <!--<calibration_parent link="double_stereo_link"/>-->
-            <!--<calibration_child link="wide_stereo_link"/>-->
-            <!--<topic topic="/wide_stereo/left/image_rect"/>-->
-        <!--</sensor>-->
-
-        <sensor name="${prefix}frontal_camera" update_rate="20">
-            <parent link="${prefix}frontal_camera_optical"/>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-            <calibration_parent link="${prefix}car_center"/>
-            <calibration_child link="${prefix}frontal_camera"/>
-            <topic topic="/frontal_camera/image_color"/>
-        </sensor>
-
         <sensor name="${prefix}top_right_camera" update_rate="20">
             <parent link="${prefix}top_right_camera_optical"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
-            <calibration_parent link="${prefix}car_center"/>
+            <calibration_parent link="${prefix}base_link"/>
             <calibration_child link="${prefix}top_right_camera"/>
             <topic topic="/top_right_camera/image_color"/>
         </sensor>
 
+        <sensor name="${prefix}top_left_camera" update_rate="20">
+            <parent link="${prefix}top_left_camera_optical"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <calibration_parent link="${prefix}base_link"/>
+            <calibration_child link="${prefix}top_left_camera"/>
+            <topic topic="/top_right_camera/image_color"/>
+        </sensor>
 
 <!--        <sensor name="${prefix}frontal_laser" update_rate="20">-->
 <!--            <parent link="${prefix}frontal_laser"/>-->
 <!--            <origin xyz="0 0 0" rpy="0 0 0"/>-->
-<!--            <calibration_parent link="${prefix}car_center"/>-->
+<!--            <calibration_parent link="${prefix}base_link"/>-->
 <!--            <calibration_child link="${prefix}frontal_laser_mount_link"/>-->
 <!--            <topic topic="/frontal_laser/cloud"/>-->
 <!--        </sensor>-->
@@ -39,7 +30,7 @@
         <sensor name="${prefix}left_laser" update_rate="20">
             <parent link="${prefix}left_laser"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
-            <calibration_parent link="${prefix}car_center"/>
+            <calibration_parent link="${prefix}base_link"/>
             <calibration_child link="${prefix}left_laser"/>
             <topic topic="/left_laser/laserscan"/>
         </sensor>
@@ -47,7 +38,7 @@
         <sensor name="${prefix}right_laser" update_rate="20">
             <parent link="${prefix}right_laser"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
-            <calibration_parent link="${prefix}car_center"/>
+            <calibration_parent link="${prefix}base_link"/>
             <calibration_child link="${prefix}right_laser"/>
             <topic topic="/right_laser/laserscan"/>
         </sensor>
