@@ -51,8 +51,6 @@ class InteractiveDataLabeler:
         self.labels = {'detected': False, 'idxs': []}
         self.lock = threading.Lock()
 
-
-
         self.msg_type_str, self.msg_type = interactive_calibration.utilities.getMessageTypeFromTopic(self.topic)
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback)
 
@@ -85,61 +83,86 @@ class InteractiveDataLabeler:
             # Create clusters in 2D scan
             clusters = []
 
+            # print(self.msg.ranges)
+            # print(type(self.msg.ranges))
+            # for idx, range in enumerate(self.msg.ranges):
+            #     # if range < 0.01:
+            #     #     self.msg.ranges[idx] = Nan
+            #     pass
+
             ranges = self.msg.ranges
-            threshold = .90
+
+            threshold = .20
+            minimum_range_value = 0.01
             cluster_counter = 0
             points = []
             xs, ys = interactive_calibration.utilities.laser_scan_msg_to_xy(self.msg)
 
+            # Clustering:
+            # print(ranges)
+            first_time = True
             for idx, r in enumerate(ranges):
+                if r < minimum_range_value or ranges[idx - 1] < minimum_range_value:
+                    # print("Ignoring idx " + str(idx))
+                    continue
 
-                if idx == 0:
+                if first_time:
                     clusters.append(LaserScanCluster(cluster_counter, idx))
                 else:
-                    if abs(ranges[idx - 1] - r) > threshold:  # new cluster
+                    x = xs[clusters[-1].idxs[-1]]
+                    y = ys[clusters[-1].idxs[-1]]
+                    d = sqrt((xs[idx] - x) ** 2 + (ys[idx] - y) ** 2)
+                    if  d > threshold:
+                        # if abs(ranges[idx - 1] - r) > threshold:  # new cluster
                         cluster_counter += 1
                         clusters.append(LaserScanCluster(cluster_counter, idx))
+                        # print("Creating new cluster " + str(cluster_counter))
+                        # # print("range before: " + str(ranges[idx - 1]))
+                        # # print("range now: " + str(r))
+                        #
+                        # print("xy before: " + str(x) + ', ' + str(y))
+                        # print("xy now: " + str(xs[idx]) + ', ' + str(ys[idx]))
+                        # print('d = ' + str(d))
                     else:
                         clusters[-1].pushIdx(idx)
 
+                first_time = False
+
+            # Report clusters
+            # for cluster in clusters:
+            #     print('Cluster ' + str(cluster.cluster_count) + ' has idxs = ' + str(cluster.idxs))
             # print('Laser scan split into ' + str(len(clusters)) + ' clusters')
 
             # Find out which cluster is closer to the marker
             x_marker = self.marker.pose.position.x
             y_marker = self.marker.pose.position.y
-            z_marker = self.marker.pose.position.z
-            distance_to_point = 9999999
-            idx_closest_point = None
-            x_closest_point = 0
-            y_closest_point = 0
-
-            z = 0
-            for idx, (x, y) in enumerate(zip(xs, ys)):
-                dist = sqrt((x_marker - x) ** 2 + (y_marker - y) ** 2 + (z_marker - z) ** 2)
-
-                if dist < distance_to_point:
-                    distance_to_point = dist
-                    idx_closest_point = idx
-                    x_closest_point = x
-                    y_closest_point = y
 
             idx_closest_cluster = 0
-            for idx, cluster in enumerate(clusters):
-                if idx_closest_point in cluster.idxs:
-                    idx_closest_cluster = idx
+            min_dist = 999999
+            for cluster_idx, cluster in enumerate(clusters):
+                for idx in cluster.idxs:
+                    x = xs[idx]
+                    y = ys[idx]
+                    dist = sqrt((x_marker -x) ** 2 + (y_marker - y) ** 2)
+                    if dist < min_dist:
+                        idx_closest_cluster = cluster_idx
+                        min_dist = dist
 
-            num_clusters = len(clusters)
+            closest_cluster = clusters[idx_closest_cluster]
+            # num_clusters = len(clusters)
             # print('Closest cluster is ' + str(idx_closest_cluster))
+            # print('x_marker = ' + str(x_marker) + ' y_marker = ' + str(y_marker))
+
 
             # Find the coordinate of the middle point in the closest cluster and bring the marker to that point
-            # r = ranges[idx_closest_point]
-            # theta = self.msg.angle_min + idx_closest_point * self.msg.angle_increment
-            closest_cluster = clusters[idx_closest_cluster]
-            idx_middle_point = int((closest_cluster.idxs[0] + closest_cluster.idxs[-1]) / 2)
-            r = ranges[idx_middle_point]
-            theta = self.msg.angle_min + idx_middle_point * self.msg.angle_increment
-            self.marker.pose.position.x = r * math.cos(theta)
-            self.marker.pose.position.y = r * math.sin(theta)
+            x_sum = 0
+            y_sum = 0
+            for idx in closest_cluster.idxs:
+                x_sum += xs[idx]
+                y_sum += ys[idx]
+
+            self.marker.pose.position.x = x_sum / float(len(closest_cluster.idxs))
+            self.marker.pose.position.y = y_sum / float(len(closest_cluster.idxs))
             self.marker.pose.position.z = 0
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
@@ -154,6 +177,7 @@ class InteractiveDataLabeler:
                                                           idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
+            # print('self.parent = ' + self.parent)
 
             # Create point cloud message with the colored clusters (just for debugging)
             # cmap = cm.Pastel2(np.linspace(0, 1, num_clusters))
