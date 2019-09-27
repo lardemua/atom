@@ -6,7 +6,7 @@
 <!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/atlascar2/27-05-2019_with_chessboard.bag"/>-->
 <!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/atlascar2/calibration_31_05_2019_fixed.bag"/>-->
 <!--    <arg name="bag" default="/tmp/bag_file_2019-09-24-01-13-19.bag"/>-->
-    <arg name="bag" default="/home/atlas/calibration/bag_file_2019-09-24-01-20-41.bag"/>
+    <arg name="bag" default="$(env HOME)/bagfiles/bag_file_2019-09-24-01-20-41.bag"/>
 
 
 <!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/pr2_test.bag"/>-->
