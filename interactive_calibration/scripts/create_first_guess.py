@@ -61,16 +61,11 @@ def menuFeedback(feedback):
     if handle == 2:
         for sensor in sensors:
             interactive_calibration.sensor.Sensor.resetToInitalPose(sensor)
-    if handle == 3:  # collect snapshot
-        print('Collect snapshot selected')
-
-        print('NEED REVIEW: THIS DOES NOT DO ANYTHING!!!')
 
 
 def initMenu():
     menu_handler.insert("Save sensors configuration", callback=menuFeedback)
     menu_handler.insert("Reset to initial configuration", callback=menuFeedback)
-    menu_handler.insert("Collect snapshot", callback=menuFeedback)
 
 
 if __name__ == "__main__":
@@ -79,7 +74,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-w", "--world_link", help='Name of the reference frame wich is common to all sensors. Usually '
                                                'it is the world or base_link.', type=str, required=True)
-    ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.1)
+    ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.6)
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff

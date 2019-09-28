@@ -40,6 +40,10 @@ Also, in the same directory (catkin_ws/src), clone the atlas car model:
 git clone https://github.com/lardemua/atlas-core.git
 ```` 
 
+Finally, you will need colorama:
+```
+sudo pip install colorama
+```
 ## Using PR2 robot instead of AtlasCar2
 If you want to try it with the PR2 robot model too, it is needed to have the robot xacro files on your catkin source.
 For that, clone the package:
@@ -53,24 +57,24 @@ First , add this package to your catkin workspace source.
 
 Run the command:
 ```
-roslaunch interactive_calibration rviz.launch car_model:=true read_first_guess:=false
+roslaunch interactive_calibration atlascar2_calibration.launch
 ```
 
-Rviz will open, and you will need to set the Fixed Frame as 'ground'.
+Rviz will open. It is better if you check the Fixed Frame: it must be 'base_link'.
 Now you are able to see the atlas car model with the sensors in their first position.
 
 Then, in a new terminal:
 ```
-rosrun interactive_calibration create_first_guess.py -w car_center
+rosrun interactive_calibration create_first_guess.py -w base_link
 ```
 
 Now you can move the green markers and save the new sensors configuration.
 Kill the booth process in the terminals, and run:
 
 ```
-roslaunch interactive_calibration rviz.launch car_model:=true read_first_guess:=true
+roslaunch interactive_calibration atlascar2_calibration.launch read_first_guess:=true
 ```
-Now you will see the atlas car model with the sensors in the updated position (don't forget to set Fixed Frame as 'ground').
+Now you will see the atlas car model with the sensors in the updated position (don't forget: Fixed Frame should be 'base_link').
 
 ## For PR2 robot model
 For seeing the PR2 model instead of the AtlasCar2, just run the command (it's the same but with the car_model argument set as false)
