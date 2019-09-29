@@ -1,33 +1,13 @@
 <launch>
-
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Parameters-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/atlascar2/27-05-2019_with_chessboard.bag"/>-->
-<!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/atlascar2/calibration_31_05_2019_fixed.bag"/>-->
-<!--    <arg name="bag" default="/tmp/bag_file_2019-09-24-01-13-19.bag"/>-->
     <arg name="read_first_guess" default="false"/>
     <arg name="bag" default="$(env HOME)/bagfiles/bag_file_2019-09-24-01-20-41.bag"/>
-
-<!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/pr2_test.bag"/>-->
-
     <arg name="xacro_file" default="$(find interactive_calibration)/urdf/macro_first_guess.urdf.xacro"/>
-    <!--/calibrations/atlascar2/atlascar2.urdf.xacro"/>-->
-<!--    <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro"/>-->
-    <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/urdf/macro_first_guess.urdf.xacro"/>
     <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/config.rviz"/>
 
-
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <!-- Load robot description file based on whether or not we are reading the first guess xacro file.-->
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <group if="$(arg read_first_guess)">
-        <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>
-    </group>
-
-    <group unless="$(arg read_first_guess)">
-        <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
-    </group>
+    <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Robot and joint state publisher for generating tfs -->
@@ -53,5 +33,4 @@
     <include file="$(find atlas2_bringup)/launch/playback_sensor_data.launch">
         <arg name="bag" value="$(arg bag)" />
     </include>
-
 </launch>
