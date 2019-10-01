@@ -83,7 +83,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_right_camera" type="fixed">
-    <origin xyz="-1.50000011921 -2.5133471489 1.25" rpy="0.0 0.399999989245 0.0"/>
+    <origin xyz="-1.5 -0.12 1.25" rpy="0.0 0.4 0.0"/>
     <parent link="base_link"/>
     <child link="top_right_camera"/>
   </joint>
@@ -150,7 +150,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_left_camera" type="fixed">
-    <origin xyz="-1.5 0.12 1.25" rpy="0.0 0.4 0.0"/>
+    <origin xyz="1.7934513092041016 0.11999999731779099 1.25" rpy="1.61264849914 -0.0176877887299 0.399629778014"/>
     <parent link="base_link"/>
     <child link="top_left_camera"/>
   </joint>

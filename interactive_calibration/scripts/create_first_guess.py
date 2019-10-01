@@ -53,7 +53,7 @@ def menuFeedback(feedback):
                     joint.origin.rpy[2] = euler[2]
 
         xml_string = xml_robot.to_xml_string()
-        filename = rospack.get_path('interactive_calibration') + "/urdf/macro_first_guess.urdf.xacro"
+        filename = rospack.get_path('interactive_calibration') + args['filename']
         f = open(filename, "w")
         f.write(xml_string)
         f.close()
@@ -74,6 +74,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-w", "--world_link", help='Name of the reference frame wich is common to all sensors. Usually '
                                                'it is the world or base_link.', type=str, required=True)
+    ap.add_argument("-f", "--filename", help="Full path and name of the first guess xacro file. Starting from the root of the interactive calibration ros package",
+                    type=str, required=True, default="/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro")
     ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.6)
     args = vars(ap.parse_args())
 
