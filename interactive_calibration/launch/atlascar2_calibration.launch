@@ -53,5 +53,4 @@
     <include file="$(find atlas2_bringup)/launch/playback_sensor_data.launch">
         <arg name="bag" value="$(arg bag)" />
     </include>
-
 </launch>

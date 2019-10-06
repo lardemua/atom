@@ -60,8 +60,10 @@ Run the command:
 roslaunch interactive_calibration atlascar2_calibration.launch
 ```
 
-Rviz will open. It is better if you check the Fixed Frame: it must be 'base_link'. You must also add the location and name of the file that will store the first guess data with the -f argument. Location is given starting from the path of the interactive_calibration ros package.
-now you are able to see the atlas car model with the sensors in their first position.y
+Rviz will open. It is better if you check the Fixed Frame: it must be 'base_link'. 
+You must also add the location and name of the file that will store the first guess data with the -f argument. 
+Location is given starting from the path of the interactive_calibration ros package.
+now you are able to see the atlas car model with the sensors in their first position.
 
 Then, in a new terminal:
 ```

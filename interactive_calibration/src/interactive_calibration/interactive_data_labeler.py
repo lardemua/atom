@@ -38,7 +38,7 @@ class LaserScanCluster:
 
 class InteractiveDataLabeler:
 
-    def __init__(self, server, menu_handler, sensor_dict, marker_scale):
+    def __init__(self, server, menu_handler, sensor_dict, marker_scale, chess_numx, chess_numy):
         print('Creating an InteractiveDataLabeler for sensor ' + str(sensor_dict['_name']))
 
         self.server = server
@@ -50,6 +50,8 @@ class InteractiveDataLabeler:
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
         self.lock = threading.Lock()
+        self.numx = chess_numx
+        self.numy = chess_numy
 
         self.msg_type_str, self.msg_type = interactive_calibration.utilities.getMessageTypeFromTopic(self.topic)
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback)
@@ -227,13 +229,13 @@ class InteractiveDataLabeler:
             image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             # Find chessboard corners
-            self.found, corners = cv2.findChessboardCorners(image_gray, (8, 6))
-            cv2.drawChessboardCorners(image, (8, 6), corners, self.found)  # Draw and display the corners
+            self.found, corners = cv2.findChessboardCorners(image_gray, (self.numx, self.numy))
+            cv2.drawChessboardCorners(image, (self.numx, self.numy), corners, self.found)  # Draw and display the corners
 
             if self.found is True:
                 # print('Found chessboard for ' + self.name)
                 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-                corners2 = cv2.cornerSubPix(image_gray, corners, (8, 6), (-1, -1), criteria)
+                corners2 = cv2.cornerSubPix(image_gray, corners, (self.numx, self.numy), (-1, -1), criteria)
                 corners2_d = []
                 print(corners2_d)
                 for corner in corners2:

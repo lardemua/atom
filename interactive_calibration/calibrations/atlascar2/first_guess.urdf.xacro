@@ -45,45 +45,9 @@
     <parent link="top_right_camera"/>
     <child link="top_right_camera_optical"/>
   </joint>
-  <gazebo reference="top_right_camera_optical"><material>Gazebo/Grey</material>
-    <sensor name="top_right_camera" type="camera">
-      <update_rate>120</update_rate>
-      <camera name="top_right_camera">
-        <pose>0 0 0 0 -1.5707 1.5707</pose>
-        <horizontal_fov>1.0471975512</horizontal_fov>
-        <image>
-          <width>1272</width>
-          <height>1016</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.5</near>
-          <far>300</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <plugin filename="libgazebo_ros_camera.so" name="camera_controller">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>120</updateRate>
-        <cameraName>top_right_camera</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>top_right_camera_optical</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-      </plugin>
-    </sensor>
-  </gazebo>
+  <gazebo reference="top_right_camera_optical"/>
   <joint name="base_link_to_top_right_camera" type="fixed">
-    <origin xyz="-1.5 -0.12 1.25" rpy="0.0 0.4 0.0"/>
+    <origin xyz="-1.77280187607 -0.233933746815 1.25" rpy="-6.41765959721e-08 0.236651372034 -0.0570543483677"/>
     <parent link="base_link"/>
     <child link="top_right_camera"/>
   </joint>
@@ -112,51 +76,15 @@
     <parent link="top_left_camera"/>
     <child link="top_left_camera_optical"/>
   </joint>
-  <gazebo reference="top_left_camera_optical"><material>Gazebo/Grey</material>
-    <sensor name="top_left_camera" type="camera">
-      <update_rate>120</update_rate>
-      <camera name="top_left_camera">
-        <pose>0 0 0 0 -1.5707 1.5707</pose>
-        <horizontal_fov>1.0471975512</horizontal_fov>
-        <image>
-          <width>1272</width>
-          <height>1016</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.5</near>
-          <far>300</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <plugin filename="libgazebo_ros_camera.so" name="camera_controller">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>120</updateRate>
-        <cameraName>top_left_camera</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>top_left_camera_optical</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-      </plugin>
-    </sensor>
-  </gazebo>
+  <gazebo reference="top_left_camera_optical"/>
   <joint name="base_link_to_top_left_camera" type="fixed">
-    <origin xyz="1.7934513092041016 0.11999999731779099 1.25" rpy="1.61264849914 -0.0176877887299 0.399629778014"/>
+    <origin xyz="-1.73982644081 0.382407188416 1.25" rpy="4.58485844927e-05 0.226041151401 -0.0962249358456"/>
     <parent link="base_link"/>
     <child link="top_left_camera"/>
   </joint>
   <link name="frontal_laser_mount_link">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <mass value="0.001"/>
       <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
     </inertial>
@@ -168,7 +96,7 @@
   </joint>
   <link name="frontal_laser">
     <inertial>
-      <origin xyz="0.0026 -0.02325 -0.0" rpy="0 0 0"/>
+      <origin xyz="0.0026 -0.02325 -0.0" rpy="0.0 0.0 0.0"/>
       <mass value="1.0"/>
       <inertia ixx="0.00290035300653" ixy="0.0" ixz="0.0" iyy="0.00136918611899" iyz="0.0" izz="0.00297887297512"/>
     </inertial>
@@ -192,7 +120,7 @@
   </joint>
   <link name="right_laser">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <mass value="1.1"/>
       <inertia ixx="0.00307156543804" ixy="0.0" ixz="0.0" iyy="0.00312849041527" iyz="0.0" izz="0.00196432421427"/>
     </inertial>
@@ -209,46 +137,15 @@
       </geometry>
     </collision>
   </link>
-  <gazebo reference="right_laser"><turnGravityOff>true</turnGravityOff>
-    <sensor name="right_laser" type="ray">
-      <pose>0 0 0 0 0 0</pose>
-      <visualize>false</visualize>
-      <update_rate>50</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>720</samples>
-            <resolution>1</resolution>
-            <min_angle>-2.35619</min_angle>
-            <max_angle>2.35619</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.1</min>
-          <max>30.0</max>
-          <resolution>0.01</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.001</stddev>
-        </noise>
-      </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_laser">
-        <topicName>scan</topicName>
-        <frameName>right_laser</frameName>
-        <robotNamespace>/</robotNamespace>
-      </plugin>
-    </sensor>
-  </gazebo>
+  <gazebo reference="right_laser"/>
   <joint name="base_link_to_right_laser" type="fixed">
-    <origin xyz="-0.05 -0.7 0.1" rpy="0.0 0.0 -0.63"/>
+    <origin xyz="-0.0500000007451 -0.699999988079 0.10000000149" rpy="7.91199037381e-09 5.07742774923e-10 -0.802577692221"/>
     <parent link="base_link"/>
     <child link="right_laser"/>
   </joint>
   <link name="left_laser">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <mass value="1.1"/>
       <inertia ixx="0.00307156543804" ixy="0.0" ixz="0.0" iyy="0.00312849041527" iyz="0.0" izz="0.00196432421427"/>
     </inertial>
@@ -265,40 +162,9 @@
       </geometry>
     </collision>
   </link>
-  <gazebo reference="left_laser"><turnGravityOff>true</turnGravityOff>
-    <sensor name="left_laser" type="ray">
-      <pose>0 0 0 0 0 0</pose>
-      <visualize>false</visualize>
-      <update_rate>50</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>720</samples>
-            <resolution>1</resolution>
-            <min_angle>-2.35619</min_angle>
-            <max_angle>2.35619</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.1</min>
-          <max>30.0</max>
-          <resolution>0.01</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.001</stddev>
-        </noise>
-      </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_laser">
-        <topicName>scan</topicName>
-        <frameName>left_laser</frameName>
-        <robotNamespace>/</robotNamespace>
-      </plugin>
-    </sensor>
-  </gazebo>
+  <gazebo reference="left_laser"/>
   <joint name="base_link_to_left_laser" type="fixed">
-    <origin xyz="-0.05 0.7 0.1" rpy="0.0 -0.0 0.57"/>
+    <origin xyz="-0.0500000007451 0.699999988079 0.10000000149" rpy="-1.40600650738e-08 1.04046331119e-08 0.850917484309"/>
     <parent link="base_link"/>
     <child link="left_laser"/>
   </joint>

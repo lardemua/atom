@@ -32,7 +32,7 @@ import interactive_calibration.interactive_data_labeler
 
 class DataCollectorAndLabeler:
 
-    def __init__(self, world_link, output_folder, server, menu_handler, marker_size):
+    def __init__(self, world_link, output_folder, server, menu_handler, marker_size, chess_numx, chess_numy):
 
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)  # Delete old folder
@@ -42,6 +42,7 @@ class DataCollectorAndLabeler:
 
         self.listener = TransformListener()
         self.sensors = {}
+        self.transforms = {}
         self.sensor_labelers = {}
         self.world_link = world_link
         self.server = server
@@ -96,14 +97,17 @@ class DataCollectorAndLabeler:
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[xs.name] = sensor_dict
 
-            sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size)
+            sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server,
+                                                                                                     self.menu_handler,
+                                                                                                     sensor_dict,
+                                                                                                     marker_size,
+                                                                                                     chess_numx,
+                                                                                                     chess_numy)
             self.sensor_labelers[xs.name] = sensor_labeler
 
             print(Fore.BLUE + xs.name + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
         self.abstract_transforms = self.getAllTransforms()
-
-    def collectSnapshot(self):
 
         # --------------------------------------
         # Collect transforms (for now collect all transforms even if they are fixed)
@@ -118,6 +122,9 @@ class DataCollectorAndLabeler:
             transforms_dict[key] = {'trans': trans, 'quat': quat}
 
         # self.transforms[self.data_stamp] = transforms_dict
+        self.transforms = transforms_dict
+
+    def collectSnapshot(self):
 
         # --------------------------------------
         # Collect sensor data (images, laser scans, etc)
@@ -182,13 +189,11 @@ class DataCollectorAndLabeler:
         # --------------------------------------
         # Add a new collection
         # --------------------------------------
-        self.collections[self.data_stamp] = {'transforms': transforms_dict,
-                                             'data': all_sensor_data_dict,
-                                             'labels': all_sensor_labels_dict}
+        self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict}
         self.data_stamp += 1
 
         # Save to json file
-        D = {'sensors': self.sensors, 'collections': self.collections}
+        D = {'sensors': self.sensors, 'collections': self.collections, 'transforms': self.transforms}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
     def getAllTransforms(self):

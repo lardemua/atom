@@ -123,6 +123,10 @@ if __name__ == "__main__":
     ap.add_argument('-w', '--world_link', help='Name of the reference frame wich is common to all sensors. Usually '
                                                'it is the world or base_link.', type=str, required=True)
     ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.5)
+    ap.add_argument("-cnumx", "--chess_num_x", help="Chessboard's number of corners in horizontal dimension.",
+                    type=int, required=True)
+    ap.add_argument("-cnumy", "--chess_num_y", help="Chessboard's number of corners in vertical dimension.",
+                    type=int, required=True)
     ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str, required=True)
     args = vars(ap.parse_args())
 
@@ -143,7 +147,8 @@ if __name__ == "__main__":
 
     print('Number of sensors: ' + str(len(xml_robot.sensors)))
     data_collector = interactive_calibration.data_collector_and_labeler.DataCollectorAndLabeler(
-        args['world_link'], args['output_folder'], server, menu_handler, args['marker_scale'])
+        args['world_link'], args['output_folder'], server, menu_handler, args['marker_scale'], args['chess_num_x'],
+        args['chess_num_y'])
 
     createInteractiveMarker()
     initMenu()
