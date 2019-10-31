@@ -34,12 +34,19 @@ class DataCollectorAndLabeler:
 
     def __init__(self, world_link, output_folder, server, menu_handler, marker_size, chess_numx, chess_numy):
 
-        if os.path.exists(output_folder):
-            shutil.rmtree(output_folder)  # Delete old folder
+        if not os.path.exists(output_folder):
+            os.mkdir(output_folder)  # Create the new folder
+        else:
+            while True:
+                msg = Fore.YELLOW + "To continue, the directory '{}' will be delete.\n"
+                msg = msg         + "Do you wish to continue? [y/N] " + Style.RESET_ALL
 
-        os.mkdir(output_folder)  # Create the new folder
+                answer = raw_input(msg.format(output_folder))
+                if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
+                    if answer[0].lower() == 'y': sys.exit(1)
+                else: sys.exit(1)
+
         self.output_folder = output_folder
-
         self.listener = TransformListener()
         self.sensors = {}
         self.transforms = {}
