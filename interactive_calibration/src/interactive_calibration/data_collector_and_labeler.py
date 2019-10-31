@@ -43,8 +43,12 @@ class DataCollectorAndLabeler:
 
                 answer = raw_input(msg.format(output_folder))
                 if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
-                    if answer[0].lower() == 'y': sys.exit(1)
-                else: sys.exit(1)
+                    if answer[0].lower() == 'n': sys.exit(1)
+                    else: break
+                else: sys.exit(1) # defaults to N
+
+            shutil.rmtree(output_folder)  # Delete old folder
+            os.mkdir(output_folder)       # Recreate the folder
 
         self.output_folder = output_folder
         self.listener = TransformListener()
