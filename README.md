@@ -34,11 +34,23 @@ In the same directory (catkin_ws/src):
 git clone https://github.com/clearpathrobotics/LMS1xx.git
 git clone https://github.com/ros-drivers/pointgrey_camera_driver.git
 git clone https://github.com/SICKAG/sick_ldmrs_laser.git
+git clone https://github.com/SICKAG/libsick_ldmrs.git
 ```
 Also, in the same directory (catkin_ws/src), clone the atlas car model:
 ````
 git clone https://github.com/lardemua/atlas-core.git
 ```` 
+
+In order to compile this package, flycap is needed. To run FlyCapture2 on a Linux Ubuntu system, install the following dependencies:
+
+```
+sudo apt-get install libraw1394-11 libgtkmm-2.4-1v5 libglademm-2.4-1v5 libgtkglextmm-x11-1.2-dev libgtkglextmm-x11-1.2 libusb-1.0-0
+```
+And then:
+```
+sudo sh install_flycapture.sh
+```
+(See if flycap works. It probably need some updates as well)
 
 Finally, you will need colorama:
 ```
