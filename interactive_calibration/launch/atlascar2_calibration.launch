@@ -11,7 +11,9 @@
 
 <!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/pr2_test.bag"/>-->
 
-    <arg name="xacro_file" default="$(find interactive_calibration)/calibrations/atlascar2/atlascar2.urdf.xacro"/>
+    <arg name="xacro_file" default="$(find atlas2_description)/urdf/atlas2.urdf.xacro"/>
+
+
     <!--/calibrations/atlascar2/atlascar2.urdf.xacro"/>-->
 <!--    <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro"/>-->
     <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/first_guess.urdf.xacro"/>

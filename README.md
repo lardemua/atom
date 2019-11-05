@@ -18,17 +18,8 @@ Saving the markers final position and reopen the robot with the sensors at the u
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 # Installation
-First, you need to uninstall urdfdom_py ros package and install the updated version of this package so that can be able to recognize sensor element.
-To remove the old version, run the command:
-```
-sudo apt-get remove ros-melodic-urdfdom_py
-```
-Then, you must clone the new version to your catkin source:
-```
-cd && cd catkin_ws/src
-git clone https://github.com/afonsocastro/urdf_parser_py.git
-```
-Beside this, it will be needed some sensors packages.
+
+It will be needed some sensors packages.
 In the same directory (catkin_ws/src):
 ```
 git clone https://github.com/clearpathrobotics/LMS1xx.git
