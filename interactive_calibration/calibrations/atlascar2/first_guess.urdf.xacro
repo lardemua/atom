@@ -83,7 +83,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_right_camera" type="fixed">
-    <origin xyz="-1.5 -0.12 1.25" rpy="0.0 0.4 0.0"/>
+    <origin xyz="-1.5 -0.215595543384552 1.25" rpy="2.87639977769e-08 0.231614677419 -0.0695532323982"/>
     <parent link="base_link"/>
     <child link="top_right_camera"/>
   </joint>
@@ -150,7 +150,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_left_camera" type="fixed">
-    <origin xyz="-1.5 0.12 1.25" rpy="0.0 0.4 0.0"/>
+    <origin xyz="-1.5 0.1799130141735077 1.25" rpy="-7.00049190111e-08 0.234987143739 -0.0603197392008"/>
     <parent link="base_link"/>
     <child link="top_left_camera"/>
   </joint>
@@ -242,7 +242,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_right_laser" type="fixed">
-    <origin xyz="1.1338140964508057 -2.1695430278778076 0.10000000149011612" rpy="0.0 0.0 -0.630000024243"/>
+    <origin xyz="-0.05000000074505806 -0.699999988079071 0.10000000149011612" rpy="8.10708019675e-09 7.81548619769e-09 -0.802585229488"/>
     <parent link="base_link"/>
     <child link="right_laser"/>
   </joint>
@@ -298,36 +298,8 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_left_laser" type="fixed">
-    <origin xyz="-0.05 0.7 0.1" rpy="0.0 -0.0 0.57"/>
+    <origin xyz="-0.05000000074505806 0.699999988079071 0.10000000149011612" rpy="-2.78440592625e-09 1.36237645799e-08 0.811567993071"/>
     <parent link="base_link"/>
     <child link="left_laser"/>
   </joint>
-  <sensor name="top_right_camera" update_rate="20.0">
-    <parent link="top_right_camera_optical"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-    <calibration_parent link="base_link"/>
-    <calibration_child link="top_right_camera"/>
-    <topic topic="/top_right_camera/image_color"/>
-  </sensor>
-  <sensor name="top_left_camera" update_rate="20.0">
-    <parent link="top_left_camera_optical"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-    <calibration_parent link="base_link"/>
-    <calibration_child link="top_left_camera"/>
-    <topic topic="/top_right_camera/image_color"/>
-  </sensor>
-  <sensor name="left_laser" update_rate="20.0">
-    <parent link="left_laser"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-    <calibration_parent link="base_link"/>
-    <calibration_child link="left_laser"/>
-    <topic topic="/left_laser/laserscan"/>
-  </sensor>
-  <sensor name="right_laser" update_rate="20.0">
-    <parent link="right_laser"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-    <calibration_parent link="base_link"/>
-    <calibration_child link="right_laser"/>
-    <topic topic="/right_laser/laserscan"/>
-  </sensor>
 </robot>

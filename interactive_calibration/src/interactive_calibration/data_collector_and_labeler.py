@@ -217,11 +217,11 @@ class DataCollectorAndLabeler:
         # --------------------------------------
         # Add a new collection
         # --------------------------------------
-        self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict}
+        self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': self.transforms}
         self.data_stamp += 1
 
         # Save to json file
-        D = {'sensors': self.sensors, 'collections': self.collections, 'transforms': self.transforms}
+        D = {'sensors': self.sensors, 'collections': self.collections}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
     def getAllTransforms(self):

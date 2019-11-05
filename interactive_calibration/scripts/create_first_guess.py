@@ -89,6 +89,7 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 
     # Parse robot description from param /robot_description
+    xml_robot = URDF.from_parameter_server()
     robot_from_json = json.load(open(args['calibration_file'], 'r'))
 
     # Process robot description and create an instance of class Sensor for each sensor
