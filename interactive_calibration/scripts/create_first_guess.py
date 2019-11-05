@@ -16,6 +16,7 @@ import interactive_calibration.sensor
 
 # from interactive_calibration import D
 from graphviz import Digraph
+import json
 
 # from interactive_calibration import Tra
 
@@ -77,6 +78,7 @@ if __name__ == "__main__":
     ap.add_argument("-f", "--filename", help="Full path and name of the first guess xacro file. Starting from the root of the interactive calibration ros package",
                     type=str, required=True, default="/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro")
     ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.6)
+    ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff
@@ -87,30 +89,31 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 
     # Parse robot description from param /robot_description
-    xml_robot = URDF.from_parameter_server()
-    # robot = URDF.from_xml_file(rospack.get_path('interactive_calibration') + "/urdf/atlas_macro.urdf.xacro")
+    robot_from_json = json.load(open(args['calibration_file'], 'r'))
 
     # Process robot description and create an instance of class Sensor for each sensor
     number_of_sensors = 0
     sensors = []
 
-    print('Number of sensors: ' + str(len(xml_robot.sensors)))
+    print('Number of sensors: ' + str(len(robot_from_json)))
 
     # parsing of robot description
-    for i, xml_sensor in enumerate(xml_robot.sensors):
+    # for i, xml_sensor in enumerate(xml_robot.sensors):
+    for key, value in robot_from_json.items():
 
-        print(Fore.BLUE + '\n\nSensor name is ' + xml_sensor.name + Style.RESET_ALL)
+        print(Fore.BLUE + '\n\nSensor name is ' + key + Style.RESET_ALL)
 
-        # Check if we have all the information needed. Abort if not.
-        for attr in ['parent', 'calibration_parent', 'calibration_child']:
-            if not hasattr(xml_sensor, attr):
-                raise ValueError(
-                    'Element ' + attr + ' for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
+        #TODO put this in a function and adapt for the json case
+        # # Check if we have all the information needed. Abort if not.
+        # for attr in ['parent', 'calibration_parent', 'calibration_child']:
+        #     if not hasattr(xml_sensor, attr):
+        #         raise ValueError(
+        #             'Element ' + attr + ' for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
 
         # Append to the list of sensors
-        sensors.append(interactive_calibration.sensor.Sensor(xml_sensor.name, server, menu_handler, args['world_link'],
-                                                             xml_sensor.calibration_parent,
-                                                             xml_sensor.calibration_child, xml_sensor.parent,
+        sensors.append(interactive_calibration.sensor.Sensor(key, server, menu_handler, args['world_link'],
+                                                             value['calibration_parent_link'],
+                                                             value['calibration_child_link'], value['sensor_link'],
                                                              marker_scale=args['marker_scale']))
 
     initMenu()

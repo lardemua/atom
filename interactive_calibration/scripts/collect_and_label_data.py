@@ -6,7 +6,6 @@
 import argparse
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import MenuHandler
-from urdf_parser_py.urdf import URDF
 import rospkg
 
 # from AtlasCarCalibration.interactive_calibration.src.interactive_calibration.DataCollector import DataCollector
@@ -128,6 +127,7 @@ if __name__ == "__main__":
     ap.add_argument("-cnumy", "--chess_num_y", help="Chessboard's number of corners in vertical dimension.",
                     type=int, required=True)
     ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str, required=True)
+    ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
     args = vars(ap.parse_args())
 
     # Initialize ROS stuff
@@ -137,18 +137,10 @@ if __name__ == "__main__":
     robot_description = rospy.get_param('/robot_description')
     rospy.sleep(0.5)
 
-    # Parse robot description from param /robot_description
-    xml_robot = URDF.from_parameter_server()
-    # robot = URDF.from_xml_file(rospack.get_path('interactive_calibration') + "/urdf/atlas_macro.urdf.xacro")
-
     # Process robot description and create an instance of class Sensor for each sensor
-    number_of_sensors = 0
-    sensors = []
-
-    print('Number of sensors: ' + str(len(xml_robot.sensors)))
     data_collector = interactive_calibration.data_collector_and_labeler.DataCollectorAndLabeler(
         args['world_link'], args['output_folder'], server, menu_handler, args['marker_scale'], args['chess_num_x'],
-        args['chess_num_y'])
+        args['chess_num_y'], args['calibration_file'])
 
     createInteractiveMarker()
     initMenu()

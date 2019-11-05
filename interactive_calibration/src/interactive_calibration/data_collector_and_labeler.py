@@ -22,7 +22,6 @@ from visualization_msgs.msg import *
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
 from transformation_t import TransformationT
-from urdf_parser_py.urdf import URDF
 
 import interactive_calibration.interactive_data_labeler
 
@@ -32,7 +31,7 @@ import interactive_calibration.interactive_data_labeler
 
 class DataCollectorAndLabeler:
 
-    def __init__(self, world_link, output_folder, server, menu_handler, marker_size, chess_numx, chess_numy):
+    def __init__(self, world_link, output_folder, server, menu_handler, marker_size, chess_numx, chess_numy, calibration_file):
 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)  # Create the new folder
@@ -69,25 +68,33 @@ class DataCollectorAndLabeler:
         rospy.sleep(0.5)
 
         # Parse robot description from param /robot_description
-        xml_robot = URDF.from_parameter_server()
+        # xml_robot = URDF.from_parameter_server()
+        robot_from_json = json.load(open(calibration_file, 'r'))
+
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
-        for i, xs in enumerate(xml_robot.sensors):
-            self.assertXMLSensorAttributes(xs)  # raises exception if not ok
+
+        print('Number of sensors: ' + str(len(robot_from_json)))
+
+        for sensor_key, value in robot_from_json.items():
+            print('visiting sensor ' + sensor_key)
+            # continue
+            # TODO put this in a function and adapt for the json case
 
             # Create a dictionary that describes this sensor
-            sensor_dict = {'_name': xs.name, 'parent': xs.parent, 'calibration_parent': xs.calibration_parent,
-                           'calibration_child': xs.calibration_child}
+            sensor_dict = {'_name': sensor_key, 'parent': value['sensor_link'], 'calibration_parent': value['calibration_parent_link'],
+                           'calibration_child': value['calibration_child_link']}
 
 
             #TODO replace by utils function
-            msg = rospy.wait_for_message(xs.topic, rospy.AnyMsg)
+            print("Waiting for message")
+            msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
             connection_header = msg._connection_header['type'].split('/')
             ros_pkg = connection_header[0] + '.msg'
             msg_type = connection_header[1]
-            print('Topic ' + xs.topic + ' has type ' + msg_type)
-            sensor_dict['topic'] = xs.topic
+            print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
+            sensor_dict['topic'] = value['topic_name']
             sensor_dict['msg_type'] = msg_type
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
@@ -99,14 +106,14 @@ class DataCollectorAndLabeler:
                 sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
 
             # Get the kinematic chain form world_link to this sensor's parent link
-            chain = self.listener.chain(xs.parent, rospy.Time(), self.world_link, rospy.Time(), self.world_link)
+            chain = self.listener.chain(value['sensor_link'], rospy.Time(), self.world_link, rospy.Time(), self.world_link)
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
                 key = self.generateKey(parent, child)
                 chain_list.append({'key': key, 'parent': parent, 'child': child})
 
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
-            self.sensors[xs.name] = sensor_dict
+            self.sensors[sensor_key] = sensor_dict
 
             sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server,
                                                                                                      self.menu_handler,
@@ -114,9 +121,13 @@ class DataCollectorAndLabeler:
                                                                                                      marker_size,
                                                                                                      chess_numx,
                                                                                                      chess_numy)
-            self.sensor_labelers[xs.name] = sensor_labeler
+            self.sensor_labelers[sensor_key] = sensor_labeler
 
-            print(Fore.BLUE + xs.name + Style.RESET_ALL + ':\n' + str(sensor_dict))
+            print('finished visiting sensor ' + sensor_key)
+            print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
+
+        print('sensor_labelers:')
+        print(self.sensor_labelers)
 
         self.abstract_transforms = self.getAllTransforms()
 
@@ -143,10 +154,14 @@ class DataCollectorAndLabeler:
         all_sensor_data_dict = {}
         for sensor_name, sensor in self.sensors.iteritems():
 
+            print('collectSnapshot: sensor_name ' + sensor_name)
+
             # TODO add exception also for point cloud and depht image
             if sensor['msg_type'] == 'Image':  #
                 # Get latest ros message on this topic
+                print("waiting for message " + sensor['topic'])
                 msg = rospy.wait_for_message(sensor['topic'], Image)
+                print("received message " + sensor['topic'])
 
                 # Convert to opencv image and save image to disk
                 cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -171,7 +186,9 @@ class DataCollectorAndLabeler:
             else:
                 # Get latest ros message on this topic
                 # msg = rospy.wait_for_message(sensor['topic'], LaserScan)
+                print("waiting for message " + sensor['topic'])
                 msg = rospy.wait_for_message(sensor['topic'], eval(sensor['msg_type']))
+                print("received message " + sensor['topic'])
 
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)

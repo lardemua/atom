@@ -16,7 +16,7 @@
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <calibration_parent link="${prefix}base_link"/>
             <calibration_child link="${prefix}top_left_camera"/>
-            <topic topic="/top_right_camera/image_color"/>
+            <topic topic="/top_left_camera/image_color"/>
         </sensor>
 
 <!--        <sensor name="${prefix}frontal_laser" update_rate="20">-->
