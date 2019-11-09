@@ -82,6 +82,7 @@ roslaunch interactive_calibration atlascar2_calibration.launch read_first_guess:
 ```
 Now you will see the atlas car model with the sensors in the updated position (don't forget: Fixed Frame should be 'base_link').
 
+To continue the AtlasCar2 multi-modal sensors calibration, it is required to collect some sensors data and optimizing the sensors poses. This next steps are described in the README file of OptimizationUtils repository (https://github.com/miguelriemoliveira/OptimizationUtils#calibration-of-sensors-in-the-atlascar).
 ## For PR2 robot model
 For seeing the PR2 model instead of the AtlasCar2, just run the command (it's the same but with the car_model argument set as false)
 ```
