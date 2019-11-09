@@ -75,7 +75,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-w", "--world_link", help='Name of the reference frame wich is common to all sensors. Usually '
                                                'it is the world or base_link.', type=str, required=True)
-    ap.add_argument("-f", "--filename", help="Full path and name of the first guess xacro file. Starting from the root of the interactive calibration ros package",
+    ap.add_argument("-f", "--filename", help="Path to the file where it will be the first guess file, starting from the root of the interactive calibration ros package",
                     type=str, required=True, default="/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro")
     ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.6)
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)

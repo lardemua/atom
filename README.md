@@ -60,17 +60,18 @@ First , add this package to your catkin workspace source.
 
 Run the command:
 ```
-roslaunch interactive_calibration atlascar2_calibration.launch
+roslaunch interactive_calibration atlascar2_calibration.launch 
 ```
 
 Rviz will open. It is better if you check the Fixed Frame: it must be 'base_link'. 
 You must also add the location and name of the file that will store the first guess data with the -f argument. 
 Location is given starting from the path of the interactive_calibration ros package.
-now you are able to see the atlas car model with the sensors in their first position.
+Besides that, it is also required the path to the calibration JSON file.
+Now you are able to see the atlas car model with the sensors in their first position.
 
 Then, in a new terminal:
 ```
-rosrun interactive_calibration create_first_guess.py -w base_link -f /calibrations/atlascar2/first_guess.urdf.xacro
+rosrun interactive_calibration create_first_guess.py -w base_link -s 0.5 -f /calibrations/atlascar2/first_guess.urdf.xacro -c ~/catkin_ws/src/AtlasCarCalibration/interactive_calibration/calibrations/atlascar2/atlascar2_calibration.json
 ```
 
 Now you can move the green markers and save the new sensors configuration.
