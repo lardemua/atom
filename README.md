@@ -32,7 +32,12 @@ Also, in the same directory (catkin_ws/src), clone the atlas car model:
 git clone https://github.com/lardemua/atlas-core.git
 ```` 
 
-In order to compile this package, flycap is needed. To run FlyCapture2 on a Linux Ubuntu system, install the following dependencies:
+In order to compile this package, flycap is needed. Install from
+
+https://flir.app.boxcn.net/v/Flycapture2SDK/folder/72274730742
+
+
+To run FlyCapture2 on a Linux Ubuntu system, install the following dependencies:
 
 ```
 sudo apt-get install libraw1394-11 libgtkmm-2.4-1v5 libglademm-2.4-1v5 libgtkglextmm-x11-1.2-dev libgtkglextmm-x11-1.2 libusb-1.0-0
