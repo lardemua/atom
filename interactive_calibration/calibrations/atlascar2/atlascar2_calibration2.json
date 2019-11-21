@@ -1,0 +1,38 @@
+{
+    "sensors": {
+        "top_right_camera": {
+                "link": "top_right_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "top_right_camera",
+                "topic_name": "/top_right_camera/image_color"
+        },
+            "top_left_camera": {
+                "link": "top_left_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "top_left_camera",
+                "topic_name": "/top_left_camera/image_color"
+        },
+        "right_laser": {
+                "link": "right_laser",
+                "parent_link": "base_link",
+                "child_link": "right_laser",
+                "topic_name": "/right_laser/laserscan"
+        },
+            "left_laser": {
+                "link": "left_laser",
+                "parent_link": "base_link",
+                "child_link": "left_laser",
+                "topic_name": "/left_laser/laserscan"
+        }
+    },
+
+    "world_link": "base_link",
+
+    "calibration_pattern" : {
+        "pattern_type": "chessboard",
+        "border_size": 0.5,
+        "dimension": [9, 7],
+        "size": 0.019
+    }
+}
+

@@ -1,9 +1,133 @@
+
 import math
 import numpy as np
+
+import json
+import jsonschema
+
 import rospy
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 
+from urdf_parser_py.urdf import URDF
+
+class SensorConfig(object):
+    def __init__(self, name, link, parent_link, child_link, topic_name):
+        self.name = name;
+        self.link = link;
+        self.parent_link = parent_link;
+        self.child_link  = child_link;
+        self.topic_name  = topic_name;
+
+    def __str__(self):
+        return "Node<'{}','{}','{}','{}','{}'>".format(self.name, self.link,
+               self.parent_link, self.child_link, self.topic_name)
+
+class PatternConfig(object):
+    def __init__(self, pattern_type, dimension, size, border_size):
+        self.pattern_type = pattern_type;
+        self.dimension    = dimension;
+        self.size         = size;
+        self.border_size  = border_size
+
+    def __str__(self):
+        return "Pattern<[{},{}],{}>".format(self.dimension[0], self.dimension[1], self.size)
+
+class CalibConfig(object):
+
+    def __init__(self):
+        self.sensors = {}
+        self.pattern = None
+        self.world_link = None
+
+    def loadJSON(self, filename):
+        """Load configuration from a json file"""
+        try:
+            with open(filename, 'r') as f:
+                obj = json.load(f);
+
+            self.validateJSON(obj)
+        except OSError as e:
+            print("I/O error({0}): {1}".format(e.errno, e.strerror))
+            return False
+        except jsonschema.exceptions.ValidationError as e:
+            print("Invalid calibration JSON: {} @ /{}".format(e.message, "/".join( [str(x) for x in e.path] )))
+            return False
+
+        # build the sensors
+        for name, params in obj['sensors'].items():
+            self.sensors[name] = SensorConfig(name, **params)
+
+        # Fixed frame
+        self.world_link = obj['world_link'].lstrip('/')
+
+        # Add pattern
+        self.pattern = PatternConfig( **obj['calibration_pattern'] )
+
+        return True
+
+    @staticmethod
+    def validateJSON(obj):
+        # Tedious work!!!!
+        schema = {
+            "type": "object",
+            "required": ["sensors", "world_link", "calibration_pattern"],
+            "properties": {
+                "sensors": {
+                    "type": "object",
+                    "patternProperties":{
+                        "^(.*)$": {
+                            "type": "object",
+                            "required": ["link", "parent_link", "child_link"],
+                             "additionalProperties": False,
+                            "properties": {
+                                "link": { "type": "string" },
+                                "parent_link": { "type": "string" },
+                                "child_link":  { "type": "string" },
+                                "topic_name":  { "type": "string" },
+                            }
+                        }
+                    }
+                },
+                "world_link": { "type": "string" },
+                "calibration_pattern": {
+                    "type": "object",
+                    "required": ["pattern_type", "dimension", "size", "border_size"],
+                    "additionalProperties": False,
+                    "properties": {
+                        "pattern_type": { "type": "string" },
+                        "dimension": {
+                            "type" : "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {"type": "number"}
+                        },
+                        "size":        { "type" : "number" },
+                        "border_size": { "type" : "number" }
+                    }
+                }
+            }
+        }
+
+        jsonschema.validate(obj, schema)
+
+def validateLinks(world_link, sensors, urdf):
+    try:
+        for name, sensor in sensors.items():
+            chain = urdf.get_chain(world_link, sensor.link)
+            if sensor.parent_link not in chain or sensor.child_link not in chain:
+                print("{}: The links '{}' and '{}' are not parte of the same chain.".format(sensor.name, sensor.parent_link, sensor.child_link))
+                return False
+    except KeyError as e:
+        link_name = str(e).strip("'")
+        if link_name == urdf.get_root():
+            print("Configuration contains an unknown base link: {}".format(world_link))
+            return False
+
+        print("Configuration contains an unknown link: {}".format(link_name))
+        return False
+
+    return True
 
 def laser_scan_msg_to_xy(msg):
     data = message_converter.convert_ros_message_to_dictionary(msg)
