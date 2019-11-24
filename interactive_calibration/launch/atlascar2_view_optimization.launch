@@ -3,11 +3,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Parameters-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/atlascar2/27-05-2019_with_chessboard.bag"/>-->
-<!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/atlascar2/calibration_31_05_2019_fixed.bag"/>-->
-<!--    <arg name="bag" default="/tmp/bag_file_2019-09-24-01-13-19.bag"/>-->
-    <arg name="read_first_guess" default="false"/>
-    <arg name="bag" default="$(env HOME)/bagfiles/bag_file_2019-09-24-01-20-41.bag"/>
+    <arg name="read_first_guess" default="true"/>
 
 <!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/pr2_test.bag"/>-->
 
@@ -15,9 +11,8 @@
 
 
     <!--/calibrations/atlascar2/atlascar2.urdf.xacro"/>-->
-<!--    <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro"/>-->
     <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/first_guess.urdf.xacro"/>
-    <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/.rviz"/>
+    <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/view_optimization.rviz"/>
 
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -48,11 +43,5 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Playing back bag files -->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <!--To put together the ros bag and the robot state publisher one must use sim_time=true and &#45;&#45;clock-->
-    <param name="/use_sim_time" value="true"/>
-    <!--    <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r .2 -l /tf:=/tf_dev_null &#45;&#45;clock"/>-->
-    <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l &#45;&#45;clock"/>-->
-    <include file="$(find atlas2_bringup)/launch/playback_sensor_data.launch">
-        <arg name="bag" value="$(arg bag)" />
-    </include>
+
 </launch>
