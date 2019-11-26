@@ -1,24 +1,18 @@
-
 import copy
+import json
 import os
 import shutil
 import cv2
-import numpy as np
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
-
 from interactive_markers.menu_handler import *
 from rospy_message_converter import message_converter
-
-import tf
 from tf.listener import TransformListener
-from visualization_msgs.msg import *
-from sensor_msgs.msg        import *
-
-from transformation_t import TransformationT
-from interactive_calibration.utilities                import CalibConfig
+from sensor_msgs.msg import *
+from interactive_calibration.utilities import CalibConfig
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
+
 
 class DataCollectorAndLabeler:
 
@@ -29,16 +23,19 @@ class DataCollectorAndLabeler:
         else:
             while True:
                 msg = Fore.YELLOW + "To continue, the directory '{}' will be delete.\n"
-                msg = msg         + "Do you wish to continue? [y/N] " + Style.RESET_ALL
+                msg = msg + "Do you wish to continue? [y/N] " + Style.RESET_ALL
 
                 answer = raw_input(msg.format(output_folder))
                 if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
-                    if answer[0].lower() == 'n': sys.exit(1)
-                    else: break
-                else: sys.exit(1) # defaults to N
+                    if answer[0].lower() == 'n':
+                        sys.exit(1)
+                    else:
+                        break
+                else:
+                    sys.exit(1)  # defaults to N
 
             shutil.rmtree(output_folder)  # Delete old folder
-            os.mkdir(output_folder)       # Recreate the folder
+            os.mkdir(output_folder)  # Recreate the folder
 
         self.output_folder = output_folder
         self.listener = TransformListener()
@@ -61,7 +58,7 @@ class DataCollectorAndLabeler:
 
         config = CalibConfig()
         ok = config.loadJSON(calibration_file)
-        if not ok: sys.exit(1) # loadJSON should tell you why.
+        if not ok: sys.exit(1)  # loadJSON should tell you why.
 
         self.world_link = config.world_link
 
@@ -79,9 +76,9 @@ class DataCollectorAndLabeler:
             # Create a dictionary that describes this sensor
             sensor_dict = {'_name': sensor_key, 'parent': value.link,
                            'calibration_parent': value.parent_link,
-                           'calibration_child':  value.child_link}
+                           'calibration_child': value.child_link}
 
-            #TODO replace by utils function
+            # TODO replace by utils function
             print("Waiting for message")
             msg = rospy.wait_for_message(value.topic_name, rospy.AnyMsg)
             connection_header = msg._connection_header['type'].split('/')
@@ -109,7 +106,8 @@ class DataCollectorAndLabeler:
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[sensor_key] = sensor_dict
 
-            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size, config.pattern.dimension[0], config.pattern.dimension[1])
+            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size,
+                                                    config.pattern.dimension[0], config.pattern.dimension[1])
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
@@ -198,7 +196,7 @@ class DataCollectorAndLabeler:
                 self.sensor_labelers[sensor_name].lock.release()
                 # TODO check if more deepcopys are needed
             else:
-                #TODO put here a raise error
+                # TODO put here a raise error
                 pass
 
         print('----------------\nstarts here\n----------------')
@@ -207,7 +205,8 @@ class DataCollectorAndLabeler:
         # --------------------------------------
         # Add a new collection
         # --------------------------------------
-        self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': self.transforms}
+        self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
+                                             'transforms': self.transforms}
         self.data_stamp += 1
 
         # Save to json file
@@ -237,4 +236,3 @@ class DataCollectorAndLabeler:
     @staticmethod
     def generateKey(parent, child, suffix=''):
         return parent + '-' + child + suffix
-
