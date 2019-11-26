@@ -14,6 +14,7 @@ Saving the markers final position and reopen the robot with the sensors at the u
 - [Known problems](#known-problems)
   * [urdf model not showing on rviz or urdf model showed up misplaced](#urdf-model-not-showing-on-rviz-or-urdf-model-showed-up-misplaced)
 - [Recording a bag file of the ATLASCAR2](#recording-a-bag-file-of-the-atlascar2)
+- [Run cos optimization first test](#run-cos-optimization-first-test)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
