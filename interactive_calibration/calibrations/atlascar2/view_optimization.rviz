@@ -1,0 +1,534 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /LaserScans-MarkerArray1
+        - /Chessboards-MarkerArray1
+        - /Chessboards-MarkerArray1/Status1
+        - /Chessboards-MarkerArray1/Namespaces1
+      Splitter Ratio: 0.644501268863678
+    Tree Height: 523
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: Image
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: ground
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_link:
+          Value: true
+        chessboard_0:
+          Value: true
+        chessboard_1:
+          Value: true
+        chessboard_10:
+          Value: true
+        chessboard_11:
+          Value: true
+        chessboard_12:
+          Value: true
+        chessboard_13:
+          Value: true
+        chessboard_14:
+          Value: true
+        chessboard_15:
+          Value: true
+        chessboard_16:
+          Value: true
+        chessboard_17:
+          Value: true
+        chessboard_18:
+          Value: true
+        chessboard_19:
+          Value: true
+        chessboard_2:
+          Value: true
+        chessboard_20:
+          Value: true
+        chessboard_21:
+          Value: true
+        chessboard_22:
+          Value: true
+        chessboard_23:
+          Value: true
+        chessboard_24:
+          Value: true
+        chessboard_25:
+          Value: true
+        chessboard_26:
+          Value: true
+        chessboard_27:
+          Value: true
+        chessboard_28:
+          Value: true
+        chessboard_29:
+          Value: true
+        chessboard_3:
+          Value: true
+        chessboard_30:
+          Value: true
+        chessboard_31:
+          Value: true
+        chessboard_32:
+          Value: true
+        chessboard_4:
+          Value: true
+        chessboard_5:
+          Value: true
+        chessboard_6:
+          Value: true
+        chessboard_7:
+          Value: true
+        chessboard_8:
+          Value: true
+        chessboard_9:
+          Value: true
+        frontal_laser:
+          Value: true
+        frontal_laser_mount_link:
+          Value: true
+        ground:
+          Value: true
+        left_laser:
+          Value: true
+        model:
+          Value: true
+        right_laser:
+          Value: true
+        top_left_camera:
+          Value: true
+        top_left_camera_optical:
+          Value: true
+        top_right_camera:
+          Value: true
+        top_right_camera_optical:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        base_link:
+          chessboard_0:
+            {}
+          chessboard_1:
+            {}
+          chessboard_10:
+            {}
+          chessboard_11:
+            {}
+          chessboard_12:
+            {}
+          chessboard_13:
+            {}
+          chessboard_14:
+            {}
+          chessboard_15:
+            {}
+          chessboard_16:
+            {}
+          chessboard_17:
+            {}
+          chessboard_18:
+            {}
+          chessboard_19:
+            {}
+          chessboard_2:
+            {}
+          chessboard_20:
+            {}
+          chessboard_21:
+            {}
+          chessboard_22:
+            {}
+          chessboard_23:
+            {}
+          chessboard_24:
+            {}
+          chessboard_25:
+            {}
+          chessboard_26:
+            {}
+          chessboard_27:
+            {}
+          chessboard_28:
+            {}
+          chessboard_29:
+            {}
+          chessboard_3:
+            {}
+          chessboard_30:
+            {}
+          chessboard_31:
+            {}
+          chessboard_32:
+            {}
+          chessboard_4:
+            {}
+          chessboard_5:
+            {}
+          chessboard_6:
+            {}
+          chessboard_7:
+            {}
+          chessboard_8:
+            {}
+          chessboard_9:
+            {}
+          frontal_laser_mount_link:
+            frontal_laser:
+              {}
+          ground:
+            {}
+          left_laser:
+            {}
+          model:
+            {}
+          right_laser:
+            {}
+          top_left_camera:
+            top_left_camera_optical:
+              {}
+          top_right_camera:
+            top_right_camera_optical:
+              {}
+      Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        frontal_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        frontal_laser_mount_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        ground:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        model:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_camera_optical:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        top_right_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_right_camera_optical:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /c3/top_right_camera
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /c4/top_left_camera
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /LaserScans
+      Name: LaserScans-MarkerArray
+      Namespaces:
+        0-left_laser: true
+        0-right_laser: true
+        1-left_laser: true
+        1-right_laser: true
+        10-left_laser: true
+        10-right_laser: true
+        11-left_laser: true
+        11-right_laser: true
+        12-left_laser: true
+        12-right_laser: true
+        13-left_laser: true
+        13-right_laser: true
+        14-left_laser: true
+        14-right_laser: true
+        15-left_laser: true
+        15-right_laser: true
+        16-left_laser: true
+        16-right_laser: true
+        17-left_laser: true
+        17-right_laser: true
+        18-left_laser: true
+        18-right_laser: true
+        19-left_laser: true
+        19-right_laser: true
+        2-left_laser: true
+        2-right_laser: true
+        20-left_laser: true
+        20-right_laser: true
+        21-left_laser: true
+        21-right_laser: true
+        22-left_laser: true
+        22-right_laser: true
+        23-left_laser: true
+        23-right_laser: true
+        24-left_laser: true
+        24-right_laser: true
+        25-left_laser: true
+        25-right_laser: true
+        26-left_laser: true
+        26-right_laser: true
+        27-left_laser: true
+        27-right_laser: true
+        28-left_laser: true
+        28-right_laser: true
+        29-left_laser: true
+        29-right_laser: true
+        3-left_laser: true
+        3-right_laser: true
+        30-left_laser: true
+        30-right_laser: true
+        31-left_laser: true
+        31-right_laser: true
+        32-left_laser: true
+        32-right_laser: true
+        4-left_laser: true
+        4-right_laser: true
+        5-left_laser: true
+        5-right_laser: true
+        6-left_laser: true
+        6-right_laser: true
+        7-left_laser: true
+        7-right_laser: true
+        8-left_laser: true
+        8-right_laser: true
+        9-left_laser: true
+        9-right_laser: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /Chessboards
+      Name: Chessboards-MarkerArray
+      Namespaces:
+        0: true
+        1: true
+        10: true
+        11: true
+        12: true
+        13: true
+        14: true
+        15: true
+        16: true
+        17: true
+        18: true
+        19: true
+        2: true
+        20: true
+        21: true
+        22: true
+        23: true
+        24: true
+        25: true
+        26: true
+        27: true
+        28: true
+        29: true
+        3: true
+        30: true
+        31: true
+        32: true
+        4: true
+        5: true
+        6: true
+        7: true
+        8: true
+        9: true
+      Queue Size: 100
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 255; 255; 255
+    Default Light: true
+    Fixed Frame: base_link
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+    - Class: rviz_visual_tools/KeyTool
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 5.077204704284668
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0.8239420056343079
+        Y: 0.4460950493812561
+        Z: -0.04230014607310295
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.7398003935813904
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 0.5184310674667358
+    Saved:
+      - Class: rviz/Orbit
+        Distance: 4.057810306549072
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: -0.424695760011673
+          Y: 0.802316427230835
+          Z: 0.9974352121353149
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.5447967052459717
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz)
+        Yaw: 3.929020881652832
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 683
+  Hide Left Dock: false
+  Hide Right Dock: true
+  Image:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000024cfc020000000afb0000001200530065006c0065006300740069006f006e000000003d0000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000410000024c000000dd00fffffffb0000000a0056006900650077007300000001aa000001d3000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e00000117000000000000000000000001000003380000024cfc0200000011fb0000000a0049006d00610067006500000000410000024c0000001600fffffffb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000000000000000fb0000001e0054006f007000520069006700680074002d00430061006d0065007200610100000041000001210000000000000000fb0000001c0054006f0070004c006500660074002d00430061006d0065007200610100000168000001260000000000000000fb0000000c00430061006d006500720061010000003d000003860000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c00650064000000003d000001290000000000000000fb000000280054006f0070004c0065006600740049006d006100670065002d004c006100620065006c00650064000000003d0000026f0000000000000000fb0000001a0054006f0070004c006500660074002d0049006d00610067006500000000410000024d0000000000000000fb0000001c0054006f007000520069006700680074002d0049006d006100670065000000016c0000011d0000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b2000000000000000000000002000006b4000000a9fc0100000002fb0000000a0049006d00610067006502000002f9000001190000025f000001e7fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650000000000000007800000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000003e60000024c00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1366
+  X: 0
+  Y: 28
