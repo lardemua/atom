@@ -4,30 +4,17 @@
 #    IMPORT MODULES      #
 # ------------------------
 import argparse
-from interactive_markers.interactive_marker_server import *
-from interactive_markers.menu_handler import MenuHandler
 import rospkg
 
-# from AtlasCarCalibration.interactive_calibration.src.interactive_calibration.DataCollector import DataCollector
-# from AtlasCarCalibration.interactive_calibration.src.interactive_calibration.sensor import *
-import interactive_calibration.data_collector_and_labeler
-
-# ------------------------
-#      BASE CLASSES      #
-# ------------------------
-
-# ------------------------
-#      GLOBAL VARS       #
-# ------------------------
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
+
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
+from interactive_markers.menu_handler              import MenuHandler
+
+from interactive_calibration.data_collector_and_labeler import DataCollectorAndLabeler
 
 server = None
 menu_handler = MenuHandler()
-
-
-# ------------------------
-#      FUNCTIONS         #
-# ------------------------
 
 def menuFeedback(feedback):
     print('Menu feedback')
@@ -41,9 +28,9 @@ def initMenu():
     menu_handler.insert("Collect snapshot", callback=menuFeedback)
 
 
-def createInteractiveMarker():
+def createInteractiveMarker(world_link):
     marker = InteractiveMarker()
-    marker.header.frame_id = args['world_link']
+    marker.header.frame_id = world_link
     trans = (1,0,1)
     marker.pose.position.x = trans[0]
     marker.pose.position.y = trans[1]
@@ -119,13 +106,7 @@ def markerFeedback(feedback):
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument('-w', '--world_link', help='Name of the reference frame wich is common to all sensors. Usually '
-                                               'it is the world or base_link.', type=str, required=True)
     ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.5)
-    ap.add_argument("-cnumx", "--chess_num_x", help="Chessboard's number of corners in horizontal dimension.",
-                    type=int, required=True)
-    ap.add_argument("-cnumy", "--chess_num_y", help="Chessboard's number of corners in vertical dimension.",
-                    type=int, required=True)
     ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str, required=True)
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
     args = vars(ap.parse_args())
@@ -138,11 +119,11 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
 
     # Process robot description and create an instance of class Sensor for each sensor
-    data_collector = interactive_calibration.data_collector_and_labeler.DataCollectorAndLabeler(
-        args['world_link'], args['output_folder'], server, menu_handler, args['marker_scale'], args['chess_num_x'],
-        args['chess_num_y'], args['calibration_file'])
+    data_collector = DataCollectorAndLabeler(args['output_folder'],
+                     server, menu_handler,
+                     args['marker_scale'], args['calibration_file'])
 
-    createInteractiveMarker()
+    createInteractiveMarker(data_collector.world_link)
     initMenu()
     menu_handler.reApply(server)
     server.applyChanges()

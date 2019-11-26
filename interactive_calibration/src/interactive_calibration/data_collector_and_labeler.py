@@ -1,37 +1,28 @@
-#!/usr/bin/env python
 
-# ------------------------
-#    IMPORT MODULES      #
-# ------------------------
 import copy
-import json
 import os
 import shutil
-from colorama import Style, Fore
-import numpy as np
 import cv2
-import tf
+import numpy as np
+
 from cv_bridge import CvBridge
+from colorama import Style, Fore
+
 from interactive_markers.menu_handler import *
-# from sensor_msgs.msg import CameraInfo
 from rospy_message_converter import message_converter
-# to make sure that this expression works for most sensor msgs: msg = # rospy.wait_for_message(sensor['topic'],
-# eval(sensor['msg_type']))
 
-from visualization_msgs.msg import *
+import tf
 from tf.listener import TransformListener
-from sensor_msgs.msg import *
+from visualization_msgs.msg import *
+from sensor_msgs.msg        import *
+
 from transformation_t import TransformationT
-
-import interactive_calibration.interactive_data_labeler
-
-# ------------------------
-#      BASE CLASSES      #
-# ------------------------
+from interactive_calibration.utilities                import CalibConfig
+from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
 class DataCollectorAndLabeler:
 
-    def __init__(self, world_link, output_folder, server, menu_handler, marker_size, chess_numx, chess_numy, calibration_file):
+    def __init__(self, output_folder, server, menu_handler, marker_size, calibration_file):
 
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)  # Create the new folder
@@ -54,7 +45,6 @@ class DataCollectorAndLabeler:
         self.sensors = {}
         self.transforms = {}
         self.sensor_labelers = {}
-        self.world_link = world_link
         self.server = server
         self.menu_handler = menu_handler
 
@@ -65,36 +55,40 @@ class DataCollectorAndLabeler:
         self.collections = {}
 
         self.bridge = CvBridge()
+
+        # wait for transformations
         rospy.sleep(0.5)
 
-        # Parse robot description from param /robot_description
-        # xml_robot = URDF.from_parameter_server()
-        robot_from_json = json.load(open(calibration_file, 'r'))
+        config = CalibConfig()
+        ok = config.loadJSON(calibration_file)
+        if not ok: sys.exit(1) # loadJSON should tell you why.
 
+        self.world_link = config.world_link
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
 
-        print('Number of sensors: ' + str(len(robot_from_json)))
+        print('Number of sensors: ' + str(len(config.sensors)))
 
-        for sensor_key, value in robot_from_json.items():
+        # Go through the sensors in the calib config.
+        for sensor_key, value in config.sensors.items():
             print('visiting sensor ' + sensor_key)
             # continue
             # TODO put this in a function and adapt for the json case
 
             # Create a dictionary that describes this sensor
-            sensor_dict = {'_name': sensor_key, 'parent': value['sensor_link'], 'calibration_parent': value['calibration_parent_link'],
-                           'calibration_child': value['calibration_child_link']}
-
+            sensor_dict = {'_name': sensor_key, 'parent': value.link,
+                           'calibration_parent': value.parent_link,
+                           'calibration_child':  value.child_link}
 
             #TODO replace by utils function
             print("Waiting for message")
-            msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
+            msg = rospy.wait_for_message(value.topic_name, rospy.AnyMsg)
             connection_header = msg._connection_header['type'].split('/')
             ros_pkg = connection_header[0] + '.msg'
             msg_type = connection_header[1]
-            print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
-            sensor_dict['topic'] = value['topic_name']
+            print('Topic ' + value.topic_name + ' has type ' + msg_type)
+            sensor_dict['topic'] = value.topic_name
             sensor_dict['msg_type'] = msg_type
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
@@ -106,7 +100,7 @@ class DataCollectorAndLabeler:
                 sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
 
             # Get the kinematic chain form world_link to this sensor's parent link
-            chain = self.listener.chain(value['sensor_link'], rospy.Time(), self.world_link, rospy.Time(), self.world_link)
+            chain = self.listener.chain(value.link, rospy.Time(), self.world_link, rospy.Time(), self.world_link)
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
                 key = self.generateKey(parent, child)
@@ -115,12 +109,8 @@ class DataCollectorAndLabeler:
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[sensor_key] = sensor_dict
 
-            sensor_labeler = interactive_calibration.interactive_data_labeler.InteractiveDataLabeler(self.server,
-                                                                                                     self.menu_handler,
-                                                                                                     sensor_dict,
-                                                                                                     marker_size,
-                                                                                                     chess_numx,
-                                                                                                     chess_numy)
+            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size, config.pattern.dimension[0], config.pattern.dimension[1])
+
             self.sensor_labelers[sensor_key] = sensor_labeler
 
             print('finished visiting sensor ' + sensor_key)
@@ -248,10 +238,3 @@ class DataCollectorAndLabeler:
     def generateKey(parent, child, suffix=''):
         return parent + '-' + child + suffix
 
-    @staticmethod
-    def assertXMLSensorAttributes(xml_sensor):
-        # Check if we have all the information needed. Abort if not.
-        for attr in ['parent', 'calibration_parent', 'calibration_child', 'topic']:
-            if not hasattr(xml_sensor, attr):
-                raise ValueError(
-                    'Element ' + attr + ' for sensor ' + xml_sensor.name + ' must be specified in the urdf/xacro.')
