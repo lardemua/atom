@@ -18,14 +18,15 @@
                 "child_link": "right_laser",
                 "topic_name": "/right_laser/laserscan"
         },
-            "left_laser": {
-                "link": "left_laser",
-                "parent_link": "base_link",
-                "child_link": "left_laser",
-                "topic_name": "/left_laser/laserscan"
+        "left_laser": {
+            "link": "left_laser",
+            "parent_link": "base_link",
+            "child_link": "left_laser",
+            "topic_name": "/left_laser/laserscan"
         }
     },
 
+    "anchored_sensor": "top_right_camera",
     "world_link": "base_link",
 
     "calibration_pattern" : {

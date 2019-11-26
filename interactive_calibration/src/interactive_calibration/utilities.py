@@ -39,6 +39,7 @@ class CalibConfig(object):
         self.sensors = {}
         self.pattern = None
         self.world_link = None
+        self.anchored_sensor = None
 
     def loadJSON(self, filename):
         """Load configuration from a json file"""
@@ -60,6 +61,12 @@ class CalibConfig(object):
 
         # Fixed frame
         self.world_link = obj['world_link'].lstrip('/')
+
+        # check if we have an anchored sensor
+        if 'anchored_sensor' in obj:
+            self.anchored_sensor = obj['anchored_sensor']
+            if self.anchored_sensor not in self.sensors:
+                return False
 
         # Add pattern
         self.pattern = PatternConfig( **obj['calibration_pattern'] )
@@ -89,6 +96,7 @@ class CalibConfig(object):
                         }
                     }
                 },
+                "anchored_sensor": { "type": "string" },
                 "world_link": { "type": "string" },
                 "calibration_pattern": {
                     "type": "object",
