@@ -1,0 +1,13 @@
+image_width: 964
+image_height: 724
+camera_name: narrow_stereo
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [1091.942541, 0.000000, 484.248973, 0.000000, 1089.883112, 365.277096, 0.000000, 0.000000, 1.000000]
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.235196, 0.251856, -0.139190, 0.000250, -0.000084]
+
+
