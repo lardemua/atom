@@ -24,9 +24,13 @@ import numpy as np
 #      BASE CLASSES      #
 # ------------------------
 
-# return Fore.GREEN + self.parent + Style.RESET_ALL + ' to ' + Fore.GREEN + self.child + Style.RESET_ALL + ' (' + self.joint_type + ')'
+# return Fore.GREEN + self.parent + Style.RESET_ALL + ' to ' + Fore.GREEN + self.child + Style.RESET_ALL + ' (' +
+# self.joint_type + ')'
 
 class LaserScanCluster:
+    """
+    An auxiliary class for storing information about 2D laser clusters
+    """
 
     def __init__(self, cluster_count, idx):
         self.cluster_count = cluster_count
@@ -35,12 +39,32 @@ class LaserScanCluster:
     def pushIdx(self, idx):
         self.idxs.append(idx)
 
+    def __str__(self):
+        return "Cluster " + str(self.cluster_count) + " contains idxs = " + str(self.idxs)
+
 
 class InteractiveDataLabeler:
+    """
+    Handles data labelling for a generic sensor:
+        Cameras: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
+        LaserScans: Semi-automated laelling. An rviz interactive marker is placed on the laser cluster which contains
+                    the calibration pattern, and the pattern is tracked from there onward.
+        PointCloud2: #TODO Tiago Madeira can you complete?
+    """
 
     def __init__(self, server, menu_handler, sensor_dict, marker_scale, chess_numx, chess_numy):
+        """
+        Class constructor. Initializes several variables and ros stuff.
+        :param server: an interactive marker server
+        :param menu_handler: an interactive MenuHandler
+        :param sensor_dict: A dictionary that describes the sensor
+        :param marker_scale: scale of the markers to be drawn
+        :param chess_numx: chessboard size in x
+        :param chess_numy: chessboard size in y
+        """
         print('Creating an InteractiveDataLabeler for sensor ' + str(sensor_dict['_name']))
 
+        # Store variables to class attributes
         self.server = server
         self.menu_handler = menu_handler
         self.name = sensor_dict['_name']
@@ -53,99 +77,106 @@ class InteractiveDataLabeler:
         self.numx = chess_numx
         self.numy = chess_numy
 
+        # Get the type of message from the message topic of the sensor data, which is given as input. The message
+        # type is used to define which labelling technique is used.
         self.msg_type_str, self.msg_type = interactive_calibration.utilities.getMessageTypeFromTopic(self.topic)
+        print('msg_type_str is = ' + str(self.msg_type_str))
+
+        # Subscribe to the message topic containing sensor data
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback)
 
-        print('msg_type_str is = ' + str(self.msg_type_str))
+        # Handle the interactive labelling of data differently according to the sensor message types.
         if self.msg_type_str in ['LaserScan', 'PointCloud2']:
-            self.publisher = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2, queue_size=0)
-            self.createInteractiveMarker()  # create interactive marker
+            self.threshold = 0.2 # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
+            self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
+            self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
+                                                             queue_size=0)  # publish a point cloud with the points in the selected
+            self.publisher_clusters = rospy.Publisher(self.topic + '/clusters', sensor_msgs.msg.PointCloud2,
+                                                      queue_size=0)  # publish a point cloud with the points in the selected
+            # cluster
+            self.createInteractiveMarker()  # interactive marker to label the calibration pattern cluster (one time)
             print('Created interactive marker.')
         elif self.msg_type_str in ['Image']:
-            self.bridge = CvBridge()
-            self.publisher = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image, queue_size=0)
+            self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
+            self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
+                                                            queue_size=0)  # publish
+            # images with the detected chessboard overlaid onto the image.
         else:
-            self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
+            # We handle only know message types
+            raise ValueError('Message type ' + self.msg_type_str + ' for topic ' + self.topic + 'is of an unknown '
+                                                                                                'type.')
+            # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
 
-        rospy.Timer(rospy.Duration(.1), self.timerCallback)
+        rospy.Timer(rospy.Duration(.1), self.timerCallback)  # Setup a periodic function call
 
     def timerCallback(self, event):
+        """
+        Called every x milliseconds
+        :param event:
+        :return:
+        """
 
-        if not self.received_first_msg:  # nothing to do if no msg received
+        if not self.received_first_msg:  # nothing to do if no msg received first
             return None
 
-        self.lock.acquire()
+        self.lock.acquire()  # use semaphores to make sure the data is not being written on two sides simultaneously
 
-        # if no chessboard is detected, the labels are empty
+        # Detected and idxs values to False and [], to make sure we are not using information from a previous labelling
         self.labels['detected'] = False
         self.labels['idxs'] = []
 
-        if self.msg_type_str == 'LaserScan':
+        # Labelling process dependent of the sensor type
+        if self.msg_type_str == 'LaserScan':  # 2D LIDARS -------------------------------------
+            # For 2D LIDARS the process is the following: First cluster all the range data into clusters. Then,
+            # associate one of the clusters with the calibration pattern by selecting the cluster which is closest to
+            # the rviz interactive marker.
 
-            # Create clusters in 2D scan
-            clusters = []
+            clusters = []  # initialize cluster list to empty
+            cluster_counter = 0  # init counter
+            points = []  # init points
 
-            # print(self.msg.ranges)
-            # print(type(self.msg.ranges))
-            # for idx, range in enumerate(self.msg.ranges):
-            #     # if range < 0.01:
-            #     #     self.msg.ranges[idx] = Nan
-            #     pass
-
-            ranges = self.msg.ranges
-
-            threshold = .20
-            minimum_range_value = 0.01
-            cluster_counter = 0
-            points = []
+            # Compute cartesian coordinates
             xs, ys = interactive_calibration.utilities.laser_scan_msg_to_xy(self.msg)
 
             # Clustering:
-            # print(ranges)
-            first_time = True
-            for idx, r in enumerate(ranges):
-                if r < minimum_range_value or ranges[idx - 1] < minimum_range_value:
-                    # print("Ignoring idx " + str(idx))
+            first_iteration = True
+            for idx, r in enumerate(self.msg.ranges):
+                # Skip if either this point or the previous have range smaller than minimum_range_value
+                if r < self.minimum_range_value or self.msg.ranges[idx - 1] < self.minimum_range_value:
                     continue
 
-                if first_time:
+                if first_iteration:  # if first iteration, create a new cluster
                     clusters.append(LaserScanCluster(cluster_counter, idx))
-                else:
-                    x = xs[clusters[-1].idxs[-1]]
-                    y = ys[clusters[-1].idxs[-1]]
-                    d = sqrt((xs[idx] - x) ** 2 + (ys[idx] - y) ** 2)
-                    if  d > threshold:
-                        # if abs(ranges[idx - 1] - r) > threshold:  # new cluster
+                    first_iteration = False
+                else:  # check if new point belongs to current cluster, create new cluster if not
+                    x = xs[clusters[-1].idxs[-1]]  # x coordinate of last point of last cluster
+                    y = ys[clusters[-1].idxs[-1]]  # y coordinate of last point of last cluster
+                    distance = sqrt((xs[idx] - x) ** 2 + (ys[idx] - y) ** 2)
+                    if distance > self.threshold:  # if distance larger than threshold, create new cluster
                         cluster_counter += 1
                         clusters.append(LaserScanCluster(cluster_counter, idx))
                         # print("Creating new cluster " + str(cluster_counter))
-                        # # print("range before: " + str(ranges[idx - 1]))
+                        # # print("range before: " + str(self.msg.ranges[idx - 1]))
                         # # print("range now: " + str(r))
-                        #
                         # print("xy before: " + str(x) + ', ' + str(y))
                         # print("xy now: " + str(xs[idx]) + ', ' + str(ys[idx]))
-                        # print('d = ' + str(d))
-                    else:
+                        # print('distance = ' + str(distance))
+                    else:  # same cluster, push this point into the same cluster
                         clusters[-1].pushIdx(idx)
-
-                first_time = False
 
             # Report clusters
             # for cluster in clusters:
             #     print('Cluster ' + str(cluster.cluster_count) + ' has idxs = ' + str(cluster.idxs))
             # print('Laser scan split into ' + str(len(clusters)) + ' clusters')
 
-            # Find out which cluster is closer to the marker
-            x_marker = self.marker.pose.position.x
-            y_marker = self.marker.pose.position.y
-
+            # Association stage: find out which cluster is closer to the marker
+            x_marker, y_marker = self.marker.pose.position.x, self.marker.pose.position.y  # interactive marker pose
             idx_closest_cluster = 0
-            min_dist = 999999
-            for cluster_idx, cluster in enumerate(clusters):
-                for idx in cluster.idxs:
-                    x = xs[idx]
-                    y = ys[idx]
-                    dist = sqrt((x_marker -x) ** 2 + (y_marker - y) ** 2)
+            min_dist = sys.maxint
+            for cluster_idx, cluster in enumerate(clusters):  # cycle all clusters
+                for idx in cluster.idxs:  # cycle each point in the cluster
+                    x, y = xs[idx], ys[idx]
+                    dist = sqrt((x_marker - x) ** 2 + (y_marker - y) ** 2)
                     if dist < min_dist:
                         idx_closest_cluster = cluster_idx
                         min_dist = dist
@@ -155,10 +186,8 @@ class InteractiveDataLabeler:
             # print('Closest cluster is ' + str(idx_closest_cluster))
             # print('x_marker = ' + str(x_marker) + ' y_marker = ' + str(y_marker))
 
-
             # Find the coordinate of the middle point in the closest cluster and bring the marker to that point
-            x_sum = 0
-            y_sum = 0
+            x_sum, y_sum = 0, 0
             for idx in closest_cluster.idxs:
                 x_sum += xs[idx]
                 y_sum += ys[idx]
@@ -172,38 +201,40 @@ class InteractiveDataLabeler:
             # Update the dictionary with the labels
             self.labels['detected'] = True
 
-            threshold_to_remove = 0.03  # remove 10% of data from each side
+            percentage_points_to_remove = 0.0  # remove x% of data from each side
             number_of_idxs = len(clusters[idx_closest_cluster].idxs)
-            idxs_to_remove = int(threshold_to_remove * float(number_of_idxs))
+            idxs_to_remove = int(percentage_points_to_remove * float(number_of_idxs))
             clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
                                                           idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
-            # print('self.parent = ' + self.parent)
 
-            # Create point cloud message with the colored clusters (just for debugging)
-            # cmap = cm.Pastel2(np.linspace(0, 1, num_clusters))
-            # cmap = cm.Accent(np.linspace(0, 1, num_clusters))
-            # points = []
-            # for cluster in clusters:
-            #     for idx in cluster.idxs:
-            #         x = xs[idx]
-            #         y = ys[idx]
-            #         z = 0
-            #         r = int(cmap[cluster.cluster_count, 0] * 255.0)
-            #         g = int(cmap[cluster.cluster_count, 1] * 255.0)
-            #         b = int(cmap[cluster.cluster_count, 2] * 255.0)
-            #         a = 255
-            #         rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
-            #         pt = [x, y, z, rgb]
-            #         points.append(pt)
+            # Create and publish point cloud message with the colored clusters (just for debugging)
+            cmap = cm.prism(np.linspace(0, 1, len(clusters)))
+            points = []
+            z, a = 0, 255
+            for cluster in clusters:
+                for idx in cluster.idxs:
+                    x, y = xs[idx], ys[idx]
+                    r, g, b = int(cmap[cluster.cluster_count, 0] * 255.0), \
+                              int(cmap[cluster.cluster_count, 1] * 255.0), \
+                              int(cmap[cluster.cluster_count, 2] * 255.0)
+                    rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
+                    pt = [x, y, z, rgb]
+                    points.append(pt)
 
-            # Create point cloud message with the colored clusters (just for debugging)
+            fields = [PointField('x', 0, PointField.FLOAT32, 1), PointField('y', 4, PointField.FLOAT32, 1),
+                      PointField('z', 8, PointField.FLOAT32, 1), PointField('rgba', 12, PointField.UINT32, 1)]
+            header = Header()
+            header.frame_id = self.parent
+            header.stamp = self.msg.header.stamp
+            pc_msg = point_cloud2.create_cloud(header, fields, points)
+            self.publisher_clusters.publish(pc_msg)
+
+            # Create and pblish point cloud message containing only the selected calibration pattern points
             points = []
             for idx in clusters[idx_closest_cluster].idxs_filtered:
-                x_marker = xs[idx]
-                y_marker = ys[idx]
-                z_marker = 0
+                x_marker, y_marker, z_marker = xs[idx], ys[idx], 0
                 r = int(0 * 255.0)
                 g = int(0 * 255.0)
                 b = int(1 * 255.0)
@@ -212,15 +243,10 @@ class InteractiveDataLabeler:
                 pt = [x_marker, y_marker, z_marker, rgb]
                 points.append(pt)
 
-            fields = [PointField('x', 0, PointField.FLOAT32, 1), PointField('y', 4, PointField.FLOAT32, 1),
-                      PointField('z', 8, PointField.FLOAT32, 1), PointField('rgba', 12, PointField.UINT32, 1)]
-            header = Header()
-            header.frame_id = self.parent
-            header.stamp = self.msg.header.stamp
             pc_msg = point_cloud2.create_cloud(header, fields, points)
-            self.publisher.publish(pc_msg)
+            self.publisher_selected_points.publish(pc_msg)
 
-        elif self.msg_type_str == 'Image':
+        elif self.msg_type_str == 'Image':  # Cameras -------------------------------------------
 
             # Convert to opencv image and save image to disk
             image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
@@ -230,7 +256,8 @@ class InteractiveDataLabeler:
 
             # Find chessboard corners
             self.found, corners = cv2.findChessboardCorners(image_gray, (self.numx, self.numy))
-            cv2.drawChessboardCorners(image, (self.numx, self.numy), corners, self.found)  # Draw and display the corners
+            cv2.drawChessboardCorners(image, (self.numx, self.numy), corners,
+                                      self.found)  # Draw and display the corners
 
             if self.found is True:
                 # print('Found chessboard for ' + self.name)
@@ -259,7 +286,7 @@ class InteractiveDataLabeler:
             msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp
             msg_out.header.frame_id = self.msg.header.frame_id
-            self.publisher.publish(msg_out)
+            self.publisher_labelled_image.publish(msg_out)
 
         self.lock.release()
 
