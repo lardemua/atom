@@ -129,7 +129,7 @@ class DataCollectorAndLabeler:
             self.listener.waitForTransform(ab['parent'], ab['child'], rospy.Time(), rospy.Duration(1.0))
             (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], rospy.Time())
             key = self.generateKey(ab['parent'], ab['child'])
-            transforms_dict[key] = {'trans': trans, 'quat': quat}
+            transforms_dict[key] = {'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
 
         # self.transforms[self.data_stamp] = transforms_dict
         self.transforms = transforms_dict
@@ -145,9 +145,8 @@ class DataCollectorAndLabeler:
             print('collectSnapshot: sensor_name ' + sensor_name)
 
             # TODO add exception also for point cloud and depht image
-            if sensor['msg_type'] == 'Image':  #
-                # Get latest ros message on this topic
-                print("waiting for message " + sensor['topic'])
+            if sensor['msg_type'] == 'Image':  # Cameras
+                print("waiting for message " + sensor['topic'])  # Get latest ros message on this topic
                 msg = rospy.wait_for_message(sensor['topic'], Image)
                 print("received message " + sensor['topic'])
 
@@ -199,9 +198,6 @@ class DataCollectorAndLabeler:
                 # TODO put here a raise error
                 pass
 
-        print('----------------\nstarts here\n----------------')
-        print(all_sensor_labels_dict)
-        print('----------------\nends here\n----------------')
         # --------------------------------------
         # Add a new collection
         # --------------------------------------

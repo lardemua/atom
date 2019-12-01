@@ -90,10 +90,10 @@ class InteractiveDataLabeler:
             self.threshold = 0.2 # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
             self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
-                                                             queue_size=0)  # publish a point cloud with the points in the selected
+                                                             queue_size=0)  # publish a point cloud with the points
+            # in the selected cluster
             self.publisher_clusters = rospy.Publisher(self.topic + '/clusters', sensor_msgs.msg.PointCloud2,
-                                                      queue_size=0)  # publish a point cloud with the points in the selected
-            # cluster
+                                                      queue_size=0)  # publish a point cloud with coloured clusters
             self.createInteractiveMarker()  # interactive marker to label the calibration pattern cluster (one time)
             print('Created interactive marker.')
         elif self.msg_type_str in ['Image']:
