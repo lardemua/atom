@@ -112,8 +112,6 @@ class DataCollectorAndLabeler:
         print('sensor_labelers:')
         print(self.sensor_labelers)
 
-        # Collect transforms (for now collect all transforms even if they are fixed)
-
     def getTransforms(self, abstract_transforms):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
         now = rospy.Time.now()
@@ -141,6 +139,8 @@ class DataCollectorAndLabeler:
             msg = copy.deepcopy(self.sensor_labelers[sensor_name].msg)
             labels = copy.deepcopy(self.sensor_labelers[sensor_name].labels)
             self.sensor_labelers[sensor_name].lock.release()
+
+            transforms = self.getTransforms(self.abstract_transforms)
 
             # TODO add exception also for point cloud and depht image
             # Update sensor data ---------------------------------------------
@@ -172,7 +172,7 @@ class DataCollectorAndLabeler:
 
         # Build a collection dictionary
         self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
-                                             'transforms': self.getTransforms(self.abstract_transforms)}  # create a
+                                             'transforms': transforms}
         self.data_stamp += 1
 
         # Save to json file
