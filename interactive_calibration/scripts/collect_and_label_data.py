@@ -19,12 +19,10 @@ menu_handler = MenuHandler()
 
 
 def menuFeedback(feedback):
-    print('Menu feedback')
     handle = feedback.menu_entry_id
     if handle == 1:  # collect snapshot
         print('Collect snapshot selected')
         data_collector.collectSnapshot()
-
 
 def initMenu():
     menu_handler.insert("Collect snapshot", callback=menuFeedback)

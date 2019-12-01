@@ -40,31 +40,26 @@ class DataCollectorAndLabeler:
         self.output_folder = output_folder
         self.listener = TransformListener()
         self.sensors = {}
-        self.transforms = {}
         self.sensor_labelers = {}
         self.server = server
         self.menu_handler = menu_handler
-
         self.data_stamp = 0
-
-        # self.transforms = {}
-        # self.data = []
         self.collections = {}
 
         self.bridge = CvBridge()
 
-        # wait for transformations
-        rospy.sleep(0.5)
+
+        self.abstract_transforms = self.getAllAbstractTransforms()
 
         config = CalibConfig()
         ok = config.loadJSON(calibration_file)
-        if not ok: sys.exit(1)  # loadJSON should tell you why.
+        if not ok:
+            sys.exit(1)  # loadJSON should tell you why.
 
         self.world_link = config.world_link
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
-
         print('Number of sensors: ' + str(len(config.sensors)))
 
         # Go through the sensors in the calib config.
@@ -117,100 +112,76 @@ class DataCollectorAndLabeler:
         print('sensor_labelers:')
         print(self.sensor_labelers)
 
-        self.abstract_transforms = self.getAllTransforms()
-
-        # --------------------------------------
         # Collect transforms (for now collect all transforms even if they are fixed)
-        # --------------------------------------
-        transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
 
-        for ab in self.abstract_transforms:  # Update all transformations
-            print(ab)
-            self.listener.waitForTransform(ab['parent'], ab['child'], rospy.Time(), rospy.Duration(1.0))
-            (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], rospy.Time())
+    def getTransforms(self, abstract_transforms):
+        transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
+        now = rospy.Time.now()
+
+        for ab in abstract_transforms:  # Update all transformations
+            self.listener.waitForTransform(ab['parent'], ab['child'], now, rospy.Duration(1.0))
+            (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], now)
             key = self.generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
 
-        # self.transforms[self.data_stamp] = transforms_dict
-        self.transforms = transforms_dict
+        return transforms_dict
 
     def collectSnapshot(self):
 
         # --------------------------------------
-        # Collect sensor data (images, laser scans, etc)
+        # Collect sensor data and labels (images, laser scans, etc)
         # --------------------------------------
         all_sensor_data_dict = {}
+        all_sensor_labels_dict = {}
         for sensor_name, sensor in self.sensors.iteritems():
-
             print('collectSnapshot: sensor_name ' + sensor_name)
 
-            # TODO add exception also for point cloud and depht image
-            if sensor['msg_type'] == 'Image':  # Cameras
-                print("waiting for message " + sensor['topic'])  # Get latest ros message on this topic
-                msg = rospy.wait_for_message(sensor['topic'], Image)
-                print("received message " + sensor['topic'])
+            # Lock the semaphore and make a copy of both the data and the labels.
+            self.sensor_labelers[sensor_name].lock.acquire()
+            msg = copy.deepcopy(self.sensor_labelers[sensor_name].msg)
+            labels = copy.deepcopy(self.sensor_labelers[sensor_name].labels)
+            self.sensor_labelers[sensor_name].lock.release()
 
-                # Convert to opencv image and save image to disk
-                cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            # TODO add exception also for point cloud and depht image
+            # Update sensor data ---------------------------------------------
+            if sensor['msg_type'] == 'Image':  # Special case of requires saving image data as png separate files
+                cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")  # Convert to opencv image and save image to disk
                 filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
                 filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
                 print('Data ' + str(self.data_stamp) + ' from sensor ' + sensor['_name'] + ': saving image ' + filename)
                 cv2.imwrite(filename, cv_image)
-                # cv2.imshow('sensor', cv_image)
-                # cv2.waitKey(0)
 
-                # Convert the image to python dictionary
+                # Convert the sensor data to python dictionary
                 image_dict = message_converter.convert_ros_message_to_dictionary(msg)
-
-                # Remove data field (which contains the image), and replace by "data_file" field which contains the
-                # full path to where the image was saved
-                del image_dict['data']
+                del image_dict['data']  # Remove data field (which contains the image), and replace by "data_file"
+                # field which contains the  full path to where the image was saved
                 image_dict['data_file'] = filename_relative
 
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = image_dict
 
             else:
-                # Get latest ros message on this topic
-                # msg = rospy.wait_for_message(sensor['topic'], LaserScan)
-                print("waiting for message " + sensor['topic'])
-                msg = rospy.wait_for_message(sensor['topic'], eval(sensor['msg_type']))
-                print("received message " + sensor['topic'])
-
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
-        # self.data[self.data_stamp] = all_sensor_data_dict
-        # self.data.append(all_sensor_data_dict)
-
-        # --------------------------------------
-        # Collect sensor labels
-        # --------------------------------------
-        all_sensor_labels_dict = {}
-        for sensor_name, sensor in self.sensors.iteritems():
-
+            # Update sensor labels ---------------------------------------------
             if sensor['msg_type'] in ['Image', 'LaserScan']:
-                self.sensor_labelers[sensor_name].lock.acquire()
-                all_sensor_labels_dict[sensor['_name']] = copy.deepcopy(self.sensor_labelers[sensor['_name']].labels)
-                self.sensor_labelers[sensor_name].lock.release()
-                # TODO check if more deepcopys are needed
+                all_sensor_labels_dict[sensor_name] = labels
             else:
-                # TODO put here a raise error
-                pass
+                raise ValueError('Unknown message type.')
 
-        # --------------------------------------
-        # Add a new collection
-        # --------------------------------------
+        # Build a collection dictionary
         self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
-                                             'transforms': self.transforms}
+                                             'transforms': self.getTransforms(self.abstract_transforms)}  # create a
         self.data_stamp += 1
 
         # Save to json file
         D = {'sensors': self.sensors, 'collections': self.collections}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
-    def getAllTransforms(self):
+    def getAllAbstractTransforms(self):
 
+        rospy.sleep(0.5) # wait for transformations
         # Get a list of all transforms to collect
         transforms_list = []
         for sensor_name, sensor in self.sensors.iteritems():

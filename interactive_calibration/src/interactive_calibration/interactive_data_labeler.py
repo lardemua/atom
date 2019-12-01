@@ -87,7 +87,8 @@ class InteractiveDataLabeler:
 
         # Handle the interactive labelling of data differently according to the sensor message types.
         if self.msg_type_str in ['LaserScan', 'PointCloud2']:
-            self.threshold = 0.2 # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
+            # TODO parameters given from a command line input?
+            self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
             self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=0)  # publish a point cloud with the points
@@ -107,20 +108,13 @@ class InteractiveDataLabeler:
                                                                                                 'type.')
             # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
 
-        rospy.Timer(rospy.Duration(.1), self.timerCallback)  # Setup a periodic function call
-
-    def timerCallback(self, event):
-        """
-        Called every x milliseconds
-        :param event:
-        :return:
-        """
-
-        if not self.received_first_msg:  # nothing to do if no msg received first
-            return None
-
+    def sensorDataReceivedCallback(self, msg):
         self.lock.acquire()  # use semaphores to make sure the data is not being written on two sides simultaneously
+        self.msg = msg  # make a local copy of sensor data
+        self.labelData()  # label the data
+        self.lock.release()  # release lock
 
+    def labelData(self):
         # Detected and idxs values to False and [], to make sure we are not using information from a previous labelling
         self.labels['detected'] = False
         self.labels['idxs'] = []
@@ -155,19 +149,8 @@ class InteractiveDataLabeler:
                     if distance > self.threshold:  # if distance larger than threshold, create new cluster
                         cluster_counter += 1
                         clusters.append(LaserScanCluster(cluster_counter, idx))
-                        # print("Creating new cluster " + str(cluster_counter))
-                        # # print("range before: " + str(self.msg.ranges[idx - 1]))
-                        # # print("range now: " + str(r))
-                        # print("xy before: " + str(x) + ', ' + str(y))
-                        # print("xy now: " + str(xs[idx]) + ', ' + str(ys[idx]))
-                        # print('distance = ' + str(distance))
                     else:  # same cluster, push this point into the same cluster
                         clusters[-1].pushIdx(idx)
-
-            # Report clusters
-            # for cluster in clusters:
-            #     print('Cluster ' + str(cluster.cluster_count) + ' has idxs = ' + str(cluster.idxs))
-            # print('Laser scan split into ' + str(len(clusters)) + ' clusters')
 
             # Association stage: find out which cluster is closer to the marker
             x_marker, y_marker = self.marker.pose.position.x, self.marker.pose.position.y  # interactive marker pose
@@ -182,9 +165,6 @@ class InteractiveDataLabeler:
                         min_dist = dist
 
             closest_cluster = clusters[idx_closest_cluster]
-            # num_clusters = len(clusters)
-            # print('Closest cluster is ' + str(idx_closest_cluster))
-            # print('x_marker = ' + str(x_marker) + ' y_marker = ' + str(y_marker))
 
             # Find the coordinate of the middle point in the closest cluster and bring the marker to that point
             x_sum, y_sum = 0, 0
@@ -231,7 +211,7 @@ class InteractiveDataLabeler:
             pc_msg = point_cloud2.create_cloud(header, fields, points)
             self.publisher_clusters.publish(pc_msg)
 
-            # Create and pblish point cloud message containing only the selected calibration pattern points
+            # Create and publish point cloud message containing only the selected calibration pattern points
             points = []
             for idx in clusters[idx_closest_cluster].idxs_filtered:
                 x_marker, y_marker, z_marker = xs[idx], ys[idx], 0
@@ -260,24 +240,15 @@ class InteractiveDataLabeler:
                                       self.found)  # Draw and display the corners
 
             if self.found is True:
-                # print('Found chessboard for ' + self.name)
                 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
                 corners2 = cv2.cornerSubPix(image_gray, corners, (self.numx, self.numy), (-1, -1), criteria)
                 corners2_d = []
-                print(corners2_d)
                 for corner in corners2:
                     corners2_d.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
 
                 x = int(round(corners2_d[0]['x']))
                 y = int(round(corners2_d[0]['y']))
                 cv2.line(image, (x, y), (x, y), (0, 255, 255), 20)
-
-                # if self.name == 'top_right_camera':
-                #     print('corners2_d =\n' + str(corners2_d))
-
-                # cv2.imshow(self.name, image)
-                # cv2.imwrite('/tmp/img.png', image)
-                # cv2.waitKey(0)
 
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
@@ -287,12 +258,6 @@ class InteractiveDataLabeler:
             msg_out.header.stamp = self.msg.header.stamp
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_image.publish(msg_out)
-
-        self.lock.release()
-
-    def sensorDataReceivedCallback(self, msg):
-        self.msg = msg
-        self.received_first_msg = True
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')
