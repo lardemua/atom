@@ -45,11 +45,7 @@ class DataCollectorAndLabeler:
         self.menu_handler = menu_handler
         self.data_stamp = 0
         self.collections = {}
-
         self.bridge = CvBridge()
-
-
-        self.abstract_transforms = self.getAllAbstractTransforms()
 
         config = CalibConfig()
         ok = config.loadJSON(calibration_file)
@@ -112,6 +108,9 @@ class DataCollectorAndLabeler:
         print('sensor_labelers:')
         print(self.sensor_labelers)
 
+        self.abstract_transforms = self.getAllAbstractTransforms()
+        print("abstract_transforms = " + str(self.abstract_transforms))
+
     def getTransforms(self, abstract_transforms):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
         now = rospy.Time.now()
@@ -131,6 +130,10 @@ class DataCollectorAndLabeler:
         # --------------------------------------
         all_sensor_data_dict = {}
         all_sensor_labels_dict = {}
+
+        # Collect all the transforms
+        transforms = self.getTransforms(self.abstract_transforms)
+
         for sensor_name, sensor in self.sensors.iteritems():
             print('collectSnapshot: sensor_name ' + sensor_name)
 
@@ -139,8 +142,6 @@ class DataCollectorAndLabeler:
             msg = copy.deepcopy(self.sensor_labelers[sensor_name].msg)
             labels = copy.deepcopy(self.sensor_labelers[sensor_name].labels)
             self.sensor_labelers[sensor_name].lock.release()
-
-            transforms = self.getTransforms(self.abstract_transforms)
 
             # TODO add exception also for point cloud and depht image
             # Update sensor data ---------------------------------------------
@@ -185,7 +186,9 @@ class DataCollectorAndLabeler:
         # Get a list of all transforms to collect
         transforms_list = []
         for sensor_name, sensor in self.sensors.iteritems():
+            print("visiting sensor " + str(sensor_name))
             for transform in sensor['chain']:
+                print("visiting transform " + str(transform))
                 transforms_list.append(transform)
 
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
