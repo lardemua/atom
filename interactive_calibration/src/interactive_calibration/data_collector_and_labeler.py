@@ -186,9 +186,7 @@ class DataCollectorAndLabeler:
         # Get a list of all transforms to collect
         transforms_list = []
         for sensor_name, sensor in self.sensors.iteritems():
-            print("visiting sensor " + str(sensor_name))
             for transform in sensor['chain']:
-                print("visiting transform " + str(transform))
                 transforms_list.append(transform)
 
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
