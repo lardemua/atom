@@ -48,9 +48,6 @@ class DataCollectorAndLabeler:
 
         self.bridge = CvBridge()
 
-
-        self.abstract_transforms = self.getAllAbstractTransforms()
-
         config = CalibConfig()
         ok = config.loadJSON(calibration_file)
         if not ok:
@@ -111,6 +108,8 @@ class DataCollectorAndLabeler:
 
         print('sensor_labelers:')
         print(self.sensor_labelers)
+
+        self.abstract_transforms = self.getAllAbstractTransforms()
 
     def getTransforms(self, abstract_transforms):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
