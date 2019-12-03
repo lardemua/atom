@@ -60,7 +60,6 @@ class DataCollectorAndLabeler:
 
         # Go through the sensors in the calib config.
         for sensor_key, value in config.sensors.items():
-            print('visiting sensor ' + sensor_key)
             # continue
             # TODO put this in a function and adapt for the json case
 
