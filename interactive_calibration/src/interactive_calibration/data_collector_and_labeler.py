@@ -88,6 +88,7 @@ class DataCollectorAndLabeler:
 
             # Get the kinematic chain form world_link to this sensor's parent link
             chain = self.listener.chain(value.link, rospy.Time(), self.world_link, rospy.Time(), self.world_link)
+
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
                 key = self.generateKey(parent, child)
@@ -181,12 +182,19 @@ class DataCollectorAndLabeler:
 
     def getAllAbstractTransforms(self):
 
-        rospy.sleep(0.5) # wait for transformations
+        rospy.sleep(0.5)  # wait for transformations
         # Get a list of all transforms to collect
         transforms_list = []
-        for sensor_name, sensor in self.sensors.iteritems():
-            for transform in sensor['chain']:
-                transforms_list.append(transform)
+
+        now = rospy.Time.now()
+        all_frames = self.listener.getFrameStrings()
+
+        for frame in all_frames:
+            chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)
+            for idx in range(0, len(chain) - 1):
+                parent = chain[idx]
+                child = chain[idx + 1]
+                transforms_list.append({'parent': parent, 'child': child, 'key': self.generateKey(parent, child)})
 
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
         uniq_l = list(map(dict, frozenset(frozenset(i.items()) for i in transforms_list)))
