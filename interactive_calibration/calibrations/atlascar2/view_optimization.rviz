@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Image1
-        - /LaserScans-MarkerArray1
+        - /LaserScans-MarkerArray1/Status1
         - /LaserScans-MarkerArray1/Namespaces1
         - /Chessboards-MarkerArray1
         - /Chessboards-MarkerArray1/Namespaces1
@@ -236,7 +236,11 @@ Visualization Manager:
       Marker Topic: /Chessboards
       Name: Chessboards-MarkerArray
       Namespaces:
-        {}
+        0: true
+        1: true
+        2: true
+        3: true
+        4: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -268,7 +272,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.1775290966033936
+      Distance: 4.72162389755249
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -283,10 +287,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6997971534729004
+      Pitch: 0.23979727923870087
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.2495574951171875
+      Yaw: 3.859555959701538
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
