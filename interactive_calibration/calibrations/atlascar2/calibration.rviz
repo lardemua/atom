@@ -62,15 +62,15 @@ Visualization Manager:
           Value: true
         frontal_laser_mount_link:
           Value: true
-        frontal_rgbd_camera_depth_frame:
+        top_center_rgbd_camera_depth_frame:
           Value: true
-        frontal_rgbd_camera_depth_optical_frame:
+        top_center_rgbd_camera_depth_optical_frame:
           Value: true
-        frontal_rgbd_camera_link:
+        top_center_rgbd_camera_link:
           Value: true
-        frontal_rgbd_camera_rgb_frame:
+        top_center_rgbd_camera_rgb_frame:
           Value: true
-        frontal_rgbd_camera_rgb_optical_frame:
+        top_center_rgbd_camera_rgb_optical_frame:
           Value: true
         ground:
           Value: true
@@ -98,12 +98,12 @@ Visualization Manager:
           frontal_laser_mount_link:
             frontal_laser:
               {}
-          frontal_rgbd_camera_link:
-            frontal_rgbd_camera_depth_frame:
-              frontal_rgbd_camera_depth_optical_frame:
+          top_center_rgbd_camera_link:
+            top_center_rgbd_camera_depth_frame:
+              top_center_rgbd_camera_depth_optical_frame:
                 {}
-            frontal_rgbd_camera_rgb_frame:
-              frontal_rgbd_camera_rgb_optical_frame:
+            top_center_rgbd_camera_rgb_frame:
+              top_center_rgbd_camera_rgb_optical_frame:
                 {}
           ground:
             {}
@@ -144,24 +144,24 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        frontal_rgbd_camera_depth_frame:
+        top_center_rgbd_camera_depth_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        frontal_rgbd_camera_depth_optical_frame:
+        top_center_rgbd_camera_depth_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        frontal_rgbd_camera_link:
+        top_center_rgbd_camera_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        frontal_rgbd_camera_rgb_frame:
+        top_center_rgbd_camera_rgb_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        frontal_rgbd_camera_rgb_optical_frame:
+        top_center_rgbd_camera_rgb_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
