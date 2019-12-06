@@ -236,10 +236,19 @@ class InteractiveDataLabeler:
 
             # Find chessboard corners
             self.found, corners = cv2.findChessboardCorners(image_gray, (self.numx, self.numy))
-            cv2.drawChessboardCorners(image, (self.numx, self.numy), corners,
-                                      self.found)  # Draw and display the corners
+            if not self.found:
+                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners, self.found)  # Draw and display the corners
 
             if self.found is True:
+                # WARNING: this is a quick hack to maintain the chessboard corners
+                # in the right place.
+                diff = corners[0][0][0] - corners[self.numx-1][0][0]
+                if diff > 0:
+                    rospy.logwarn_throttle(20, 'Inverted chessboard detected. Appying fix!')
+                    corners = np.array(np.flipud(corners))
+
+                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners, self.found)  # Draw and display the corners
+
                 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
                 corners2 = cv2.cornerSubPix(image_gray, corners, (self.numx, self.numy), (-1, -1), criteria)
                 corners2_d = []
