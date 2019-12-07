@@ -20,10 +20,13 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <group if="$(arg read_first_guess)">
         <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>
+<!--        <param name="initial_robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>-->
     </group>
 
     <group unless="$(arg read_first_guess)">
         <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+
+        <param name="initial_robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
     </group>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
