@@ -348,8 +348,10 @@ class InteractiveDataLabeler:
             mask = np.zeros((h + 2, w + 2, 1), np.uint8)
             cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
 
+            print(idx_closest_point)
+
             # Flag the mask pixels
-            cv2.floodFill(img, mask, (int(math.floor(idx_closest_point/640)), idx_closest_point % 640), 255, 0, 0,
+            cv2.floodFill(img, mask, (idx_closest_point % 640, int(math.floor(idx_closest_point/640))), 255, 0, 0,
                           8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
 
             ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
@@ -379,7 +381,7 @@ class InteractiveDataLabeler:
 
                 self.publisher_labelled_depth_image.publish(msg_out)
 
-                coords = points[cX * 640 + cY]
+                coords = points[cY * 640 + cX]
 
                 self.marker.pose.position.x = coords[0]
                 self.marker.pose.position.y = coords[1]
