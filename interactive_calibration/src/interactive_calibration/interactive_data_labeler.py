@@ -316,7 +316,7 @@ class InteractiveDataLabeler:
             self.publisher_labelled_image.publish(msg_out)
 
         elif self.msg_type_str == 'PointCloud2':  # RGB-D pointcloud -------------------------------------------
-            print("Found point cloud!")
+            # print("Found point cloud!")
 
             # Get 3D coords
             points = pc2.read_points_list(self.msg, skip_nans=False, field_names=("x", "y", "z"))
@@ -348,7 +348,7 @@ class InteractiveDataLabeler:
             mask = np.zeros((h + 2, w + 2, 1), np.uint8)
             cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
 
-            print(idx_closest_point)
+            # print(idx_closest_point)
 
             # Flag the mask pixels
             cv2.floodFill(img, mask, (idx_closest_point % 640, int(math.floor(idx_closest_point/640))), 255, 0, 0,
@@ -487,7 +487,7 @@ class InteractiveDataLabeler:
         self.marker.header.frame_id = self.parent
         self.marker.pose.position.x = 0
         self.marker.pose.position.y = 0
-        self.marker.pose.position.z = 5
+        self.marker.pose.position.z = 4
         self.marker.pose.orientation.x = 0
         self.marker.pose.orientation.y = 0
         self.marker.pose.orientation.z = 0
