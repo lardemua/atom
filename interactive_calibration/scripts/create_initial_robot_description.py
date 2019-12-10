@@ -3,16 +3,9 @@
 # ------------------------
 #    IMPORT MODULES      #
 # ------------------------
-import argparse
-import numpy as np
-import matplotlib
+
 import rospy
-from matplotlib import cm
-from tf import TransformListener
 from urdf_parser_py.urdf import URDF
-import rospkg
-from colorama import Fore, Style
-from graphviz import Digraph
 
 # ------------------------
 #      BASE CLASSES      #

@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import cv2
+import itertools
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
@@ -47,19 +48,19 @@ class DataCollectorAndLabeler:
         self.collections = {}
         self.bridge = CvBridge()
 
-        config = CalibConfig()
-        ok = config.loadJSON(calibration_file)
+        self.config = CalibConfig()
+        ok = self.config.loadJSON(calibration_file)
         if not ok:
             sys.exit(1)  # loadJSON should tell you why.
 
-        self.world_link = config.world_link
+        self.world_link = self.config.world_link
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
-        print('Number of sensors: ' + str(len(config.sensors)))
+        print('Number of sensors: ' + str(len(self.config.sensors)))
 
         # Go through the sensors in the calib config.
-        for sensor_key, value in config.sensors.items():
+        for sensor_key, value in self.config.sensors.items():
             # continue
             # TODO put this in a function and adapt for the json case
 
@@ -98,7 +99,7 @@ class DataCollectorAndLabeler:
             self.sensors[sensor_key] = sensor_dict
 
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size,
-                                                    config.pattern.dimension[0], config.pattern.dimension[1])
+                                                    self.config.pattern.dimension[0], self.config.pattern.dimension[1])
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
@@ -171,13 +172,36 @@ class DataCollectorAndLabeler:
             else:
                 raise ValueError('Unknown message type.')
 
+        collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': transforms}
+
+        # Check if the message time stamps are "close enough"
+        stamps = []  # a list of the several time stamps of the stored messages
+        t = rospy.Time()
+        for sensor_key, data in collection_dict['data'].items():
+            t.set(data['header']['stamp']['secs'], data['header']['stamp']['nsecs'])
+            stamps.append(copy.deepcopy(t))
+
+        pairs = list(itertools.combinations(stamps, 2))
+        max_duration = rospy.Duration(0)
+        for p1, p2 in pairs:
+            d = p1 - p2
+            if d > max_duration:
+                max_duration = d
+
+        print('max duration is = ' + str(self.config.obj['max_duration_between_msgs']))
+        if max_duration.to_sec() > float(self.config.obj['max_duration_between_msgs']):
+            rospy.logerr('Max duration between msgs in collection is ' + str(max_duration.to_sec())
+                         + ' . Not saving collection.')
+            return None
+        else:
+            rospy.loginfo('Max duration between msgs in collection is ' + str(max_duration.to_sec()))
+
         # Build a collection dictionary
-        self.collections[self.data_stamp] = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
-                                             'transforms': transforms}
+        self.collections[self.data_stamp] = collection_dict
         self.data_stamp += 1
 
         # Save to json file
-        D = {'sensors': self.sensors, 'collections': self.collections}
+        D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config.obj}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
     def getAllAbstractTransforms(self):

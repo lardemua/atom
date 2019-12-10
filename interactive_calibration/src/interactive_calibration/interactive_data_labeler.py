@@ -111,7 +111,9 @@ class InteractiveDataLabeler:
     def sensorDataReceivedCallback(self, msg):
         self.lock.acquire()  # use semaphores to make sure the data is not being written on two sides simultaneously
         self.msg = msg  # make a local copy of sensor data
+        # now = rospy.Time.now()
         self.labelData()  # label the data
+        # rospy.loginfo('Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
         self.lock.release()  # release lock
 
     def labelData(self):
@@ -234,23 +236,27 @@ class InteractiveDataLabeler:
             # TODO cvtcolor only if image has 3 channels
             image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+
             # Find chessboard corners
             self.found, corners = cv2.findChessboardCorners(image_gray, (self.numx, self.numy))
             if not self.found:
-                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners, self.found)  # Draw and display the corners
+                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners,
+                                          self.found)  # Draw and display the corners
 
             if self.found is True:
                 # WARNING: this is a quick hack to maintain the chessboard corners
                 # in the right place.
-                diff = corners[0][0][0] - corners[self.numx-1][0][0]
+                diff = corners[0][0][0] - corners[self.numx - 1][0][0]
                 if diff > 0:
                     rospy.logwarn_throttle(20, 'Inverted chessboard detected. Appying fix!')
                     corners = np.array(np.flipud(corners))
 
-                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners, self.found)  # Draw and display the corners
+                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners,
+                                          self.found)  # Draw and display the corners
 
-                criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-                corners2 = cv2.cornerSubPix(image_gray, corners, (self.numx, self.numy), (-1, -1), criteria)
+                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+                # corners2 = cv2.cornerSubPix(image_gray, corners, (self.numx, self.numy), (-1, -1), criteria)
+                corners2 = corners
                 corners2_d = []
                 for corner in corners2:
                     corners2_d.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})

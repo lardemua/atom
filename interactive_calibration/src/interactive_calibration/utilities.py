@@ -71,6 +71,9 @@ class CalibConfig(object):
         # Add pattern
         self.pattern = PatternConfig( **obj['calibration_pattern'] )
 
+        # TODO Eurico will change this
+        self.obj = obj
+
         return True
 
     @staticmethod
