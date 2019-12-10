@@ -3,36 +3,48 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Parameters-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <arg name="read_first_guess" default="true"/>
+    <arg name="read_first_guess" default="false"/>
 
 <!--    <arg name="bag" default="$(find interactive_calibration)/calibrations/pr2/pr2_test.bag"/>-->
 
     <arg name="xacro_file" default="$(find atlas2_description)/urdf/atlas2.urdf.xacro"/>
-
+    <arg name="prefix" default="initial_"/>
 
     <!--/calibrations/atlascar2/atlascar2.urdf.xacro"/>-->
     <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/first_guess.urdf.xacro"/>
     <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/view_optimization.rviz"/>
+    <arg name="node_start_delay" default="1"/>
 
+<!--    <param name="robot_description" value=""/>-->
+
+    <node pkg="interactive_calibration" type="create_initial_robot_description.py" name="create_initial_robot_description"
+          args="_xacro_file:=$(arg xacro_file) _prefix:=$(arg prefix)" output="screen"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Load robot description file based on whether or not we are reading the first guess xacro file.-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <group if="$(arg read_first_guess)">
         <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>
-<!--        <param name="initial_robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>-->
     </group>
 
     <group unless="$(arg read_first_guess)">
         <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
-
-        <param name="initial_robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
     </group>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Robot and joint state publisher for generating tfs -->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+    <!-- Make sure this node runs after the initial_robot_description parameter is created-->
+    <node name="initial_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@'">
+        <remap from="robot_description" to="initial_robot_description"/>
+    </node>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Connector from the initial prefixed subtree to the current one -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <node pkg="tf" type="static_transform_publisher" name="initial_subtree_connector" args="0 0 0 0 0 0 base_link $(arg prefix)base_link 10" />
 
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
         <param name="use_gui" value="true"/>
