@@ -349,7 +349,7 @@ class InteractiveDataLabeler:
             cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
 
             # Flag the mask pixels
-            cv2.floodFill(img, mask, (math.floor(idx_closest_point/640), idx_closest_point % 640), 255, 0, 0,
+            cv2.floodFill(img, mask, (int(math.floor(idx_closest_point/640)), idx_closest_point % 640), 255, 0, 0,
                           8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
 
             ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
