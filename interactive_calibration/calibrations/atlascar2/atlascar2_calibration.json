@@ -6,7 +6,7 @@
                 "child_link": "top_right_camera",
                 "topic_name": "/top_right_camera/image_color"
         },
-            "top_left_camera": {
+        "top_left_camera": {
                 "link": "top_left_camera_optical",
                 "parent_link": "base_link",
                 "child_link": "top_left_camera",
@@ -23,6 +23,12 @@
             "parent_link": "base_link",
             "child_link": "left_laser",
             "topic_name": "/left_laser/laserscan"
+        },
+        "top_center_rgbd_camera_depth_frame": {
+           "link": "top_center_rgbd_camera_depth_optical_frame",
+           "parent_link": "top_center_rgbd_camera_link",
+           "child_link": "top_center_rgbd_camera_depth_frame",
+           "topic_name": "/top_center_rgbd_camera/depth/points"
         }
 },
 
