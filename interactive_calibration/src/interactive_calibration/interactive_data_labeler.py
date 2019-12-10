@@ -19,6 +19,44 @@ from sensor_msgs.msg import *
 import interactive_calibration.utilities
 import numpy as np
 
+from ctypes import *  # Convert float to uint32
+from sensor_msgs.msg import PointCloud2, PointField
+import sensor_msgs.point_cloud2 as pc2
+from copy import deepcopy
+
+# The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
+FIELDS_XYZ = [
+    PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
+    PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
+    PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
+]
+FIELDS_XYZRGB = FIELDS_XYZ + \
+                [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
+
+# Bit operations
+BIT_MOVE_16 = 2 ** 16
+BIT_MOVE_8 = 2 ** 8
+
+
+def createRosCloud(points, stamp, frame_id, colours=None):
+    # Set header
+    header = Header()
+    header.stamp = stamp
+    header.frame_id = frame_id
+
+    # Set "fields" and "cloud_data"
+    points = np.asarray(points)
+    if not colours:  # XYZ only
+        fields = FIELDS_XYZ
+        cloud_data = points
+    else:  # XYZ + RGB
+        fields = FIELDS_XYZRGB
+        tmpColours = np.floor(np.asarray(colours) * 255)  # nx3 matrix
+        tmpColours = tmpColours[:, 0] * BIT_MOVE_16 + tmpColours[:, 1] * BIT_MOVE_8 + tmpColours[:, 2]
+        cloud_data = np.c_[points, tmpColours]
+
+    # Create ros_cloud
+    return pc2.create_cloud(header, fields, cloud_data)
 
 # ------------------------
 #      BASE CLASSES      #
@@ -86,7 +124,7 @@ class InteractiveDataLabeler:
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback)
 
         # Handle the interactive labelling of data differently according to the sensor message types.
-        if self.msg_type_str in ['LaserScan', 'PointCloud2']:
+        if self.msg_type_str in ['LaserScan']:
             # TODO parameters given from a command line input?
             self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
             self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
@@ -102,6 +140,15 @@ class InteractiveDataLabeler:
             self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=0)  # publish
             # images with the detected chessboard overlaid onto the image.
+
+        elif self.msg_type_str in ['PointCloud2']:
+            self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
+                                                             queue_size=0)  # publish a point cloud with the points
+            self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
+            self.bridge = CvBridge()
+            self.publisher_labelled_depth_image = rospy.Publisher(self.topic + '/depth_image_labelled', sensor_msgs.msg.Image,
+                                                                  queue_size=0)  # publish
+            print('Created interactive marker.')
         else:
             # We handle only know message types
             raise ValueError('Message type ' + self.msg_type_str + ' for topic ' + self.topic + 'is of an unknown '
@@ -268,6 +315,94 @@ class InteractiveDataLabeler:
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_image.publish(msg_out)
 
+        elif self.msg_type_str == 'PointCloud2':  # RGB-D pointcloud -------------------------------------------
+            print("Found point cloud!")
+
+            # Get 3D coords
+            points = pc2.read_points_list(self.msg, skip_nans=False, field_names=("x", "y", "z"))
+
+            # Association stage: find out which cluster is closer to the marker
+            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z  # interactive marker pose
+            idx_closest_point = 0
+            min_dist = sys.maxint
+            for idx, point in enumerate(points):  # cycle each point in the cloud
+                x, y, z = point[0], point[1], point[2]
+                dist = sqrt((x_marker - x) ** 2 + (y_marker - y) ** 2 + (z_marker - z) ** 2)
+                if dist < min_dist:
+                    idx_closest_point = idx
+                    min_dist = dist
+
+            # Wait for depth image message
+            imgmsg = rospy.wait_for_message('/top_center_rgbd_camera/depth/image_rect', Image)
+
+            img = self.bridge.imgmsg_to_cv2(imgmsg, desired_encoding="8UC1")
+            # image = self.bridge.imgmsg_to_cv2(self.msg, desired_encoding="passthrough")
+
+            h, w = img.shape
+
+            # ret, thresh = cv2.threshold(img, 1, 255, 0)
+            thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 0)
+
+            contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            mask = np.zeros((h + 2, w + 2, 1), np.uint8)
+            cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
+
+            # Flag the mask pixels
+            cv2.floodFill(img, mask, (math.floor(idx_closest_point/640), idx_closest_point % 640), 255, 0, 0,
+                          8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
+
+            ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
+
+            tmpmask = nmask[1:h + 1, 1:w + 1]
+
+            # calculate moments of binary image
+            M = cv2.moments(tmpmask)
+
+            if M["m00"] != 0:
+                # calculate x,y coordinate of center
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+
+                showcenter = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+                blueImg = np.zeros(showcenter.shape, showcenter.dtype)
+                blueImg[:, :] = (255, 100, 0)
+                blueMask = cv2.bitwise_and(blueImg, blueImg, mask=tmpmask)
+                showcenter = cv2.addWeighted(blueMask, 0.2, showcenter, 0.8, 0.0)
+
+                cv2.line(showcenter, (cX, cY), (cX, cY), (255, 0, 0), 15)
+
+                msg_out = self.bridge.cv2_to_imgmsg(showcenter, encoding="passthrough")
+                msg_out.header.stamp = self.msg.header.stamp
+                msg_out.header.frame_id = self.msg.header.frame_id
+
+                self.publisher_labelled_depth_image.publish(msg_out)
+
+                coords = points[cX * 640 + cY]
+
+                self.marker.pose.position.x = coords[0]
+                self.marker.pose.position.y = coords[1]
+                self.marker.pose.position.z = coords[2]
+                self.menu_handler.reApply(self.server)
+                self.server.applyChanges()
+
+
+            # idx = np.where(tmpmask == 100)
+            # # Create tuple with (l, c)
+            # pointcoords = list(zip(idx[0], idx[1]))
+            #
+            # points = pc2.read_points_list(self.msg, skip_nans=False, field_names=("x", "y", "z"))
+            # tmppoints = []
+            #
+            # for coord in pointcoords:
+            #     pointidx = (coord[0]) * 640 + (coord[1])
+            #     tmppoints.append(points[pointidx])
+            #
+            # msg_out = createRosCloud(tmppoints, self.msg.header.stamp, self.msg.header.frame_id)
+            #
+            # self.publisher_selected_points.publish(msg_out)
+
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')
 
@@ -341,6 +476,73 @@ class InteractiveDataLabeler:
         # control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
         # control.orientation_mode = InteractiveMarkerControl.FIXED
         # self.marker.controls.append(control)
+
+        self.server.insert(self.marker, self.markerFeedback)
+        self.menu_handler.apply(self.server, self.marker.name)
+
+    def createInteractiveMarkerRGBD(self):
+        self.marker = InteractiveMarker()
+        self.marker.header.frame_id = self.parent
+        self.marker.pose.position.x = 0
+        self.marker.pose.position.y = 0
+        self.marker.pose.position.z = 5
+        self.marker.pose.orientation.x = 0
+        self.marker.pose.orientation.y = 0
+        self.marker.pose.orientation.z = 0
+        self.marker.pose.orientation.w = 1
+        self.marker.scale = self.marker_scale
+
+        self.marker.name = self.name
+        self.marker.description = self.name + '_labeler'
+
+        # insert a box
+        control = InteractiveMarkerControl()
+        control.always_visible = True
+
+        marker_box = Marker()
+        marker_box.type = Marker.SPHERE
+        marker_box.scale.x = self.marker.scale * 0.3
+        marker_box.scale.y = self.marker.scale * 0.3
+        marker_box.scale.z = self.marker.scale * 0.3
+        marker_box.color.r = 0
+        marker_box.color.g = 1
+        marker_box.color.b = 0
+        marker_box.color.a = 0.2
+
+        control.markers.append(marker_box)
+        self.marker.controls.append(control)
+
+        self.marker.controls[0].interaction_mode = InteractiveMarkerControl.MOVE_3D
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "move_x"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        self.marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.name = "move_y"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        self.marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 0
+        control.orientation.z = 1
+        control.name = "move_z"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        self.marker.controls.append(control)
 
         self.server.insert(self.marker, self.markerFeedback)
         self.menu_handler.apply(self.server, self.marker.name)
