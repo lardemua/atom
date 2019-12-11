@@ -106,11 +106,11 @@ class DataCollectorAndLabeler:
             print('finished visiting sensor ' + sensor_key)
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
-        print('sensor_labelers:')
-        print(self.sensor_labelers)
+        # print('sensor_labelers:')
+        # print(self.sensor_labelers)
 
         self.abstract_transforms = self.getAllAbstractTransforms()
-        print("abstract_transforms = " + str(self.abstract_transforms))
+        # print("abstract_transforms = " + str(self.abstract_transforms))
 
     def getTransforms(self, abstract_transforms):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp

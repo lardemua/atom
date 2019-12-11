@@ -85,7 +85,7 @@ class InteractiveDataLabeler:
     """
     Handles data labelling for a generic sensor:
         Cameras: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
-        LaserScans: Semi-automated laelling. An rviz interactive marker is placed on the laser cluster which contains
+        LaserScans: Semi-automated labelling. An rviz interactive marker is placed on the laser cluster which contains
                     the calibration pattern, and the pattern is tracked from there onward.
         PointCloud2: #TODO Tiago Madeira can you complete?
     """
@@ -134,7 +134,7 @@ class InteractiveDataLabeler:
             self.publisher_clusters = rospy.Publisher(self.topic + '/clusters', sensor_msgs.msg.PointCloud2,
                                                       queue_size=0)  # publish a point cloud with coloured clusters
             self.createInteractiveMarker()  # interactive marker to label the calibration pattern cluster (one time)
-            print('Created interactive marker.')
+            print('Created interactive marker for laser scans.')
         elif self.msg_type_str in ['Image']:
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
@@ -148,7 +148,7 @@ class InteractiveDataLabeler:
             self.bridge = CvBridge()
             self.publisher_labelled_depth_image = rospy.Publisher(self.topic + '/depth_image_labelled', sensor_msgs.msg.Image,
                                                                   queue_size=0)  # publish
-            print('Created interactive marker.')
+            print('Created interactive marker for point clouds.')
         else:
             # We handle only know message types
             raise ValueError('Message type ' + self.msg_type_str + ' for topic ' + self.topic + 'is of an unknown '
@@ -349,7 +349,7 @@ class InteractiveDataLabeler:
             # ret, thresh = cv2.threshold(img, 1, 255, 0)
             thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 0)
 
-            contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            _,contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
             mask = np.zeros((h + 2, w + 2, 1), np.uint8)
             cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
