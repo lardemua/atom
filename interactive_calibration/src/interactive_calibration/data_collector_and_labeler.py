@@ -184,11 +184,10 @@ class DataCollectorAndLabeler:
         pairs = list(itertools.combinations(stamps, 2))
         max_duration = rospy.Duration(0)
         for p1, p2 in pairs:
-            d = p1 - p2
+            d = abs(p1 - p2)
             if d > max_duration:
                 max_duration = d
 
-        print('max duration is = ' + str(self.config.obj['max_duration_between_msgs']))
         if max_duration.to_sec() > float(self.config.obj['max_duration_between_msgs']):
             rospy.logerr('Max duration between msgs in collection is ' + str(max_duration.to_sec())
                          + ' . Not saving collection.')
