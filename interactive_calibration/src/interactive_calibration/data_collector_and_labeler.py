@@ -51,6 +51,7 @@ class DataCollectorAndLabeler:
         self.config = CalibConfig()
         ok = self.config.loadJSON(calibration_file)
         if not ok:
+            rospy.logerr('Error loading json.')
             sys.exit(1)  # loadJSON should tell you why.
 
         self.world_link = self.config.world_link

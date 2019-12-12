@@ -66,6 +66,7 @@ class CalibConfig(object):
         if 'anchored_sensor' in obj:
             self.anchored_sensor = obj['anchored_sensor']
             if self.anchored_sensor not in self.sensors:
+                print('Anchored sensor not in list of sensors.')
                 return False
 
         # Add pattern

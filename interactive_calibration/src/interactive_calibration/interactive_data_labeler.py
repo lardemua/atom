@@ -22,7 +22,7 @@ import numpy as np
 from ctypes import *  # Convert float to uint32
 from sensor_msgs.msg import PointCloud2, PointField
 import sensor_msgs.point_cloud2 as pc2
-from copy import deepcopy
+from copy import deepcopy, copy
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -57,6 +57,7 @@ def createRosCloud(points, stamp, frame_id, colours=None):
 
     # Create ros_cloud
     return pc2.create_cloud(header, fields, cloud_data)
+
 
 # ------------------------
 #      BASE CLASSES      #
@@ -146,7 +147,8 @@ class InteractiveDataLabeler:
                                                              queue_size=0)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
             self.bridge = CvBridge()
-            self.publisher_labelled_depth_image = rospy.Publisher(self.topic + '/depth_image_labelled', sensor_msgs.msg.Image,
+            self.publisher_labelled_depth_image = rospy.Publisher(self.topic + '/depth_image_labelled',
+                                                                  sensor_msgs.msg.Image,
                                                                   queue_size=0)  # publish
             print('Created interactive marker for point clouds.')
         else:
@@ -283,7 +285,6 @@ class InteractiveDataLabeler:
             # TODO cvtcolor only if image has 3 channels
             image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-
             # Find chessboard corners
             self.found, corners = cv2.findChessboardCorners(image_gray, (self.numx, self.numy))
             if not self.found:
@@ -341,26 +342,56 @@ class InteractiveDataLabeler:
             # Wait for depth image message
             imgmsg = rospy.wait_for_message('/top_center_rgbd_camera/depth/image_rect', Image)
 
-            img = self.bridge.imgmsg_to_cv2(imgmsg, desired_encoding="8UC1")
-            # image = self.bridge.imgmsg_to_cv2(self.msg, desired_encoding="passthrough")
+            # img = self.bridge.imgmsg_to_cv2(imgmsg, desired_encoding="8UC1")
+            img = self.bridge.imgmsg_to_cv2(imgmsg, desired_encoding="passthrough")
 
+            img_float = img.astype(np.float32)
+            img_float = img_float / 1000
+
+            # print('img type = ' + str(img.dtype))
+            # print('img_float type = ' + str(img_float.dtype))
+            # print('img_float shape = ' + str(img_float.shape))
             h, w = img.shape
 
-            # ret, thresh = cv2.threshold(img, 1, 255, 0)
-            thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 0)
-
-            _,contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
+            # second approach
             mask = np.zeros((h + 2, w + 2, 1), np.uint8)
-            cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
+            # cv2.floodFill(img, mask,
+            #               (idx_closest_point % 640, int(math.floor(idx_closest_point / 640))),  # seed point
+            #               255,  # not used
+            #               100, 300,  # low and high threshold
+            #               8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY  # connectivity 8, value to set touch mask only
+            #               )
 
-            # print(idx_closest_point)
+            # seed_point = (idx_closest_point % 640, int(math.floor(idx_closest_point / 640)))
+            seed_point = (int(math.floor(idx_closest_point / w)) , idx_closest_point % w)
+            img_float2 = deepcopy(img_float)
+            cv2.floodFill(img_float2, mask, seed_point, 128, 0.5, .5,
+                          8 | (128 << 8) | cv2.FLOODFILL_MASK_ONLY)
 
-            # Flag the mask pixels
-            cv2.floodFill(img, mask, (idx_closest_point % 640, int(math.floor(idx_closest_point/640))), 255, 0, 0,
-                          8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
+            mask[seed_point[0]-10:seed_point[0]+10, seed_point[1]-10:seed_point[1]+10] = 255
 
-            ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
+            cv2.imshow("mask", mask)
+            cv2.waitKey(20)
+            nmask = mask
+            # ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
+
+            # first approach
+
+            # ret, thresh = cv2.threshold(img, 1, 255, 0)
+            # thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 0)
+            #
+            # _,contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            #
+            # mask = np.zeros((h + 2, w + 2, 1), np.uint8)
+            # cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
+            #
+            # # print(idx_closest_point)
+            #
+            # # Flag the mask pixels
+            # cv2.floodFill(img, mask, (idx_closest_point % 640, int(math.floor(idx_closest_point/640))), 255, 0, 0,
+            #               8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
+            #
+            # ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
 
             tmpmask = nmask[1:h + 1, 1:w + 1]
 
@@ -389,12 +420,11 @@ class InteractiveDataLabeler:
 
                 coords = points[cY * 640 + cX]
 
-                self.marker.pose.position.x = coords[0]
-                self.marker.pose.position.y = coords[1]
-                self.marker.pose.position.z = coords[2]
-                self.menu_handler.reApply(self.server)
-                self.server.applyChanges()
-
+                # self.marker.pose.position.x = coords[0]
+                # self.marker.pose.position.y = coords[1]
+                # self.marker.pose.position.z = coords[2]
+                # self.menu_handler.reApply(self.server)
+                # self.server.applyChanges()
 
             # idx = np.where(tmpmask == 100)
             # # Create tuple with (l, c)
