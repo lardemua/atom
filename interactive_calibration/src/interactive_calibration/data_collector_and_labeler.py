@@ -11,7 +11,7 @@ from interactive_markers.menu_handler import *
 from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
-from interactive_calibration.utilities import CalibConfig
+from interactive_calibration.utilities import loadJSONConfig
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
 
@@ -48,36 +48,32 @@ class DataCollectorAndLabeler:
         self.collections = {}
         self.bridge = CvBridge()
 
-        self.config = CalibConfig()
-        ok = self.config.loadJSON(calibration_file)
-        if not ok:
-            rospy.logerr('Error loading json.')
+        self.config = loadJSONConfig(calibration_file)
+        if self.config is None:
             sys.exit(1)  # loadJSON should tell you why.
 
-        self.world_link = self.config.world_link
+        self.world_link = self.config['world_link']
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
-        print('Number of sensors: ' + str(len(self.config.sensors)))
+        print('Number of sensors: ' + str(len(self.config['sensors'])))
 
         # Go through the sensors in the calib config.
-        for sensor_key, value in self.config.sensors.items():
-            # continue
-            # TODO put this in a function and adapt for the json case
+        for sensor_key, value in self.config['sensors'].items():
 
             # Create a dictionary that describes this sensor
-            sensor_dict = {'_name': sensor_key, 'parent': value.link,
-                           'calibration_parent': value.parent_link,
-                           'calibration_child': value.child_link}
+            sensor_dict = {'_name': sensor_key, 'parent': value['link'],
+                           'calibration_parent': value['parent_link'],
+                           'calibration_child': value['child_link']}
 
             # TODO replace by utils function
             print("Waiting for message")
-            msg = rospy.wait_for_message(value.topic_name, rospy.AnyMsg)
+            msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
             connection_header = msg._connection_header['type'].split('/')
             ros_pkg = connection_header[0] + '.msg'
             msg_type = connection_header[1]
-            print('Topic ' + value.topic_name + ' has type ' + msg_type)
-            sensor_dict['topic'] = value.topic_name
+            print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
+            sensor_dict['topic'] = value['topic_name']
             sensor_dict['msg_type'] = msg_type
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
@@ -89,7 +85,7 @@ class DataCollectorAndLabeler:
                 sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
 
             # Get the kinematic chain form world_link to this sensor's parent link
-            chain = self.listener.chain(value.link, rospy.Time(), self.world_link, rospy.Time(), self.world_link)
+            chain = self.listener.chain(value['link'], rospy.Time(), self.world_link, rospy.Time(), self.world_link)
 
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
@@ -99,8 +95,8 @@ class DataCollectorAndLabeler:
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[sensor_key] = sensor_dict
 
-            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict, marker_size,
-                                                    self.config.pattern.dimension[0], self.config.pattern.dimension[1])
+            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
+                                                    marker_size, self.config['calibration_pattern'])
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
@@ -189,7 +185,7 @@ class DataCollectorAndLabeler:
             if d > max_duration:
                 max_duration = d
 
-        if max_duration.to_sec() > float(self.config.obj['max_duration_between_msgs']):
+        if max_duration.to_sec() > float(self.config['max_duration_between_msgs']):
             rospy.logerr('Max duration between msgs in collection is ' + str(max_duration.to_sec())
                          + ' . Not saving collection.')
             return None
@@ -201,7 +197,7 @@ class DataCollectorAndLabeler:
         self.data_stamp += 1
 
         # Save to json file
-        D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config.obj}
+        D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
     def getAllAbstractTransforms(self):

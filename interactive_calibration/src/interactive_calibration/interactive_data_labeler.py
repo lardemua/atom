@@ -3,7 +3,8 @@
 # ------------------------
 #    IMPORT MODULES      #
 # ------------------------
-import math
+import sys
+import struct
 import threading
 from __builtin__ import enumerate
 from math import sqrt
@@ -14,7 +15,7 @@ from cv_bridge import CvBridge
 from matplotlib import cm
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
-from visualization_msgs.msg import *
+from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
 from sensor_msgs.msg import *
 import interactive_calibration.utilities
 import numpy as np
@@ -22,7 +23,9 @@ import numpy as np
 from ctypes import *  # Convert float to uint32
 from sensor_msgs.msg import PointCloud2, PointField
 import sensor_msgs.point_cloud2 as pc2
-from copy import deepcopy, copy
+from copy import deepcopy
+
+from interactive_calibration import patterns
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -58,7 +61,6 @@ def createRosCloud(points, stamp, frame_id, colours=None):
     # Create ros_cloud
     return pc2.create_cloud(header, fields, cloud_data)
 
-
 # ------------------------
 #      BASE CLASSES      #
 # ------------------------
@@ -91,7 +93,7 @@ class InteractiveDataLabeler:
         PointCloud2: #TODO Tiago Madeira can you complete?
     """
 
-    def __init__(self, server, menu_handler, sensor_dict, marker_scale, chess_numx, chess_numy):
+    def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern):
         """
         Class constructor. Initializes several variables and ros stuff.
         :param server: an interactive marker server
@@ -113,8 +115,16 @@ class InteractiveDataLabeler:
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
         self.lock = threading.Lock()
-        self.numx = chess_numx
-        self.numy = chess_numy
+
+        # self.calib_pattern = calib_pattern
+        if calib_pattern['pattern_type'] == 'chessboard':
+            self.pattern = patterns.ChessboardPattern(tuple(calib_pattern['dimension']), calib_pattern['size'])
+        elif calib_pattern['pattern_type'] == 'charuco':
+            self.pattern = patterns.CharucoPattern(tuple(calib_pattern['dimension']), calib_pattern['size'],
+                                                   calib_pattern['inner_size'])
+        else:
+            print("Unknown pattern type '{}'".format(calib_pattern['pattern_type']))
+            sys.exit(1)
 
         # Get the type of message from the message topic of the sensor data, which is given as input. The message
         # type is used to define which labelling technique is used.
@@ -122,15 +132,15 @@ class InteractiveDataLabeler:
         print('msg_type_str is = ' + str(self.msg_type_str))
 
         # Subscribe to the message topic containing sensor data
-        self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback)
+        self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=None)
 
         # Handle the interactive labelling of data differently according to the sensor message types.
         if self.msg_type_str in ['LaserScan']:
             # TODO parameters given from a command line input?
             self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
             self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
-            self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
-                                                             queue_size=0)  # publish a point cloud with the points
+            self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled',
+                                                             sensor_msgs.msg.PointCloud2, queue_size=0)  # publish a point cloud with the points
             # in the selected cluster
             self.publisher_clusters = rospy.Publisher(self.topic + '/clusters', sensor_msgs.msg.PointCloud2,
                                                       queue_size=0)  # publish a point cloud with coloured clusters
@@ -138,8 +148,7 @@ class InteractiveDataLabeler:
             print('Created interactive marker for laser scans.')
         elif self.msg_type_str in ['Image']:
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
-            self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
-                                                            queue_size=0)  # publish
+            self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image, queue_size=0)  # publish
             # images with the detected chessboard overlaid onto the image.
 
         elif self.msg_type_str in ['PointCloud2']:
@@ -153,8 +162,7 @@ class InteractiveDataLabeler:
             print('Created interactive marker for point clouds.')
         else:
             # We handle only know message types
-            raise ValueError('Message type ' + self.msg_type_str + ' for topic ' + self.topic + 'is of an unknown '
-                                                                                                'type.')
+            raise ValueError('Message type ' + self.msg_type_str + ' for topic ' + self.topic + 'is of an unknown type.')
             # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
 
     def sensorDataReceivedCallback(self, msg):
@@ -282,40 +290,22 @@ class InteractiveDataLabeler:
             # Convert to opencv image and save image to disk
             image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
 
-            # TODO cvtcolor only if image has 3 channels
-            image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            result = self.pattern.detect(image)
+            if result['detected']:
+                # For visual debugging
+                self.pattern.drawKeypoints(image, result)
 
-            # Find chessboard corners
-            self.found, corners = cv2.findChessboardCorners(image_gray, (self.numx, self.numy))
-            if not self.found:
-                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners,
-                                          self.found)  # Draw and display the corners
+                c = []
+                for corner in result['keypoints']:
+                    c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
 
-            if self.found is True:
-                # WARNING: this is a quick hack to maintain the chessboard corners
-                # in the right place.
-                diff = corners[0][0][0] - corners[self.numx - 1][0][0]
-                if diff > 0:
-                    rospy.logwarn_throttle(20, 'Inverted chessboard detected. Appying fix!')
-                    corners = np.array(np.flipud(corners))
-
-                cv2.drawChessboardCorners(image, (self.numx, self.numy), corners,
-                                          self.found)  # Draw and display the corners
-
-                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-                # corners2 = cv2.cornerSubPix(image_gray, corners, (self.numx, self.numy), (-1, -1), criteria)
-                corners2 = corners
-                corners2_d = []
-                for corner in corners2:
-                    corners2_d.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
-
-                x = int(round(corners2_d[0]['x']))
-                y = int(round(corners2_d[0]['y']))
+                x = int(round(c[0]['x']))
+                y = int(round(c[0]['y']))
                 cv2.line(image, (x, y), (x, y), (0, 255, 255), 20)
 
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
-                self.labels['idxs'] = corners2_d
+                self.labels['idxs'] = c
 
             msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp

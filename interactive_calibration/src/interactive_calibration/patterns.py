@@ -57,19 +57,19 @@ class CharucoPattern(Pattern):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary)
-        corners, ids, rejected, recoverd = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
+        corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
         if len(corners) > 4:
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
             # For now, a valid detection must contain all corners
             return {'detected': len(ccorners) == self.number_of_corners,
-                    'corners': ccorners, 'ids': cids}
+                    'keypoints': ccorners, 'ids': cids}
 
-        return {"detected": False, 'corners': np.array([]), 'ids': ids}
+        return {"detected": False, 'keypoints': np.array([]), 'ids': ids}
 
     def drawKeypoints(self, image, result):
-        if len(result['corners']) == 0:
+        if len(result['keypoints']) == 0:
             return
 
-        cv2.drawChessboardCorners(image, (self.size[0]-1, self.size[1]-1), result['corners'], result['detected'])
+        cv2.drawChessboardCorners(image, (self.size[0]-1, self.size[1]-1), result['keypoints'], result['detected'])

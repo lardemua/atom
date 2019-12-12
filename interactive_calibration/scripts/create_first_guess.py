@@ -4,19 +4,21 @@ import sys
 import os.path
 import argparse
 
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 
 # ROS imports
 import rospkg
+import rospy
 
-from interactive_markers.interactive_marker_server import *
-from interactive_markers.menu_handler              import MenuHandler
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
+from interactive_markers.menu_handler import MenuHandler
 
 from urdf_parser_py.urdf import URDF
 
 # __self__ imports
-from interactive_calibration.utilities import CalibConfig, validateLinks
-from interactive_calibration.sensor    import Sensor
+from interactive_calibration.utilities import loadJSONConfig
+from interactive_calibration.sensor import Sensor
+
 
 class InteractiveFirstGuess(object):
 
@@ -31,58 +33,66 @@ class InteractiveFirstGuess(object):
         self.urdf = None
         # interactive markers server
         self.server = None
-        self.menu   = None
+        self.menu = None
 
     def init(self):
         # The parameter /robot_description must exist
         if not rospy.has_param('/robot_description'):
-            rospy.logerr("The parameter does not '/robot_description' and it is required to continue")
+            rospy.logerr("Parameter '/robot_description' must exist to continue")
             sys.exit(1)
 
-        self.config = CalibConfig()
-        ok = self.config.loadJSON(self.args['calibration_file'])
-        # Exit if it fails to open a valid calibration file
-        if not ok: sys.exit(1)
+        self.config = loadJSONConfig(self.args['calibration_file'])
+        if self.config is None:
+            sys.exit(1)  # loadJSON should tell you why.
+
+        # self.config = CalibConfig()
+        # ok = self.config.loadJSON(self.args['calibration_file'])
+        # # Exit if it fails to open a valid calibration file
+        # if not ok:
+        #     sys.exit(1)
 
         # Load the urdf from /robot_description
         self.urdf = URDF.from_parameter_server()
 
-        ok = validateLinks(self.config.world_link, self.config.sensors, self.urdf)
-        if not ok: sys.exit(1)
+        # ok = validateLinks(self.config.world_link, self.config.sensors, self.urdf)
+        # if not ok:
+        #     sys.exit(1)
 
-        print('Number of sensors: ' + str(len(self.config.sensors)))
+        print('Number of sensors: ' + str(len(self.config['sensors'])))
 
         # Init interaction
         self.server = InteractiveMarkerServer("interactive_first_guess")
-        self.menu   = MenuHandler()
+        self.menu = MenuHandler()
 
         self.menu.insert("Save sensors configuration",     callback=self.onSaveFirstGuess)
         self.menu.insert("Reset to initial configuration", callback=self.onReset)
 
         # For each node generate an interactive marker.
-        for name, sensor in self.config.sensors.items():
+        for name, sensor in self.config['sensors'].items():
             print(Fore.BLUE + '\nSensor name is ' + name + Style.RESET_ALL)
             params = {
-                "frame_world":      self.config.world_link,
-                "frame_opt_parent": sensor.parent_link,
-                "frame_opt_child":  sensor.child_link,
-                "frame_sensor":     sensor.link,
+                "frame_world":      self.config['world_link'],
+                "frame_opt_parent": sensor['parent_link'],
+                "frame_opt_child":  sensor['child_link'],
+                "frame_sensor":     sensor['link'],
                 "marker_scale":     self.args['marker_scale']}
             # Append to the list of sensors
-            self.sensors.append(Sensor(sensor.name, self.server, self.menu, **params))
+            self.sensors.append(Sensor(name, self.server, self.menu, **params))
 
         self.server.applyChanges()
 
     def onSaveFirstGuess(self, feedback):
         for sensor in self.sensors:
-            for joint in self.urdf.joints:  # find corresponding joint for this sensor
+            # find corresponding joint for this sensor
+            for joint in self.urdf.joints:
                 if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
                     trans = sensor.optT.getTranslation()
                     euler = sensor.optT.getEulerAngles()
                     joint.origin.xyz = list(trans)
                     joint.origin.rpy = list(euler)
 
-        # Write the urdf file with interactive_calibration's source path as base directory.
+        # Write the urdf file with interactive_calibration's
+        # source path as base directory.
         rospack = rospkg.RosPack()
         outfile = rospack.get_path('interactive_calibration') + os.path.abspath('/' + self.args['filename'])
         with open(outfile, 'w') as out:
@@ -115,4 +125,3 @@ if __name__ == "__main__":
     print('Changes applied ...')
 
     rospy.spin()
-
