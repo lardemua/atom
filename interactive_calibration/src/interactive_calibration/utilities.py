@@ -7,120 +7,72 @@ import jsonschema
 
 import rospy
 from rospy_message_converter import message_converter
+
 from sensor_msgs.msg import *
 
-from urdf_parser_py.urdf import URDF
+def loadJSONConfig(filename):
+    """Load configuration from a json file"""
+    try:
+        with open(filename, 'r') as f:
+            obj = json.load(f)
 
-class SensorConfig(object):
-    def __init__(self, name, link, parent_link, child_link, topic_name):
-        self.name = name;
-        self.link = link;
-        self.parent_link = parent_link;
-        self.child_link  = child_link;
-        self.topic_name  = topic_name;
+        _validateJSONConfig(obj)
+    except OSError as e:
+        print("I/O error({0}): {1}".format(e.errno, e.strerror))
+        return None
+    except jsonschema.exceptions.ValidationError as e:
+        print("Invalid calibration JSON: {} @ /{}".format(e.message, "/".join([str(x) for x in e.path])))
+        return None
 
-    def __str__(self):
-        return "Node<'{}','{}','{}','{}','{}'>".format(self.name, self.link,
-               self.parent_link, self.child_link, self.topic_name)
+    return obj
 
-class PatternConfig(object):
-    def __init__(self, pattern_type, dimension, size, border_size):
-        self.pattern_type = pattern_type;
-        self.dimension    = dimension;
-        self.size         = size;
-        self.border_size  = border_size
-
-    def __str__(self):
-        return "Pattern<[{},{}],{}>".format(self.dimension[0], self.dimension[1], self.size)
-
-class CalibConfig(object):
-
-    def __init__(self):
-        self.sensors = {}
-        self.pattern = None
-        self.world_link = None
-        self.anchored_sensor = None
-
-    def loadJSON(self, filename):
-        """Load configuration from a json file"""
-        try:
-            with open(filename, 'r') as f:
-                obj = json.load(f);
-
-            self.validateJSON(obj)
-        except OSError as e:
-            print("I/O error({0}): {1}".format(e.errno, e.strerror))
-            return False
-        except jsonschema.exceptions.ValidationError as e:
-            print("Invalid calibration JSON: {} @ /{}".format(e.message, "/".join( [str(x) for x in e.path] )))
-            return False
-
-        # build the sensors
-        for name, params in obj['sensors'].items():
-            self.sensors[name] = SensorConfig(name, **params)
-
-        # Fixed frame
-        self.world_link = obj['world_link'].lstrip('/')
-
-        # check if we have an anchored sensor
-        if 'anchored_sensor' in obj:
-            self.anchored_sensor = obj['anchored_sensor']
-            if self.anchored_sensor not in self.sensors:
-                return False
-
-        # Add pattern
-        self.pattern = PatternConfig( **obj['calibration_pattern'] )
-
-        # TODO Eurico will change this
-        self.obj = obj
-
-        return True
-
-    @staticmethod
-    def validateJSON(obj):
-        # Tedious work!!!!
-        schema = {
-            "type": "object",
-            "required": ["sensors", "world_link", "calibration_pattern"],
-            "properties": {
-                "sensors": {
-                    "type": "object",
-                    "patternProperties":{
-                        "^(.*)$": {
-                            "type": "object",
-                            "required": ["link", "parent_link", "child_link"],
-                             "additionalProperties": False,
-                            "properties": {
-                                "link": { "type": "string" },
-                                "parent_link": { "type": "string" },
-                                "child_link":  { "type": "string" },
-                                "topic_name":  { "type": "string" },
-                            }
+def _validateJSONConfig(obj):
+    # Tedious work!!!!
+    schema = {
+        "type": "object",
+        "required": ["sensors", "world_link", "calibration_pattern"],
+        "properties": {
+            "sensors": {
+                "type": "object",
+                "patternProperties": {
+                    "^(.*)$": {
+                        "type": "object",
+                        "required": ["link", "parent_link", "child_link"],
+                        "additionalProperties": False,
+                        "properties": {
+                            "link": {"type": "string"},
+                            "parent_link": {"type": "string"},
+                            "child_link": {"type": "string"},
+                            "topic_name": {"type": "string"},
                         }
                     }
-                },
-                "anchored_sensor": { "type": "string" },
-                "world_link": { "type": "string" },
-                "calibration_pattern": {
-                    "type": "object",
-                    "required": ["pattern_type", "dimension", "size", "border_size"],
-                    "additionalProperties": False,
-                    "properties": {
-                        "pattern_type": { "type": "string" },
-                        "dimension": {
-                            "type" : "array",
-                            "minItems": 2,
-                            "maxItems": 2,
-                            "items": {"type": "number"}
-                        },
-                        "size":        { "type" : "number" },
-                        "border_size": { "type" : "number" }
-                    }
+                }
+            },
+            "anchored_sensor": {"type": "string"},
+            "world_link": {"type": "string"},
+            "max_duration_between_msgs": {"type": "number"},
+            "calibration_pattern": {
+                "type": "object",
+                "required": ["pattern_type", "dimension", "size", "border_size"],
+                "additionalProperties": False,
+                "properties": {
+                    "pattern_type": {"type": "string"},
+                    "dimension": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {"type": "number"}
+                    },
+                    "size": {"type": "number"},
+                    "inner_size": {"type": "number"},
+                    "border_size": {"type": "number"}
                 }
             }
         }
+    }
 
-        jsonschema.validate(obj, schema)
+    jsonschema.validate(obj, schema)
+
 
 def validateLinks(world_link, sensors, urdf):
     try:
@@ -140,6 +92,7 @@ def validateLinks(world_link, sensors, urdf):
 
     return True
 
+
 def laser_scan_msg_to_xy(msg):
     data = message_converter.convert_ros_message_to_dictionary(msg)
     return laser_scan_data_to_xy(data)
@@ -158,7 +111,6 @@ def laser_scan_data_to_xy(data):
         y.append(r * math.sin(theta))
 
     return x, y
-
 
 
 def getMessageTypeFromTopic(topic):
