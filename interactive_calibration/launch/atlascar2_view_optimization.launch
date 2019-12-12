@@ -13,7 +13,7 @@
     <!--/calibrations/atlascar2/atlascar2.urdf.xacro"/>-->
     <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/first_guess.urdf.xacro"/>
     <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/view_optimization.rviz"/>
-    <arg name="node_start_delay" default="1"/>
+    <arg name="node_start_delay" default="2"/>
 
 <!--    <param name="robot_description" value=""/>-->
 
