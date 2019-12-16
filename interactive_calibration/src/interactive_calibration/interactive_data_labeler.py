@@ -7,7 +7,7 @@ import sys
 import struct
 import threading
 from __builtin__ import enumerate
-from math import sqrt
+import math
 
 import cv2
 import rospy
@@ -26,6 +26,8 @@ import sensor_msgs.point_cloud2 as pc2
 from copy import deepcopy
 
 from interactive_calibration import patterns
+
+from image_geometry import PinholeCameraModel
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -204,7 +206,7 @@ class InteractiveDataLabeler:
                 else:  # check if new point belongs to current cluster, create new cluster if not
                     x = xs[clusters[-1].idxs[-1]]  # x coordinate of last point of last cluster
                     y = ys[clusters[-1].idxs[-1]]  # y coordinate of last point of last cluster
-                    distance = sqrt((xs[idx] - x) ** 2 + (ys[idx] - y) ** 2)
+                    distance = math.sqrt((xs[idx] - x) ** 2 + (ys[idx] - y) ** 2)
                     if distance > self.threshold:  # if distance larger than threshold, create new cluster
                         cluster_counter += 1
                         clusters.append(LaserScanCluster(cluster_counter, idx))
@@ -218,7 +220,7 @@ class InteractiveDataLabeler:
             for cluster_idx, cluster in enumerate(clusters):  # cycle all clusters
                 for idx in cluster.idxs:  # cycle each point in the cluster
                     x, y = xs[idx], ys[idx]
-                    dist = sqrt((x_marker - x) ** 2 + (y_marker - y) ** 2)
+                    dist = math.sqrt((x_marker - x) ** 2 + (y_marker - y) ** 2)
                     if dist < min_dist:
                         idx_closest_cluster = cluster_idx
                         min_dist = dist
@@ -318,16 +320,18 @@ class InteractiveDataLabeler:
             # Get 3D coords
             points = pc2.read_points_list(self.msg, skip_nans=False, field_names=("x", "y", "z"))
 
-            # Association stage: find out which cluster is closer to the marker
+            # Get the marker position
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z  # interactive marker pose
-            idx_closest_point = 0
-            min_dist = sys.maxint
-            for idx, point in enumerate(points):  # cycle each point in the cloud
-                x, y, z = point[0], point[1], point[2]
-                dist = sqrt((x_marker - x) ** 2 + (y_marker - y) ** 2 + (z_marker - z) ** 2)
-                if dist < min_dist:
-                    idx_closest_point = idx
-                    min_dist = dist
+
+            cam_model = PinholeCameraModel()
+
+            # Wait for camera info message
+            camera_info = rospy.wait_for_message('/top_center_rgbd_camera/depth/camera_info', CameraInfo)
+            cam_model.fromCameraInfo(camera_info)
+
+            # Project points
+            seed_point = cam_model.project3dToPixel((x_marker, y_marker, z_marker))
+            seed_point = (int(math.floor(seed_point[0])), int(math.floor(seed_point[1])))
 
             # Wait for depth image message
             imgmsg = rospy.wait_for_message('/top_center_rgbd_camera/depth/image_rect', Image)
@@ -343,47 +347,18 @@ class InteractiveDataLabeler:
             # print('img_float shape = ' + str(img_float.shape))
             h, w = img.shape
 
-            # second approach
             mask = np.zeros((h + 2, w + 2, 1), np.uint8)
-            # cv2.floodFill(img, mask,
-            #               (idx_closest_point % 640, int(math.floor(idx_closest_point / 640))),  # seed point
-            #               255,  # not used
-            #               100, 300,  # low and high threshold
-            #               8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY  # connectivity 8, value to set touch mask only
-            #               )
 
-            # seed_point = (idx_closest_point % 640, int(math.floor(idx_closest_point / 640)))
-            seed_point = (int(math.floor(idx_closest_point / w)) , idx_closest_point % w)
+            # mask[seed_point[1] - 2:seed_point[1] + 2, seed_point[0] - 2:seed_point[0] + 2] = 255
+
             img_float2 = deepcopy(img_float)
-            cv2.floodFill(img_float2, mask, seed_point, 128, 0.5, .5,
-                          8 | (128 << 8) | cv2.FLOODFILL_MASK_ONLY)
+            cv2.floodFill(img_float2, mask, seed_point, 128, 0.1, 0.1,
+                          8 | (128 << 8) | cv2.FLOODFILL_MASK_ONLY) # | cv2.FLOODFILL_FIXED_RANGE)
 
-            mask[seed_point[0]-10:seed_point[0]+10, seed_point[1]-10:seed_point[1]+10] = 255
+            # Switch coords of seed point
+            # mask[seed_point[1]-2:seed_point[1]+2, seed_point[0]-2:seed_point[0]+2] = 255
 
-            cv2.imshow("mask", mask)
-            cv2.waitKey(20)
-            nmask = mask
-            # ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
-
-            # first approach
-
-            # ret, thresh = cv2.threshold(img, 1, 255, 0)
-            # thresh = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 0)
-            #
-            # _,contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            #
-            # mask = np.zeros((h + 2, w + 2, 1), np.uint8)
-            # cv2.drawContours(mask, contours, -1, (100, 100, 100), 1)
-            #
-            # # print(idx_closest_point)
-            #
-            # # Flag the mask pixels
-            # cv2.floodFill(img, mask, (idx_closest_point % 640, int(math.floor(idx_closest_point/640))), 255, 0, 0,
-            #               8 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
-            #
-            # ret, nmask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
-
-            tmpmask = nmask[1:h + 1, 1:w + 1]
+            tmpmask = mask[1:h + 1, 1:w + 1]
 
             # calculate moments of binary image
             M = cv2.moments(tmpmask)
@@ -393,28 +368,25 @@ class InteractiveDataLabeler:
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
 
-                showcenter = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+                mask[cY-2:cY+2, cX-2:cX+2] = 255
 
-                blueImg = np.zeros(showcenter.shape, showcenter.dtype)
-                blueImg[:, :] = (255, 100, 0)
-                blueMask = cv2.bitwise_and(blueImg, blueImg, mask=tmpmask)
-                showcenter = cv2.addWeighted(blueMask, 0.2, showcenter, 0.8, 0.0)
+                cv2.imshow("mask", mask)
+                cv2.waitKey(20)
 
-                cv2.line(showcenter, (cX, cY), (cX, cY), (255, 0, 0), 15)
+                # msg_out = self.bridge.cv2_to_imgmsg(showcenter, encoding="passthrough")
+                # msg_out.header.stamp = self.msg.header.stamp
+                # msg_out.header.frame_id = self.msg.header.frame_id
 
-                msg_out = self.bridge.cv2_to_imgmsg(showcenter, encoding="passthrough")
-                msg_out.header.stamp = self.msg.header.stamp
-                msg_out.header.frame_id = self.msg.header.frame_id
-
-                self.publisher_labelled_depth_image.publish(msg_out)
+                # self.publisher_labelled_depth_image.publish(msg_out)
 
                 coords = points[cY * 640 + cX]
 
-                # self.marker.pose.position.x = coords[0]
-                # self.marker.pose.position.y = coords[1]
-                # self.marker.pose.position.z = coords[2]
-                # self.menu_handler.reApply(self.server)
-                # self.server.applyChanges()
+                if not math.isnan(coords[0]):
+                    self.marker.pose.position.x = coords[0]
+                    self.marker.pose.position.y = coords[1]
+                    self.marker.pose.position.z = coords[2]
+                    self.menu_handler.reApply(self.server)
+                    self.server.applyChanges()
 
             # idx = np.where(tmpmask == 100)
             # # Create tuple with (l, c)
