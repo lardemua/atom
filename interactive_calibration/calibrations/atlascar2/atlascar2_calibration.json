@@ -40,7 +40,7 @@
         "pattern_type": "chessboard",
         "border_size": 0.5,
         "dimension": {"x": 9, "y": 6},
-        "size": 0.019,
+        "size": 0.101,
         "inner_size": 0.014
     }
 }

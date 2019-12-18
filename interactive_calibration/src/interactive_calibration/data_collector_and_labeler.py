@@ -223,7 +223,7 @@ class DataCollectorAndLabeler:
     def createJSONFile(self, output_file, D):
         print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
         f = open(output_file, 'w')
-        json.encoder.FLOAT_REPR = lambda f: ("%.4f" % f)  # to get only four decimal places on the json file
+        json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
         print >> f, json.dumps(D, indent=2, sort_keys=True)
         f.close()
         print("Completed.")
