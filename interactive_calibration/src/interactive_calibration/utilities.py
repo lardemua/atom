@@ -53,9 +53,17 @@ def _validateJSONConfig(obj):
             "max_duration_between_msgs": {"type": "number"},
             "calibration_pattern": {
                 "type": "object",
-                "required": ["pattern_type", "dimension", "size", "border_size"],
+                "required": ["link", "parent_link", "pattern_type", "dimension", "size", "border_size"],
                 "additionalProperties": False,
                 "properties": {
+                    "link": {"type": "string"},
+                    "parent_link": {"type": "string"},
+                    "origin": {
+                        "type": "array"
+                        "minItems": 6,
+                        "maxItems": 6,
+                        "items": {"type": "number"}
+                    },
                     "pattern_type": {"type": "string"},
                     "dimension": {
                         "type": "array",

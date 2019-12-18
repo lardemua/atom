@@ -41,7 +41,7 @@ class SimplePatternDetector:
             rospy.signal_shutdown(1)
 
 def main():
-    rospy.init_node('detect_chessboard')
+    rospy.init_node('detect_chessboard', anonymous=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("topic", help="Topic name to subscribe.", metavar='topic', type=str)

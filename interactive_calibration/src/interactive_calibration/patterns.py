@@ -3,18 +3,7 @@ import cv2
 import numpy as np
 
 
-class Pattern:
-    def __init__(self):
-        pass
-
-    def detect(self, image):
-        return {"detected": False, 'keypoints': np.array([])}
-
-    def drawKeypoints(self, image, data):
-        pass
-
-
-class ChessboardPattern(Pattern):
+class ChessboardPattern(object):
     def __init__(self, size, length):
         self.size = size
         self.length = length
@@ -45,13 +34,13 @@ class ChessboardPattern(Pattern):
         cv2.drawChessboardCorners(image, self.size, result['keypoints'], result['detected'])
 
 
-class CharucoPattern(Pattern):
+class CharucoPattern(object):
     def __init__(self, size, length, marker_length):
 
         self.size = size
-        self.number_of_corners = (size[0]-1) * (size[1]-1)
+        self.number_of_corners = size[0] * size[1]
         self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        self.board = cv2.aruco.CharucoBoard_create(size[0], size[1], length, marker_length, self.dictionary)
+        self.board = cv2.aruco.CharucoBoard_create(size[0]+1, size[1]+1, length, marker_length, self.dictionary)
 
     def detect(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
