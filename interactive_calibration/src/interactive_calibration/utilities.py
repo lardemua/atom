@@ -59,11 +59,12 @@ def _validateJSONConfig(obj):
                     "link": {"type": "string"},
                     "parent_link": {"type": "string"},
                     "origin": {
-                        "type": "array"
+                        "type": "array",
                         "minItems": 6,
                         "maxItems": 6,
                         "items": {"type": "number"}
                     },
+                    "fixed": {"type": "boolean"},
                     "pattern_type": {"type": "string"},
                     "dimension": {
                         "type": "array",

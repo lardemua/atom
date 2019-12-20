@@ -294,9 +294,6 @@ class InteractiveDataLabeler:
 
             result = self.pattern.detect(image)
             if result['detected']:
-                # For visual debugging
-                self.pattern.drawKeypoints(image, result)
-
                 c = []
                 for corner in result['keypoints']:
                     c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
@@ -308,6 +305,9 @@ class InteractiveDataLabeler:
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
                 self.labels['idxs'] = c
+
+            # For visual debugging
+            self.pattern.drawKeypoints(image, result)
 
             msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp

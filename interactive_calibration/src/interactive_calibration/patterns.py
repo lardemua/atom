@@ -61,4 +61,4 @@ class CharucoPattern(object):
         if len(result['keypoints']) == 0:
             return
 
-        cv2.drawChessboardCorners(image, (self.size[0]-1, self.size[1]-1), result['keypoints'], result['detected'])
+        cv2.drawChessboardCorners(image, (self.size[0], self.size[1]), result['keypoints'], result['detected'])

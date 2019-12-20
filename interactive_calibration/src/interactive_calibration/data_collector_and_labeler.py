@@ -85,7 +85,9 @@ class DataCollectorAndLabeler:
                 sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
 
             # Get the kinematic chain form world_link to this sensor's parent link
-            chain = self.listener.chain(value['link'], rospy.Time(), self.world_link, rospy.Time(), self.world_link)
+            now = rospy.Time()
+            self.listener.waitForTransform(value['link'], self.world_link, now, rospy.Duration(5))
+            chain = self.listener.chain(value['link'], now, self.world_link, now, self.world_link)
 
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
