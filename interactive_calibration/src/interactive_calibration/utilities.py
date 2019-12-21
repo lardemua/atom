@@ -1,4 +1,4 @@
-
+import itertools
 import math
 import numpy as np
 
@@ -9,6 +9,7 @@ import rospy
 from rospy_message_converter import message_converter
 
 from sensor_msgs.msg import *
+
 
 def loadJSONConfig(filename):
     """Load configuration from a json file"""
@@ -25,6 +26,7 @@ def loadJSONConfig(filename):
         return None
 
     return obj
+
 
 def _validateJSONConfig(obj):
     # Tedious work!!!!
@@ -91,7 +93,9 @@ def validateLinks(world_link, sensors, urdf):
         for name, sensor in sensors.items():
             chain = urdf.get_chain(world_link, sensor.link)
             if sensor.parent_link not in chain or sensor.child_link not in chain:
-                print("{}: The links '{}' and '{}' are not parte of the same chain.".format(sensor.name, sensor.parent_link, sensor.child_link))
+                print("{}: The links '{}' and '{}' are not parte of the same chain.".format(sensor.name,
+                                                                                            sensor.parent_link,
+                                                                                            sensor.child_link))
                 return False
     except KeyError as e:
         link_name = str(e).strip("'")
@@ -161,3 +165,35 @@ def draw_2d_axes(plt):
 
     plt.text(10, 0.5, 'X', color='red')
     plt.text(-1.0, 10, 'Y', color='green')
+
+
+def printRosTime(time, prefix=""):
+    print(prefix + str(time.secs) + "." + str(time.nsecs))
+
+
+def getMaxTimeDelta(stamps):
+    if len(stamps) < 2:  # need at least two time stamps to compute a delta
+        return None
+
+    pairs = list(itertools.combinations(stamps, 2))
+    max_duration = rospy.Duration(0)
+    for p1, p2 in pairs:
+        d = abs(p1 - p2)
+        if d > max_duration:
+            max_duration = d
+
+    return max_duration
+
+
+def getAverageTime(stamps):
+    reference_time = rospy.Time.now()  # get a time at the start of this call
+    durations = [(stamp - reference_time).to_sec() for stamp in stamps]
+    avg_duration = sum(durations) / len(durations)
+    avg_time = reference_time + rospy.Duration(avg_duration)
+
+    printRosTime(reference_time, "reference_time: ")
+    printRosTime(avg_time, "avg_time: ")
+    print("durations = " + str(durations))
+    print("avg_duration = " + str(avg_duration))
+
+    return avg_time

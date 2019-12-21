@@ -21,11 +21,11 @@ menu_handler = MenuHandler()
 def menuFeedback(feedback):
     handle = feedback.menu_entry_id
     if handle == 1:  # collect snapshot
-        print('Collect snapshot selected')
-        data_collector.collectSnapshot()
+        print('Save collection selected')
+        data_collector.saveCollection()
 
 def initMenu():
-    menu_handler.insert("Collect snapshot", callback=menuFeedback)
+    menu_handler.insert("Save collection", callback=menuFeedback)
 
 
 def createInteractiveMarker(world_link):

@@ -23,12 +23,6 @@
             "parent_link": "base_link",
             "child_link": "left_laser",
             "topic_name": "/left_laser/laserscan"
-        },
-      "top_center_rgbd_camera_rgb": {
-            "link": "top_center_rgbd_camera_rgb_optical_frame",
-            "parent_link": "base_link",
-            "child_link": "top_center_rgbd_camera_link",
-            "topic_name": "/top_center_rgbd_camera/rgb/image_raw"
         }
 },
 

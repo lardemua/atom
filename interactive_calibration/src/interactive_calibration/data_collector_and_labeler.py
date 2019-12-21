@@ -3,7 +3,6 @@ import json
 import os
 import shutil
 import cv2
-import itertools
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
@@ -11,6 +10,8 @@ from interactive_markers.menu_handler import *
 from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
+
+from utilities import printRosTime, getMaxTimeDelta, getAverageTime
 from interactive_calibration.utilities import loadJSONConfig
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
@@ -111,52 +112,87 @@ class DataCollectorAndLabeler:
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
 
-    def getTransforms(self, abstract_transforms):
+    def getTransforms(self, abstract_transforms, time=None):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
-        now = rospy.Time.now()
+
+        if time is None:
+            time = rospy.Time.now()
 
         for ab in abstract_transforms:  # Update all transformations
-            self.listener.waitForTransform(ab['parent'], ab['child'], now, rospy.Duration(1.0))
-            (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], now)
+            self.listener.waitForTransform(ab['parent'], ab['child'], time, rospy.Duration(1.0))
+            (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], time)
             key = self.generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
 
         return transforms_dict
 
-    def collectSnapshot(self):
+    def lockAllLabelers(self):
+        for sensor_name, sensor in self.sensors.iteritems():
+            self.sensor_labelers[sensor_name].lock.acquire()
+        print("Locked all labelers")
+
+    def unlockAllLabelers(self):
+        for sensor_name, sensor in self.sensors.iteritems():
+            self.sensor_labelers[sensor_name].lock.release()
+        print("Unlocked all labelers")
+
+    def getLabelersTimeStatistics(self):
+        stamps = []  # a list of the several time stamps of the stored messages
+        for sensor_name, sensor in self.sensors.iteritems():
+            stamps.append(copy.deepcopy(self.sensor_labelers[sensor_name].msg.header.stamp))
+
+        max_delta = getMaxTimeDelta(stamps)
+        average_time = getAverageTime(stamps)  # For looking up transforms use average time of all sensor msgs
+
+        print('Times:')
+        for stamp in stamps:
+            printRosTime(stamp)
+
+        return stamps, average_time, max_delta
+
+    def saveCollection(self):
 
         # --------------------------------------
         # Collect sensor data and labels (images, laser scans, etc)
         # --------------------------------------
-        all_sensor_data_dict = {}
-        all_sensor_labels_dict = {}
+
+        # Lock the semaphore for all labelers
+        self.lockAllLabelers()
+
+        # Analyse message time stamps and decide if collection can be stored
+        stamps, average_time, max_delta = self.getLabelersTimeStatistics()
+
+        if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):  # times are close enough?
+            rospy.logwarn('Max duration between msgs in collection is ' + str(max_delta.to_sec()) +
+                          '. Not saving collection.')
+            self.unlockAllLabelers()
+            return None
+        else:  # test passed
+            rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
 
         # Collect all the transforms
-        transforms = self.getTransforms(self.abstract_transforms)
+        transforms = self.getTransforms(self.abstract_transforms, average_time)  # use average time of sensor msgs
+        printRosTime(average_time, "Collected transforms for time ")
 
+        all_sensor_data_dict = {}
+        all_sensor_labels_dict = {}
         for sensor_name, sensor in self.sensors.iteritems():
-            print('collectSnapshot: sensor_name ' + sensor_name)
+            print('collect sensor: ' + sensor_name)
 
-            # Lock the semaphore and make a copy of both the data and the labels.
-            self.sensor_labelers[sensor_name].lock.acquire()
             msg = copy.deepcopy(self.sensor_labelers[sensor_name].msg)
             labels = copy.deepcopy(self.sensor_labelers[sensor_name].labels)
-            self.sensor_labelers[sensor_name].lock.release()
 
-            # TODO add exception also for point cloud and depht image
+            # TODO add exception also for point cloud and depth image
             # Update sensor data ---------------------------------------------
             if sensor['msg_type'] == 'Image':  # Special case of requires saving image data as png separate files
                 cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")  # Convert to opencv image and save image to disk
                 filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
                 filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
-                print('Data ' + str(self.data_stamp) + ' from sensor ' + sensor['_name'] + ': saving image ' + filename)
                 cv2.imwrite(filename, cv_image)
 
-                # Convert the sensor data to python dictionary
-                image_dict = message_converter.convert_ros_message_to_dictionary(msg)
+                image_dict = message_converter.convert_ros_message_to_dictionary(msg) # Convert sensor data to dictionary
                 del image_dict['data']  # Remove data field (which contains the image), and replace by "data_file"
-                # field which contains the  full path to where the image was saved
-                image_dict['data_file'] = filename_relative
+                image_dict['data_file'] = filename_relative # Contains full path to where the image was saved
 
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = image_dict
@@ -172,35 +208,14 @@ class DataCollectorAndLabeler:
                 raise ValueError('Unknown message type.')
 
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': transforms}
-
-        # Check if the message time stamps are "close enough"
-        stamps = []  # a list of the several time stamps of the stored messages
-        t = rospy.Time()
-        for sensor_key, data in collection_dict['data'].items():
-            t.set(data['header']['stamp']['secs'], data['header']['stamp']['nsecs'])
-            stamps.append(copy.deepcopy(t))
-
-        pairs = list(itertools.combinations(stamps, 2))
-        max_duration = rospy.Duration(0)
-        for p1, p2 in pairs:
-            d = abs(p1 - p2)
-            if d > max_duration:
-                max_duration = d
-
-        if max_duration.to_sec() > float(self.config['max_duration_between_msgs']):
-            rospy.logerr('Max duration between msgs in collection is ' + str(max_duration.to_sec())
-                         + ' . Not saving collection.')
-            return None
-        else:
-            rospy.loginfo('Max duration between msgs in collection is ' + str(max_duration.to_sec()))
-
-        # Build a collection dictionary
         self.collections[self.data_stamp] = collection_dict
         self.data_stamp += 1
 
         # Save to json file
         D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config}
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
+
+        self.unlockAllLabelers()
 
     def getAllAbstractTransforms(self):
 
