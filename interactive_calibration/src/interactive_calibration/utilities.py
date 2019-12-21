@@ -67,10 +67,13 @@ def _validateJSONConfig(obj):
                     "fixed": {"type": "boolean"},
                     "pattern_type": {"type": "string"},
                     "dimension": {
-                        "type": "array",
-                        "minItems": 2,
-                        "maxItems": 2,
-                        "items": {"type": "number"}
+                        "type": "object",
+                        "required": ["x", "y"],
+                        "additionalProperties": False,
+                        "properties": {
+                            "x": {"type": "number"},
+                            "y": {"type": "number"},
+                        }
                     },
                     "size": {"type": "number"},
                     "inner_size": {"type": "number"},

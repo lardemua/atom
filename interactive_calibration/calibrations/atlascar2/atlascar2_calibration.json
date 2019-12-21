@@ -37,6 +37,10 @@
     "max_duration_between_msgs": 0.1,
 
     "calibration_pattern" : {
+        "link": "chessboard_link",
+        "parent_link": "base_link",
+        "origin": [0.0, 0.0, 0.0, 1.5, 0.0, 0.0],
+        "false": true,
         "pattern_type": "chessboard",
         "border_size": 0.5,
         "dimension": {"x": 9, "y": 6},

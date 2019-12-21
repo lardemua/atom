@@ -5,7 +5,7 @@ import numpy as np
 
 class ChessboardPattern(object):
     def __init__(self, size, length):
-        self.size = size
+        self.size = (size["x"], size["y"])
         self.length = length
 
     def detect(self, image):
@@ -37,10 +37,10 @@ class ChessboardPattern(object):
 class CharucoPattern(object):
     def __init__(self, size, length, marker_length):
 
-        self.size = size
-        self.number_of_corners = size[0] * size[1]
+        self.size = (size["x"], size["y"])
+        self.number_of_corners = size["x"] * size["y"]
         self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        self.board = cv2.aruco.CharucoBoard_create(size[0]+1, size[1]+1, length, marker_length, self.dictionary)
+        self.board = cv2.aruco.CharucoBoard_create(size["x"]+1, size["y"]+1, length, marker_length, self.dictionary)
 
     def detect(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -52,7 +52,7 @@ class CharucoPattern(object):
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
             # For now, a valid detection must contain all corners
-            return {'detected': len(ccorners) == self.number_of_corners,
+            return {'detected': ccorners is not None and len(ccorners) == self.number_of_corners,
                     'keypoints': ccorners, 'ids': cids}
 
         return {"detected": False, 'keypoints': np.array([]), 'ids': ids}
