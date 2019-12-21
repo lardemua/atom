@@ -65,6 +65,56 @@ Visualization Manager:
           Value: true
         chessboard_0:
           Value: true
+        chessboard_1:
+          Value: true
+        chessboard_10:
+          Value: true
+        chessboard_11:
+          Value: true
+        chessboard_12:
+          Value: true
+        chessboard_13:
+          Value: true
+        chessboard_14:
+          Value: true
+        chessboard_15:
+          Value: true
+        chessboard_16:
+          Value: true
+        chessboard_17:
+          Value: true
+        chessboard_18:
+          Value: true
+        chessboard_19:
+          Value: true
+        chessboard_2:
+          Value: true
+        chessboard_20:
+          Value: true
+        chessboard_21:
+          Value: true
+        chessboard_22:
+          Value: true
+        chessboard_23:
+          Value: true
+        chessboard_24:
+          Value: true
+        chessboard_25:
+          Value: true
+        chessboard_26:
+          Value: true
+        chessboard_27:
+          Value: true
+        chessboard_3:
+          Value: true
+        chessboard_4:
+          Value: true
+        chessboard_5:
+          Value: true
+        chessboard_7:
+          Value: true
+        chessboard_9:
+          Value: true
         frontal_laser:
           Value: true
         frontal_laser_mount_link:
@@ -136,6 +186,56 @@ Visualization Manager:
             model:
               {}
           chessboard_0:
+            {}
+          chessboard_1:
+            {}
+          chessboard_10:
+            {}
+          chessboard_11:
+            {}
+          chessboard_12:
+            {}
+          chessboard_13:
+            {}
+          chessboard_14:
+            {}
+          chessboard_15:
+            {}
+          chessboard_16:
+            {}
+          chessboard_17:
+            {}
+          chessboard_18:
+            {}
+          chessboard_19:
+            {}
+          chessboard_2:
+            {}
+          chessboard_20:
+            {}
+          chessboard_21:
+            {}
+          chessboard_22:
+            {}
+          chessboard_23:
+            {}
+          chessboard_24:
+            {}
+          chessboard_25:
+            {}
+          chessboard_26:
+            {}
+          chessboard_27:
+            {}
+          chessboard_3:
+            {}
+          chessboard_4:
+            {}
+          chessboard_5:
+            {}
+          chessboard_7:
+            {}
+          chessboard_9:
             {}
           frontal_laser_mount_link:
             frontal_laser:
@@ -301,6 +401,56 @@ Visualization Manager:
       Namespaces:
         0-left_laser: true
         0-right_laser: true
+        1-left_laser: true
+        1-right_laser: true
+        10-left_laser: true
+        10-right_laser: true
+        11-left_laser: true
+        11-right_laser: true
+        12-left_laser: true
+        12-right_laser: true
+        13-left_laser: true
+        13-right_laser: true
+        14-left_laser: true
+        14-right_laser: true
+        15-left_laser: true
+        15-right_laser: true
+        16-left_laser: true
+        16-right_laser: true
+        17-left_laser: true
+        17-right_laser: true
+        18-left_laser: true
+        18-right_laser: true
+        19-left_laser: true
+        19-right_laser: true
+        2-left_laser: true
+        2-right_laser: true
+        20-left_laser: true
+        20-right_laser: true
+        21-left_laser: true
+        21-right_laser: true
+        22-left_laser: true
+        22-right_laser: true
+        23-left_laser: true
+        23-right_laser: true
+        24-left_laser: true
+        24-right_laser: true
+        25-left_laser: true
+        25-right_laser: true
+        26-left_laser: true
+        26-right_laser: true
+        27-left_laser: true
+        27-right_laser: true
+        3-left_laser: true
+        3-right_laser: true
+        4-left_laser: true
+        4-right_laser: true
+        5-left_laser: true
+        5-right_laser: true
+        7-left_laser: true
+        7-right_laser: true
+        9-left_laser: true
+        9-right_laser: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -308,7 +458,32 @@ Visualization Manager:
       Marker Topic: /Chessboards
       Name: Chessboards-MarkerArray
       Namespaces:
-        {}
+        0: true
+        1: true
+        10: true
+        11: true
+        12: true
+        13: true
+        14: true
+        15: true
+        16: true
+        17: true
+        18: true
+        19: true
+        2: true
+        20: true
+        21: true
+        22: true
+        23: true
+        24: true
+        25: true
+        26: true
+        27: true
+        3: true
+        4: true
+        5: true
+        7: true
+        9: true
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -364,25 +539,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.2757349014282227
+      Distance: 5.661978244781494
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.9412506818771362
-        Y: -0.34908729791641235
-        Z: -3.5762786865234375e-7
+        X: 0.2994581460952759
+        Y: -0.2403222918510437
+        Z: -5.960464477539062e-7
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7297967672348022
+      Pitch: 0.869796872138977
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.5904271602630615
+      Yaw: 4.185426235198975
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
