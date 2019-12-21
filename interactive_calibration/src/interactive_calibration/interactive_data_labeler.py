@@ -120,9 +120,9 @@ class InteractiveDataLabeler:
 
         # self.calib_pattern = calib_pattern
         if calib_pattern['pattern_type'] == 'chessboard':
-            self.pattern = patterns.ChessboardPattern(tuple(calib_pattern['dimension']), calib_pattern['size'])
+            self.pattern = patterns.ChessboardPattern(calib_pattern['dimension'], calib_pattern['size'])
         elif calib_pattern['pattern_type'] == 'charuco':
-            self.pattern = patterns.CharucoPattern(tuple(calib_pattern['dimension']), calib_pattern['size'],
+            self.pattern = patterns.CharucoPattern(calib_pattern['dimension'], calib_pattern['size'],
                                                    calib_pattern['inner_size'])
         else:
             print("Unknown pattern type '{}'".format(calib_pattern['pattern_type']))
