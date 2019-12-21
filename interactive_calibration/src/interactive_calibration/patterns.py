@@ -11,6 +11,7 @@ class ChessboardPattern(object):
     def detect(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+        print("size = " + str(self.size))
         # Find chessboard corners
         found, corners = cv2.findChessboardCorners(gray, self.size)
         if not found:
