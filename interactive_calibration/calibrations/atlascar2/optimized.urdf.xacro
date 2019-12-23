@@ -83,7 +83,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_right_camera" type="fixed">
-    <origin xyz="-1.49884228618 -0.238544097849 1.37837300009" rpy="-0.00819751684561 0.219479998536 -0.00467927025547"/>
+    <origin xyz="-1.55 -0.22 1.35" rpy="-0.0 0.227300133871 -0.0"/>
     <parent link="base_link"/>
     <child link="top_right_camera"/>
   </joint>
@@ -150,13 +150,13 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_left_camera" type="fixed">
-    <origin xyz="-1.55 0.22 1.35" rpy="1.75049115904e-16 0.198720401856 1.54943559518e-16"/>
+    <origin xyz="-1.55 0.22 1.35" rpy="5.0106362823e-18 0.198720401856 -4.36421700435e-19"/>
     <parent link="base_link"/>
     <child link="top_left_camera"/>
   </joint>
   <link name="frontal_laser_mount_link">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.001"/>
       <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
     </inertial>
@@ -168,7 +168,7 @@
   </joint>
   <link name="frontal_laser">
     <inertial>
-      <origin xyz="0.0026 -0.02325 -0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0026 -0.02325 -0.0" rpy="0 0 0"/>
       <mass value="1.0"/>
       <inertia ixx="0.00290035300653" ixy="0.0" ixz="0.0" iyy="0.00136918611899" iyz="0.0" izz="0.00297887297512"/>
     </inertial>
@@ -192,7 +192,7 @@
   </joint>
   <link name="right_laser">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="1.1"/>
       <inertia ixx="0.00307156543804" ixy="0.0" ixz="0.0" iyy="0.00312849041527" iyz="0.0" izz="0.00196432421427"/>
     </inertial>
@@ -242,13 +242,13 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_right_laser" type="fixed">
-    <origin xyz="-0.561389488206 -0.775677838173 0.279871683968" rpy="-0.483993663665 0.0875468157422 -0.244101862115"/>
+    <origin xyz="0.0132202017686 -0.885333931027 0.273334977076" rpy="0.580334645239 -0.24657385509 -0.688003861727"/>
     <parent link="base_link"/>
     <child link="right_laser"/>
   </joint>
   <link name="left_laser">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="1.1"/>
       <inertia ixx="0.00307156543804" ixy="0.0" ixz="0.0" iyy="0.00312849041527" iyz="0.0" izz="0.00196432421427"/>
     </inertial>
@@ -298,7 +298,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_left_laser" type="fixed">
-    <origin xyz="0.0529260416624 1.69699480591 0.279931019861" rpy="0.303682129396 0.155716535888 0.207176080297"/>
+    <origin xyz="-0.07 0.76 0.27" rpy="-0.0 0.0 0.944289442264"/>
     <parent link="base_link"/>
     <child link="left_laser"/>
   </joint>
@@ -346,7 +346,7 @@
   </joint>
   <link name="top_center_rgbd_camera_rgb_optical_frame"/>
   <joint name="base_link_to_top_center_rgbd_camera" type="fixed">
-    <origin xyz="-1.51 -0.01 1.338" rpy="0.0 0.207 0.0"/>
+    <origin xyz="-1.51 -0.01 1.338" rpy="-0.0 0.207 -0.0"/>
     <parent link="base_link"/>
     <child link="top_center_rgbd_camera_link"/>
   </joint>

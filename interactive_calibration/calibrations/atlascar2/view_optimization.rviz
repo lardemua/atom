@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /RobotModel1/Links1
+        - /LaserScans-MarkerArray1/Status1
         - /LaserScans-MarkerArray1/Namespaces1
         - /Chessboards-MarkerArray1/Namespaces1
       Splitter Ratio: 0.644501268863678
@@ -27,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -246,13 +247,13 @@ Visualization Manager:
       Marker Topic: /Miscellaneous
       Name: Miscellaneous-MarkerArray
       Namespaces:
-        top_left_camera: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /LaserScans
-      Name: LaserScans-MarkerArray
+      Marker Topic: /LaserBeams
+      Name: LaserBeam-MarkerArray
       Namespaces:
         0-right_laser: true
         1-right_laser: true
@@ -267,18 +268,35 @@ Visualization Manager:
         18-right_laser: true
         19-right_laser: true
         2-right_laser: true
-        20-right_laser: true
-        21-right_laser: true
-        22-right_laser: true
-        23-right_laser: true
-        24-right_laser: true
-        25-right_laser: true
-        26-right_laser: true
-        27-right_laser: true
         3-right_laser: true
         4-right_laser: true
         5-right_laser: true
         7-right_laser: true
+        9-right_laser: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /LaserScans
+      Name: LaserScans-MarkerArray
+      Namespaces:
+        0-right_laser: false
+        1-right_laser: false
+        10-right_laser: false
+        11-right_laser: true
+        12-right_laser: true
+        13-right_laser: true
+        14-right_laser: true
+        15-right_laser: true
+        16-right_laser: true
+        17-right_laser: true
+        18-right_laser: true
+        19-right_laser: true
+        2-right_laser: false
+        3-right_laser: false
+        4-right_laser: false
+        5-right_laser: false
+        7-right_laser: false
         9-right_laser: true
       Queue Size: 100
       Value: true
@@ -300,14 +318,6 @@ Visualization Manager:
         18: true
         19: true
         2: true
-        20: true
-        21: true
-        22: true
-        23: true
-        24: true
-        25: true
-        26: true
-        27: true
         3: true
         4: true
         5: true
@@ -368,25 +378,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.297671318054199
+      Distance: 7.48775577545166
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.2994581460952759
-        Y: -0.2403222918510437
-        Z: -5.960464477539062e-7
+        X: 2.4996464252471924
+        Y: -0.46792083978652954
+        Z: -1.1920928955078125e-7
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3597972095012665
+      Pitch: 0.9047962427139282
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 2.5904111862182617
+      Yaw: 3.2490272521972656
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
