@@ -4,13 +4,14 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /RobotModel1/Links1
         - /LaserScans-MarkerArray1
+        - /LaserScans-MarkerArray1/Status1
         - /LaserScans-MarkerArray1/Namespaces1
         - /Chessboards-MarkerArray1
         - /Chessboards-MarkerArray1/Namespaces1
         - /Camera1
-        - /Axes1
       Splitter Ratio: 0.644501268863678
     Tree Height: 523
   - Class: rviz/Selection
@@ -58,19 +59,160 @@ Visualization Manager:
       Reference Frame: base_footprint
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        chessboard_1:
+          Value: true
+        chessboard_2:
+          Value: true
+        chessboard_20:
+          Value: true
+        chessboard_3:
+          Value: true
+        chessboard_4:
+          Value: true
+        chessboard_5:
+          Value: true
+        chessboard_6:
+          Value: true
+        chessboard_7:
+          Value: true
+        chessboard_8:
+          Value: true
+        chessboard_9:
+          Value: true
+        frontal_laser:
+          Value: true
+        frontal_laser_mount_link:
+          Value: true
+        initial_base_footprint:
+          Value: true
+        initial_base_link:
+          Value: true
+        initial_frontal_laser:
+          Value: true
+        initial_frontal_laser_mount_link:
+          Value: true
+        initial_left_laser:
+          Value: true
+        initial_model:
+          Value: true
+        initial_right_laser:
+          Value: true
+        initial_top_center_rgbd_camera_depth_frame:
+          Value: true
+        initial_top_center_rgbd_camera_depth_optical_frame:
+          Value: true
+        initial_top_center_rgbd_camera_link:
+          Value: true
+        initial_top_center_rgbd_camera_rgb_frame:
+          Value: true
+        initial_top_center_rgbd_camera_rgb_optical_frame:
+          Value: true
+        initial_top_left_camera:
+          Value: true
+        initial_top_left_camera_optical:
+          Value: true
+        initial_top_right_camera:
+          Value: true
+        initial_top_right_camera_optical:
+          Value: true
+        left_laser:
+          Value: true
+        model:
+          Value: true
+        right_laser:
+          Value: true
+        top_center_rgbd_camera_depth_frame:
+          Value: true
+        top_center_rgbd_camera_depth_optical_frame:
+          Value: true
+        top_center_rgbd_camera_link:
+          Value: true
+        top_center_rgbd_camera_rgb_frame:
+          Value: true
+        top_center_rgbd_camera_rgb_optical_frame:
+          Value: true
+        top_left_camera:
+          Value: true
+        top_left_camera_optical:
+          Value: true
+        top_right_camera:
+          Value: true
+        top_right_camera_optical:
+          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        base_link:
+          base_footprint:
+            model:
+              {}
+          chessboard_1:
+            {}
+          chessboard_2:
+            {}
+          chessboard_20:
+            {}
+          chessboard_3:
+            {}
+          chessboard_4:
+            {}
+          frontal_laser_mount_link:
+            frontal_laser:
+              {}
+          initial_base_link:
+            initial_base_footprint:
+              initial_model:
+                {}
+            initial_frontal_laser_mount_link:
+              initial_frontal_laser:
+                {}
+            initial_left_laser:
+              {}
+            initial_right_laser:
+              {}
+            initial_top_center_rgbd_camera_link:
+              initial_top_center_rgbd_camera_depth_frame:
+                initial_top_center_rgbd_camera_depth_optical_frame:
+                  {}
+              initial_top_center_rgbd_camera_rgb_frame:
+                initial_top_center_rgbd_camera_rgb_optical_frame:
+                  {}
+            initial_top_left_camera:
+              initial_top_left_camera_optical:
+                {}
+            initial_top_right_camera:
+              initial_top_right_camera_optical:
+                {}
+          left_laser:
+            {}
+          right_laser:
+            {}
+          top_center_rgbd_camera_link:
+            top_center_rgbd_camera_depth_frame:
+              top_center_rgbd_camera_depth_optical_frame:
+                {}
+            top_center_rgbd_camera_rgb_frame:
+              top_center_rgbd_camera_rgb_optical_frame:
+                {}
+          top_left_camera:
+            top_left_camera_optical:
+              {}
+          top_right_camera:
+            top_right_camera_optical:
+              {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -161,18 +303,89 @@ Visualization Manager:
     - Alpha: 0.20000000298023224
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
-        All Links Enabled: true
+        All Links Enabled: false
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        initial_base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_frontal_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        initial_frontal_laser_mount_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_left_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        initial_model:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: false
+        initial_right_laser:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        initial_top_center_rgbd_camera_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_top_center_rgbd_camera_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_top_center_rgbd_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        initial_top_center_rgbd_camera_rgb_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_top_center_rgbd_camera_rgb_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_top_left_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        initial_top_left_camera_optical:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        initial_top_right_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        initial_top_right_camera_optical:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: InitialRobotModel
       Robot Description: initial_robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Class: rviz/MarkerArray
       Enabled: true
@@ -195,7 +408,11 @@ Visualization Manager:
       Marker Topic: /LaserScans
       Name: LaserScans-MarkerArray
       Namespaces:
-        {}
+        1-right_laser: false
+        2-right_laser: false
+        20-right_laser: false
+        3-right_laser: true
+        4-right_laser: false
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -203,7 +420,11 @@ Visualization Manager:
       Marker Topic: /Chessboards
       Name: Chessboards-MarkerArray
       Namespaces:
-        1: true
+        1: false
+        2: false
+        20: false
+        3: true
+        4: false
       Queue Size: 0
       Value: true
     - Class: rviz/Image
@@ -219,17 +440,16 @@ Visualization Manager:
       Unreliable: false
       Value: false
     - Class: rviz/Camera
-      Enabled: true
+      Enabled: false
       Image Rendering: background and overlay
-      Image Topic: /c1/top_left_camera/image_raw
+      Image Topic: /c3/top_left_camera/image_raw
       Name: Camera
       Overlay Alpha: 0
-      Queue Size: 2
+      Queue Size: 1
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
       Visibility:
-        Axes: true
         Chessboards-MarkerArray: true
         Grid: true
         Image: true
@@ -241,18 +461,11 @@ Visualization Manager:
         TF: true
         Value: true
       Zoom Factor: 1
-    - Class: rviz/Axes
-      Enabled: false
-      Length: 1
-      Name: Axes
-      Radius: 0.009999999776482582
-      Reference Frame: chessboard_1
-      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: base_link
+    Fixed Frame: right_laser
     Frame Rate: 30
   Name: root
   Tools:
@@ -277,25 +490,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 10.180468559265137
+      Distance: 0.8137122988700867
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.3707582950592041
-        Y: -1.128462314605713
-        Z: 1.5497207641601562e-6
+        X: 0.0541076697409153
+        Y: 1.0291215181350708
+        Z: 9.308134849561611e-7
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5097975730895996
+      Pitch: 0.03479619324207306
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.6525933742523193
+      Yaw: 4.117419719696045
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
@@ -319,15 +532,15 @@ Visualization Manager:
         Yaw: 3.929020881652832
 Window Geometry:
   Camera:
-    collapsed: false
+    collapsed: true
   Displays:
     collapsed: false
   Height: 683
   Hide Left Dock: false
-  Hide Right Dock: false
+  Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000024cfc0200000009fb0000001200530065006c0065006300740069006f006e000000003d0000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000410000024c000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e00000117000000000000000000000001000002de0000024cfc0200000013fb0000000c00430061006d00650072006101000000410000024c0000001600fffffffb0000000a0056006900650077007300000000410000024c000000b000fffffffb0000000a0049006d00610067006502000000d00000001c00000488000002c8fb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000000000000000fb0000001e0054006f007000520069006700680074002d00430061006d0065007200610100000041000001210000000000000000fb0000001c0054006f0070004c006500660074002d00430061006d0065007200610100000168000001260000000000000000fb0000000c00430061006d006500720061010000003d000003860000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c00650064000000003d000001290000000000000000fb000000280054006f0070004c0065006600740049006d006100670065002d004c006100620065006c00650064000000003d0000026f0000000000000000fb0000001a0054006f0070004c006500660074002d0049006d00610067006500000000410000024d0000000000000000fb0000001c0054006f007000520069006700680074002d0049006d006100670065000000016c0000011d0000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000646000000a9fc0100000002fb0000000a0049006d00610067006502000000f00000001c00000468000002c8fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650000000000000007800000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000001020000024c00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000024cfc0200000009fb0000001200530065006c0065006300740069006f006e000000003d0000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000410000024c000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e00000117000000000000000000000001000002c70000024cfc0200000013fb0000000c00430061006d00650072006100000000410000024c0000001600fffffffb0000000a0056006900650077007300000000410000024c000000b000fffffffb0000000a0049006d00610067006502000000d00000001c00000488000002c8fb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000000000000000fb0000001e0054006f007000520069006700680074002d00430061006d0065007200610100000041000001210000000000000000fb0000001c0054006f0070004c006500660074002d00430061006d0065007200610100000168000001260000000000000000fb0000000c00430061006d006500720061010000003d000003860000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c00650064000000003d000001290000000000000000fb000000280054006f0070004c0065006600740049006d006100670065002d004c006100620065006c00650064000000003d0000026f0000000000000000fb0000001a0054006f0070004c006500660074002d0049006d00610067006500000000410000024d0000000000000000fb0000001c0054006f007000520069006700680074002d0049006d006100670065000000016c0000011d0000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000646000000a9fc0100000002fb0000000a0049006d00610067006502000000f00000001c00000468000002c8fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650000000000000007800000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000003e60000024c00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
