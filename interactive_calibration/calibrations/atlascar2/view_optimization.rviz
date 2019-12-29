@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /RobotModel1/Links1
         - /LaserScans-MarkerArray1
-        - /LaserScans-MarkerArray1/Status1
         - /LaserScans-MarkerArray1/Namespaces1
         - /Chessboards-MarkerArray1
         - /Chessboards-MarkerArray1/Namespaces1
@@ -76,16 +75,6 @@ Visualization Manager:
         chessboard_3:
           Value: true
         chessboard_4:
-          Value: true
-        chessboard_5:
-          Value: true
-        chessboard_6:
-          Value: true
-        chessboard_7:
-          Value: true
-        chessboard_8:
-          Value: true
-        chessboard_9:
           Value: true
         frontal_laser:
           Value: true
@@ -157,15 +146,7 @@ Visualization Manager:
           base_footprint:
             model:
               {}
-          chessboard_1:
-            {}
-          chessboard_2:
-            {}
-          chessboard_20:
-            {}
           chessboard_3:
-            {}
-          chessboard_4:
             {}
           frontal_laser_mount_link:
             frontal_laser:
@@ -392,7 +373,7 @@ Visualization Manager:
       Marker Topic: /Miscellaneous
       Name: Miscellaneous-MarkerArray
       Namespaces:
-        top_left_camera: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -408,11 +389,7 @@ Visualization Manager:
       Marker Topic: /LaserScans
       Name: LaserScans-MarkerArray
       Namespaces:
-        1-right_laser: false
-        2-right_laser: false
-        20-right_laser: false
         3-right_laser: true
-        4-right_laser: false
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -420,11 +397,7 @@ Visualization Manager:
       Marker Topic: /Chessboards
       Name: Chessboards-MarkerArray
       Namespaces:
-        1: false
-        2: false
-        20: false
         3: true
-        4: false
       Queue Size: 0
       Value: true
     - Class: rviz/Image
@@ -490,25 +463,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 0.8137122988700867
+      Distance: 0.6749621033668518
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.0541076697409153
-        Y: 1.0291215181350708
-        Z: 9.308134849561611e-7
+        X: 0.0029962658882141113
+        Y: 1.1120027303695679
+        Z: 1.0500227745069424e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.03479619324207306
+      Pitch: 0.6697961688041687
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.117419719696045
+      Yaw: 3.9924123287200928
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
