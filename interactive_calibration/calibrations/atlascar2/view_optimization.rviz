@@ -66,15 +66,41 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
+        chessboard_0:
+          Value: true
         chessboard_1:
           Value: true
-        chessboard_2:
+        chessboard_11:
           Value: true
-        chessboard_20:
+        chessboard_12:
+          Value: true
+        chessboard_13:
+          Value: true
+        chessboard_14:
+          Value: true
+        chessboard_15:
+          Value: true
+        chessboard_16:
+          Value: true
+        chessboard_17:
+          Value: true
+        chessboard_18:
+          Value: true
+        chessboard_19:
+          Value: true
+        chessboard_2:
           Value: true
         chessboard_3:
           Value: true
         chessboard_4:
+          Value: true
+        chessboard_5:
+          Value: true
+        chessboard_6:
+          Value: true
+        chessboard_7:
+          Value: true
+        chessboard_9:
           Value: true
         frontal_laser:
           Value: true
@@ -146,7 +172,41 @@ Visualization Manager:
           base_footprint:
             model:
               {}
+          chessboard_0:
+            {}
+          chessboard_1:
+            {}
+          chessboard_11:
+            {}
+          chessboard_12:
+            {}
+          chessboard_13:
+            {}
+          chessboard_14:
+            {}
+          chessboard_15:
+            {}
+          chessboard_16:
+            {}
+          chessboard_17:
+            {}
+          chessboard_18:
+            {}
+          chessboard_19:
+            {}
+          chessboard_2:
+            {}
           chessboard_3:
+            {}
+          chessboard_4:
+            {}
+          chessboard_5:
+            {}
+          chessboard_6:
+            {}
+          chessboard_7:
+            {}
+          chessboard_9:
             {}
           frontal_laser_mount_link:
             frontal_laser:
@@ -389,7 +449,24 @@ Visualization Manager:
       Marker Topic: /LaserScans
       Name: LaserScans-MarkerArray
       Namespaces:
-        3-right_laser: true
+        0-right_laser: false
+        1-right_laser: false
+        11-right_laser: false
+        12-right_laser: false
+        13-right_laser: false
+        14-right_laser: false
+        15-right_laser: false
+        16-right_laser: true
+        17-right_laser: false
+        18-right_laser: false
+        19-right_laser: false
+        2-right_laser: false
+        3-right_laser: false
+        4-right_laser: false
+        5-right_laser: false
+        6-right_laser: false
+        7-right_laser: false
+        9-right_laser: false
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -397,7 +474,24 @@ Visualization Manager:
       Marker Topic: /Chessboards
       Name: Chessboards-MarkerArray
       Namespaces:
-        3: true
+        0: false
+        1: false
+        11: false
+        12: false
+        13: false
+        14: false
+        15: false
+        16: true
+        17: false
+        18: false
+        19: false
+        2: false
+        3: false
+        4: false
+        5: false
+        6: false
+        7: false
+        9: false
       Queue Size: 0
       Value: true
     - Class: rviz/Image
@@ -415,7 +509,7 @@ Visualization Manager:
     - Class: rviz/Camera
       Enabled: false
       Image Rendering: background and overlay
-      Image Topic: /c3/top_left_camera/image_raw
+      Image Topic: /c17/top_left_camera/image_raw
       Name: Camera
       Overlay Alpha: 0
       Queue Size: 1
@@ -438,7 +532,7 @@ Visualization Manager:
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: right_laser
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -463,25 +557,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 0.6749621033668518
+      Distance: 0.9472270607948303
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.0029962658882141113
-        Y: 1.1120027303695679
-        Z: 1.0500227745069424e-6
+        X: 2.5201714038848877
+        Y: -0.197065532207489
+        Z: 3.6014971556141973e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6697961688041687
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.9924123287200928
+      Yaw: 2.5873165130615234
     Saved:
       - Class: rviz/Orbit
         Distance: 4.057810306549072
