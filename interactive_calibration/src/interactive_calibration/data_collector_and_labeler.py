@@ -162,13 +162,14 @@ class DataCollectorAndLabeler:
         # Analyse message time stamps and decide if collection can be stored
         stamps, average_time, max_delta = self.getLabelersTimeStatistics()
 
-        if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):  # times are close enough?
-            rospy.logwarn('Max duration between msgs in collection is ' + str(max_delta.to_sec()) +
-                          '. Not saving collection.')
-            self.unlockAllLabelers()
-            return None
-        else:  # test passed
-            rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
+        if max_delta is not None:  # if max_delta is None (only one sensor), continue
+            if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):  # times are close enough?
+                rospy.logwarn('Max duration between msgs in collection is ' + str(max_delta.to_sec()) +
+                              '. Not saving collection.')
+                self.unlockAllLabelers()
+                return None
+            else:  # test passed
+                rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
 
         # Collect all the transforms
         transforms = self.getTransforms(self.abstract_transforms, average_time)  # use average time of sensor msgs
@@ -190,9 +191,10 @@ class DataCollectorAndLabeler:
                 filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
                 cv2.imwrite(filename, cv_image)
 
-                image_dict = message_converter.convert_ros_message_to_dictionary(msg) # Convert sensor data to dictionary
+                image_dict = message_converter.convert_ros_message_to_dictionary(
+                    msg)  # Convert sensor data to dictionary
                 del image_dict['data']  # Remove data field (which contains the image), and replace by "data_file"
-                image_dict['data_file'] = filename_relative # Contains full path to where the image was saved
+                image_dict['data_file'] = filename_relative  # Contains full path to where the image was saved
 
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = image_dict

@@ -83,7 +83,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_right_camera" type="fixed">
-    <origin xyz="-1.55 -0.22 1.35" rpy="-0.0 0.399999183858 -0.0"/>
+    <origin xyz="-1.53423238886 -0.236720836088 1.31835582197" rpy="-0.0117981741948 0.386468749713 -0.00898751586873"/>
     <parent link="base_link"/>
     <child link="top_right_camera"/>
   </joint>
@@ -150,7 +150,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_top_left_camera" type="fixed">
-    <origin xyz="-1.55 0.22 1.35" rpy="-5.12018340835e-19 0.399999183858 -5.87444891709e-19"/>
+    <origin xyz="-1.55 0.22 1.35" rpy="2.30612405754e-16 0.399999183858 -1.63927875103e-16"/>
     <parent link="base_link"/>
     <child link="top_left_camera"/>
   </joint>
@@ -242,7 +242,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_right_laser" type="fixed">
-    <origin xyz="-0.0698918431156 -0.760661358765 0.26005" rpy="-0.000621349019053 0.0010885400895 -0.785555100415"/>
+    <origin xyz="-0.0121436674251 -0.712532742873 0.260000102267" rpy="-0.0187159454145 0.302001556776 -0.746752860587"/>
     <parent link="base_link"/>
     <child link="right_laser"/>
   </joint>
@@ -298,7 +298,7 @@
     </sensor>
   </gazebo>
   <joint name="base_link_to_left_laser" type="fixed">
-    <origin xyz="-0.07 0.76 0.27" rpy="-0.0 0.0 0.785399619817"/>
+    <origin xyz="-0.128566476578 0.78830472507 0.260011141723" rpy="0.00013364861577 0.279225582292 0.897002730585"/>
     <parent link="base_link"/>
     <child link="left_laser"/>
   </joint>
