@@ -14,7 +14,7 @@ class ChessboardPattern(object):
         # Find chessboard corners
         found, corners = cv2.findChessboardCorners(gray, self.size)
         if not found:
-            return {"detected": False, 'keypoints': corners}
+            return {"detected": False, 'keypoints': corners, 'ids': []}
 
         # WARNING: this is a quick hack to maintain the chessboard corners
         # in the right place.
@@ -22,10 +22,11 @@ class ChessboardPattern(object):
         if diff > 0:
             corners = np.array(np.flipud(corners))
 
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        spcorners = cv2.cornerSubPix(gray, corners, self.size, (-1, -1), criteria)
+        # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        # spcorners = cv2.cornerSubPix(gray, corners, self.size, (-1, -1), criteria)
+        spcorners = corners
 
-        return {"detected": True, 'keypoints': spcorners}
+        return {"detected": True, 'keypoints': spcorners, 'ids': range(0, len(spcorners))}
 
     def drawKeypoints(self, image, result):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
@@ -51,14 +52,15 @@ class CharucoPattern(object):
         if len(corners) > 4:
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
-            # For now, a valid detection must contain all corners
-            return {'detected': ccorners is not None and len(ccorners) == self.number_of_corners,
-                    'keypoints': ccorners, 'ids': cids}
+            # A valid detection must have at least half the total number of corners.
+            detected = ccorners is not None and len(ccorners) > self.number_of_corners/2
+            if detected:
+                return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist() }
 
-        return {"detected": False, 'keypoints': np.array([]), 'ids': ids}
+        return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 
     def drawKeypoints(self, image, result):
-        if len(result['keypoints']) == 0:
+        if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
-
-        cv2.drawChessboardCorners(image, (self.size[0], self.size[1]), result['keypoints'], result['detected'])
+        detected = len(result['keypoints']) == self.size[0] * self.size[1]
+        cv2.drawChessboardCorners(image, (self.size[0], self.size[1]), result['keypoints'], detected)

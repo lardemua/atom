@@ -295,8 +295,15 @@ class InteractiveDataLabeler:
             result = self.pattern.detect(image)
             if result['detected']:
                 c = []
-                for corner in result['keypoints']:
-                    c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
+
+                if result.has_key('ids'):
+                    # The charuco pattern also return an ID for each keypoint.
+                    # We can use this information for partial detections.
+                    for idx, corner in enumerate(result['keypoints']):
+                        c.append({'x': float(corner[0][0]), 'y': float(corner[0][1]), 'id': result['ids'][idx]})
+                else:
+                    for corner in result['keypoints']:
+                        c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
 
                 x = int(round(c[0]['x']))
                 y = int(round(c[0]['y']))

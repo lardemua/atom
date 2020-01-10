@@ -17,7 +17,7 @@ class SimplePatternDetector:
         self.sub    = rospy.Subscriber(options['topic'], Image, self.onImage, queue_size=1)
         self.bridge = CvBridge()
 
-        size = (options['num_x'], options['num_y'])
+        size = { "x": options['num_x'], "y": options['num_y']}
         length = options['length']
         inner_length = options['inner_length']
 
