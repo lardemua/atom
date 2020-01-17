@@ -1,12 +1,36 @@
 {
     "sensors": {
+         "top_right_camera": {
+                "link": "top_right_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "top_right_camera",
+                "topic_name": "/top_right_camera/image_color"
+        },
         "top_left_camera": {
                 "link": "top_left_camera_optical",
                 "parent_link": "base_link",
                 "child_link": "top_left_camera",
                 "topic_name": "/top_left_camera/image_color"
+        },
+        "right_laser": {
+                "link": "right_laser",
+                "parent_link": "base_link",
+                "child_link": "right_laser",
+                "topic_name": "/right_laser/laserscan"
+        },
+        "left_laser": {
+            "link": "left_laser",
+            "parent_link": "base_link",
+            "child_link": "left_laser",
+            "topic_name": "/left_laser/laserscan"
+        },
+          "top_center_rgbd_camera_depth": {
+            "link": "top_center_rgbd_camera_depth_optical_frame",
+            "parent_link": "base_link",
+            "child_link": "top_center_rgbd_camera_link",
+            "topic_name": "/top_center_rgbd_camera/depth/points"
         }
-},
+    },
 
     "anchored_sensor": "top_left_camera",
     "world_link": "base_link",

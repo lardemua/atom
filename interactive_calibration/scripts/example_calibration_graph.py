@@ -56,6 +56,17 @@ if __name__ == "__main__":
     g.edge('Reference Sensor', 'Sensor 4', '', color=gray, style='dashed', _attributes={'penwidth': '.4', 'arrowhead': 'none'})
 
 
+    # g.edge('Reference Sensor', 'Sensor 1', '', color=black, style='solid', _attributes={'penwidth': '1'})
+    # g.edge('Reference Sensor', 'Sensor 2', '', color=black, style='solid', _attributes={'penwidth': '1'})
+    # g.edge('Reference Sensor', 'Sensor 3', '', color=black, style='solid', _attributes={'penwidth': '1'})
+    # g.edge('Reference Sensor', 'Sensor 4', '', color=black, style='solid', _attributes={'penwidth': '1'})
+    #
+    # g.edge('Sensor 1', 'Sensor 4', '', color=gray, style='dashed', _attributes={'penwidth': '.4', 'arrowhead': 'none'})
+    # g.edge('Sensor 1', 'Sensor 2', '', color=gray, style='dashed', _attributes={'penwidth': '.4', 'arrowhead': 'none'})
+    # g.edge('Sensor 1', 'Sensor 3', '', color=gray, style='dashed', _attributes={'penwidth': '.4', 'arrowhead': 'none'})
+    # g.edge('Sensor 2', 'Sensor 4', '', color=gray, style='dashed', _attributes={'penwidth': '.4', 'arrowhead': 'none'})
+    # g.edge('Sensor 3', 'Sensor 4', '', color=gray, style='dashed', _attributes={'penwidth': '.4', 'arrowhead': 'none'})
+
     # g.edge('Sensor1', 'Sensor2', '',
     #        color=rgb, style='solid', _attributes={'penwidth': '2'})
     # g.edge('Sensor2', 'Sensor3', '',
