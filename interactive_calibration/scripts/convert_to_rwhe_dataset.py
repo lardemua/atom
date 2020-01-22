@@ -17,6 +17,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-out", "--dataset_out", type=str, required=True, help="Full path to the output dataset folder")
+    ap.add_argument("-b", "--base", help="This problem is an eye-to-base.", dest="base", action="store_true")
     ap.add_argument("-s", "--sensor", help="This problem uses a single sensor. This argument defines its name.",
                     type=str, required=True)
     args = vars(ap.parse_args())
@@ -79,7 +80,10 @@ if __name__ == "__main__":
         for collection_key in sorted_keys:
             collection = dataset_sensors['collections'][collection_key]
             # T = utilities.getTransform('ee_link', 'base_link', collection['transforms']).reshape((1, 16))
-            T = utilities.getTransform('base_link', 'ee_link', collection['transforms']).reshape((1, 16))
+            if args['base']:
+                T = utilities.getTransform('ee_link', 'base_link', collection['transforms']).reshape((1, 16))
+            else:
+                T = utilities.getTransform('base_link', 'ee_link', collection['transforms']).reshape((1, 16))
             print('Collection ' + collection_key + ' =\n' + str(T))
             h, w = T.shape
             for i in range(0, w):
