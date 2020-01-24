@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="bagfile" />
+    <arg name="rate" default="1"/>
+    <arg name="xacro_file"  default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand_chess/ur10e.urdf.xacro" />
+
+    <arg name="rviz" default="false" />
+    <arg name="rviz_config" default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand_chess/rviz.rviz" />
+
+    <include file="$(find rgbd_launch)/launch/kinect_frames.launch" />
+
+    <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+    <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" required="false"/>
+
+    <param name="use_sim_time" value="true"/>
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+          args="-d 2 -l --clock --rate $(arg rate) $(arg bagfile)"/>
+
+</launch>
