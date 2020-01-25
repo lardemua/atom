@@ -54,10 +54,13 @@ if __name__ == "__main__":
 
                     print("visuals:\n " + str(link.visuals[0]))
 
-                    print("origin:\n " + str(link.visuals[0].origin))
-                    x = link.visuals[0].origin.xyz[0]
-                    y = link.visuals[0].origin.xyz[1]
-                    z = link.visuals[0].origin.xyz[2]
+                    x = y = z = 0
+                    if hasattr('link.visuals[0]', 'origin'):
+                        print("origin:\n " + str(link.visuals[0].origin))
+                        x = link.visuals[0].origin.xyz[0]
+                        y = link.visuals[0].origin.xyz[1]
+                        z = link.visuals[0].origin.xyz[2]
+
                     print("mesh file: " + filename)
 
                     m = Marker(header=Header(frame_id=link.name, stamp=rospy.Time.now()),
