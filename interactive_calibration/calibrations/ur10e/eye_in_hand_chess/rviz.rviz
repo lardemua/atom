@@ -138,7 +138,7 @@ Visualization Manager:
       Marker Topic: /test_meshes
       Name: MarkerArray
       Namespaces:
-        c1: true
+        c0: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -169,25 +169,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 0.9911018013954163
+      Distance: 1.4689823389053345
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.23702076077461243
-        Y: -0.5519662499427795
-        Z: 7.301568984985352e-7
+        X: -0.47614413499832153
+        Y: -0.42842018604278564
+        Z: 7.897615432739258e-7
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.964796781539917
+      Pitch: 0.4047975540161133
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.73274040222168
+      Yaw: 5.577725410461426
     Saved: ~
 Window Geometry:
   Camera:
