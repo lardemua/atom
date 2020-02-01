@@ -31,7 +31,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ProjectionsImage
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -98,7 +98,7 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
-        "": true
+        Camera: true
         Grid: true
         Image: true
         InteractiveMarkers: true
@@ -229,25 +229,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 0.411113440990448
+      Distance: 1.7329761981964111
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.7664205431938171
-        Y: -0.8717902898788452
-        Z: 8.493661880493164e-7
+        X: -0.7222453951835632
+        Y: -0.4342583119869232
+        Z: 7.301568984985352e-7
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: -0.5152021050453186
+      Pitch: 0.8147975206375122
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.507713794708252
+      Yaw: 3.7127132415771484
     Saved: ~
 Window Geometry:
   Camera:
