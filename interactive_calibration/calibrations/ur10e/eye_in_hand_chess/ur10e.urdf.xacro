@@ -1,22 +1,24 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ur10e_and_camera">
-    <xacro:include filename="$(find ur_e_description)/urdf/ur10e_joint_limited_robot.urdf.xacro" />
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="ur10e" >
 
-    <link name="camera_link" />
+  <xacro:include filename="$(find ur_e_description)/urdf/common.gazebo.xacro" />
+  <xacro:include filename="$(find ur_e_description)/urdf/ur10e.urdf.xacro" />
+  <xacro:ur10e_robot prefix="" joint_limited="false"/>
 
-    <joint name="camera_joint" type="fixed">
-        <parent link="ee_link"  />
-        <child  link="camera_link"/>
-        <origin xyz="0 0 0" rpy="3.14159 0 0"/>
-        <!-- <origin xyz="0.04180196863432179 -0.06175451218256622 0.04753730432804916" rpy="3.13875839937 -0.014541476237 -0.00490489873721"/> -->
-        <!-- <origin xyz="0.04243085438717736 -0.0617936577879632 0.047406912654841836" rpy="3.1392599224 -0.0144165350185 -0.00496869013782"/> -->
-        <!-- <origin xyz="0.028 -0.06042073982785581 0.04404998419530226" rpy="-3.13882006844 -0.0111143081021 -0.016374601036"/> -->
-        <!-- <origin xyz="-0.0062457294067694916 -0.05731410920995202 0.04361176276990688" rpy="-3.13949475085 -0.0138658614135 -0.00757430945153"/> -->
-        <!-- <origin xyz="-0.008822707453233472 -0.06332039688055228 0.041509902112571245" rpy="-3.14041065678 -0.0142453212306 0.00227888982265"/> -->
-        <!-- <origin xyz="-0.009810813473970764 -0.06283651025908535 0.0410679928911672" rpy="-3.14046952157 -0.0146242521676 0.000841765326346"/> -->
-        <!-- <origin xyz="-0.006197630434814864 -0.05712333621274038 0.04200309311231139" rpy="-3.14146336277 -0.0164354868577 -0.00893770193716"/> -->
-        <!-- <origin xyz="-0.005533759820772154 -0.05820819881411328 0.040155992199870344" rpy="-3.13976600744 -0.0197606039146 -0.00736772190622"/> -->
+  <xacro:include filename="$(find ur_e_description)/urdf/astra.urdf.xacro" />
+  <xacro:sensor_astra parent="ee_link" prefix="camera">
+      <!-- NOTE: CHANGE THIS -->
+      <origin xyz="0 0 0" rpy="${pi} 0 0"/>
+      <!-- <origin xyz="0.041311319304504816 -0.06402544453787727 0.044527571211305426" rpy="3.13766148064 -0.00787797070144 0.000110993634886"/> -->
+  </xacro:sensor_astra>
 
-    </joint>
+  <link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link = "base_link" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
 
 </robot>

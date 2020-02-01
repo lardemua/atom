@@ -1,17 +1,24 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ur10e_and_camera">
-    <xacro:include filename="$(find ur_e_description)/urdf/ur10e_joint_limited_robot.urdf.xacro" />
+<robot xmlns:xacro="http://ros.org/wiki/xacro"
+       name="ur10e" >
 
-    <link name="camera_link" />
+  <xacro:include filename="$(find ur_e_description)/urdf/common.gazebo.xacro" />
+  <xacro:include filename="$(find ur_e_description)/urdf/ur10e.urdf.xacro" />
+  <xacro:ur10e_robot prefix="" joint_limited="false"/>
 
-    <joint name="camera_joint" type="fixed">
-        <parent link="base_link"  />
-        <child  link="camera_link"/>
-        <!-- <origin xyz="0.9 0.15 0.5" rpy="0 0.5 2"/> -->
-        <!-- <origin xyz="0.9389990132510372 0.16275628223934924 0.6772718894032261" rpy="0.022279862745 0.563324514996 2.1726142738"/> -->
-        <origin xyz="0.9428549486249146 0.16352956421669793 0.6776344875119994" rpy="0.0255369171865 0.56343124593 2.17569355621"/>
-        <!-- <origin xyz="0.9402073721290084 0.1783001607979796 0.6816250550635298" rpy="0.04493490584157748 0.5742330193173137 2.1978793783108284"/> -->
-        <!-- <origin xyz="0.9489211526634104 0.1792115439633525 0.6842998069879084" rpy="0.0443204555056 0.570345606354 2.19979861613"/> -->
-    </joint>
+  <xacro:include filename="$(find ur_e_description)/urdf/astra.urdf.xacro" />
+  <xacro:sensor_astra parent="ee_link" prefix="camera">
+      <!-- NOTE: CHANGE THIS -->
+      <origin xyz="0 0 0" rpy="${pi} 0 0"/>
+      <!-- <origin xyz="0.041311319304504816 -0.06402544453787727 0.044527571211305426" rpy="3.13766148064 -0.00787797070144 0.000110993634886"/> -->
+  </xacro:sensor_astra>
+
+  <link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link = "base_link" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
 
 </robot>

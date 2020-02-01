@@ -32,7 +32,9 @@ class ChessboardPattern(object):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
 
-        cv2.drawChessboardCorners(image, self.size, result['keypoints'], result['detected'])
+        for point in result['keypoints']:
+            cv2.drawMarker(image, tuple(point[0]), (0,0,255), cv2.MARKER_CROSS, 14)
+            cv2.circle(image, tuple(point[0]), 7, (0,255,0), lineType=cv2.LINE_AA)
 
 
 class CharucoPattern(object):
@@ -40,13 +42,15 @@ class CharucoPattern(object):
 
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
-        self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
         self.board = cv2.aruco.CharucoBoard_create(size["x"]+1, size["y"]+1, length, marker_length, self.dictionary)
 
     def detect(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary)
+        param = cv2.aruco.DetectorParameters_create()
+        param.doCornerRefinement = False
+        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=param)
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
         if len(corners) > 4:
@@ -62,5 +66,7 @@ class CharucoPattern(object):
     def drawKeypoints(self, image, result):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
-        detected = len(result['keypoints']) == self.size[0] * self.size[1]
-        cv2.drawChessboardCorners(image, (self.size[0], self.size[1]), result['keypoints'], detected)
+
+        for point in result['keypoints']:
+            cv2.drawMarker(image, tuple(point[0]), (0,0,255), cv2.MARKER_CROSS, 14)
+            cv2.circle(image, tuple(point[0]), 7, (0,255,0), lineType=cv2.LINE_AA)

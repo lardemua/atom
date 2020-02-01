@@ -3,10 +3,10 @@
 
     <arg name="bagfile" />
     <arg name="rate" default="1"/>
-    <arg name="xacro_file"  default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand_chess/ur10e.urdf.xacro" />
+    <arg name="xacro_file"  default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/ur10e.urdf.xacro" />
 
     <arg name="rviz" default="false" />
-    <arg name="rviz_config" default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand_chess/rviz.rviz" />
+    <arg name="rviz_config" default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/rviz.rviz" />
 
     <include file="$(find rgbd_launch)/launch/kinect_frames.launch" />
 
