@@ -204,18 +204,15 @@ if __name__ == "__main__":
               'key': generateKey(name, name + '_optical_frame')}
              ]
 
-    sensor = {name: {'_name': name,
-                     'calibration_parent': config['sensors'][name]['parent_link'],
-                     'calibration_child': config['sensors'][name]['child_link'],
-                     'parent': name + '_optical_frame',
-                     'camera_info': camera_info,
-                     'camera_info_topic': '/' + name + '/camera_info',
-                     'chain': chain,
-                     'msg_type': 'Image',
-                     'topic_name': '/' + name + '/image_color'
-                     }
-
-              }
+    sensor = {'_name': name,
+              'calibration_parent': config['sensors'][name]['parent_link'],
+              'calibration_child': config['sensors'][name]['child_link'],
+              'parent': name + '_optical_frame',
+              'camera_info': camera_info,
+              'camera_info_topic': '/' + name + '/camera_info',
+              'chain': chain,
+              'msg_type': 'Image',
+              'topic_name': '/' + name + '/image_color'}
 
     sensors[name] = sensor
 
