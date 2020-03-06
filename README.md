@@ -144,3 +144,52 @@ If it not works, run first
 ```
 chmod +xfirst_optimization.py
 ```
+
+# Convert to and from RWHE Datasets
+
+#### To convert from an RWHE dataset run
+
+```
+rosrun interactive_calibration convert_from_rwhe_dataset.py -out /home/mike/datasets/kuka_1 -rwhe /home/mike/workingcopy/RWHE-Calib/Datasets/kuka_1/ -s hand_camera -json /home/mike/catkin_ws/src/AtlasCarCalibration/interactive_calibration/calibrations/rwhe_kuka/config.json 
+```
+
+Note that you must define the sensor's name with the -s argument. To run this conversion you must also have a config.json file. 
+Here's what I am using, its in **calibrations/rwhe_kuka**:
+
+```json
+{
+    "sensors": {
+         "hand_camera": {
+                "link": "hand_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "hand_camera",
+                "topic_name": "/hand_camera/image_color"
+        }
+    },
+
+    "anchored_sensor": "hand_camera",
+    "world_link": "base_link",
+    "max_duration_between_msgs": 0.1,
+
+    "calibration_pattern" : {
+        "link": "chessboard_link",
+        "parent_link": "base_link",
+        "origin": [0.0, 0.0, 0.0, 1.5, 0.0, 0.0],
+        "fixed": false,
+        "pattern_type": "chessboard",
+        "border_size": 0.5,
+        "dimension": {"x": 28, "y": 17},
+        "size": 0.02,
+        "inner_size": 0.0000001
+    }
+}
+```
+
+
+#### To convert to an RWHE dataset run
+
+Use this script:
+
+```
+rosrun interactive_calibration convert_to_rwhe_dataset.py
+```

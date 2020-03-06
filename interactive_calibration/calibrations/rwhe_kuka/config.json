@@ -1,0 +1,27 @@
+{
+    "sensors": {
+         "hand_camera": {
+                "link": "hand_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "hand_camera",
+                "topic_name": "/hand_camera/image_color"
+        }
+    },
+
+    "anchored_sensor": "hand_camera",
+    "world_link": "base_link",
+    "max_duration_between_msgs": 0.1,
+
+    "calibration_pattern" : {
+        "link": "chessboard_link",
+        "parent_link": "base_link",
+        "origin": [0.0, 0.0, 0.0, 1.5, 0.0, 0.0],
+        "fixed": false,
+        "pattern_type": "chessboard",
+        "border_size": 0.5,
+        "dimension": {"x": 28, "y": 17},
+        "size": 0.02,
+        "inner_size": 0.0000001
+    }
+}
+
