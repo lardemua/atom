@@ -3,8 +3,8 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Parameters-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <arg name="bag" default="$(find interactive_calibration)/calibrations/agrobv16/data_test.bag"/>
-    <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/agrobv16/calibration.rviz"/>
+    <arg name="bag" default="$(find interactive_calibration)/calibrations/agrob/data_test.bag"/>
+    <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/agrob/calibration.rviz"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Visualization -->
