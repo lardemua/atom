@@ -96,6 +96,16 @@ roslaunch interactive_calibration rviz.launch car_model:=false read_first_guess:
 ```
 You need to set Fixed Frame as 'base_footprint' in order to see the urdf robot model.
 
+
+# Agrob
+
+For running a bag file run 
+
+```bash
+roslaunch interactive_calibration agrob_playback.launch bag:=/home/mike/bagfiles/agrob/agrob_2020-03-12-10-08-49_0.bag
+```
+
+
 ## Visualizing the calibration graphs
 
 In order to visualize the calibration graphs you may run:
@@ -109,6 +119,8 @@ Annotated tf trees are displayed to better understand the calibration process. H
 ![calibration_full](https://github.com/lardemua/AtlasCarCalibration/blob/master/docs/calibration_full.png) 
 
 ![calibration_per_sensor](https://github.com/lardemua/AtlasCarCalibration/blob/master/docs/calibration_per_sensor.png) 
+
+
 
 # Known problems
 
