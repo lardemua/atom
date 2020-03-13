@@ -31,9 +31,10 @@ if __name__ == "__main__":
     ap.add_argument("-ds", "--dataset", help="Path containing the dataset.", type=str, required=True)
     ap.add_argument("-json", "--json_file", help="Json file containing config file.", type=str, required=True)
     ap.add_argument("-out", "--dataset_out", type=str, required=True, help="Full path to the output dataset folder")
-    ap.add_argument("-s", "--sensor", help="This problem uses a single sensor. This argument defines its name.",
-                    type=str, required=True)
     args = vars(ap.parse_args())
+
+
+
 
     # print('Copying images ...')
     # Testing output folder
@@ -53,11 +54,70 @@ if __name__ == "__main__":
             else:
                 sys.exit(1)  # defaults to N
 
+
     # ---------------------------------------
-    # --- INITIALIZATION Read data from file
+    # --- Calibration_config dictionary
+    # ---------------------------------------
+    D = {}  # initialize the dataset
+    with open(args['json_file'], 'r') as f:
+        config = json.load(f)
+        D['calibration_config'] = config
+    print("\n")
+
+    # ---------------------------------------
+    # --- Sensors dictionary
+    # ---------------------------------------
+    sensors = {}
+    for sensor_name in config['sensors']:
+
+        extensions = ("*.pgn", "*.jpg", "*.jpeg","*.tiff")
+        image_paths = []
+        for extension in extensions:
+            image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
+
+        print(image_paths)
+        print(sensor_name)
+
+        continue
+        # K = [2058.7, 0, 962.1690, 0, 2059.3, 611.0970, 0, 0, 1]
+        # Dist = [-0.1163, 0.1688, 2.8333e-04, 2.1871e-04, -0.0722]  # We use distortion_coefficients = (k1,k2,p1,p2,k3) as
+        # # in opencv
+        # P = [2058.7, 0, 962.1690, 0, 0, 2059.3, 611.0970, 0, 0, 0, 1, 0]
+        # R = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+        camera_info = {'K': K, 'D': Dist, 'P': P, 'R': R, 'binning_x': 0, 'binning_y': 0, 'distortion_model': 'plump_bob',
+                       'header': {'frame_id': sensor_name + '_optical_frame', 'stamp': {'secs': 1, 'nsecs': 0}, 'seq': 0},
+                       'height': 1208, 'width': 1928,
+                       'roi': {'do_rectify': False, 'height': 0, 'width': 0, 'x_offset': 0, 'y_offset': 0}}
+
+        chain = [{'child': 'ee_link', 'parent': 'base_link',
+                  'key': generateKey('base_link', 'ee_link')},
+                 {'child': sensor_name, 'parent': 'ee_link',
+                  'key': generateKey('ee_link', sensor_name)},
+                 {'child': sensor_name + '_optical_frame', 'parent': sensor_name,
+                  'key': generateKey(sensor_name, sensor_name + '_optical_frame')}
+                 ]
+
+        sensor = {'_name': sensor_name,
+                  'calibration_parent': config['sensors'][sensor_name]['parent_link'],
+                  'calibration_child': config['sensors'][sensor_name]['child_link'],
+                  'parent': sensor_name + '_optical_frame',
+                  'camera_info': camera_info,
+                  'camera_info_topic': '/' + sensor_name + '/camera_info',
+                  'chain': chain,
+                  'msg_type': 'Image',
+                  'topic_name': '/' + sensor_name + '/image_color'}
+
+        sensors[sensor_name] = sensor
+
+    D['sensors'] = sensors
+
+    exit(0)
+
+    # ---------------------------------------
+    # --- # Copy images from input to output dataset.
     # ---------------------------------------
 
-    # Copy images from input to output dataset.
     image_paths = glob.glob(args['rwhe_dataset'] + '/*.png')
     image_paths.sort()
     print('Copying ' + str(len(image_paths)) + ' images...')
@@ -72,15 +132,8 @@ if __name__ == "__main__":
     robot_poses_vec = pandas.read_csv(robot_poses_vec_filename, sep="\t", header=None)
     robot_poses_vec = robot_poses_vec.to_numpy()  # convert from pandas dataframe to np array
 
-    D = {}  # initialize the dataset
 
-    # ---------------------------------------
-    # --- Calibration_config dictionary
-    # ---------------------------------------
-    with open(args['json_file'], 'r') as f:
-        config = json.load(f)
-        D['calibration_config'] = config
-    print("\n")
+
 
     # Create a pattern detector for usage later
     pattern = D['calibration_config']['calibration_pattern']
@@ -171,51 +224,7 @@ if __name__ == "__main__":
 
     D['collections'] = collections
 
-    # ---------------------------------------
-    # --- Sensors dictionary
-    # ---------------------------------------
-    sensors = {}
-    name = args['sensor']
 
-    # Values from Matlab
-    # cameraIntrinsics with properties:
-    #   FocalLength: [2.0587e+03 2.0593e+03]
-    #   PrincipalPoint: [962.1690 611.0970]
-    #   ImageSize: [1208 1928]
-    #   RadialDistortion: [-0.1163 0.1688 - 0.0722]
-    #   TangentialDistortion: [2.8333e-04 2.1871e-04]
-    #   Skew: 0.1682
-    K = [2058.7, 0, 962.1690, 0, 2059.3, 611.0970, 0, 0, 1]
-    Dist = [-0.1163, 0.1688, 2.8333e-04, 2.1871e-04, -0.0722]  # We use distortion_coefficients = (k1,k2,p1,p2,k3) as
-    # in opencv
-    P = [2058.7, 0, 962.1690, 0, 0, 2059.3, 611.0970, 0, 0, 0, 1, 0]
-    R = [1, 0, 0, 0, 1, 0, 0, 0, 1]
-
-    camera_info = {'K': K, 'D': Dist, 'P': P, 'R': R, 'binning_x': 0, 'binning_y': 0, 'distortion_model': 'plump_bob',
-                   'header': {'frame_id': name + '_optical_frame', 'stamp': {'secs': 1, 'nsecs': 0}, 'seq': 0},
-                   'height': 1208, 'width': 1928,
-                   'roi': {'do_rectify': False, 'height': 0, 'width': 0, 'x_offset': 0, 'y_offset': 0}}
-
-    chain = [{'child': 'ee_link', 'parent': 'base_link',
-              'key': generateKey('base_link', 'ee_link')},
-             {'child': name, 'parent': 'ee_link',
-              'key': generateKey('ee_link', name)},
-             {'child': name + '_optical_frame', 'parent': name,
-              'key': generateKey(name, name + '_optical_frame')}
-             ]
-
-    sensor = {'_name': name,
-              'calibration_parent': config['sensors'][name]['parent_link'],
-              'calibration_child': config['sensors'][name]['child_link'],
-              'parent': name + '_optical_frame',
-              'camera_info': camera_info,
-              'camera_info_topic': '/' + name + '/camera_info',
-              'chain': chain,
-              'msg_type': 'Image',
-              'topic_name': '/' + name + '/image_color'}
-
-    sensors[name] = sensor
 
     # Create top level dictionary and save to file
-    D['sensors'] = sensors
     createJSONFile(args['dataset_out'] + '/data_collected.json', D)
