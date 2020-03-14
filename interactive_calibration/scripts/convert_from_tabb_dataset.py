@@ -3,12 +3,13 @@ import glob
 import sys
 import os.path
 import argparse
-
+import numpy as np
 import json
 import pandas
 from colorama import Fore, Style
 from shutil import copyfile
 import cv2
+from tqdm import tqdm
 from interactive_calibration import patterns
 
 from OptimizationUtils.utilities import generateKey
@@ -33,9 +34,6 @@ if __name__ == "__main__":
     ap.add_argument("-out", "--dataset_out", type=str, required=True, help="Full path to the output dataset folder")
     args = vars(ap.parse_args())
 
-
-
-
     # print('Copying images ...')
     # Testing output folder
     if not os.path.exists(args['dataset_out']):
@@ -54,7 +52,6 @@ if __name__ == "__main__":
             else:
                 sys.exit(1)  # defaults to N
 
-
     # ---------------------------------------
     # --- Calibration_config dictionary
     # ---------------------------------------
@@ -70,24 +67,77 @@ if __name__ == "__main__":
     sensors = {}
     for sensor_name in config['sensors']:
 
-        extensions = ("*.pgn", "*.jpg", "*.jpeg","*.tiff")
+        extensions = ("*.pgn", "*.jpg", "*.jpeg", "*.tiff")
         image_paths = []
         for extension in extensions:
             image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
 
-        print(image_paths)
-        print(sensor_name)
+        image_paths.sort()  # sort the list of image paths
 
-        continue
-        # K = [2058.7, 0, 962.1690, 0, 2059.3, 611.0970, 0, 0, 1]
-        # Dist = [-0.1163, 0.1688, 2.8333e-04, 2.1871e-04, -0.0722]  # We use distortion_coefficients = (k1,k2,p1,p2,k3) as
-        # # in opencv
-        # P = [2058.7, 0, 962.1690, 0, 0, 2059.3, 611.0970, 0, 0, 0, 1, 0]
-        # R = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+        # termination criteria
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-        camera_info = {'K': K, 'D': Dist, 'P': P, 'R': R, 'binning_x': 0, 'binning_y': 0, 'distortion_model': 'plump_bob',
-                       'header': {'frame_id': sensor_name + '_optical_frame', 'stamp': {'secs': 1, 'nsecs': 0}, 'seq': 0},
-                       'height': 1208, 'width': 1928,
+        # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+
+        dy = config['calibration_pattern']['dimension']['y']
+        dx = config['calibration_pattern']['dimension']['x']
+        objp = np.zeros((dy * dx, 3), np.float32)
+        objp[:, :2] = np.mgrid[0:dx, 0:dy].T.reshape(-1, 2)
+
+        # Arrays to store object points and image points from all the images.
+        objpoints = []  # 3d point in real world space
+        imgpoints = []  # 2d points in image plane.
+
+        print('Detecting chessboard corners for images from sensor ' + sensor_name + '. \nIt may take a while ...')
+        height = 0
+        width = 0
+        for path in tqdm(image_paths):
+            img = cv2.imread(path)
+            window_name = os.path.basename(path)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            height, width = gray.shape
+            # Find the chess board corners
+            ret, corners = cv2.findChessboardCorners(gray, (dx, dy), None)
+
+            # If found, add object points, image points (after refining them)
+            if ret:
+                objpoints.append(objp)
+
+                corners2 = cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), criteria)
+                imgpoints.append(corners2)
+
+                # Draw and display the corners
+                img = cv2.drawChessboardCorners(img, (dx, dy), corners2, ret)
+
+                # cv2.namedWindow(window_name, cv2.WINDOW_GUI_EXPANDED)
+                # cv2.imshow(window_name, img)
+                # cv2.resizeWindow(window_name, width / 3, height / 3)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
+
+        print('Running intrinsic calibration with ' + str(len(image_paths)) + ' images ...')
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+
+        tmp = mtx.reshape((1,9)).tolist()
+        K = tmp[0]
+        tmp = dist.tolist()
+        Dist = tmp[0]
+
+        # extract P from K
+        P = K[0:3]
+        P.append(0)
+        P.extend(K[3:6])
+        P.append(0)
+        P.extend(K[6:9])
+        P.append(0)
+
+        R = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+        camera_info = {'K': K, 'D': Dist, 'P': P, 'R': R, 'binning_x': 0, 'binning_y': 0,
+                       'distortion_model': 'plump_bob',
+                       'header': {'frame_id': sensor_name + '_optical_frame', 'stamp': {'secs': 1, 'nsecs': 0},
+                                  'seq': 0},
+                       'height': height, 'width': width,
                        'roi': {'do_rectify': False, 'height': 0, 'width': 0, 'x_offset': 0, 'y_offset': 0}}
 
         chain = [{'child': 'ee_link', 'parent': 'base_link',
@@ -112,28 +162,39 @@ if __name__ == "__main__":
 
     D['sensors'] = sensors
 
-    exit(0)
-
     # ---------------------------------------
     # --- # Copy images from input to output dataset.
     # ---------------------------------------
 
-    image_paths = glob.glob(args['rwhe_dataset'] + '/*.png')
-    image_paths.sort()
     print('Copying ' + str(len(image_paths)) + ' images...')
-    for image_path in image_paths:
-        image_idx = os.path.basename(image_path)[:-4]
-        filename_out = args['dataset_out'] + '/' + args['sensor'] + '_' + image_idx + '.png'
-        print('Copy image ' + image_path + ' to ' + filename_out)
-        copyfile(image_path, filename_out)
+    prefix = 'image'
+    for sensor_name in config['sensors']:
+
+        extensions = ("*.pgn", "*.jpg", "*.jpeg", "*.tiff")
+        image_paths = []
+        for extension in extensions:
+            image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
+        image_paths.sort()  # sort the list of image paths
+
+        for path in tqdm(image_paths):
+            filename, file_extension = os.path.splitext(os.path.basename(path))
+            image_idx = filename[len(prefix):] # remove image from filename
+
+            filename_out = args['dataset_out'] + '/' + sensor_name + '_' +  str(image_idx)+  file_extension
+            print('Copy image ' + path + ' to ' + filename_out)
+            copyfile(path, filename_out)
+
+    createJSONFile(args['dataset_out'] + '/data_collected.json', D)
+    exit(0)
+
+    # ---------------------------------------
+    # --- Collections dictionary
+    # ---------------------------------------
 
     # Load RobotPosesVec.txt
     robot_poses_vec_filename = args['rwhe_dataset'] + '/RobotPosesVec.txt'
     robot_poses_vec = pandas.read_csv(robot_poses_vec_filename, sep="\t", header=None)
     robot_poses_vec = robot_poses_vec.to_numpy()  # convert from pandas dataframe to np array
-
-
-
 
     # Create a pattern detector for usage later
     pattern = D['calibration_config']['calibration_pattern']
@@ -144,9 +205,6 @@ if __name__ == "__main__":
     else:
         raise ValueError('Unknown pattern type ' + pattern['pattern_type'])
 
-    # ---------------------------------------
-    # --- Collections dictionary
-    # ---------------------------------------
     collections = {}
     for idx, image_path in enumerate(image_paths):
         image_idx = os.path.basename(image_path)[:-4]
@@ -223,8 +281,6 @@ if __name__ == "__main__":
         print('Created collection ' + collection_idx + ' of ' + str(len(image_paths)))
 
     D['collections'] = collections
-
-
 
     # Create top level dictionary and save to file
     createJSONFile(args['dataset_out'] + '/data_collected.json', D)
