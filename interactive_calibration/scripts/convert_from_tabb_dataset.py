@@ -10,6 +10,7 @@ from colorama import Fore, Style
 from shutil import copyfile
 import cv2
 from tqdm import tqdm
+import re
 from interactive_calibration import patterns
 
 from OptimizationUtils.utilities import generateKey
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     sensors = {}
     for sensor_name in config['sensors']:
 
-        extensions = ("*.pgn", "*.jpg", "*.jpeg", "*.tiff")
+        extensions = ("*.png", "*.jpg", "*.jpeg", "*.tiff")
         image_paths = []
         for extension in extensions:
             image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
@@ -88,12 +89,12 @@ if __name__ == "__main__":
         objpoints = []  # 3d point in real world space
         imgpoints = []  # 2d points in image plane.
 
-        print('Detecting chessboard corners for images from sensor ' + sensor_name + '. \nIt may take a while ...')
+        print('Detecting chessboard corners for images from sensor ' + sensor_name + '. It may take a while ...')
         height = 0
         width = 0
-        for path in tqdm(image_paths):
-            img = cv2.imread(path)
-            window_name = os.path.basename(path)
+        for image_path in tqdm(image_paths):
+            img = cv2.imread(image_path)
+            window_name = os.path.basename(image_path)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             height, width = gray.shape
             # Find the chess board corners
@@ -115,10 +116,10 @@ if __name__ == "__main__":
                 # cv2.waitKey(0)
                 # cv2.destroyAllWindows()
 
-        print('Running intrinsic calibration with ' + str(len(image_paths)) + ' images ...')
+        print('Running intrinsic calibration with ' + str(len(image_paths)) + ' images ... It may take a while ... ')
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-        tmp = mtx.reshape((1,9)).tolist()
+        tmp = mtx.reshape((1, 9)).tolist()
         K = tmp[0]
         tmp = dist.tolist()
         Dist = tmp[0]
@@ -167,33 +168,29 @@ if __name__ == "__main__":
     # ---------------------------------------
 
     print('Copying ' + str(len(image_paths)) + ' images...')
-    prefix = 'image'
     for sensor_name in config['sensors']:
 
-        extensions = ("*.pgn", "*.jpg", "*.jpeg", "*.tiff")
+        extensions = ("*.png", "*.jpg", "*.jpeg", "*.tiff")
         image_paths = []
         for extension in extensions:
             image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
         image_paths.sort()  # sort the list of image paths
 
-        for path in tqdm(image_paths):
-            filename, file_extension = os.path.splitext(os.path.basename(path))
-            image_idx = filename[len(prefix):] # remove image from filename
-
-            filename_out = args['dataset_out'] + '/' + sensor_name + '_' +  str(image_idx)+  file_extension
-            print('Copy image ' + path + ' to ' + filename_out)
-            copyfile(path, filename_out)
-
-    createJSONFile(args['dataset_out'] + '/data_collected.json', D)
-    exit(0)
+        for image_path in image_paths:
+            filename, file_extension = os.path.splitext(os.path.basename(image_path))
+            numerics = re.findall(r'\d+', filename)
+            image_idx = str(int(numerics[-1]))  # get the last of the numbers in the filename and use it as index
+            filename_out = args['dataset_out'] + '/' + sensor_name + '_' + str(image_idx) + file_extension
+            print('Copy image ' + image_path + ' to ' + filename_out)
+            copyfile(image_path, filename_out)
 
     # ---------------------------------------
     # --- Collections dictionary
     # ---------------------------------------
 
-    # Load RobotPosesVec.txt
-    robot_poses_vec_filename = args['rwhe_dataset'] + '/RobotPosesVec.txt'
-    robot_poses_vec = pandas.read_csv(robot_poses_vec_filename, sep="\t", header=None)
+    # Load robot_cali.txt file
+    robot_cali_filename = args['dataset'] + '/robot_cali.txt'
+    robot_poses_vec = pandas.read_csv(robot_cali_filename, sep="\t", header=None)
     robot_poses_vec = robot_poses_vec.to_numpy()  # convert from pandas dataframe to np array
 
     # Create a pattern detector for usage later
@@ -205,45 +202,39 @@ if __name__ == "__main__":
     else:
         raise ValueError('Unknown pattern type ' + pattern['pattern_type'])
 
+    # Setup dictionaries with empty collections
     collections = {}
-    for idx, image_path in enumerate(image_paths):
-        image_idx = os.path.basename(image_path)[:-4]
-        filename_out = args['dataset_out'] + '/' + args['sensor'] + '_' + image_idx + '.png'
-        filename_relative = args['sensor'] + '_' + image_idx + '.png'
+    for sensor_name in config['sensors']:
+        extensions = ("*.png", "*.jpg", "*.jpeg", "*.tiff")
+        image_paths = []
+        for extension in extensions:
+            image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
+        image_paths.sort()  # sort the list of image paths
 
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        h, w, _ = image.shape
+        for image_path in image_paths:
+            filename, file_extension = os.path.splitext(os.path.basename(image_path))
+            numerics = re.findall(r'\d+', filename)
+            image_idx = numerics[-1]  # get the last of the numbers in the filename and use it as index
+            key = str(int(image_idx))
 
-        stamp = {'nsecs': 0, 'secs': idx}  # assume one collection per second
-        data = {'data_file': filename_out, 'encoding': 'rgb8',
-                'header': {'frame_id': args['sensor'] + '_optical_frame', 'stamp': stamp},
-                'height': h, 'width': w, 'step': w, 'is_bigendian': 0
-                }
+            if not key in collections:
+                collections[key] = {'transforms':{}, 'data': {}, 'labels':{}}
 
-        # Detect pattern
-        result = pattern_detector.detect(image)
-        if result['detected']:
-            c = []
-            if result.has_key('ids'):
-                # The charuco pattern also return an ID for each keypoint.
-                # We can use this information for partial detections.
-                for idx, corner in enumerate(result['keypoints']):
-                    c.append({'x': float(corner[0][0]), 'y': float(corner[0][1]), 'id': result['ids'][idx]})
-            else:
-                for corner in result['keypoints']:
-                    c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
+    # Create transforms dictionary
+    for collection_key in collections:
 
-            # Update the dictionary with the labels
-            labels = {'detected': True, 'idxs': c}
-        else:
-            labels = {'detected': False, 'idxs': []}
-
-        # Create transforms dictionary
         transforms = {}  # initialize the transforms dictionary
 
         # Transform: base_link-ee_link
-        row_number = int(image_idx) - 1  # they started counting at 1 ... who are these people ???
-        T = robot_poses_vec[row_number, :].reshape(4, 4)
+        # Must transform from their format in the txt file into ours
+        row_number = 1 + int(collection_key) * 4  # they started counting at 1 ... who are these people ???
+        T = []
+        for row in range(row_number, row_number + 4):
+            tmp = robot_poses_vec[row].tolist()
+            tmp = [float(x) for x in tmp[0].split()]
+            T.extend(tmp)
+        T = np.asarray(T).reshape((4, 4))
+
         quat = list(quaternion_from_matrix(T))
         trans = list(T[0:3, 3])
         parent = config['world_link']
@@ -252,35 +243,76 @@ if __name__ == "__main__":
         transform = {'trans': trans, 'quat': quat, 'parent': parent, 'child': child}
         transforms[transform_key] = transform
 
-        # Transform: ee_link-hand_camera
-        rpy = pattern['origin'][3:]
-        quat = list(quaternion_from_euler(rpy[0], rpy[1], rpy[2], axes='sxyz'))
-        trans = pattern['origin'][0:3]
-        parent = 'ee_link'
-        child = args['sensor']
-        transform_key = generateKey(parent, child)
-        transform = {'trans': trans, 'quat': quat, 'parent': parent, 'child': child}
-        transforms[transform_key] = transform
+        for sensor_name in config['sensors']:
+            # Transform: ee_link-hand_camera
+            # TODO Talk to Eurico about this
+            rpy = [0, 0, 0]
+            quat = list(quaternion_from_euler(rpy[0], rpy[1], rpy[2], axes='sxyz'))
+            trans = [0, 0, 0]
+            parent = 'ee_link'
+            child = sensor_name
+            transform_key = generateKey(parent, child)
+            transform = {'trans': trans, 'quat': quat, 'parent': parent, 'child': child}
+            transforms[transform_key] = transform
 
-        # Transform: camera-camera_optical_frame
-        quat = [-.5, 0.5, -0.5, 0.5]  # optical transformation
-        trans = [0, 0, 0]
-        parent = args['sensor']
-        child = args['sensor'] + '_optical_frame'
-        transform_key = generateKey(parent, child)
-        transform = {'trans': trans, 'quat': quat, 'parent': parent, 'child': child}
-        transforms[transform_key] = transform
+            # Transform: camera-camera_optical_frame
+            quat = [-.5, 0.5, -0.5, 0.5]  # optical transformation
+            trans = [0, 0, 0]
+            parent = sensor_name
+            child = sensor_name + '_optical_frame'
+            transform_key = generateKey(parent, child)
+            transform = {'trans': trans, 'quat': quat, 'parent': parent, 'child': child}
+            transforms[transform_key] = transform
 
-        collection = {'data': {}, 'labels': {}, 'transforms': {}}
-        collection['data'][args['sensor']] = data
-        collection['labels'][args['sensor']] = labels
-        collection['transforms'] = transforms
+            collections[collection_key]['transforms'] = transforms
 
-        collection_idx = str(image_idx)
-        collections[collection_idx] = collection
-        print('Created collection ' + collection_idx + ' of ' + str(len(image_paths)))
+    # Add data and labels for each collection and sensor
+    for sensor_name in config['sensors']:
+        print('Creating collections for sensor ' + sensor_name)
+
+        extensions = ("*.png", "*.jpg", "*.jpeg", "*.tiff")
+        image_paths = []
+        for extension in extensions:
+            image_paths.extend(glob.glob(args['dataset'] + '/images/' + sensor_name + '/' + extension))
+        image_paths.sort()  # sort the list of image paths
+
+        for image_path in image_paths:
+            filename, file_extension = os.path.splitext(os.path.basename(image_path))
+            numerics = re.findall(r'\d+', filename)
+            image_idx = str(int(numerics[-1]))  # get the last of the numbers in the filename and use it as index
+
+            filename_relative = sensor_name + '_' + image_idx + file_extension
+            image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+            h, w, _ = image.shape
+
+            stamp = {'nsecs': 0, 'secs': image_idx}  # assume one collection per second
+            data = {'data_file': filename_relative, 'encoding': 'rgb8',
+                    'header': {'frame_id': sensor_name + '_optical_frame', 'stamp': stamp},
+                    'height': h, 'width': w, 'step': w, 'is_bigendian': 0
+                    }
+
+            # Detect pattern
+            result = pattern_detector.detect(image)
+            if result['detected']:
+                c = []
+                if result.has_key('ids'):
+                    # The charuco pattern also return an ID for each keypoint.
+                    # We can use this information for partial detections.
+                    for idx, corner in enumerate(result['keypoints']):
+                        c.append({'x': float(corner[0][0]), 'y': float(corner[0][1]), 'id': result['ids'][idx]})
+                else:
+                    for corner in result['keypoints']:
+                        c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
+
+                # Update the dictionary with the labels
+                labels = {'detected': True, 'idxs': c}
+            else:
+                labels = {'detected': False, 'idxs': []}
+
+            collections[image_idx]['data'][sensor_name] = data
+            collections[image_idx]['labels'][sensor_name] = labels
+            print('Created collection ' + image_idx + ' of ' + str(len(image_paths) - 1))
 
     D['collections'] = collections
-
-    # Create top level dictionary and save to file
     createJSONFile(args['dataset_out'] + '/data_collected.json', D)
+
