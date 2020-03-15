@@ -233,10 +233,10 @@ if __name__ == "__main__":
             tmp = robot_poses_vec[row].tolist()
             tmp = [float(x) for x in tmp[0].split()]
             T.extend(tmp)
-        T = np.asarray(T).reshape((4, 4))
+        T = np.linalg.inv(np.asarray(T).reshape((4, 4)))
 
         quat = list(quaternion_from_matrix(T))
-        trans = list(T[0:3, 3])
+        trans = list(T[0:3, 3]/1000.0)
         parent = config['world_link']
         child = 'ee_link'  # TODO Confirm ee_link with Eurico
         transform_key = generateKey(parent, child)
@@ -246,8 +246,8 @@ if __name__ == "__main__":
         for sensor_name in config['sensors']:
             # Transform: ee_link-hand_camera
             # TODO Talk to Eurico about this
-            rpy = [0, 0, 0]
-            quat = list(quaternion_from_euler(rpy[0], rpy[1], rpy[2], axes='sxyz'))
+            rpy = [-np.pi*0.5, -np.pi*0.5, np.pi]
+            quat = list(quaternion_from_euler(rpy[0], rpy[1], rpy[2]))
             trans = [0, 0, 0]
             parent = 'ee_link'
             child = sensor_name

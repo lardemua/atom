@@ -19,7 +19,7 @@
         "fixed": true,
         "pattern_type": "chessboard",
         "border_size": 0.5,
-        "dimension": {"x": 8, "y": 6},
+        "dimension": {"x": 6, "y": 8},
         "size": 0.0285,
         "inner_size": 0.0000001
     }
