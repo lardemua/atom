@@ -11,7 +11,7 @@
 <!--    <arg name="bag" default="$(env HOME)/bagfiles/bag_file_2019-09-24-01-20-41.bag"/>-->
     <arg name="bag" default="$(env HOME)/bagfiles/calibration_5_dez_2019.bag"/>
     <arg name="bag_start" default="0"/>
-    <arg name="xacro_file" default="$(find atlas2_description)/urdf/atlas2.urdf.xacro"/>
+    <arg name="xacro_file" default="$(find atlascar2_description)/urdf/atlascar2.urdf.xacro"/>
     <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/atlascar2/first_guess.urdf.xacro"/>
     <arg name="xacro_file_optimized" default="$(find interactive_calibration)/calibrations/atlascar2/optimized.urdf.xacro"/>
     <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/calibration.rviz"/>
@@ -55,7 +55,7 @@
     <param name="/use_sim_time" value="true"/>
     <!--    <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r .2 -l /tf:=/tf_dev_null &#45;&#45;clock"/>-->
     <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l &#45;&#45;clock"/>-->
-    <include file="$(find atlas2_bringup)/launch/playback_sensor_data.launch">
+    <include file="$(find atlascar2_bringup)/launch/playback_sensor_data.launch">
         <arg name="bag" value="$(arg bag)" />
         <arg name="bag_start" value="$(arg bag_start)" />
     </include>

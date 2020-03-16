@@ -30,7 +30,7 @@ git clone https://github.com/SICKAG/libsick_ldmrs.git
 ```
 Also, in the same directory (catkin_ws/src), clone the atlas car model:
 ````
-git clone https://github.com/lardemua/atlas-core.git
+git clone https://github.com/lardemua/atlascar2.git
 ```` 
 
 In order to compile this package, flycap is needed. Install from

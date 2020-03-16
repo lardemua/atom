@@ -6,7 +6,7 @@
     <visual>
       <origin xyz="-0.9 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://atlas2_description/meshes/mitsubishi_miev.dae"/>
+        <mesh filename="package://atlascar2_description/meshes/mitsubishi_miev.dae"/>
       </geometry>
     </visual>
   </link>
@@ -311,13 +311,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://atlas2_description/meshes/asus_xtion/asus_xtion_simple.dae"/>
+        <mesh filename="package://atlascar2_description/meshes/asus_xtion/asus_xtion_simple.dae"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://atlas2_description/meshes/asus_xtion/asus_xtion_simple.dae"/>
+        <mesh filename="package://atlascar2_description/meshes/asus_xtion/asus_xtion_simple.dae"/>
       </geometry>
     </collision>
   </link>

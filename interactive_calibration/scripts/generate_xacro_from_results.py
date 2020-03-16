@@ -42,7 +42,7 @@ if __name__ == "__main__":
     dataset_results = json.load(f)
 
     # xacro_file = rospy.get_param('~xacro_file')
-    xacro_file = "/home/mike/catkin_ws/src/atlas-core/atlas2_description/urdf/atlas2.urdf.xacro"
+    xacro_file = "/home/mike/catkin_ws/src/atlascar2/atlascar2_description/urdf/atlascar2.urdf.xacro"
     rospy.loginfo('xacro_file is ' + xacro_file)
 
     # Parse robot description from param /robot_description
