@@ -37,7 +37,7 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
     <!-- Make sure this node runs after the initial_robot_description parameter is created-->
-    <node name="initial_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@'">
+    <node name="initial_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'">
         <remap from="robot_description" to="initial_robot_description"/>
     </node>
 
