@@ -34,12 +34,12 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Robot and joint state publisher for generating tfs -->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'/>
 
     <!-- Make sure this node runs after the initial_robot_description parameter is created-->
-    <node name="initial_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'">
-        <remap from="robot_description" to="initial_robot_description"/>
-    </node>
+<!--    <node name="initial_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'">-->
+<!--        <remap from="robot_description" to="initial_robot_description"/>-->
+<!--    </node>-->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Connector from the initial prefixed subtree to the current one -->
