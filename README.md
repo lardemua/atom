@@ -205,3 +205,20 @@ Use this script:
 ```
 rosrun interactive_calibration convert_to_rwhe_dataset.py
 ```
+
+
+# Convert to and from Tabb Datasets
+
+#### To convert from an Tabb dataset run
+
+will add this later ...
+
+#### To convert to an RWHE dataset run
+
+Here's an example:
+
+```
+rosrun interactive_calibration convert_to_tabb_dataset.py -json /home/mike/datasets/eye_in_hand10/data_collected.json -out /home/mike/datasets/eye_in_hand10_converted_to_tabb
+```
+
+
