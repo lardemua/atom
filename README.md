@@ -213,7 +213,7 @@ rosrun interactive_calibration convert_to_rwhe_dataset.py
 
 will add this later ...
 
-#### To convert to an RWHE dataset run
+#### To convert to an Tabb dataset run
 
 Here's an example:
 
