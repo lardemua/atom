@@ -1,14 +1,28 @@
 {
     "sensors": {
-        "world_camera": {
-            "link": "camera_rgb_optical_frame",
-            "parent_link": "ee_link",
-            "child_link" : "camera_link",
-            "topic_name" : "/camera/rgb/image_raw"
-        }
+        "right_camera": {
+            "link": "zed_right_camera_frame",
+            "parent_link": "tower_link",
+            "child_link" : "zed_right_camera_optical_frame",
+            "topic_name" : "/zed/right/image"
+        },
+
+        "left_camera": {
+            "link": "zed_left_camera_frame",
+            "parent_link": "tower_link",
+            "child_link" : "zed_left_camera_optical_frame",
+            "topic_name" : "/zed/left/image"
+        },
+
+	"vlp16": {
+	   "link": "vlp16_frame",
+	   "parent_link": "tower_link",
+	   "child_link": "velodyne",
+	   "topic_name": "velodyne_points"
+	}
     },
 
-    "anchored_sensor": "top_left_camera",
+    "anchored_sensor": "right_camera",
     "world_link": "base_link",
     "max_duration_between_msgs": 0.1,
 
@@ -20,7 +34,7 @@
         "pattern_type": "charuco",
         "border_size": 0.5,
         "dimension": {"x": 13, "y": 8},
-        "size": 0.02,
-        "inner_size": 0.015
+        "size": 0.029,
+        "inner_size": 0.021
     }
 }
