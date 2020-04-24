@@ -49,7 +49,7 @@ class CharucoPattern(object):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         param = cv2.aruco.DetectorParameters_create()
-        param.doCornerRefinement = False
+        # param.doCornerRefinement = False
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=param)
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
