@@ -1,24 +1,24 @@
 {
     "sensors": {
         "right_camera": {
-            "link": "zed_right_camera_frame",
-            "parent_link": "tower_link",
-            "child_link" : "zed_right_camera_optical_frame",
-            "topic_name" : "/zed/right/image"
+            "link": "zed_right_camera_optical_frame",
+            "parent_link": "zed_camera_center",
+            "child_link" : "zed_right_camera_frame",
+            "topic_name" : "/zed/zed_node/right/image"
         },
 
         "left_camera": {
-            "link": "zed_left_camera_frame",
-            "parent_link": "tower_link",
-            "child_link" : "zed_left_camera_optical_frame",
-            "topic_name" : "/zed/left/image"
+            "link": "zed_left_camera_optical_frame",
+            "parent_link": "zed_camera_center",
+            "child_link" : "zed_left_camera_frame",
+            "topic_name" : "/zed/zed_node/left/image"
         },
 
 	"vlp16": {
-	   "link": "vlp16_frame",
+	   "link": "velodyne",
 	   "parent_link": "tower_link",
-	   "child_link": "velodyne",
-	   "topic_name": "velodyne_points"
+	   "child_link": "vlp16_frame",
+	   "topic_name": "/velodyne_points"
 	}
     },
 

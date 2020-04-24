@@ -154,7 +154,7 @@ class InteractiveDataLabeler:
                                                             queue_size=0)  # publish
             # images with the detected chessboard overlaid onto the image.
 
-        elif self.msg_type_str in ['PointCloud2']:
+        elif self.msg_type_str in ['PointCloud2TIAGO']: # TODO, this will have to be revised later on Check #44
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=0)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
@@ -165,10 +165,19 @@ class InteractiveDataLabeler:
 
             self.cam_model = PinholeCameraModel()
             topic_name = os.path.dirname(self.topic) + '/camera_info'
-            rospy.loginfo('Wating for for camera info message on topic' + str(topic_name))
+            rospy.loginfo('Waiting for for camera info message on topic' + str(topic_name))
             camera_info = rospy.wait_for_message('/top_center_rgbd_camera/depth/camera_info', CameraInfo)
+            print('... received!')
             self.cam_model.fromCameraInfo(camera_info)
             print('Created interactive marker for point clouds.')
+
+        elif self.msg_type_str in ['PointCloud2']: # Velodyne data (Andre Aguiar)
+            self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
+                                                             queue_size=0)  # publish a point cloud with the points
+            self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
+
+            print('Created interactive marker for point clouds.')
+
         else:
             # We handle only know message types
             raise ValueError(
@@ -332,7 +341,8 @@ class InteractiveDataLabeler:
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_image.publish(msg_out)
 
-        elif self.msg_type_str == 'PointCloud2':  # RGB-D pointcloud -------------------------------------------
+        elif self.msg_type_str == 'PointCloud2TIAGO':  # RGB-D pointcloud -------------------------------------------
+            # TODO, this will have to be revised later on Check #44
 
             # print("Found point cloud!")
 
@@ -604,6 +614,47 @@ class InteractiveDataLabeler:
             #
             # self.publisher_selected_points.publish(msg_out)
             print('all. took ' + str((rospy.Time.now() - tall).to_sec()))
+
+        elif self.msg_type_str == 'PointCloud2':  # RGB-D pointcloud (Andre Aguiar)-------------------------------------
+            print("Received point cloud, Andre please label it!")
+
+
+            # Inputs:
+            #        self.msg contains the PointCloud2 message.
+            #        marker's pose
+            #
+            # Output:
+            #        publish point cloud of only selected points
+            #          labels in the dictionary
+
+            self.labels['detected'] = False # By default labels are not detected (I don't trust Andre's code :))
+
+            # Get the marker position (this comes from the shpere in rviz)
+            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z  # interactive marker pose
+            print('x_marker=' + str(x_marker))
+            print('y_marker=' + str(y_marker))
+            print('z_marker=' + str(z_marker))
+
+            # Tracking and ransac magic goes here ...
+
+            # ...
+
+            # Update the dictionary with the labels (to be saved if the user selects the option)
+            # self.labels['detected'] = True
+            # self.labels['idxs'] = ...
+
+            # After detecting the pattern you must reposition the marker in the center of the pattern
+            self.marker.pose.position.x = 0
+            self.marker.pose.position.y = 0
+            self.marker.pose.position.z = 4
+            self.menu_handler.reApply(self.server)
+            self.server.applyChanges()
+
+            # publish the points that belong to the cluster (larger radius transparent spheres are in the 2d lidars case?)
+            # msg_out = createRosCloud(tmppoints, self.msg.header.stamp, self.msg.header.frame_id)
+            # self.publisher_selected_points.publish(msg_out)
+
+
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')

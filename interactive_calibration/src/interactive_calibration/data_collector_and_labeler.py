@@ -68,8 +68,9 @@ class DataCollectorAndLabeler:
                            'calibration_child': value['child_link']}
 
             # TODO replace by utils function
-            print("Waiting for message")
+            print("Waiting for message "+ value['topic_name'] + ' ...')
             msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
+            print('... received!')
             connection_header = msg._connection_header['type'].split('/')
             ros_pkg = connection_header[0] + '.msg'
             msg_type = connection_header[1]
@@ -81,13 +82,17 @@ class DataCollectorAndLabeler:
             if sensor_dict['msg_type'] == 'Image':  # if it is an image must get camera_info
                 sensor_dict['camera_info_topic'] = os.path.dirname(sensor_dict['topic']) + '/camera_info'
                 from sensor_msgs.msg import CameraInfo
+                print('Waiting for camera_info message on topic ' + sensor_dict['camera_info_topic'] + ' ...')
                 camera_info_msg = rospy.wait_for_message(sensor_dict['camera_info_topic'], CameraInfo)
+                print('... received!')
                 from rospy_message_converter import message_converter
                 sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
 
             # Get the kinematic chain form world_link to this sensor's parent link
             now = rospy.Time()
+            print('Waiting for transformation from ' + value['link'] + ' to ' + self.world_link)
             self.listener.waitForTransform(value['link'], self.world_link, now, rospy.Duration(5))
+            print('... received!')
             chain = self.listener.chain(value['link'], now, self.world_link, now, self.world_link)
 
             chain_list = []
@@ -103,7 +108,7 @@ class DataCollectorAndLabeler:
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
-            print('finished visiting sensor ' + sensor_key)
+            print('Setup for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
         # print('sensor_labelers:')
