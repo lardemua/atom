@@ -646,6 +646,7 @@ class InteractiveDataLabeler:
             marker_point = np.array([[x_marker, y_marker, z_marker]])
             dist = scipy.spatial.distance.cdist(marker_point, points, metric='euclidean')
             pts = points[np.transpose(dist < self.tracker_threshold)[:, 0], :]
+            idx = np.where(np.transpose(dist < self.tracker_threshold)[:, 0])[0]
 
             # Tracker - update seed point with the average of cluster to use in the next
             # iteration
@@ -712,22 +713,23 @@ class InteractiveDataLabeler:
             distances = abs((self.A * pts[:, 0] + self.B * pts[:, 1] + self.C * pts[:, 2] + self.D)) / \
                         (math.sqrt(self.A * self.A + self.B * self.B + self.C * self.C))
             inliers = pts[np.where(distances < self.ransac_threshold)]
-            idx = np.where(distances < self.ransac_threshold)
-            idx=idx[0] # TODO not sure why the np.where returns a tuple. WE collect the first element.
+            # Create dictionary [pcl point index, distance to plane] to select the pcl indexes of the inliers
+            idx_map = dict(zip(idx, distances))
+            final_idx = []
+            for key in idx_map:
+                if idx_map[key] < self.ransac_threshold:
+                    final_idx.append(key)
             # -------------------------------------- End of RANSAC ----------------------------------------- #
 
-            # publish the points that belong to the cluster (larger radius transparent spheres are in the 2d lidars
-            # case?)
-            cmap = cm.prism(np.linspace(0, 1, len(inliers)))
+            # publish the points that belong to the cluster
             points = []
-            z, a = 0, 255
             for i in range(len(inliers)):
                 r = int(1 * 255.0)
                 g = int(1 * 255.0)
                 b = int(1 * 255.0)
-                a = 255
+                a = 150
                 rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
-                pt = [inliers[i,0], inliers[i,1], inliers[i,2], rgb]
+                pt = [inliers[i, 0], inliers[i, 1], inliers[i, 2], rgb]
                 points.append(pt)
 
             fields = [PointField('x', 0, PointField.FLOAT32, 1), PointField('y', 4, PointField.FLOAT32, 1),
@@ -743,7 +745,7 @@ class InteractiveDataLabeler:
 
             # Update the dictionary with the labels (to be saved if the user selects the option)
             self.labels['detected'] = True
-            self.labels['idxs'] = idx.tolist()
+            self.labels['idxs'] = final_idx
 
             # Update the interactive marker pose
             self.marker.pose.position.x = seed_point[0]
