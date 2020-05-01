@@ -99,10 +99,15 @@ You need to set Fixed Frame as 'base_footprint' in order to see the urdf robot m
 
 # Agrob
 
-For running a bag file run 
-
+Install the agrob description package
 ```bash
-roslaunch interactive_calibration agrob_playback.launch bag:=/home/mike/bagfiles/agrob/agrob_2020-03-12-10-08-49_0.bag
+cd <your_catkin_ws>/src
+git clone https://github.com/aaguiar96/agrob
+```
+
+For running a bag file run 
+```bash
+roslaunch interactive_calibration agrob_calibration.launch bag:=<path_to_your_bag_file>
 ```
 
 
