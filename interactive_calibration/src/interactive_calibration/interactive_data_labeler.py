@@ -712,10 +712,8 @@ class InteractiveDataLabeler:
             distances = abs((self.A * pts[:, 0] + self.B * pts[:, 1] + self.C * pts[:, 2] + self.D)) / \
                         (math.sqrt(self.A * self.A + self.B * self.B + self.C * self.C))
             inliers = pts[np.where(distances < self.ransac_threshold)]
-            print(inliers)
-            print(inliers)
-            print(inliers)
-            idx = np.where(np.where(distances < self.ransac_threshold))
+            idx = np.where(distances < self.ransac_threshold)
+            idx=idx[0] # TODO not sure why the np.where returns a tuple. WE collect the first element.
             # -------------------------------------- End of RANSAC ----------------------------------------- #
 
             # publish the points that belong to the cluster (larger radius transparent spheres are in the 2d lidars
@@ -745,9 +743,6 @@ class InteractiveDataLabeler:
 
             # Update the dictionary with the labels (to be saved if the user selects the option)
             self.labels['detected'] = True
-            print(idx)
-            print(type(idx))
-
             self.labels['idxs'] = idx.tolist()
 
             # Update the interactive marker pose
