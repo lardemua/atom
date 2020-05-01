@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import cv2
+import tf
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
@@ -226,7 +227,6 @@ class DataCollectorAndLabeler:
 
     def getAllAbstractTransforms(self):
 
-        rospy.sleep(0.5)  # wait for transformations
         # Get a list of all transforms to collect
         transforms_list = []
 
@@ -234,7 +234,14 @@ class DataCollectorAndLabeler:
         all_frames = self.listener.getFrameStrings()
 
         for frame in all_frames:
-            chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)
+            print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
+            try:
+                self.listener.waitForTransform(frame, self.world_link, now, rospy.Duration(3))
+                chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                rospy.logerr('Could not get transform from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
+                continue
+
             for idx in range(0, len(chain) - 1):
                 parent = chain[idx]
                 child = chain[idx + 1]
