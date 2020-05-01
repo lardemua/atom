@@ -12,7 +12,7 @@ from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
-from utilities import printRosTime, getMaxTimeDelta, getAverageTime
+from utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
 from interactive_calibration.utilities import loadJSONConfig
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
@@ -148,11 +148,13 @@ class DataCollectorAndLabeler:
             stamps.append(copy.deepcopy(self.sensor_labelers[sensor_name].msg.header.stamp))
 
         max_delta = getMaxTimeDelta(stamps)
-        average_time = getAverageTime(stamps)  # For looking up transforms use average time of all sensor msgs
+        # TODO : this is because of Andre's bag file problem. We should go back to the getAverageTime
+        # average_time = getAverageTime(stamps)  # For looking up transforms use average time of all sensor msgs
+        average_time = getMaxTime(stamps)  # For looking up transforms use average time of all sensor msgs
 
         print('Times:')
-        for stamp in stamps:
-            printRosTime(stamp)
+        for stamp, sensor_name in zip(stamps, self.sensors):
+            printRosTime(stamp, prefix=sensor_name + ': ')
 
         return stamps, average_time, max_delta
 
@@ -210,7 +212,7 @@ class DataCollectorAndLabeler:
                 all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
             # Update sensor labels ---------------------------------------------
-            if sensor['msg_type'] in ['Image', 'LaserScan']:
+            if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
                 all_sensor_labels_dict[sensor_name] = labels
             else:
                 raise ValueError('Unknown message type.')
@@ -234,7 +236,7 @@ class DataCollectorAndLabeler:
         all_frames = self.listener.getFrameStrings()
 
         for frame in all_frames:
-            print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
+            # print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
             try:
                 self.listener.waitForTransform(frame, self.world_link, now, rospy.Duration(3))
                 chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)

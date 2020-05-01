@@ -24,7 +24,7 @@
 
     "anchored_sensor": "right_camera",
     "world_link": "base_link",
-    "max_duration_between_msgs": 0.1,
+    "max_duration_between_msgs": 10000000,
 
     "calibration_pattern" : {
         "link": "chessboard_link",

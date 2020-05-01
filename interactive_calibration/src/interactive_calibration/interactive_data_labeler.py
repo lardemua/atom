@@ -177,7 +177,8 @@ class InteractiveDataLabeler:
         elif self.msg_type_str in ['PointCloud2']:  # Velodyne data (Andre Aguiar)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=0)  # publish a point cloud with the points
-            self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
+            self.createInteractiveMarkerRGBD(x=2, y=0, z=0)  # interactive marker to label the calibration pattern
+            # cluster (one time)
 
             # Labeler definitions
             # Hessian plane coefficients
@@ -711,6 +712,9 @@ class InteractiveDataLabeler:
             distances = abs((self.A * pts[:, 0] + self.B * pts[:, 1] + self.C * pts[:, 2] + self.D)) / \
                         (math.sqrt(self.A * self.A + self.B * self.B + self.C * self.C))
             inliers = pts[np.where(distances < self.ransac_threshold)]
+            print(inliers)
+            print(inliers)
+            print(inliers)
             idx = np.where(np.where(distances < self.ransac_threshold))
             # -------------------------------------- End of RANSAC ----------------------------------------- #
 
@@ -720,8 +724,8 @@ class InteractiveDataLabeler:
             points = []
             z, a = 0, 255
             for i in range(len(inliers)):
-                r = int(0 * 255.0)
-                g = int(0 * 255.0)
+                r = int(1 * 255.0)
+                g = int(1 * 255.0)
                 b = int(1 * 255.0)
                 a = 255
                 rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
@@ -741,7 +745,10 @@ class InteractiveDataLabeler:
 
             # Update the dictionary with the labels (to be saved if the user selects the option)
             self.labels['detected'] = True
-            self.labels['idxs'] = idx
+            print(idx)
+            print(type(idx))
+
+            self.labels['idxs'] = idx.tolist()
 
             # Update the interactive marker pose
             self.marker.pose.position.x = seed_point[0]
@@ -827,12 +834,12 @@ class InteractiveDataLabeler:
         self.server.insert(self.marker, self.markerFeedback)
         self.menu_handler.apply(self.server, self.marker.name)
 
-    def createInteractiveMarkerRGBD(self):
+    def createInteractiveMarkerRGBD(self, x=0, y=0, z=0):
         self.marker = InteractiveMarker()
         self.marker.header.frame_id = self.parent
-        self.marker.pose.position.x = 0
-        self.marker.pose.position.y = 0
-        self.marker.pose.position.z = 4
+        self.marker.pose.position.x = x
+        self.marker.pose.position.y = y
+        self.marker.pose.position.z = z
         self.marker.pose.orientation.x = 0
         self.marker.pose.orientation.y = 0
         self.marker.pose.orientation.z = 0

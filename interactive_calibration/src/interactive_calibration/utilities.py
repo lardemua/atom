@@ -185,6 +185,21 @@ def getMaxTimeDelta(stamps):
     return max_duration
 
 
+def getMaxTime(stamps):
+    reference_time = rospy.Time.now()  # get a time at the start of this call
+    durations = [(stamp - reference_time).to_sec() for stamp in stamps]
+
+    max_duration = max(durations)
+    max_time = reference_time + rospy.Duration(max_duration)
+
+    printRosTime(reference_time, "reference_time: ")
+    printRosTime(max_time, "max_time: ")
+    print("durations = " + str(durations))
+    print("max_duration = " + str(max_duration))
+
+    return max_time
+
+
 def getAverageTime(stamps):
     reference_time = rospy.Time.now()  # get a time at the start of this call
     durations = [(stamp - reference_time).to_sec() for stamp in stamps]
