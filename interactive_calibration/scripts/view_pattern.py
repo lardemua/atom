@@ -14,10 +14,10 @@ from interactive_calibration import patterns
 class SimplePatternDetector:
 
     def __init__(self, options):
-        self.sub    = rospy.Subscriber(options['topic'], Image, self.onImage, queue_size=1)
+        self.sub = rospy.Subscriber(options['topic'], Image, self.onImage, queue_size=1)
         self.bridge = CvBridge()
 
-        size = { "x": options['num_x'], "y": options['num_y']}
+        size = {"x": options['num_x'], "y": options['num_y']}
         length = options['length']
         inner_length = options['inner_length']
 
@@ -31,7 +31,9 @@ class SimplePatternDetector:
 
     def onImage(self, image_msg):
 
-        image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+        image_rgb = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+        image_gray = cv2.cvtColor(image_rgb, cv2.COLOR_BGR2GRAY)
+        image = cv2.equalizeHist(image_gray)
         result = self.pattern.detect(image)
         self.pattern.drawKeypoints(image, result)
 
@@ -40,20 +42,25 @@ class SimplePatternDetector:
         if key & 0xff == ord('q'):
             rospy.signal_shutdown(1)
 
+
 def main():
     rospy.init_node('detect_chessboard', anonymous=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("topic", help="Topic name to subscribe.", metavar='topic', type=str)
-    parser.add_argument("-t", "--type", help="Pattern type", type=str, choices=['charuco', 'chessboard'], default='charuco')
+    parser.add_argument("-t", "--type", help="Pattern type", type=str, choices=['charuco', 'chessboard'],
+                        default='charuco')
     parser.add_argument("-x", "--num_x", help="Number of features in horizontal dimension.", type=int, required=True)
     parser.add_argument("-y", "--num_y", help="Number of features in vertical dimension.", type=int, required=True)
-    parser.add_argument("-L", "--length", help="Lenght of the pattern marker (e.g. square, circle).", type=float, required=True)
-    parser.add_argument("-l", "--inner_length", help="Lenght of inner marker (e.g. aruco marker).", type=float, default=0.014)
+    parser.add_argument("-L", "--length", help="Lenght of the pattern marker (e.g. square, circle).", type=float,
+                        required=True)
+    parser.add_argument("-l", "--inner_length", help="Lenght of inner marker (e.g. aruco marker).", type=float,
+                        default=0.014)
     args = vars(parser.parse_args())
 
     scd = SimplePatternDetector(args)
     rospy.spin()
+
 
 if __name__ == '__main__':
     main()

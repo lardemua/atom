@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 
@@ -8,8 +7,15 @@ class ChessboardPattern(object):
         self.size = (size["x"], size["y"])
         self.length = length
 
-    def detect(self, image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    def detect(self, image, equalize_histogram=False):
+
+        if len(image.shape) == 3:  # convert to gray if it is an rgb image
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+
+        if equalize_histogram:
+            gray = cv2.equalizeHist(gray)
 
         # Find chessboard corners
         found, corners = cv2.findChessboardCorners(gray, self.size)
@@ -18,7 +24,7 @@ class ChessboardPattern(object):
 
         # WARNING: this is a quick hack to maintain the chessboard corners
         # in the right place.
-        diff = corners[0][0][0] - corners[self.size[0]-1][0][0]
+        diff = corners[0][0][0] - corners[self.size[0] - 1][0][0]
         if diff > 0:
             corners = np.array(np.flipud(corners))
 
@@ -33,8 +39,8 @@ class ChessboardPattern(object):
             return
 
         for point in result['keypoints']:
-            cv2.drawMarker(image, tuple(point[0]), (0,0,255), cv2.MARKER_CROSS, 14)
-            cv2.circle(image, tuple(point[0]), 7, (0,255,0), lineType=cv2.LINE_AA)
+            cv2.drawMarker(image, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
+            cv2.circle(image, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
 
 
 class CharucoPattern(object):
@@ -43,10 +49,17 @@ class CharucoPattern(object):
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
         self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
-        self.board = cv2.aruco.CharucoBoard_create(size["x"]+1, size["y"]+1, length, marker_length, self.dictionary)
+        self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
 
-    def detect(self, image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    def detect(self, image, equalize_histogram=False):
+
+        if len(image.shape) == 3:  # convert to gray if it is an rgb image
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+
+        if equalize_histogram:  # equalize image histogram
+            gray = cv2.equalizeHist(gray)
 
         param = cv2.aruco.DetectorParameters_create()
         # param.doCornerRefinement = False
@@ -57,9 +70,9 @@ class CharucoPattern(object):
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
             # A valid detection must have at least half the total number of corners.
-            detected = ccorners is not None and len(ccorners) > self.number_of_corners/2
+            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 2
             if detected:
-                return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist() }
+                return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
 
         return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 
@@ -68,5 +81,5 @@ class CharucoPattern(object):
             return
 
         for point in result['keypoints']:
-            cv2.drawMarker(image, tuple(point[0]), (0,0,255), cv2.MARKER_CROSS, 14)
-            cv2.circle(image, tuple(point[0]), 7, (0,255,0), lineType=cv2.LINE_AA)
+            cv2.drawMarker(image, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
+            cv2.circle(image, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)

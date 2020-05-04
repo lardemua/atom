@@ -4,6 +4,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <arg name="bag" default="/home/andre/Documents/rosbags/calibration_2020-03-12-10-0/calibration_2020-03-12-10-08-49_0.bag"/>
     <arg name="bag_start" default="0"/>
+    <arg name="bag_duration" default="5000.0"/>
     <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/agrob/calibration.rviz"/>
     <arg name="xacro_file" default="$(find agrob_description)/urdf/agrob.urdf.xacro"/>
 
@@ -30,6 +31,8 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <include file="$(find agrob_bringup)/launch/playback_sensor_data.launch">
         <arg name="bag" value="$(arg bag)" />
+        <arg name="bag_start" value="$(arg bag_start)" />
+        <arg name="bag_duration" value="$(arg bag_duration)" />
     </include>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
