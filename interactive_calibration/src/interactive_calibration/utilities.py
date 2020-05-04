@@ -68,6 +68,7 @@ def _validateJSONConfig(obj):
                     },
                     "fixed": {"type": "boolean"},
                     "pattern_type": {"type": "string"},
+                    "dictionary": {"type": "string"},
                     "dimension": {
                         "type": "object",
                         "required": ["x", "y"],

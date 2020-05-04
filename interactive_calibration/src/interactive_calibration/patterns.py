@@ -44,11 +44,37 @@ class ChessboardPattern(object):
 
 
 class CharucoPattern(object):
-    def __init__(self, size, length, marker_length):
+    def __init__(self, size, length, marker_length, dictionary='DICT_5X5_100'):
+
+        # string to charuco dictionary conversion
+        charuco_dict = {
+            'DICT_4X4_50': cv2.aruco.DICT_4X4_50,
+            'DICT_4X4_100': cv2.aruco.DICT_4X4_100,
+            'DICT_4X4_250': cv2.aruco.DICT_4X4_250,
+            'DICT_4X4_1000': cv2.aruco.DICT_4X4_1000,
+            'DICT_5X5_50': cv2.aruco.DICT_5X5_50,
+            'DICT_5X5_100': cv2.aruco.DICT_5X5_100,
+            'DICT_5X5_250': cv2.aruco.DICT_5X5_250,
+            'DICT_5X5_1000': cv2.aruco.DICT_5X5_1000,
+            'DICT_6X6_50': cv2.aruco.DICT_6X6_50,
+            'DICT_6X6_100': cv2.aruco.DICT_6X6_100,
+            'DICT_6X6_250': cv2.aruco.DICT_6X6_250,
+            'DICT_6X6_1000': cv2.aruco.DICT_6X6_1000,
+            'DICT_7X7_50': cv2.aruco.DICT_7X7_50,
+            'DICT_7X7_100': cv2.aruco.DICT_7X7_100,
+            'DICT_7X7_250': cv2.aruco.DICT_7X7_250,
+            'DICT_7X7_1000': cv2.aruco.DICT_7X7_1000
+        }
+
+        if dictionary in charuco_dict:
+            cdictionary = charuco_dict[dictionary]
+        else:
+            print('Invalid dictionary set on json configuration file. Using the default DICT_5X5_100.')
+            cdictionary = charuco_dict['DICT_5X5_100']
 
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
-        self.dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
+        self.dictionary = cv2.aruco.getPredefinedDictionary(cdictionary)
         self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
 
     def detect(self, image, equalize_histogram=False):

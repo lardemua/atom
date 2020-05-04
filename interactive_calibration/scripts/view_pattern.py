@@ -20,9 +20,10 @@ class SimplePatternDetector:
         size = {"x": options['num_x'], "y": options['num_y']}
         length = options['length']
         inner_length = options['inner_length']
+        dictionary = options['dict']
 
         if options['type'] == 'charuco':
-            self.pattern = patterns.CharucoPattern(size, length, inner_length)
+            self.pattern = patterns.CharucoPattern(size, length, inner_length, dictionary)
         elif options['type'] == 'chessboard':
             self.pattern = patterns.ChessboardPattern(size, length)
         else:
@@ -50,6 +51,7 @@ def main():
     parser.add_argument("topic", help="Topic name to subscribe.", metavar='topic', type=str)
     parser.add_argument("-t", "--type", help="Pattern type", type=str, choices=['charuco', 'chessboard'],
                         default='charuco')
+    parser.add_argument("-d", "--dict", help="Charuco Dictionary", type=str, default='DICT_5X5_100')
     parser.add_argument("-x", "--num_x", help="Number of features in horizontal dimension.", type=int, required=True)
     parser.add_argument("-y", "--num_y", help="Number of features in vertical dimension.", type=int, required=True)
     parser.add_argument("-L", "--length", help="Lenght of the pattern marker (e.g. square, circle).", type=float,
