@@ -87,11 +87,28 @@ class CharucoPattern(object):
         if equalize_histogram:  # equalize image histogram
             gray = cv2.equalizeHist(gray)
 
-        param = cv2.aruco.DetectorParameters_create()
+        params = cv2.aruco.DetectorParameters_create()
+
+        # setup initial data
+        # params.adaptiveThreshConstant = 2
+        params.adaptiveThreshWinSizeMin = 41
+        params.adaptiveThreshWinSizeMax = 81
+        # params.adaptiveThreshWinSizeStep = 5
+        # params.minMarkerPerimeterRate = 0.003
+        # params.maxMarkerPerimeterRate = 4
+        # params.minCornerDistanceRate = 0.001
+        # params.markerBorderBits = 1
+        # params.minOtsuStdDev = 15
+        # params.perspectiveRemoveIgnoredMarginPerCell = .1
+        # params.maxErroneousBitsInBorderRate = .15
+        # params.errorCorrectionRate = .6
+
+
         # param.doCornerRefinement = False
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=param)
+        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
+        print('Detected ' + str(len(corners)) + ' corners')
         if len(corners) > 4:
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 

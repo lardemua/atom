@@ -32,10 +32,8 @@ class SimplePatternDetector:
 
     def onImage(self, image_msg):
 
-        image_rgb = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
-        image_gray = cv2.cvtColor(image_rgb, cv2.COLOR_BGR2GRAY)
-        image = cv2.equalizeHist(image_gray)
-        result = self.pattern.detect(image)
+        image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+        result = self.pattern.detect(image, equalize_histogram=True)
         self.pattern.drawKeypoints(image, result)
 
         cv2.imshow('show', image)
