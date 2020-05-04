@@ -18,6 +18,7 @@
         "origin": [0.0, 0.0, 0.0, 1.5, 0.0, 0.0],
         "fixed": true,
         "pattern_type": "chessboard",
+        "dictionary": "",
         "border_size": 0.5,
         "dimension": {"x": 28, "y": 17},
         "size": 0.02,

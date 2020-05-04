@@ -21,6 +21,7 @@
         "origin": [0,0,0,0,0,0],
         "fixed": false,
         "pattern_type": "charuco",
+        "dictionary": "DICT_5X5_100",
         "border_size": 0.5,
         "dimension": {"x": 8, "y":5},
         "size": 0.0285,
