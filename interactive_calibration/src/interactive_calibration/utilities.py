@@ -133,6 +133,7 @@ def laser_scan_data_to_xy(data):
 def getMessageTypeFromTopic(topic):
     # Wait for a message to infer the type
     # http://schulz-m.github.io/2016/07/18/rospy-subscribe-to-any-msg-type/
+    rospy.loginfo('Waiting for first message on topic ' + topic + ' ...')
     msg = rospy.wait_for_message(topic, rospy.AnyMsg)
 
     connection_header = msg._connection_header['type'].split('/')

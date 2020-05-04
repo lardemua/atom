@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # rospack = rospkg.RosPack()  # get an instance of RosPack with the default search paths
     server = InteractiveMarkerServer("data_labeler")
     robot_description = rospy.get_param('/robot_description')
-    rospy.sleep(0.5)
+    # rospy.sleep(0.5)
 
     # Process robot description and create an instance of class Sensor for each sensor
     data_collector = DataCollectorAndLabeler(args['output_folder'],
