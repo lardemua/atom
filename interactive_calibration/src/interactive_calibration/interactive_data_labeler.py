@@ -178,7 +178,8 @@ class InteractiveDataLabeler:
         elif self.msg_type_str in ['PointCloud2']:  # Velodyne data (Andre Aguiar)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=0)  # publish a point cloud with the points
-            self.createInteractiveMarkerRGBD(x=2, y=0, z=0)  # interactive marker to label the calibration pattern
+            self.createInteractiveMarkerRGBD(x=0.804, y=0.298,
+                                             z=-0.109)  # interactive marker to label the calibration pattern
             # cluster (one time)
 
             # Labeler definitions
