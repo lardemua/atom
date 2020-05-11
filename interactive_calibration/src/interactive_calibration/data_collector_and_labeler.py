@@ -4,6 +4,8 @@ import os
 import shutil
 import cv2
 import tf
+import numpy
+import ros_numpy
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore

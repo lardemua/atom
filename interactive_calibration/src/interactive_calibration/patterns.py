@@ -96,13 +96,12 @@ class CharucoPattern(object):
         # params.adaptiveThreshWinSizeStep = 5
         # params.minMarkerPerimeterRate = 0.003
         # params.maxMarkerPerimeterRate = 4
-        # params.minCornerDistanceRate = 0.001
+        # params.minCornerDistanceRate = 0.1
         # params.markerBorderBits = 1
         # params.minOtsuStdDev = 15
         # params.perspectiveRemoveIgnoredMarginPerCell = .1
         # params.maxErroneousBitsInBorderRate = .15
         # params.errorCorrectionRate = .6
-
 
         # param.doCornerRefinement = False
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
@@ -113,7 +112,7 @@ class CharucoPattern(object):
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
             # A valid detection must have at least half the total number of corners.
-            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 2
+            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 4
             if detected:
                 return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
 

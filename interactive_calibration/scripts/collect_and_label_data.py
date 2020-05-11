@@ -17,7 +17,6 @@ from interactive_calibration.data_collector_and_labeler import DataCollectorAndL
 server = None
 menu_handler = MenuHandler()
 
-
 def menuFeedback(feedback):
     handle = feedback.menu_entry_id
     if handle == 1:  # collect snapshot
