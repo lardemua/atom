@@ -16,8 +16,8 @@
 
 <!--    <param name="robot_description" value=""/>-->
 
-    <node pkg="interactive_calibration" type="create_initial_robot_description.py" name="create_initial_robot_description"
-          args="_xacro_file:=$(arg xacro_file) _prefix:=$(arg prefix)" output="screen"/>
+<!--    <node pkg="interactive_calibration" type="create_initial_robot_description.py" name="create_initial_robot_description"-->
+<!--          args="_xacro_file:=$(arg xacro_file) _prefix:=$(arg prefix)" output="screen"/>-->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Load robot description file based on whether or not we are reading the first guess xacro file.-->
@@ -33,7 +33,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Robot and joint state publisher for generating tfs -->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'"/>
+<!--    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'"/>-->
 
     <!-- Make sure this node runs after the initial_robot_description parameter is created-->
 <!--    <node name="initial_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" launch-prefix="bash -c 'sleep $(arg node_start_delay); $4 $@'">-->
@@ -45,9 +45,9 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <node pkg="tf" type="static_transform_publisher" name="initial_subtree_connector" args="0 0 0 0 0 0 base_link $(arg prefix)base_link 10" />
 
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-        <param name="use_gui" value="true"/>
-    </node>
+<!--    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">-->
+<!--        <param name="use_gui" value="true"/>-->
+<!--    </node>-->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Visualization -->
