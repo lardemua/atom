@@ -112,7 +112,7 @@ class CharucoPattern(object):
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
             # A valid detection must have at least half the total number of corners.
-            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 4
+            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 2
             if detected:
                 return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
 
