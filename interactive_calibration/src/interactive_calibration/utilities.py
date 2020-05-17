@@ -9,13 +9,13 @@ import rospy
 from rospy_message_converter import message_converter
 
 from sensor_msgs.msg import *
-
+from json_minify import json_minify
 
 def loadJSONConfig(filename):
     """Load configuration from a json file"""
     try:
         with open(filename, 'r') as f:
-            obj = json.load(f)
+            obj = json.loads(json_minify(f.read()))
 
         _validateJSONConfig(obj)
     except OSError as e:
