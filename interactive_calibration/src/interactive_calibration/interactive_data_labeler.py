@@ -332,7 +332,7 @@ class InteractiveDataLabeler:
             # Convert to opencv image and save image to disk
             image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
 
-            result = self.pattern.detect(image)
+            result = self.pattern.detect(image, equalize_histogram=True)
             if result['detected']:
                 c = []
 
