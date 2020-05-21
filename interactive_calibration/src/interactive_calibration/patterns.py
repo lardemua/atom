@@ -84,15 +84,15 @@ class CharucoPattern(object):
         else:
             gray = image
 
-        if equalize_histogram:  # equalize image histogram
-            gray = cv2.equalizeHist(gray)
+        # if equalize_histogram:  # equalize image histogram
+        #     gray = cv2.equalizeHist(gray)
 
         params = cv2.aruco.DetectorParameters_create()
 
         # setup initial data
         # params.adaptiveThreshConstant = 2
-        params.adaptiveThreshWinSizeMin = 41
-        params.adaptiveThreshWinSizeMax = 81
+        # params.adaptiveThreshWinSizeMin = 41
+        # params.adaptiveThreshWinSizeMax = 81
         # params.adaptiveThreshWinSizeStep = 5
         # params.minMarkerPerimeterRate = 0.003
         # params.maxMarkerPerimeterRate = 4

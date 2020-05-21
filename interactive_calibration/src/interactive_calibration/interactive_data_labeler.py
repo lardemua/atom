@@ -189,9 +189,11 @@ class InteractiveDataLabeler:
             self.C = 0
             self.D = 0
             self.n_inliers = 0  # RANSAC number of inliers initialization
-            self.number_iterations = 100  # RANSAC number of iterations
+            self.number_iterations = 30  # RANSAC number of iterations
             self.ransac_threshold = 0.02  # RANSAC point-to-plane distance threshold to consider inliers
-            self.tracker_threshold = 0.35  # Chessboard point tracker distance threshold
+            # Chessboard point tracker distance threshold
+            self.tracker_threshold = math.sqrt(((calib_pattern['dimension']['x'] - 1) * calib_pattern['size']) ** 2 + \
+                                               ((calib_pattern['dimension']['y'] - 1) * calib_pattern['size']) ** 2)
 
             print('Created interactive marker for point clouds.')
 
