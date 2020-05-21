@@ -32,10 +32,10 @@
         "origin": [-0.37, 0.0, 0.0, 0, 0.0, 3.8],
         "fixed": false,
         "pattern_type": "charuco",
-        "dictionary": "DICT_4X4_50",
-        "border_size": 0.12,
-        "dimension": {"x": 10, "y": 7},
-        "size": 0.029,
-        "inner_size": 0.024
+        "dictionary": "DICT_5X5_100",
+        "border_size": 0.03,
+        "dimension": {"x": 11, "y": 8},
+        "size": 0.06,
+        "inner_size": 0.045
     }
 }
