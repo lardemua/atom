@@ -26,6 +26,7 @@
         }
     },
 
+  // this is a comment
     "anchored_sensor": "top_left_camera",
     "world_link": "base_link",
     "max_duration_between_msgs": 0.1,
