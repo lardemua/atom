@@ -1,6 +1,6 @@
 {
     "sensors": {
-        "world_camera": {
+        "hand_camera": {
             "link": "camera_rgb_optical_frame",
             "parent_link": "ee_link",
             "child_link" : "camera_link",
@@ -14,7 +14,6 @@
     "calibration_pattern" : {
         "link": "chessboard_link",
         "parent_link": "base_link",
-        "origin": [-0.37, 0.0, 0.0, 1.5, 0.0, 0],
         "fixed": true,
         "pattern_type": "chessboard",
         "border_size": 0.5,

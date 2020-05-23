@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../../agrob/agrob_bringup/.idea/agrob_bringup.iml" filepath="$PROJECT_DIR$/../../../agrob/agrob_bringup/.idea/agrob_bringup.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../agrob/agrob_description/.idea/agrob_description.iml" filepath="$PROJECT_DIR$/../../../agrob/agrob_description/.idea/agrob_description.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../atlascar2/.idea/atlascar2.iml" filepath="$PROJECT_DIR$/../../../atlascar2/.idea/atlascar2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../agrob/husky/.idea/husky.iml" filepath="$PROJECT_DIR$/../../../agrob/husky/.idea/husky.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/interactive_calibration.iml" filepath="$PROJECT_DIR$/.idea/interactive_calibration.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../../iris_ur10e/.idea/iris_ur10e.iml" filepath="$PROJECT_DIR$/../../../iris_ur10e/.idea/iris_ur10e.iml" />
+    </modules>
+  </component>
+</project>

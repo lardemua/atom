@@ -1,4 +1,0 @@
-#!/bin/sh
-# File created automatically on 23/05/2020 19:37:21
-#      ATOMIC Framework
-rosrun interactive_calibration configure_calibration_pkg.py -n ur10e_eye_to_base

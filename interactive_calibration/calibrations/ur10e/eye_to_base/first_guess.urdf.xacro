@@ -1,0 +1,573 @@
+<?xml version="1.0"?>
+<robot name="ur10e" version="1.0">
+  <gazebo><plugin filename="libgazebo_ros_control.so" name="ros_control">
+      <!--robotNamespace>/</robotNamespace-->
+      <!--robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType-->
+    </plugin>
+    </gazebo>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="4.0"/>
+      <inertia ixx="0.0061063308908" ixy="0.0" ixz="0.0" iyy="0.0061063308908" iyz="0.0" izz="0.01125"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/base.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/base.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="shoulder_pan_joint" type="revolute">
+    <origin xyz="0.0 0.0 0.180718354948" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <limit effort="330.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.14"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="shoulder_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="7.369"/>
+      <inertia ixx="0.0298192606556" ixy="0.0" ixz="0.0" iyy="0.0298192606556" iyz="0.0" izz="0.0207253125"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/shoulder.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/shoulder.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="shoulder_lift_joint" type="revolute">
+    <origin xyz="0.0 0.176 0.0" rpy="0.0 1.57079632679 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="shoulder_link"/>
+    <child link="upper_arm_link"/>
+    <limit effort="330.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.14"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="upper_arm_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.306104723042" rpy="0.0 0.0 0.0"/>
+      <mass value="13.051"/>
+      <inertia ixx="0.425979473113" ixy="0.0" ixz="0.0" iyy="0.425979473113" iyz="0.0" izz="0.0367059375"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/upperarm.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/upperarm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="elbow_joint" type="revolute">
+    <origin xyz="0.0 -0.137 0.612209446083" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="upper_arm_link"/>
+    <child link="forearm_link"/>
+    <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.14"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="forearm_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.285508536233" rpy="0.0 0.0 0.0"/>
+      <mass value="3.989"/>
+      <inertia ixx="0.113997429211" ixy="0.0" ixz="0.0" iyy="0.113997429211" iyz="0.0" izz="0.0112190625"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/forearm.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/forearm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wrist_1_joint" type="revolute">
+    <origin xyz="0.0 0.0 0.571017072467" rpy="0.0 1.57079632679 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="forearm_link"/>
+    <child link="wrist_1_link"/>
+    <limit effort="54.0" lower="-6.28318530718" upper="6.28318530718" velocity="6.28"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="wrist_1_link">
+    <inertial>
+      <origin xyz="0.0 0.134789222243 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="2.1"/>
+      <inertia ixx="0.00547312281075" ixy="0.0" ixz="0.0" iyy="0.00547312281075" iyz="0.0" izz="0.00590625"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/wrist1.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/wrist1.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wrist_2_joint" type="revolute">
+    <origin xyz="0.0 0.134789222243 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="wrist_1_link"/>
+    <child link="wrist_2_link"/>
+    <limit effort="54.0" lower="-6.28318530718" upper="6.28318530718" velocity="6.28"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="wrist_2_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.119868094428" rpy="0.0 0.0 0.0"/>
+      <mass value="1.98"/>
+      <inertia ixx="0.00516037293585" ixy="0.0" ixz="0.0" iyy="0.00516037293585" iyz="0.0" izz="0.00556875"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/wrist2.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/wrist2.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wrist_3_joint" type="revolute">
+    <origin xyz="0.0 0.0 0.119868094428" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="wrist_2_link"/>
+    <child link="wrist_3_link"/>
+    <limit effort="54.0" lower="-6.28318530718" upper="6.28318530718" velocity="6.28"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="wrist_3_link">
+    <inertial>
+      <origin xyz="0.0 0.0906473542892 0.0" rpy="1.57079632679 0.0 0.0"/>
+      <mass value="0.615"/>
+      <inertia ixx="0.000439468574213" ixy="0.0" ixz="0.0" iyy="0.000439468574213" iyz="0.0" izz="0.0006226875"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/wrist3.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/collision/wrist3.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="ee_fixed_joint" type="fixed">
+    <origin xyz="0.0 0.115647354289 0.0" rpy="0.0 0.0 1.57079632679"/>
+    <parent link="wrist_3_link"/>
+    <child link="ee_link"/>
+  </joint>
+  <link name="ee_link">
+    <collision>
+      <origin xyz="-0.01 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="gripper_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.7"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.071 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/weiss-mount.dae"/>
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.07 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/ur10e/visual/weiss-cg.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.0355 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.071 0.105 0.06"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_fixed_joint" type="fixed">
+    <origin xyz="0.071 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="ee_link"/>
+    <child link="gripper_link"/>
+  </joint>
+  <joint name="left_finger_joint" type="prismatic">
+    <origin xyz="0.0 0.02 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <parent link="gripper_link"/>
+    <child link="left_finger_link"/>
+    <limit effort="100.0" lower="0.0" upper="0.03078" velocity="0.05"/>
+  </joint>
+  <link name="left_finger_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0475 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.095 0.02 0.02"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0475 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.095 0.02 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_finger_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="0.1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0475 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.095 0.02 0.02"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0475 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.095 0.02 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_finger_joint" type="prismatic">
+    <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
+    <axis xyz="0.0 -1.0 0.0"/>
+    <parent link="gripper_link"/>
+    <child link="right_finger_link"/>
+    <limit effort="100.0" lower="0.0" upper="0.03078" velocity="0.05"/>
+  </joint>
+  <transmission name="shoulder_pan_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="shoulder_pan_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="shoulder_pan_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="shoulder_lift_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="shoulder_lift_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="shoulder_lift_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="elbow_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="elbow_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="elbow_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="wrist_1_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="wrist_1_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="wrist_1_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="wrist_2_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="wrist_2_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="wrist_2_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="wrist_3_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="wrist_3_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="wrist_3_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="left_finger_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_finger_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_finger_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="right_finger_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_finger_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_finger_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <gazebo reference="shoulder_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="upper_arm_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="forearm_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="wrist_1_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="wrist_3_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="wrist_2_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="ee_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="gripper_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="left_finger_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="right_finger_link"><selfCollide>true</selfCollide>
+  </gazebo>
+  <link name="base"/>
+  <joint name="base_link-base_fixed_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 -3.14159265359"/>
+    <parent link="base_link"/>
+    <child link="base"/>
+  </joint>
+  <link name="tool0"/>
+  <joint name="wrist_3_link-tool0_fixed_joint" type="fixed">
+    <origin xyz="0.0 0.115647354289 0.0" rpy="-1.57079632679 0.0 0.0"/>
+    <parent link="wrist_3_link"/>
+    <child link="tool0"/>
+  </joint>
+  <joint name="astra_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="3.14159265359 0.0 0.0"/>
+    <parent link="ee_link"/>
+    <child link="astra_link"/>
+  </joint>
+  <link name="astra_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.564"/>
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.03 -0.06 0.0" rpy="3.14159265359 0.0 1.57079632679"/>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/sensors/astra2.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 -0.06 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.04 0.165 0.03"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="astra_rgb_joint" type="fixed">
+    <origin xyz="0.0 -0.045 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="astra_link"/>
+    <child link="astra_rgb_frame"/>
+  </joint>
+  <link name="astra_rgb_frame"/>
+  <joint name="astra_rgb_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+    <parent link="astra_rgb_frame"/>
+    <child link="astra_rgb_optical_frame"/>
+  </joint>
+  <link name="astra_rgb_optical_frame"/>
+  <joint name="astra_depth_joint" type="fixed">
+    <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="astra_link"/>
+    <child link="astra_depth_frame"/>
+  </joint>
+  <link name="astra_depth_frame"/>
+  <joint name="astra_depth_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+    <parent link="astra_depth_frame"/>
+    <child link="astra_depth_optical_frame"/>
+  </joint>
+  <link name="astra_depth_optical_frame"/>
+  <gazebo reference="astra_rgb_frame"><sensor name="camera" type="depth">
+      <always_on>true</always_on>
+      <update_rate>20.0</update_rate>
+      <camera>
+        <horizontal_fov>1.0471975512</horizontal_fov>
+        <image>
+          <format>B8G8R8</format>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.10</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_openni_kinect.so" name="astra_camera_controller">
+        <cameraName>astra</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>10</updateRate>
+        <imageTopicName>rgb/image_raw</imageTopicName>
+        <depthImageTopicName>depth/image_raw</depthImageTopicName>
+        <pointCloudTopicName>depth/points</pointCloudTopicName>
+        <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+        <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+        <frameName>astra_depth_optical_frame</frameName>
+        <baseline>0.1</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
+        <pointCloudCutoff>0.4</pointCloudCutoff>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <joint name="kinect_joint" type="fixed">
+    <origin xyz="-1.0 1.0 1.81024420261" rpy="-7.17461085058e-08 8.87414203455e-09 1.24948535484"/>
+    <parent link="base_link"/>
+    <child link="kinect_link"/>
+  </joint>
+  <link name="kinect_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.564"/>
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.03 -0.06 0.0" rpy="3.14159265359 0.0 1.57079632679"/>
+      <geometry>
+        <mesh filename="package://ur_e_description/meshes/sensors/astra2.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 -0.06 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.04 0.165 0.03"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="kinect_rgb_joint" type="fixed">
+    <origin xyz="0.0 -0.045 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="kinect_link"/>
+    <child link="kinect_rgb_frame"/>
+  </joint>
+  <link name="kinect_rgb_frame"/>
+  <joint name="kinect_rgb_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+    <parent link="kinect_rgb_frame"/>
+    <child link="kinect_rgb_optical_frame"/>
+  </joint>
+  <link name="kinect_rgb_optical_frame"/>
+  <joint name="kinect_depth_joint" type="fixed">
+    <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="kinect_link"/>
+    <child link="kinect_depth_frame"/>
+  </joint>
+  <link name="kinect_depth_frame"/>
+  <joint name="kinect_depth_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+    <parent link="kinect_depth_frame"/>
+    <child link="kinect_depth_optical_frame"/>
+  </joint>
+  <link name="kinect_depth_optical_frame"/>
+  <gazebo reference="kinect_rgb_frame"><sensor name="camera" type="depth">
+      <always_on>true</always_on>
+      <update_rate>20.0</update_rate>
+      <camera>
+        <horizontal_fov>1.0471975512</horizontal_fov>
+        <image>
+          <format>B8G8R8</format>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.10</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_openni_kinect.so" name="kinect_camera_controller">
+        <cameraName>kinect</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>10</updateRate>
+        <imageTopicName>rgb/image_raw</imageTopicName>
+        <depthImageTopicName>depth/image_raw</depthImageTopicName>
+        <pointCloudTopicName>depth/points</pointCloudTopicName>
+        <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+        <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+        <frameName>kinect_depth_optical_frame</frameName>
+        <baseline>0.1</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
+        <pointCloudCutoff>0.4</pointCloudCutoff>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+</robot>

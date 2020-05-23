@@ -1,0 +1,11 @@
+digraph G {
+	"Reference Sensor" -> "Sensor 1" [label="" color="#0000ff" style=solid penwidth=1]
+	"Reference Sensor" -> "Sensor 2" [label="" color="#0000ff" style=solid penwidth=1]
+	"Reference Sensor" -> "Sensor 3" [label="" color="#0000ff" style=solid penwidth=1]
+	"Sensor 3" -> "Sensor 4" [label="" color="#0000ff" style=solid penwidth=1]
+	"Sensor 1" -> "Sensor 4" [label="" color="#666666" style=dashed arrowhead=none penwidth=.4]
+	"Sensor 1" -> "Sensor 2" [label="" color="#666666" style=dashed arrowhead=none penwidth=.4]
+	"Sensor 1" -> "Sensor 3" [label="" color="#666666" style=dashed arrowhead=none penwidth=.4]
+	"Sensor 2" -> "Sensor 4" [label="" color="#666666" style=dashed arrowhead=none penwidth=.4]
+	"Reference Sensor" -> "Sensor 4" [label="" color="#666666" style=dashed arrowhead=none penwidth=.4]
+}

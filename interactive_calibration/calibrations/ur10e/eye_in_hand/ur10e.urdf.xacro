@@ -13,6 +13,7 @@
       <!-- <origin xyz="0.041311319304504816 -0.06402544453787727 0.044527571211305426" rpy="3.13766148064 -0.00787797070144 0.000110993634886"/> -->
   </xacro:sensor_astra>
 
+
   <link name="world" />
 
   <joint name="world_joint" type="fixed">

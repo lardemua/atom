@@ -1,6 +1,6 @@
 {
     "sensors": {
-        "world_camera": {
+        "hand_camera": {
             "link": "camera_rgb_optical_frame",
             "parent_link": "ee_link",
             "child_link" : "camera_link",
