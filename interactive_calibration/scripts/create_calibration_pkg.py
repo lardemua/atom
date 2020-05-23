@@ -59,7 +59,7 @@ if __name__ == "__main__":
         print(Fore.YELLOW + 'Package ' + package_name +
               ' not found under ROS. Are you sure the path you gave in under your $ROS_PACKAGE_PATH? Calibration ' \
               'package will not work if not under the $ROS_PACKAGE_PATH. Please fix this. ' + Style.RESET_ALL)
-        verified_package_path = package_path
+        verified_package_path = package_path + '/' + package_name
 
     # Create package structure (e.g. create folders, etc)
     execute('mkdir ' + verified_package_path + '/calibration')
