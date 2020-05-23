@@ -37,8 +37,8 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package name', type=str, required=True)
-    ap.add_argument("-b", "--bag_file", help='bag file name', type=str, required=True)
-    ap.add_argument("-d", "--description_file", help='file name of the xacro description file', type=str, required=True)
+    # ap.add_argument("-b", "--bag_file", help='bag file name', type=str, required=True)
+    # ap.add_argument("-d", "--description_file", help='file name of the xacro description file', type=str, required=True)
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
@@ -58,14 +58,25 @@ if __name__ == "__main__":
 
     print('Verified package path in ' + verified_package_path)
 
+    # --------------------------------------------------------------------------
+    # Read the config.yml file
+    # --------------------------------------------------------------------------
+    config_file = verified_package_path + '/calibration/config.yml'
+    config = yaml.load(open(config_file), Loader=yaml.CLoader)
+
+    print('\nconfig=' + str(config))
+
+    # --------------------------------------------------------------------------
+    # Setup the description file
+    # --------------------------------------------------------------------------
     description_file = verified_package_path + '/urdf/description.urdf.xacro'
     # Create a symbolic link to the given xacro
-    execute('ln -fs ' + args['description_file'] + ' ' + description_file)
+    execute('ln -fs ' + config['description_file'] + ' ' + description_file)
 
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bag = rosbag.Bag(args['bag_file'])
+    bag = rosbag.Bag(config['bag_file'])
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
     bag_topics = bag_info[1]
@@ -74,14 +85,6 @@ if __name__ == "__main__":
     # for topic, msg, t in bag.read_messages(topics=['chatter', 'numbers']):
     #     print(msg)
     bag.close()
-
-    # --------------------------------------------------------------------------
-    # Read the config.yml file
-    # --------------------------------------------------------------------------
-    config_file = verified_package_path + '/calibration/config.yml'
-    config = yaml.load(open(config_file), Loader=yaml.CLoader)
-
-    print('\nconfig=' + str(config))
 
     # --------------------------------------------------------------------------
     # Read the description.urdf.xacro file
@@ -143,7 +146,7 @@ if __name__ == "__main__":
             '<!-- Parameters-->\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<!-- bag_file: you can give another bagfile to the launch file using this arg-->\n' +
-            '<arg name="bag_file" default="' + args['bag_file'] + '"/>\n' +
+            '<arg name="bag_file" default="' + config['bag_file'] + '"/>\n' +
             '<!-- bag_start: starting time for playing back the bag file. Check "rosbag play -h"-->\n' +
             '<arg name="bag_start" default="0"/>\n' +
             '<arg name ="bag_rate" default ="1" />\n' +
@@ -186,4 +189,4 @@ if __name__ == "__main__":
     # Print final message
     print('\n\nSuccessfuly configured calibration package ' + package_name + '. You can use the launch files:\n')
     print('   ' + Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(first_guess_launch_file) +
-          '\n'+ Style.RESET_ALL)
+          '\n' + Style.RESET_ALL)
