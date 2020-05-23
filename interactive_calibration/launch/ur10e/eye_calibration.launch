@@ -1,22 +1,46 @@
 <?xml version="1.0"?>
 <launch>
 
+
     <arg name="bagfile" />
     <arg name="rate" default="1"/>
-    <arg name="xacro_file"  default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/ur10e.urdf.xacro" />
+    <arg name="xacro_file"  default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/ur10e.urdf.xacro"/>
+    <arg name="xacro_file_first_guess" default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/first_guess.urdf.xacro"/>
+    <arg name="xacro_file_optimized" default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/optimized.urdf.xacro"/>
 
     <arg name="rviz" default="false" />
     <arg name="rviz_config" default="$(find interactive_calibration)/calibrations/ur10e/eye_in_hand/rviz.rviz" />
 
-    <include file="$(find rgbd_launch)/launch/kinect_frames.launch" />
+    <arg name="read_first_guess"/>
+    <arg name="read_optimized" default="false"/>
 
-    <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+    <node pkg="image_transport" type="republish" name="republish_kinect" output="screen" args="compressed in:=/kinect/rgb/image_color raw out:=/kinect/rgb/image_color"/>
+    <node pkg="image_transport" type="republish" name="republish_astra" output="screen" args="compressed in:=/astra/rgb/image_raw raw out:=/astra/rgb/image_raw"/>
+
+<!--        <include file="$(find rgbd_launch)/launch/kinect_frames.launch">-->
+<!--    &lt;!&ndash;             <arg name="camera" value="kinect"/>&ndash;&gt;-->
+<!--        </include>-->
+
+    <group if="$(arg read_optimized)">
+        <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_optimized)"/>
+    </group>
+
+    <group unless="$(arg read_optimized)">
+        <group if="$(arg read_first_guess)">
+            <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>
+        </group>
+
+        <group unless="$(arg read_first_guess)">
+            <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+        </group>
+    </group>
+
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
     <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" required="false"/>
 
     <param name="use_sim_time" value="true"/>
     <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
-          args="-d 2 -l --clock --rate $(arg rate) $(arg bagfile)"/>
+          args="-d 2 -l --clock --rate $(arg rate) $(arg bagfile) /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>
 
 </launch>

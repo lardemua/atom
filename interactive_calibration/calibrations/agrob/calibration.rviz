@@ -67,7 +67,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 255
+      Max Intensity: 141
       Min Color: 0; 0; 0
       Min Intensity: 1
       Name: Velodyne-PointCloud2
@@ -306,7 +306,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.915822982788086
+      Distance: 5.366010665893555
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -321,10 +321,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9597968459129333
+      Pitch: 0.409797340631485
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.2815778255462646
+      Yaw: 3.556572914123535
     Saved: ~
 Window Geometry:
   Displays:
