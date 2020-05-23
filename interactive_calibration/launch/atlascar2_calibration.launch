@@ -16,6 +16,8 @@
     <arg name="xacro_file_optimized" default="$(find interactive_calibration)/calibrations/atlascar2/optimized.urdf.xacro"/>
     <arg name="rviz_config_file" default="$(find interactive_calibration)/calibrations/atlascar2/calibration.rviz"/>
 
+    <arg name="rate" default="1"/>
+
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Load robot description file based on whether or not we are reading the first guess or optimized xacro file.-->
@@ -39,14 +41,14 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
 
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-        <param name="use_gui" value="true"/>
-    </node>
+    <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"> -->
+        <!-- <param name="use_gui" value="true"/> -->
+    <!-- </node> -->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Visualization -->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config_file)" required="false"/>
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config_file)" required="false"/> -->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Playing back bag files -->
@@ -57,6 +59,12 @@
     <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l &#45;&#45;clock"/>-->
     <include file="$(find atlascar2_bringup)/launch/playback_sensor_data.launch">
         <arg name="bag" value="$(arg bag)" />
-        <arg name="bag_start" value="$(arg bag_start)" />
+        <arg name="rate" value="$(arg rate)" />
     </include>
+
+    <node name="thr1" pkg="topic_tools" type="throttle" args="messages /top_left_camera/image_color 1 /left_camera/image_color" />
+    <node name="thr2" pkg="topic_tools" type="throttle" args="messages /top_left_camera/camera_info 1 /left_camera/camera_info" />
+    <node name="thr3" pkg="topic_tools" type="throttle" args="messages /top_right_camera/image_color 1 /right_camera/image_color" />
+    <node name="thr4" pkg="topic_tools" type="throttle" args="messages /top_right_camera/camera_info 1 /right_camera/camera_info" />
+
 </launch>

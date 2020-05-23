@@ -7,12 +7,10 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1/Frames1
-        - /Collections1
-        - /Collections1/Status1
-        - /Collections1/Namespaces1
-        - /Camera2/Status1
+        - /MarkerArray1
+        - /MarkerArray1/Namespaces1
+        - /ProjectionsImage1/Status1
       Splitter Ratio: 0.5666666626930237
-    Tree Height: 523
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -59,19 +57,361 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
+        c0_base_link:
+          Value: true
+        c0_camera0:
+          Value: true
+        c0_camera0_optical_frame:
+          Value: true
+        c0_chessboard_link:
+          Value: true
+        c0_ee_link:
+          Value: true
+        c10_base_link:
+          Value: true
+        c10_camera0:
+          Value: true
+        c10_camera0_optical_frame:
+          Value: true
+        c10_chessboard_link:
+          Value: true
+        c10_ee_link:
+          Value: true
+        c11_base_link:
+          Value: true
+        c11_camera0:
+          Value: true
+        c11_camera0_optical_frame:
+          Value: true
+        c11_chessboard_link:
+          Value: true
+        c11_ee_link:
+          Value: true
+        c12_base_link:
+          Value: true
+        c12_camera0:
+          Value: true
+        c12_camera0_optical_frame:
+          Value: true
+        c12_chessboard_link:
+          Value: true
+        c12_ee_link:
+          Value: true
+        c13_base_link:
+          Value: true
+        c13_camera0:
+          Value: true
+        c13_camera0_optical_frame:
+          Value: true
+        c13_chessboard_link:
+          Value: true
+        c13_ee_link:
+          Value: true
+        c14_base_link:
+          Value: true
+        c14_camera0:
+          Value: true
+        c14_camera0_optical_frame:
+          Value: true
+        c14_chessboard_link:
+          Value: true
+        c14_ee_link:
+          Value: true
+        c15_base_link:
+          Value: true
+        c15_camera0:
+          Value: true
+        c15_camera0_optical_frame:
+          Value: true
+        c15_chessboard_link:
+          Value: true
+        c15_ee_link:
+          Value: true
+        c16_base_link:
+          Value: true
+        c16_camera0:
+          Value: true
+        c16_camera0_optical_frame:
+          Value: true
+        c16_chessboard_link:
+          Value: true
+        c16_ee_link:
+          Value: true
+        c17_base_link:
+          Value: true
+        c17_camera0:
+          Value: true
+        c17_camera0_optical_frame:
+          Value: true
+        c17_chessboard_link:
+          Value: true
+        c17_ee_link:
+          Value: true
+        c18_base_link:
+          Value: true
+        c18_camera0:
+          Value: true
+        c18_camera0_optical_frame:
+          Value: true
+        c18_chessboard_link:
+          Value: true
+        c18_ee_link:
+          Value: true
+        c19_base_link:
+          Value: true
+        c19_camera0:
+          Value: true
+        c19_camera0_optical_frame:
+          Value: true
+        c19_chessboard_link:
+          Value: true
+        c19_ee_link:
+          Value: true
+        c1_base_link:
+          Value: true
+        c1_camera0:
+          Value: true
+        c1_camera0_optical_frame:
+          Value: true
+        c1_chessboard_link:
+          Value: true
+        c1_ee_link:
+          Value: true
+        c2_base_link:
+          Value: true
+        c2_camera0:
+          Value: true
+        c2_camera0_optical_frame:
+          Value: true
+        c2_chessboard_link:
+          Value: true
+        c2_ee_link:
+          Value: true
+        c3_base_link:
+          Value: true
+        c3_camera0:
+          Value: true
+        c3_camera0_optical_frame:
+          Value: true
+        c3_chessboard_link:
+          Value: true
+        c3_ee_link:
+          Value: true
+        c4_base_link:
+          Value: true
+        c4_camera0:
+          Value: true
+        c4_camera0_optical_frame:
+          Value: true
+        c4_chessboard_link:
+          Value: true
+        c4_ee_link:
+          Value: true
+        c5_base_link:
+          Value: true
+        c5_camera0:
+          Value: true
+        c5_camera0_optical_frame:
+          Value: true
+        c5_chessboard_link:
+          Value: true
+        c5_ee_link:
+          Value: true
+        c6_base_link:
+          Value: true
+        c6_camera0:
+          Value: true
+        c6_camera0_optical_frame:
+          Value: true
+        c6_chessboard_link:
+          Value: true
+        c6_ee_link:
+          Value: true
+        c7_base_link:
+          Value: true
+        c7_camera0:
+          Value: true
+        c7_camera0_optical_frame:
+          Value: true
+        c7_chessboard_link:
+          Value: true
+        c7_ee_link:
+          Value: true
+        c8_base_link:
+          Value: true
+        c8_camera0:
+          Value: true
+        c8_camera0_optical_frame:
+          Value: true
+        c8_chessboard_link:
+          Value: true
+        c8_ee_link:
+          Value: true
+        c9_base_link:
+          Value: true
+        c9_camera0:
+          Value: true
+        c9_camera0_optical_frame:
+          Value: true
+        c9_chessboard_link:
+          Value: true
+        c9_ee_link:
+          Value: true
       Marker Scale: 0.20000000298023224
       Name: TF
-      Show Arrows: false
+      Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        base_link:
+          c0_base_link:
+            c0_chessboard_link:
+              {}
+            c0_ee_link:
+              c0_camera0:
+                c0_camera0_optical_frame:
+                  {}
+          c10_base_link:
+            c10_chessboard_link:
+              {}
+            c10_ee_link:
+              c10_camera0:
+                c10_camera0_optical_frame:
+                  {}
+          c11_base_link:
+            c11_chessboard_link:
+              {}
+            c11_ee_link:
+              c11_camera0:
+                c11_camera0_optical_frame:
+                  {}
+          c12_base_link:
+            c12_chessboard_link:
+              {}
+            c12_ee_link:
+              c12_camera0:
+                c12_camera0_optical_frame:
+                  {}
+          c13_base_link:
+            c13_chessboard_link:
+              {}
+            c13_ee_link:
+              c13_camera0:
+                c13_camera0_optical_frame:
+                  {}
+          c14_base_link:
+            c14_chessboard_link:
+              {}
+            c14_ee_link:
+              c14_camera0:
+                c14_camera0_optical_frame:
+                  {}
+          c15_base_link:
+            c15_chessboard_link:
+              {}
+            c15_ee_link:
+              c15_camera0:
+                c15_camera0_optical_frame:
+                  {}
+          c16_base_link:
+            c16_chessboard_link:
+              {}
+            c16_ee_link:
+              c16_camera0:
+                c16_camera0_optical_frame:
+                  {}
+          c17_base_link:
+            c17_chessboard_link:
+              {}
+            c17_ee_link:
+              c17_camera0:
+                c17_camera0_optical_frame:
+                  {}
+          c18_base_link:
+            c18_chessboard_link:
+              {}
+            c18_ee_link:
+              c18_camera0:
+                c18_camera0_optical_frame:
+                  {}
+          c19_base_link:
+            c19_chessboard_link:
+              {}
+            c19_ee_link:
+              c19_camera0:
+                c19_camera0_optical_frame:
+                  {}
+          c1_base_link:
+            c1_chessboard_link:
+              {}
+            c1_ee_link:
+              c1_camera0:
+                c1_camera0_optical_frame:
+                  {}
+          c2_base_link:
+            c2_chessboard_link:
+              {}
+            c2_ee_link:
+              c2_camera0:
+                c2_camera0_optical_frame:
+                  {}
+          c3_base_link:
+            c3_chessboard_link:
+              {}
+            c3_ee_link:
+              c3_camera0:
+                c3_camera0_optical_frame:
+                  {}
+          c4_base_link:
+            c4_chessboard_link:
+              {}
+            c4_ee_link:
+              c4_camera0:
+                c4_camera0_optical_frame:
+                  {}
+          c5_base_link:
+            c5_chessboard_link:
+              {}
+            c5_ee_link:
+              c5_camera0:
+                c5_camera0_optical_frame:
+                  {}
+          c6_base_link:
+            c6_chessboard_link:
+              {}
+            c6_ee_link:
+              c6_camera0:
+                c6_camera0_optical_frame:
+                  {}
+          c7_base_link:
+            c7_chessboard_link:
+              {}
+            c7_ee_link:
+              c7_camera0:
+                c7_camera0_optical_frame:
+                  {}
+          c8_base_link:
+            c8_chessboard_link:
+              {}
+            c8_ee_link:
+              c8_camera0:
+                c8_camera0_optical_frame:
+                  {}
+          c9_base_link:
+            c9_chessboard_link:
+              {}
+            c9_ee_link:
+              c9_camera0:
+                c9_camera0_optical_frame:
+                  {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -145,17 +485,25 @@ Visualization Manager:
       Name: Collections
       Namespaces:
         0: true
-        10: true
-        12: true
-        14: true
-        16: true
-        18: true
-        2: true
-        20: true
-        22: true
-        4: true
-        6: true
-        8: true
+        1: false
+        10: false
+        11: false
+        12: false
+        13: false
+        14: false
+        15: false
+        16: false
+        17: false
+        18: false
+        19: false
+        2: false
+        3: false
+        4: false
+        5: false
+        6: false
+        7: false
+        8: false
+        9: false
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -193,7 +541,7 @@ Visualization Manager:
       Zoom Factor: 1
   Enabled: true
   Global Options:
-    Background Color: 255; 255; 255
+    Background Color: 186; 189; 182
     Default Light: true
     Fixed Frame: base_link
     Frame Rate: 30
@@ -219,59 +567,39 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.0844054222106934
+      Distance: 3.257242441177368
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.17264527082443237
-        Y: -0.3833390474319458
-        Z: 6.109476089477539e-7
+        X: -0.38382434844970703
+        Y: 0.4231371283531189
+        Z: 6.705522537231445e-7
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4897974133491516
+      Pitch: 0.729797899723053
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.0777080059051514
-    Saved:
-      - Class: rviz/XYOrbit
-        Distance: 1.7956571578979492
-        Enable Stereo Rendering:
-          Stereo Eye Separation: 0.05999999865889549
-          Stereo Focal Distance: 1
-          Swap Stereo Eyes: false
-          Value: false
-        Focal Point:
-          X: -0.17264527082443237
-          Y: -0.3833390474319458
-          Z: 6.109476089477539e-7
-        Focal Shape Fixed Size: true
-        Focal Shape Size: 0.05000000074505806
-        Invert Z Axis: false
-        Name: XYOrbit
-        Near Clip Distance: 0.009999999776482582
-        Pitch: 0.4897974133491516
-        Target Frame: <Fixed Frame>
-        Value: XYOrbit (rviz)
-        Yaw: 3.0777080059051514
+      Yaw: 0.04824725165963173
+    Saved: ~
 Window Geometry:
   Camera:
     collapsed: false
   Displays:
     collapsed: false
-  Height: 683
+  Height: 1043
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
     collapsed: false
   ProjectionsImage:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000024cfc0200000008fb0000001200530065006c0065006300740069006f006e000000003d0000039e0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000410000024c000000dd00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000013c0000024cfc020000000bfb0000000c00430061006d00650072006100000000410000024c0000001600fffffffb0000002000500072006f006a0065006300740069006f006e00730049006d00610067006500000000410000024c0000001600fffffffb0000000c00430061006d0065007200610000000041000001370000001600fffffffb0000000a0049006d00610067006500000000410000024c0000001600fffffffb0000000a0049006d00610067006500000001c8000002380000000000000000fb0000000a0049006d006100670065000000003d000003c30000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000c00430061006d006500720061010000003d000001fb0000000000000000fb0000000a0049006d006100670065010000023e000001b80000000000000000fb0000000a0056006900650077007301000000410000024c000000b000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000780000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650000000000000007800000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000002a40000024c00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a000003b9fc0200000008fb0000001200530065006c0065006300740069006f006e000000003d0000039e0000005c00fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730200000780000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000003b9000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c0000026100000001000001870000024cfc020000000bfb0000000c00430061006d00650072006100000000410000024c0000001600fffffffb0000002000500072006f006a0065006300740069006f006e00730049006d00610067006500000000410000024c0000001600fffffffb0000000c00430061006d0065007200610000000041000001370000001600fffffffb0000000a0049006d00610067006500000000410000024c0000001600fffffffb0000000a0049006d00610067006500000001c8000002380000000000000000fb0000000a0049006d006100670065000000003d000003c30000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000c00430061006d006500720061010000003d000001fb0000000000000000fb0000000a0049006d006100670065010000023e000001b80000000000000000fb0000000a005600690065007700730000000315000000e1000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000780000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d0065000000000000000780000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000610000003b900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -280,6 +608,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1366
-  X: 0
-  Y: 28
+  Width: 1920
+  X: 487
+  Y: 83

@@ -8,7 +8,6 @@
         }
     },
 
-    "anchored_sensor": "camera0",
     "world_link": "base_link",
     "max_duration_between_msgs": 0.1,
 

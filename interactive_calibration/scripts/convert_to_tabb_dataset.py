@@ -84,7 +84,7 @@ if __name__ == "__main__":
         file_handle.write(
             'chess_height ' + str(dataset_sensors['calibration_config']['calibration_pattern']['dimension']['y']) + '\n')
         file_handle.write(
-            'chess_height ' + str(dataset_sensors['calibration_config']['calibration_pattern']['dimension']['x']) + '\n')
+            'chess_width ' + str(dataset_sensors['calibration_config']['calibration_pattern']['dimension']['x']) + '\n')
         file_handle.close()
         print('Created  ' + filename + '.')
 
@@ -113,6 +113,11 @@ if __name__ == "__main__":
             # TODO Eurico, I think you inverted the transform in the opposite translation, perhaps we need to do it
             #  here too?
             T = utilities.getTransform('ee_link', dataset_sensors['calibration_config']['world_link'], collection['transforms'])
+            # T = utilities.getTransform(dataset_sensors['calibration_config']['world_link'], 'ee_link', collection['transforms'])
+
+            T[0,3] = T[0,3] * 1000.0
+            T[1,3] = T[1,3] * 1000.0
+            T[2,3] = T[2,3] * 1000.0
 
             print('Collection ' + collection_key + ' =\n' + str(T))
             H, W = T.shape

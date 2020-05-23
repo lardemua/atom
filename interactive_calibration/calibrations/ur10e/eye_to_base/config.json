@@ -4,7 +4,7 @@
             "link": "camera_rgb_optical_frame",
             "parent_link": "base_link",
             "child_link" : "camera_link",
-            "topic_name" : "/camera/rgb/image_rect_color"
+            "topic_name" : "/camera/rgb/image_color"
         }
     },
 
@@ -14,12 +14,12 @@
     "calibration_pattern" : {
         "link": "chessboard_link",
         "parent_link": "ee_link",
-        "origin": [0.0, 0.0, 0.0, 1.5, 0.0, 0.0],
+        "origin": [0.0, 0.0, 0.0,0, 1.5, 0.0],
         "fixed": true,
-        "pattern_type": "chessboard",
+        "pattern_type": "charuco",
         "border_size": 0.5,
-        "dimension": {"x": 9, "y": 7},
-        "size": 0.019,
-        "inner_size": 0.014
+        "dimension": {"x": 13, "y": 8},
+        "size": 0.020,
+        "inner_size": 0.015
     }
 }

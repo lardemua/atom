@@ -1,25 +1,4 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ur10e_and_camera">
-    <xacro:include filename="$(find ur_e_description)/urdf/ur10e_joint_limited_robot.urdf.xacro" />
-
-    <link name="astra_link" />
-    <link name="kinect_link" />
-
-    <joint name="astra_eef_joint" type="fixed">
-        <parent link="ee_link"  />
-        <child  link="astra_link"/>
-        <!-- <origin xyz="0 0 0" rpy="${pi} 0 0"/> -->
-        <origin xyz="-0.010072508540529695 -0.054375082786612516 0.05082669214682842" rpy="-3.14094648692 0.00286920281033 -0.0224607343716"/>
-    </joint>
-
-    <joint name="kinect_base_joint" type="fixed">
-        <parent link="base_link"  />
-        <child  link="kinect_link"/>
-        <!-- <origin xyz="0.9 0.4 0.6" rpy="0 0.57 2.19"/> -->
-        <origin xyz="0.8131271808015654 0.48037067110684883 0.6644448706526455" rpy="0.0451004185296 0.734284415686 2.35154965264"/>
-    </joint>
-
-</robot>
 <robot xmlns:xacro="http://ros.org/wiki/xacro"
        name="ur10e" >
 
@@ -28,7 +7,7 @@
   <xacro:ur10e_robot prefix="" joint_limited="false"/>
 
   <xacro:include filename="$(find ur_e_description)/urdf/astra.urdf.xacro" />
-  <xacro:sensor_astra parent="ee_link" prefix="camera">
+  <xacro:sensor_astra parent="ee_link" prefix="astra">
       <!-- NOTE: CHANGE THIS -->
       <origin xyz="0 0 0" rpy="${pi} 0 0"/>
       <!-- <origin xyz="0.041311319304504816 -0.06402544453787727 0.044527571211305426" rpy="3.13766148064 -0.00787797070144 0.000110993634886"/> -->
@@ -36,7 +15,7 @@
 
   <xacro:sensor_astra parent="base_link" prefix="kinect">
       <!-- NOTE: CHANGE THIS -->
-        <origin xyz="0.9 0.4 0.6" rpy="0 0.57 2.19"/>
+        <origin xyz="-0.7 0.3 0.6" rpy="-0.3 0.9 -0.5"/>
       <!-- <origin xyz="0.041311319304504816 -0.06402544453787727 0.044527571211305426" rpy="3.13766148064 -0.00787797070144 0.000110993634886"/> -->
   </xacro:sensor_astra>
 

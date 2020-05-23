@@ -7,9 +7,9 @@
   <xacro:ur10e_robot prefix="" joint_limited="false"/>
 
   <xacro:include filename="$(find ur_e_description)/urdf/astra.urdf.xacro" />
-  <xacro:sensor_astra parent="ee_link" prefix="camera">
+  <xacro:sensor_astra parent="base_link" prefix="camera">
       <!-- NOTE: CHANGE THIS -->
-      <origin xyz="0 0 0" rpy="${pi} 0 0"/>
+      <origin xyz="-1 0 1" rpy="0 0 0"/>
       <!-- <origin xyz="0.041311319304504816 -0.06402544453787727 0.044527571211305426" rpy="3.13766148064 -0.00787797070144 0.000110993634886"/> -->
   </xacro:sensor_astra>
 

@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Frames1
+        - /Image2
       Splitter Ratio: 0.6570048332214355
     Tree Height: 610
   - Class: rviz/Selection
@@ -26,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Camera
+    SyncSource: Image
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -75,6 +76,8 @@ Visualization Manager:
           Value: false
         forearm_link:
           Value: false
+        gripper_link:
+          Value: true
         kinect_depth_frame:
           Value: false
         kinect_depth_optical_frame:
@@ -85,6 +88,10 @@ Visualization Manager:
           Value: false
         kinect_rgb_optical_frame:
           Value: false
+        left_finger_link:
+          Value: true
+        right_finger_link:
+          Value: true
         shoulder_link:
           Value: false
         tool0:
@@ -130,6 +137,11 @@ Visualization Manager:
                             astra_rgb_frame:
                               astra_rgb_optical_frame:
                                 {}
+                          gripper_link:
+                            left_finger_link:
+                              {}
+                            right_finger_link:
+                              {}
                         tool0:
                           {}
       Update Interval: 0
@@ -144,7 +156,24 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        astra_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        astra_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         astra_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        astra_rgb_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        astra_rgb_optical_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -167,10 +196,42 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        gripper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        kinect_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        kinect_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         kinect_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
+        kinect_rgb_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        kinect_rgb_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         shoulder_link:
           Alpha: 1
           Show Axes: false
@@ -280,7 +341,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /kinect/rgb/image_raw/labeled
+      Image Topic: /kinect/rgb/image_color/labeled
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -359,4 +420,4 @@ Window Geometry:
     collapsed: false
   Width: 1920
   X: 0
-  Y: 27
+  Y: 0

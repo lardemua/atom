@@ -105,3 +105,6 @@ venv.bak/
 
 #idea files
 .idea/*
+
+# Dataset
+snaps/

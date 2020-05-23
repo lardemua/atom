@@ -17,7 +17,8 @@ class ChessboardPattern(object):
         if equalize_histogram:
             gray = cv2.equalizeHist(gray)
 
-        # Find chessboard corners
+
+        # # Find chessboard corners
         found, corners = cv2.findChessboardCorners(gray, self.size)
         if not found:
             return {"detected": False, 'keypoints': corners, 'ids': []}
@@ -28,8 +29,8 @@ class ChessboardPattern(object):
         if diff > 0:
             corners = np.array(np.flipud(corners))
 
-        # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        # spcorners = cv2.cornerSubPix(gray, corners, self.size, (-1, -1), criteria)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
+        spcorners = cv2.cornerSubPix(gray, corners, (5,5), (-1, -1), criteria)
         spcorners = corners
 
         return {"detected": True, 'keypoints': spcorners, 'ids': range(0, len(spcorners))}
@@ -110,6 +111,9 @@ class CharucoPattern(object):
         print('Detected ' + str(len(corners)) + ' corners')
         if len(corners) > 4:
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
+
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
+            ccorners = cv2.cornerSubPix(gray, ccorners, (5,5), (-1, -1), criteria)
 
             # A valid detection must have at least half the total number of corners.
             detected = ccorners is not None and len(ccorners) > self.number_of_corners / 3
