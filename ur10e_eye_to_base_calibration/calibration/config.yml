@@ -1,30 +1,21 @@
 {
+  # Robotic system description and bag file info
+  "description_file": "/home/mike/catkin_ws/src/calibration/AtlasCarCalibration/interactive_calibration/calibrations/ur10e/eye_to_base/ur10e.urdf.xacro",
+  "bag_file": "/home/mike/bagfiles/ur10/eye_to_base_2020-02-05-10-47-48.bag",
+
    # Specify all sensors that are used in the calibration: Each sensor should have:
    # <sensor_name>: {"link": <The frame of the sensor's data. The value of the sensor's message.header.frame_id.>,
    #                 "parent_link": <Parent frame of the transformation to be calibrated.>,
    #                 "child_link" : <Child frame of the transformation to be calibrated.>,
    #                 "topic_name" : <Name of the ros message topic that contains this sensor's data.>
-   #                } 
+   #                }
    #
     "sensors": {
-        # Examples
-         "right_camera": {
-                "link": "right_camera_optical",
+         "base_camera": {
+                "link": "camera_rgb_optical_frame",
                 "parent_link": "base_link",
-                "child_link": "right_camera",
-                "topic_name": "/right_camera/image_color"
-        },
-        "left_camera": {
-                "link": "left_camera_optical",
-                "parent_link": "base_link",
-                "child_link": "left_camera",
-                "topic_name": "/left_camera/image_color"
-        },
-       "center_lidar": {
-                "link": "center_lidar",
-                "parent_link": "some_parent_link",
-                "child_link": "some_child_link",
-                "topic_name": "/center_lidar/scan"
+                "child_link": "camera_link",
+                "topic_name": "/kinect/rgb/image_color"
         }
     },
 
@@ -42,7 +33,7 @@
         # or each collection will have its own estimative of the link transformation.
         "fixed": false,
         # The type of pattern used for the calibration.
-        # Suported pattern are:
+        # Supported patterns are:
         # - chessboard
         # - charuco
         "pattern_type": "chessboard",
@@ -66,8 +57,9 @@
     },
 
     # Miscellaneous information
-    "anchored_sensor": "right_camera",     # Anchor a given sensor, making it immovable during the optimization.
+    "anchored_sensor": "base_camera",     # Anchor a given sensor, making it immovable during the optimization.
     "world_link": "base_link",             # Frame of reference for the optimization procedure. Must exist in the
                                            # transformation chains of all the sensors which are being calibrated.
-    "max_duration_between_msgs": 10000000  # Max time delta between sensor data messages when creating a collection.
+    "max_duration_between_msgs": 0.1  # Max time delta between sensor data messages when creating a collection.
+
 }
