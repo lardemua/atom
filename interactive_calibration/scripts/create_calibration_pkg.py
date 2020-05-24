@@ -90,5 +90,5 @@ if __name__ == "__main__":
 
     # Print final message
     print('\n\nCreated calibration package ' + package_name + ' in ' + verified_package_path + '. Now you should:')
-    print(Fore.BLUE + '   1. Edit the ' + config_file_dst + ' to setup the calibration and; \n   2. Run ' + Fore.RED +
-          ' calibration_setup ' + Style.RESET_ALL)
+    print(Fore.BLUE + '   1. Edit the ' + config_file_dst + ' to setup the calibration and; \n   2. Run:\n' + Fore.RED +
+          ' rosrun ' + package_name + ' configure' + Style.RESET_ALL)

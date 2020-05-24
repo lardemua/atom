@@ -1,7 +1,7 @@
 {
   # Robotic system description and bag file info
-  "description_file": "/home/mike/catkin_ws/src/calibration/AtlasCarCalibration/interactive_calibration/calibrations/ur10e/eye_to_base/ur10e.urdf.xacro",
-  "bag_file": "/home/mike/bagfiles/ur10/eye_to_base_2020-02-05-10-47-48.bag",
+  "description_file": "/home/mike/catkin_ws/src/atlascar2/atlascar2_description/urdf/atlascar2.urdf.xacro",
+  "bag_file": "/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag",
 
    # Specify all sensors that are used in the calibration: Each sensor should have:
    # <sensor_name>: {"link": <The frame of the sensor's data. The value of the sensor's message.header.frame_id.>,
@@ -12,24 +12,30 @@
    #
     "sensors": {
         # Examples
-         "right_camera": {
-                "link": "right_camera_optical",
+         "left_laser": {
+                "link": "left_laser",
                 "parent_link": "base_link",
-                "child_link": "right_camera",
-                "topic_name": "/right_camera/image_color"
+                "child_link": "left_laser",
+                "topic_name": "/left_laser/laserscan"
         },
-        "left_camera": {
-                "link": "left_camera_optical",
+         "right_laser": {
+           "link": "right_laser",
+           "parent_link": "base_link",
+           "child_link": "right_laser",
+           "topic_name": "/right_laser/laserscan"
+         },
+        "top_left_camera": {
+                "link": "top_left_camera_optical",
                 "parent_link": "base_link",
-                "child_link": "left_camera",
-                "topic_name": "/left_camera/image_color"
+                "child_link": "top_left_camera",
+                "topic_name": "/top_left_camera/image_color"
         },
-       "center_lidar": {
-                "link": "center_lidar",
-                "parent_link": "some_parent_link",
-                "child_link": "some_child_link",
-                "topic_name": "/center_lidar/scan"
-        }
+        "top_right_camera": {
+                "link": "top_right_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "top_right_camera",
+                "topic_name": "/top_right_camera/image_color"
+        },
     },
 
     # This section describes the properties of the calibration pattern used
@@ -70,7 +76,7 @@
     },
 
     # Miscellaneous information
-    "anchored_sensor": "right_camera",     # Anchor a given sensor, making it immovable during the optimization.
+    "anchored_sensor": "top_left_camera",     # Anchor a given sensor, making it immovable during the optimization.
     "world_link": "base_link",             # Frame of reference for the optimization procedure. Must exist in the
                                            # transformation chains of all the sensors which are being calibrated.
     "max_duration_between_msgs": 10000000  # Max time delta between sensor data messages when creating a collection.

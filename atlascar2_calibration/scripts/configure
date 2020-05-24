@@ -1,0 +1,4 @@
+#!/bin/sh
+# File created automatically on 24/05/2020 17:03:37
+#      ATOMIC Framework
+rosrun interactive_calibration configure_calibration_pkg.py -n atlascar2_calibration
