@@ -7,6 +7,7 @@ import argparse
 import os
 import rospkg
 import subprocess
+from copy import deepcopy
 from datetime import date, datetime
 
 import yaml
@@ -16,6 +17,85 @@ import rosbag
 import rospy
 
 from urdf_parser_py.urdf import URDF
+
+# Add diplays as a function of the sensors used
+display_dicts = {
+    'rviz/Image': {'Name': 'TopCRGBDCamera-Image', 'Min Value': 0, 'Enabled': False, 'Value': False,
+                   'Transport Hint': 'raw',
+                   'Image Topic': '/top_center_rgbd_camera/rgb/image_raw', 'Queue Size': 2, 'Max Value': 1,
+                   'Unreliable': False,
+                   'Median window': 5, 'Class': 'rviz/Image', 'Normalize Range': True},
+    'rviz/LaserScan': {'Min Color': '0; 0; 0', 'Style': 'Points', 'Use rainbow': True, 'Name': 'Left-LaserScan',
+                       'Autocompute Intensity Bounds': True, 'Enabled': True, 'Value': True,
+                       'Autocompute Value Bounds': {'Max Value': 0.5, 'Min Value': 0.5, 'Value': True},
+                       'Size (m)': 0.10000000149011612, 'Unreliable': False, 'Color Transformer': 'FlatColor',
+                       'Decay Time': 0, 'Size (Pixels)': 5, 'Min Intensity': 215, 'Use Fixed Frame': True,
+                       'Max Intensity': 695, 'Color': '239; 41; 41', 'Invert Rainbow': False,
+                       'Topic': '/left_laser/laserscan', 'Max Color': '255; 255; 255', 'Channel Name': 'intensity',
+                       'Queue Size': 10, 'Position Transformer': 'XYZ', 'Alpha': 1, 'Selectable': True,
+                       'Class': 'rviz/LaserScan', 'Axis': 'Z'},
+    'rviz/PointCloud2': {'Min Color': '0; 0; 0', 'Style': 'Points', 'Use rainbow': True,
+                         'Name': 'TopCRGBD-PointCloud2',
+                         'Autocompute Intensity Bounds': True, 'Enabled': False, 'Value': False,
+                         'Autocompute Value Bounds': {'Max Value': 9.872922897338867,
+                                                      'Min Value': 0.9480007290840149, 'Value': True},
+                         'Size (m)': 0.009999999776482582, 'Unreliable': False, 'Color Transformer': 'AxisColor',
+                         'Decay Time': 0,
+                         'Size (Pixels)': 3, 'Min Intensity': 0, 'Use Fixed Frame': False, 'Max Intensity': 4096,
+                         'Color': '241; 225; 37', 'Invert Rainbow': False,
+                         'Topic': '/top_center_rgbd_camera/depth/points',
+                         'Max Color': '255; 255; 255', 'Channel Name': 'intensity', 'Queue Size': 10,
+                         'Position Transformer': 'XYZ',
+                         'Alpha': 1, 'Selectable': True, 'Class': 'rviz/PointCloud2', 'Axis': 'Z'},
+    'rviz/Camera': {'Image Rendering': 'background and overlay', 'Name': 'TopRight-Camera', 'Enabled': False,
+                    'Value': False,
+                    'Overlay Alpha': 0.5, 'Transport Hint': 'raw', 'Zoom Factor': 1, 'Queue Size': 2,
+                    'Visibility': {'TopCRGBDCamera-Image': True, 'TopRight-Image': True, 'TopLeft-Camera': True,
+                                   'Left-LaserScan': True, 'FrontalLaser-PointCloud2': True, 'Value': True,
+                                   'DataLabeler-InteractiveMarkers': False, 'RightLaser-Labels': False,
+                                   'Right-LaserScan': True,
+                                   'Camera': True, 'RightLaser-Clusters': True, 'LeftLaser-Clusters': True,
+                                   'TopCRGBDCam-Image-Labelled': True, 'TopLeft-Image': True,
+                                   'LeftLaser-Labels': False,
+                                   'TopLeftImage-Labeled': True, 'FirstGuess-InteractiveMarkers': True,
+                                   'RobotModel': False,
+                                   'TopRightImage-Labeled': True, 'Grid': True, 'TopCRGBD-PointCloud2': True,
+                                   'TF': False},
+                    'Unreliable': False, 'Class': 'rviz/Camera', 'Image Topic': '/top_right_camera/image_color'},
+    'rviz/InteractiveMarkers': {'Show Visual Aids': False, 'Name': 'DataLabeler-InteractiveMarkers',
+                                'Update Topic': '/data_labeler/update', 'Enabled': True, 'Show Descriptions': False,
+                                'Value': True, 'Show Axes': False, 'Enable Transparency': True,
+                                'Class': 'rviz/InteractiveMarkers'},
+    'rviz/tf': {'Frame Timeout': 15, 'Name': 'TF', 'Enabled': False, 'Marker Scale': 1, 'Tree': {}, 'Value': False,
+                'Show Axes': True, 'Update Interval': 0, 'Show Names': False, 'Show Arrows': False,
+                'Frames': {'All Enabled': True}, 'Class': 'rviz/TF'},
+    'rviz/grid': {'Reference Frame': 'base_footprint', 'Name': 'Grid', 'Cell Size': 1, 'Normal Cell Count': 0,
+                  'Color': '160; 160; 164', 'Line Style': {'Line Width': 0.029999999329447746, 'Value': 'Lines'},
+                  'Enabled': True, 'Value': True, 'Plane': 'XY', 'Offset': {'Y': 0, 'X': 0, 'Z': 0}, 'Alpha': 0.5,
+                  'Plane Cell Count': 10, 'Class': 'rviz/Grid'},
+    'rviz/RobotModel': {'Name': 'RobotModel', 'Links': {
+        'top_center_rgbd_camera_rgb_optical_frame': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'left_laser': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'frontal_laser_mount_link': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'right_laser': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'Link Tree Style': 'Links in Alphabetic Order',
+        'top_right_camera': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'top_right_camera_optical': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'All Links Enabled': True, 'Expand Joint Details': False,
+        'top_center_rgbd_camera_link': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'top_center_rgbd_camera_depth_optical_frame': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'frontal_laser': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'top_center_rgbd_camera_depth_frame': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'base_link': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False}, 'Expand Tree': False,
+        'top_left_camera_optical': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'top_left_camera': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'Expand Link Details': False, 'model': {'Alpha': 1, 'Show Axes': False, 'Value': True, 'Show Trail': False},
+        'top_center_rgbd_camera_rgb_frame': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False},
+        'base_footprint': {'Alpha': 1, 'Show Axes': False, 'Show Trail': False}},
+                        'Robot Description': 'robot_description', 'Visual Enabled': True, 'Enabled': True,
+                        'Value': True, 'Update Interval': 0, 'Collision Enabled': False, 'TF Prefix': '',
+                        'Alpha': 1, 'Class': 'rviz/RobotModel'}
+}
 
 
 def execute(cmd, blocking=True, verbose=True):
@@ -187,6 +267,65 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the rviz config file
     # --------------------------------------------------------------------------
+    rviz_file_template = interactive_calibration_path + '/templates/config.rviz'
+    rviz = yaml.load(open(rviz_file_template), Loader=yaml.FullLoader)
+    vm = rviz['Visualization Manager']
+    wg = rviz['Window Geometry']
+    vm_displays = vm['Displays']
+    for i, vm_display in enumerate(vm_displays):
+        print('Display ' + str(i) + ' is ' + vm_display['Name'] + ' Class ' + Fore.RED + vm_display[
+            'Class'] + Style.RESET_ALL)
+        print(vm_display)
+
+    vm_displays = []
+
+    # Generate rviz displays according to the sensor types
+    for sensor_key in config['sensors']:
+        topic = config['sensors'][sensor_key]['topic_name']
+        topic_compressed = topic + '/compressed'
+        if topic in bag_topics:
+            msg_type = bag_info[1][topic].msg_type
+        elif topic_compressed in bag_topics:
+            msg_type = bag_info[1][topic_compressed].msg_type
+        else:
+            raise ValueError('Could not find topic ' + topic + ' in bag file.')
+
+        print('Sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
+
+        if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
+
+            # Raw data Image
+            d = display_dicts['rviz/Image']
+            display_name = sensor_key + '-Image'
+            d['Name'] = display_name
+            d['Image Topic'] = topic
+            d['Enabled'] = False
+            vm_displays.append(deepcopy(d))
+            wg[display_name] = {'collapsed': True}
+            # TODO cannot disable the marker
+
+            # Labelled data Image
+            d = display_dicts['rviz/Image']
+            display_name = sensor_key + '-Labelled' + '-Image'
+            d['Name'] = display_name
+            d['Image Topic'] = topic + '/Labelled'
+            d['Enabled'] = False
+            vm_displays.append(deepcopy(d))
+            wg[display_name] = {'collapsed': True}
+
+            # Camera
+            d = display_dicts['rviz/Camera']
+            display_name = sensor_key + '-Camera'
+            d['Name'] = display_name
+            d['Image Topic'] = topic
+            d['Enabled'] = False
+            vm_displays.append(deepcopy(d))
+            wg[display_name] = {'collapsed': True}
+
+    vm['Displays'] = vm_displays
+    vm['Window Geometry'] = wg
+    rviz_file = verified_package_path + '/rviz/config.rviz'
+    yaml.dump(rviz, open(rviz_file, 'w'))
 
     # Print final message
     print('\n\nSuccessfuly configured calibration package ' + package_name + '. You can use the launch files:\n')
