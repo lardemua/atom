@@ -37,8 +37,6 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package name', type=str, required=True)
-    # ap.add_argument("-b", "--bag_file", help='bag file name', type=str, required=True)
-    # ap.add_argument("-d", "--description_file", help='file name of the xacro description file', type=str, required=True)
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
@@ -185,6 +183,10 @@ if __name__ == "__main__":
 
     f.write('\n\n</launch>')
     f.close()
+
+    # --------------------------------------------------------------------------
+    # Create the rviz config file
+    # --------------------------------------------------------------------------
 
     # Print final message
     print('\n\nSuccessfuly configured calibration package ' + package_name + '. You can use the launch files:\n')
