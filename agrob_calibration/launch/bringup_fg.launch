@@ -1,5 +1,5 @@
 <launch>
-<!-- This file was generated automatically by the script configure_calibration_pkg.py on the 24/05/2020 22:34:05-->
+<!-- This file was generated automatically by the script configure_calibration_pkg.py on the 24/05/2020 22:45:05-->
 
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
 <!-- Runs bringup first guess for initial parameter setting through rviz interactive markers-->
@@ -8,12 +8,12 @@
 <!-- Parameters-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- bag_file: you can give another bagfile to the launch file using this arg-->
-<arg name="bag_file" default="/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag"/>
+<arg name="bag_file" default="/home/mike/bagfiles/agrob/agrob_calibration_2020-05-20-12-2/calibration_2020-05-20-12-25-58_0.bag"/>
 <!-- bag_start: starting time for playing back the bag file. Check "rosbag play -h"-->
 <arg name="bag_start" default="0"/>
 <arg name ="bag_rate" default ="1" />
-<arg name="description_file" default="$(find atlascar2_calibration)/urdf/description.urdf.xacro"/>
-<arg name="rviz_file" default="$(find atlascar2_calibration)/rviz/config.rviz"/>
+<arg name="description_file" default="$(find agrob_calibration)/urdf/description.urdf.xacro"/>
+<arg name="rviz_file" default="$(find agrob_calibration)/rviz/config.rviz"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Load robot description and tf generators -->
@@ -27,8 +27,8 @@
 <param name="/use_sim_time" value="true"/>
 <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>
 
-<node pkg="image_transport" type="republish" name="republish_top_left_camera" output="screen" args="compressed in:=/top_left_camera/image_color raw out:=/top_left_camera/image_color"/>
-<node pkg="image_transport" type="republish" name="republish_top_right_camera" output="screen" args="compressed in:=/top_right_camera/image_color raw out:=/top_right_camera/image_color"/>
+<node pkg="image_transport" type="republish" name="republish_left_camera" output="screen" args="compressed in:=/zed/zed_node/left/image raw out:=/zed/zed_node/left/image"/>
+<node pkg="image_transport" type="republish" name="republish_right_camera" output="screen" args="compressed in:=/zed/zed_node/right/image raw out:=/zed/zed_node/right/image"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Visualization -->

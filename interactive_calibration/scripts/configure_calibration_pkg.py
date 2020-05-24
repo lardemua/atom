@@ -85,6 +85,10 @@ def create_display(display_type, options={}):
 
     d = display_dicts[display_type]
     for key in options:
+        if not key in d:
+            s = 'Option ' + key + ' does not exist for ' + display_type
+            raise ValueError(s)
+
         d[key] = options[key]
     return d
 
@@ -249,7 +253,15 @@ if __name__ == "__main__":
     f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<!-- Visualization -->\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="false"/>\n'
+            '<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>\n'
+            )
+
+    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Start first guess -->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
+            # '<node name="first_guess_node" pkg="interactive_calibration" type="create_first_guess.py" args="-s 0.5 -f '
+            # '$(find ' + package_name + ')/urdf/description_fg.urdf.xacro -c $(find ' + package_name +
+            # ')/calibrations/config.json" required="true"/>\n '
             )
 
     f.write('\n\n</launch>')
@@ -271,8 +283,7 @@ if __name__ == "__main__":
     displays = []
 
     # Create grid, tf and robot model displays
-    displays.append(create_display('rviz/grid', {'Name': 'Grid', 'Image Topic': topic,
-                                                 'Reference Frame': config['world_link']}))
+    displays.append(create_display('rviz/grid', {'Name': 'Grid', 'Reference Frame': config['world_link']}))
     displays.append(create_display('rviz/tf'))
 
     displays.append(create_display('rviz/RobotModel'))
@@ -303,9 +314,9 @@ if __name__ == "__main__":
             wg[display_name] = {'collapsed': True}
             # TODO cannot disable the marker
 
-            # Labelled data Image
-            display_name = sensor_key + '-Labelled' + '-Image'
-            displays.append(create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic + '/Labelled',
+            # Labeled data Image
+            display_name = sensor_key + '-Labels' + '-Image'
+            displays.append(create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic + '/labeled',
                                                           'Enabled': False}))
             wg[display_name] = {'collapsed': True}
 
@@ -319,29 +330,36 @@ if __name__ == "__main__":
 
             # Raw data
             display_name = sensor_key + '-LaserScan'
-            color = str(int(cm_sensors[idx, 0]*255)) + '; ' + str(int(cm_sensors[idx, 1]*255)) + '; ' + str(int(cm_sensors[idx, 2]*255))
-            # color = '200; 0; 0'
-            # print color
+            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + str(
+                int(cm_sensors[idx, 2] * 255))
             displays.append(deepcopy(create_display('rviz/LaserScan',
-                                           {'Name': display_name, 'Image Topic': topic, 'Enabled': True,
-                                            'Color': color})))
+                                                    {'Name': display_name, 'Topic': topic, 'Enabled': True,
+                                                     'Color': color})))
             wg[display_name] = {'collapsed': True}
 
-            # 'rviz/LaserScan': {'Min Color': '0; 0; 0', 'Style': 'Points', 'Use rainbow': True, 'Name': 'Left-LaserScan',
-            #                    'Autocompute Intensity Bounds': True, 'Enabled': True, 'Value': True,
-            #                    'Autocompute Value Bounds': {'Max Value': 0.5, 'Min Value': 0.5, 'Value': True},
-            #                    'Size (m)': 0.10000000149011612, 'Unreliable': False, 'Color Transformer': 'FlatColor',
-            #                    'Decay Time': 0, 'Size (Pixels)': 5, 'Min Intensity': 215, 'Use Fixed Frame': True,
-            #                    'Max Intensity': 695, 'Color': '239; 41; 41', 'Invert Rainbow': False,
-            #                    'Topic': '/left_laser/laserscan', 'Max Color': '255; 255; 255',
-            #                    'Channel Name': 'intensity',
-            #                    'Queue Size': 10, 'Position Transformer': 'XYZ', 'Alpha': 1, 'Selectable': True,
-            #                    'Class': 'rviz/LaserScan', 'Axis': 'Z'},
+            # Data labels
+            display_name = sensor_key + '-Labels-LaserScan'
+            displays.append(deepcopy(create_display('rviz/PointCloud2',
+                                                    {'Name': display_name, 'Topic': topic + '/labeled', 'Enabled': True,
+                                                     'Color': color, 'Style': 'Spheres', 'Size (m)': 0.2,
+                                                     'Alpha': 0.05})))
+
+            wg[display_name] = {'collapsed': True}
+
+            # TODO Data clusters
+
+
+        elif msg_type == 'sensor_msgs/PointCloud2':
+
+
 
         else:
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + msg_type + ')' + Style.RESET_ALL)
 
+    for display in displays:
+        print('\n' + display['Name'] + '\n')
+        print(str(display) + '\n')
     vm['Displays'] = displays
     vm['Window Geometry'] = wg
     rviz_file = verified_package_path + '/rviz/config.rviz'
