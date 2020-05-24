@@ -351,6 +351,7 @@ if __name__ == "__main__":
 
         elif msg_type == 'sensor_msgs/PointCloud2':
 
+            pass
 
 
         else:
