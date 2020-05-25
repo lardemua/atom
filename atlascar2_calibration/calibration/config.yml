@@ -1,6 +1,7 @@
 {
   # Robotic system description and bag file info
-  "description_file": "/home/mike/catkin_ws/src/atlascar2/atlascar2_description/urdf/atlascar2.urdf.xacro",
+#  "description_file": "/home/mike/catkin_ws/src/atlascar2/atlascar2_description/urdf/atlascar2.urdf.xacro",
+  "description_file": "mypakcage/urdf/atlascar2.urdf.xacro",
   "bag_file": "/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag",
 
    # Specify all sensors that are used in the calibration: Each sensor should have:

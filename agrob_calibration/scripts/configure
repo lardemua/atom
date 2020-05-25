@@ -1,4 +1,0 @@
-#!/bin/sh
-# File created automatically on 25/05/2020 08:35:49
-#      ATOMIC Framework
-rosrun interactive_calibration configure_calibration_pkg.py -n agrob_calibration

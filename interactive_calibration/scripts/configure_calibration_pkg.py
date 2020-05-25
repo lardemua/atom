@@ -136,8 +136,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     config_file = verified_package_path + '/calibration/config.yml'
     config = yaml.load(open(config_file), Loader=yaml.CLoader)
-
-    print('\nconfig=' + str(config))
+    # print('\nconfig=' + str(config))
 
     # --------------------------------------------------------------------------
     # Setup the description file
@@ -209,6 +208,7 @@ if __name__ == "__main__":
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    rviz_file = '/rviz/config.rviz'
 
     f.write('<launch>\n' +
             '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n\n' +
@@ -224,7 +224,7 @@ if __name__ == "__main__":
             '<arg name="bag_start" default="0"/>\n' +
             '<arg name ="bag_rate" default ="1" />\n' +
             '<arg name="description_file" default="$(find ' + package_name + ')/urdf/description.urdf.xacro"/>\n' +
-            '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/config.rviz"/>\n' +
+            '<arg name="rviz_file" default="$(find ' + package_name + ')' + rviz_file + '"/>\n' +
             '\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<!-- Load robot description and tf generators -->\n' +
@@ -376,8 +376,7 @@ if __name__ == "__main__":
         print(str(display) + '\n')
     vm['Displays'] = displays
     vm['Window Geometry'] = wg
-    rviz_file = verified_package_path + '/rviz/config.rviz'
-    yaml.dump(rviz, open(rviz_file, 'w'))
+    yaml.dump(rviz, open(verified_package_path + rviz_file, 'w'))
 
     # Print final message
     print('\n\nSuccessfully configured calibration package ' + package_name + '. You can use the launch files:\n')

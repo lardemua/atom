@@ -3,8 +3,8 @@
 import sys
 import os.path
 import argparse
-
 from colorama import Fore, Style
+import yaml
 
 # ROS imports
 import rospkg
@@ -41,7 +41,9 @@ class InteractiveFirstGuess(object):
             rospy.logerr("Parameter '/robot_description' must exist to continue")
             sys.exit(1)
 
-        self.config = loadJSONConfig(self.args['calibration_file'])
+        # self.config = loadJSONConfig(self.args['calibration_file'])
+        self.config = yaml.load(open(self.args['calibration_file']), Loader=yaml.CLoader)
+
         if self.config is None:
             sys.exit(1)  # loadJSON should tell you why.
 
@@ -94,7 +96,8 @@ class InteractiveFirstGuess(object):
         # Write the urdf file with interactive_calibration's
         # source path as base directory.
         rospack = rospkg.RosPack()
-        outfile = rospack.get_path('interactive_calibration') + os.path.abspath('/' + self.args['filename'])
+        # outfile = rospack.get_path('interactive_calibration') + os.path.abspath('/' + self.args['filename'])
+        outfile = self.args['filename']
         with open(outfile, 'w') as out:
             print("Writing fist guess urdf to '{}'".format(outfile))
             out.write(self.urdf.to_xml_string())
@@ -108,12 +111,20 @@ if __name__ == "__main__":
 
     # Parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-f", "--filename", type=str, required=True, default="/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro",
+    ap.add_argument("-f", "--filename", type=str, required=False, default="/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro",
                     help="Full path and name of the first guess xacro file. Starting from the root of the interactive calibration ros package")
     ap.add_argument("-s", "--marker_scale",     type=float, default=0.6, help='Scale of the interactive markers.')
-    ap.add_argument("-c", "--calibration_file", type=str, required=True, help='full path to calibration file.')
+    ap.add_argument("-c", "--calibration_file", type=str, required=False, help='full path to calibration file.')
+
+    # args = vars(ap.parse_args())
+    print('\n\n')
+    print(sys.argv)
+    print('\n\n')
 
     args = vars(ap.parse_args())
+    # args = vars(ap.parse_known_args(['filename', 'marker_scale', 'calibration_file']))
+    # print('\n\n' + str(args) + '\n\n')
+    # exit(0)
 
     # Initialize ROS stuff
     rospy.init_node("sensors_first_guess")

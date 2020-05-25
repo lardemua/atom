@@ -31,7 +31,7 @@
         "parent_link": "base_link",
         # Defines if the pattern link is the same in all collections (i.e. fixed=true),
         # or each collection will have its own estimative of the link transformation.
-        "fixed": false,
+        "fixed": true,
         # The type of pattern used for the calibration.
         # Supported patterns are:
         # - chessboard
