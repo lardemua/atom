@@ -40,5 +40,6 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Static TF to remap velodyne frame name -->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-    <node pkg="tf" type="static_transform_publisher" name="vlp16_to_velodyne" args="0 0 0 0 0 0 1 /vlp16_frame /velodyne 10" />
+<!--    Miguel: Commented this and fixed the xacro. Check #157.-->
+<!--    <node pkg="tf" type="static_transform_publisher" name="vlp16_to_velodyne" args="0 0 0 0 0 0 1 /vlp16_frame /velodyne 10" />-->
 </launch>
