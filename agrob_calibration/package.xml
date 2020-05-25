@@ -26,6 +26,7 @@
   <!-- Authors do not have to be maintainers, but could be -->
   <!-- Example: -->
   <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+  <author >Miguel Riem Oliveira</author>
 
 
   <!-- The *depend tags are used to specify dependencies -->
@@ -49,12 +50,9 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>Miguel Riem Oliveira</build_depend>
-  <build_depend>rospy-a</build_depend>
-  <build_export_depend>Miguel Riem Oliveira</build_export_depend>
-  <build_export_depend>rospy-a</build_export_depend>
-  <exec_depend>Miguel Riem Oliveira</exec_depend>
-  <exec_depend>rospy-a</exec_depend>
+  <build_depend>rospy</build_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <exec_depend>rospy</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -71,7 +71,7 @@
     },
 
     # Miscellaneous information
-    "anchored_sensor": "right_camera",     # Anchor a given sensor, making it immovable during the optimization.
+    "anchored_sensor": "zed_right_camera_optical_frame",     # Anchor a given sensor, making it immovable during the optimization.
     "world_link": "base_link",             # Frame of reference for the optimization procedure. Must exist in the
                                            # transformation chains of all the sensors which are being calibrated.
     "max_duration_between_msgs": 10000000  # Max time delta between sensor data messages when creating a collection.

@@ -11,6 +11,7 @@ from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from json_minify import json_minify
 
+
 def loadJSONConfig(filename):
     """Load configuration from a json file"""
     try:

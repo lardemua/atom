@@ -8,7 +8,7 @@
    #                 "parent_link": <Parent frame of the transformation to be calibrated.>,
    #                 "child_link" : <Child frame of the transformation to be calibrated.>,
    #                 "topic_name" : <Name of the ros message topic that contains this sensor's data.>
-   #                } 
+   #                }
    #
     "sensors": {
         # Examples

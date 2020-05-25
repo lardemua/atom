@@ -8,8 +8,7 @@ project(ur10e_eye_to_base_calibration)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  Miguel Riem Oliveira
-  rospy-a
+  rospy
 )
 
 ## System dependencies are found with CMake's conventions
@@ -104,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ur10e_eye_to_base_calibration
-#  CATKIN_DEPENDS Miguel Riem Oliveira rospy-a
+#  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
 

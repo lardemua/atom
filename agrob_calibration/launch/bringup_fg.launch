@@ -1,5 +1,5 @@
 <launch>
-<!-- This file was generated automatically by the script configure_calibration_pkg.py on the 24/05/2020 22:45:05-->
+<!-- This file was generated automatically by the script configure_calibration_pkg.py on the 25/05/2020 08:36:56-->
 
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
 <!-- Runs bringup first guess for initial parameter setting through rviz interactive markers-->
@@ -19,7 +19,7 @@
 <!-- Load robot description and tf generators -->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <param name = "robot_description" command = "$(find xacro)/xacro $(arg description_file)" />
-<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Playback the bag file -->

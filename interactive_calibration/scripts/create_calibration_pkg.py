@@ -27,6 +27,7 @@ def execute(cmd, blocking=True, verbose=False):
                 print line,
             p.wait()
 
+
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
@@ -43,15 +44,14 @@ if __name__ == "__main__":
         package_path = os.getcwd()
 
     print('Creating package ' + package_name + ' on path ' + package_path)
-    cmd = 'cd ' + package_path + ' && catkin_create_pkg ' + package_name + ' rospy' + \
+    cmd = 'cd ' + package_path + ' && catkin_create_pkg ' + package_name + ' rospy ' + \
           '-a "Miguel Riem Oliveira" ' + '-m "Miguel Riem Oliveira" ' + \
           '-D "This package was created automatically by the create_calibration_pkg.py ' \
           'script. Check the ATOMIC framework webpage for more information."'
     execute(cmd, verbose=True)
 
-    execute('rospack profile && rospack profile && rospack profile')
-
     # Check if package is under $ROS_PACKAGE_PATH
+    execute('rospack profile && rospack profile && rospack profile')
     rospack = rospkg.RosPack()
     interactive_calibration_path = rospack.get_path('interactive_calibration')
     try:
@@ -71,8 +71,8 @@ if __name__ == "__main__":
 
     # Add configure.py script
     configure_file = verified_package_path + '/scripts/configure'
-    f = open(configure_file,'w')
-    f.write('#!/bin/sh') # shebang
+    f = open(configure_file, 'w')
+    f.write('#!/bin/sh')  # shebang
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     f.write('\n#      ATOMIC Framework')
     f.write('\nrosrun interactive_calibration configure_calibration_pkg.py -n ' + package_name)
     f.close()
-    execute('chmod +x ' + configure_file) # make file executable
+    execute('chmod +x ' + configure_file)  # make file executable
 
     # Add template config.json
     config_file_src = interactive_calibration_path + '/templates/config.yml'

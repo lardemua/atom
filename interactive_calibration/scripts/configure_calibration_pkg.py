@@ -230,7 +230,7 @@ if __name__ == "__main__":
             '<!-- Load robot description and tf generators -->\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<param name = "robot_description" command = "$(find xacro)/xacro $(arg description_file)" />\n' +
-            '<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>\n' +
+            '<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>\n' +
             # '<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">\n' +
             # '    <param name="use_gui" value="true"/>\n' +
             # '</node>\n' +
@@ -302,13 +302,13 @@ if __name__ == "__main__":
         else:
             raise ValueError('Could not find topic ' + topic + ' in bag file.')
 
-        print('Sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
+        print('Generating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
 
         if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
 
-            # Raw data Image
-
             display_name = sensor_key + '-Image'
+
+            # Raw data Image
             displays.append(
                 create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
             wg[display_name] = {'collapsed': True}
@@ -328,17 +328,18 @@ if __name__ == "__main__":
 
         elif msg_type == 'sensor_msgs/LaserScan':
 
-            # Raw data
             display_name = sensor_key + '-LaserScan'
-            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + str(
-                int(cm_sensors[idx, 2] * 255))
+            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + \
+                    str(int(cm_sensors[idx, 2] * 255))
+
+            # Raw data
             displays.append(deepcopy(create_display('rviz/LaserScan',
                                                     {'Name': display_name, 'Topic': topic, 'Enabled': True,
                                                      'Color': color})))
             wg[display_name] = {'collapsed': True}
 
             # Data labels
-            display_name = sensor_key + '-Labels-LaserScan'
+            display_name = sensor_key + '-Labels-PointCloud2'
             displays.append(deepcopy(create_display('rviz/PointCloud2',
                                                     {'Name': display_name, 'Topic': topic + '/labeled', 'Enabled': True,
                                                      'Color': color, 'Style': 'Spheres', 'Size (m)': 0.2,
@@ -348,12 +349,24 @@ if __name__ == "__main__":
 
             # TODO Data clusters
 
-
         elif msg_type == 'sensor_msgs/PointCloud2':
 
-            pass
+            display_name = sensor_key + '-PointCloud2'
+            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + str(
+                int(cm_sensors[idx, 2] * 255))
 
+            # Raw data
+            displays.append(deepcopy(create_display('rviz/PointCloud2',
+                                                    {'Name': display_name, 'Topic': topic, 'Enabled': True,
+                                                     'Color': color, 'Style': 'Points', 'Size (m)': 0.2,
+                                                     'Alpha': 1})))
 
+            # Labeled data
+            display_name = sensor_key + '-Labels-PointCloud2'
+            displays.append(deepcopy(create_display('rviz/PointCloud2',
+                                                    {'Name': display_name, 'Topic': topic + '/labeled', 'Enabled': True,
+                                                     'Color': color, 'Style': 'Spheres', 'Size (m)': 0.2,
+                                                     'Alpha': 0.05})))
         else:
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + msg_type + ')' + Style.RESET_ALL)
@@ -367,6 +380,6 @@ if __name__ == "__main__":
     yaml.dump(rviz, open(rviz_file, 'w'))
 
     # Print final message
-    print('\n\nSuccessfuly configured calibration package ' + package_name + '. You can use the launch files:\n')
+    print('\n\nSuccessfully configured calibration package ' + package_name + '. You can use the launch files:\n')
     print('   ' + Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(first_guess_launch_file) +
           '\n' + Style.RESET_ALL)
