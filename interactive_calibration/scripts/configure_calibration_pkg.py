@@ -259,9 +259,9 @@ if __name__ == "__main__":
     f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<!-- Start first guess -->\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
-            # '<node name="first_guess_node" pkg="interactive_calibration" type="create_first_guess.py" args="-s 0.5 -f '
-            # '$(find ' + package_name + ')/urdf/description_fg.urdf.xacro -c $(find ' + package_name +
-            # ')/calibrations/config.json" required="true"/>\n '
+            '<node name="first_guess_node" pkg="interactive_calibration" type="create_first_guess.py" args="-s 0.5 -f '
+            '$(find ' + package_name + ')/urdf/description_fg.urdf.xacro -c $(find ' + package_name +
+            ')/calibration/config.yml" required="true" output="screen"/>\n '
             )
 
     f.write('\n\n</launch>')
@@ -272,6 +272,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     rviz_file_template = interactive_calibration_path + '/templates/config.rviz'
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.FullLoader)
+    # rviz = yaml.load(open(verified_package_path + rviz_file), Loader=yaml.FullLoader) # to print current yaml
     vm = rviz['Visualization Manager']
     wg = rviz['Window Geometry']
     displays = vm['Displays']
@@ -287,6 +288,9 @@ if __name__ == "__main__":
     displays.append(create_display('rviz/tf'))
 
     displays.append(create_display('rviz/RobotModel'))
+
+    displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'MoveSensors-InteractiveMarkers',
+                                                               'Update Topic': 'first_guess_node/update'}))
 
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
     # Access with:  color_map_sensors[idx, :]
