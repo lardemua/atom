@@ -4,7 +4,9 @@
 #    IMPORT MODULES      #
 # ------------------------
 import argparse
+import os
 import rospkg
+import sys
 
 import rospy
 from visualization_msgs.msg import InteractiveMarkerControl, Marker, InteractiveMarker
@@ -104,11 +106,21 @@ def markerFeedback(feedback):
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-s", "--marker_scale", help='Scale of the interactive markers.', type=float, default=0.5)
+    ap.add_argument("-s", "--marker_size", help='Scale of the interactive markers.', type=float, default=0.5)
     ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str,
                     required=True)
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
-    args = vars(ap.parse_args())
+
+    # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
+    # filter this argv. in addition, the first argument is the node name, which should also not be given to the
+    # parser.
+    argv_filtered = []
+    for i, argv in enumerate(sys.argv):
+        if (not all(x in argv for x in ['__', ':='])) and (i != 0):
+            argv_filtered.append(argv)
+    args = vars(ap.parse_args(args=argv_filtered))
+    args['output_folder'] = os.path.expanduser(args['output_folder'])
+    args['output_folder'] = os.path.expandvars(args['output_folder'])
 
     # Initialize ROS stuff
     rospy.init_node("collect_and_label")
@@ -118,9 +130,7 @@ if __name__ == "__main__":
     # rospy.sleep(0.5)
 
     # Process robot description and create an instance of class Sensor for each sensor
-    data_collector = DataCollectorAndLabeler(args['output_folder'],
-                                             server, menu_handler,
-                                             args['marker_scale'], args['calibration_file'])
+    data_collector = DataCollectorAndLabeler(args, server, menu_handler)
 
     createInteractiveMarker(data_collector.world_link)
     initMenu()

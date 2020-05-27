@@ -17,7 +17,6 @@ from colorama import Style, Fore
 
 import rosbag
 import rospy
-
 from urdf_parser_py.urdf import URDF
 
 
@@ -200,20 +199,23 @@ if __name__ == "__main__":
     # TODO Check if config links exist in the tf topics of the bag file
 
     # --------------------------------------------------------------------------
-    # Create the launch file
+    # Create the playback launch file
     # --------------------------------------------------------------------------
-    print('Setting up launch files ...')
-    first_guess_launch_file = verified_package_path + '/launch/bringup_fg.launch'
-    f = open(first_guess_launch_file, 'w')
+    playbag_launch_file = verified_package_path + '/launch/playbag.launch'
+    print('Setting up ' + playbag_launch_file + ' launch file ...')
+    f = open(playbag_launch_file, 'w')
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
     rviz_file = '/rviz/config.rviz'
 
     f.write('<launch>\n' +
-            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Runs bringup first guess for initial parameter setting through rviz interactive markers-->\n' +
+            '<!-- playbag.launch : Plays back the bag file. Sets up image decompressors if needed, reads the urdf '
+            'robot description -->\n' +
+            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<!-- Parameters-->\n' +
@@ -240,11 +242,15 @@ if __name__ == "__main__":
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<param name="/use_sim_time" value="true"/>\n' +
             '<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args=" $(arg bag_file) --clock -r $('
-            'arg bag_rate) -l -s $(arg bag_start) /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>\n\n'
+            'arg bag_rate) -l -s $(arg bag_start) /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>\n'
             )
 
+    if compressed_topics:
+        f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+                '<!-- Image Topic Decompression -->\n' +
+                '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n')
+
     for compressed_topic in compressed_topics:  # add decompressors if needed
-        print(compressed_topic)
         sensor_key = compressed_topics[compressed_topic]['sensor_key']
         f.write('<node pkg="image_transport" type="republish" name="republish_' + sensor_key +
                 '" output="screen" args="compressed in:=' + compressed_topic + ' raw out:=' + compressed_topic +
@@ -256,15 +262,84 @@ if __name__ == "__main__":
             '<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>\n'
             )
 
-    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Start first guess -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
-            '<node name="first_guess_node" pkg="interactive_calibration" type="create_first_guess.py" args="-s 0.5 -f '
-            '$(find ' + package_name + ')/urdf/description_fg.urdf.xacro -c $(find ' + package_name +
-            ')/calibration/config.yml" required="true" output="screen"/>\n '
+    f.write('\n</launch>')
+    f.close()
+
+    # --------------------------------------------------------------------------
+    # Create the playback launch file
+    # --------------------------------------------------------------------------
+    set_initial_estimate_launch_file = verified_package_path + '/launch/set_initial_estimate.launch'
+    print('Setting up ' + set_initial_estimate_launch_file + ' launch file ...')
+    f = open(set_initial_estimate_launch_file, 'w')
+
+    f.write('<launch>\n' +
+            '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- ' + os.path.basename(set_initial_estimate_launch_file) + ': runs bringup for initial parameter setting through rviz interactive '
+            'markers-->\n' +
+            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Parameters-->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<arg name="config_file" default="$(find ' + package_name + ')/calibration/config.yml"/>\n' +
+            '<arg name="output_file" default="$(find ' + package_name + ')/urdf/initial_estimate.urdf.xacro"/>\n'
             )
 
-    f.write('\n\n</launch>')
+    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Call play bag launch file -->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
+            '<include file="$(find ' + package_name + ')/launch/playbag.launch">\n' +
+            # '   <arg name="model" value="golf"/>\n' +
+            '</include>\n')
+
+    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Start set initial estimate node -->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
+            '<node name="first_guess_node" pkg="interactive_calibration" type="create_first_guess.py" args="-s 0.5 -f '
+            '$(arg output_file) -c $(arg config_file)" required="true" output="screen"/>\n '
+            )
+
+    f.write('\n</launch>')
+    f.close()
+
+    # --------------------------------------------------------------------------
+    # Create the data collection launch file
+    # --------------------------------------------------------------------------
+    data_collection_launch_file = verified_package_path + '/launch/collect_data.launch'
+    print('Setting up ' + data_collection_launch_file + ' launch file ...')
+    f = open(data_collection_launch_file, 'w')
+
+    f.write('<launch>\n' +
+            '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- ' + os.path.basename(data_collection_launch_file) + ': runs bringup collecting data from a bag file. -->\n' +
+            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Parameters-->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<arg name="output_folder"/>\n'   '<!-- folder of the output dataset -->\n' +
+            '<arg name="overwrite" default="false"/>\n'   '<!-- overwrite output folder if it exists -->\n' +
+            '<arg name="marker_size" default="0.5"/>\n' +
+            '<arg name="config_file" default="$(find ' + package_name + ')/calibration/config.yml"/>\n'
+            )
+
+    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Call play bag launch file -->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
+            '<include file="$(find ' + package_name + ')/launch/playbag.launch">\n' +
+            # '   <arg name="model" value="golf"/>\n' +
+            '</include>\n')
+
+    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
+            '<!-- Start data collector node -->\n' +
+            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
+            '<node name="collect_data_node" pkg="interactive_calibration" type="collect_and_label_data.py" args="-s '
+            '$(arg marker_size) -o $(arg output_folder) -c $(arg config_file)" required="true" output="screen"/>\n '
+            )
+
+    f.write('\n</launch>')
     f.close()
 
     # --------------------------------------------------------------------------
@@ -383,6 +458,7 @@ if __name__ == "__main__":
     yaml.dump(rviz, open(verified_package_path + rviz_file, 'w'))
 
     # Print final message
-    print('\n\nSuccessfully configured calibration package ' + package_name + '. You can use the launch files:\n')
-    print('   ' + Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(first_guess_launch_file) +
-          '\n' + Style.RESET_ALL)
+    print('\nSuccessfully configured calibration package ' + Fore.BLUE +  package_name + Style.RESET_ALL + '. You can use the launch files:')
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(playbag_launch_file) + Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(set_initial_estimate_launch_file) + Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(data_collection_launch_file) + Style.RESET_ALL)

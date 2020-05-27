@@ -2,10 +2,17 @@ import copy
 import json
 import os
 import shutil
+import subprocess
+import time
+
+import yaml
+
 import cv2
 import tf
 import numpy
 import ros_numpy
+
+from datetime import datetime
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
@@ -19,30 +26,67 @@ from interactive_calibration.utilities import loadJSONConfig
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
 
+def execute(cmd, blocking=True, verbose=True):
+    """ @brief Executes the command in the shell in a blocking or non-blocking manner
+        @param cmd a string with teh command to execute
+        @return
+    """
+    if verbose:
+        print "Executing command: " + cmd
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if blocking:  # if blocking is True:
+        for line in p.stdout.readlines():
+            if verbose:
+                print line,
+            p.wait()
+
+
 class DataCollectorAndLabeler:
 
-    def __init__(self, output_folder, server, menu_handler, marker_size, calibration_file):
+    def __init__(self, args, server, menu_handler):
+        # def __init__(self, output_folder, server, menu_handler, marker_size, calibration_file, args):
 
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)  # Create the new folder
-        else:
-            while True:
-                msg = Fore.YELLOW + "To continue, the directory '{}' will be delete.\n"
-                msg = msg + "Do you wish to continue? [y/N] " + Style.RESET_ALL
+        interactive = sys.stdin.isatty() and sys.stdout.isatty()
+        print("is interactive = " + str(interactive))
+        exit(0)
 
-                answer = raw_input(msg.format(output_folder))
-                if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
-                    if answer[0].lower() == 'n':
-                        sys.exit(1)
-                    else:
-                        break
-                else:
-                    sys.exit(1)  # defaults to N
+        if os.path.exists(args['output_folder']):
+            now = datetime.now()
+            dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
+            basename = os.path.basename(args['output_folder'])
+            new_folder = '/tmp/dataset_backups/' + basename + '_' + dt_string
+            print('Dataset ' + Fore.YELLOW + args['output_folder'] + Style.RESET_ALL +
+                  ' exists. Moving it to a new folder: ' + Fore.YELLOW + new_folder + Style.RESET_ALL)
 
-            shutil.rmtree(output_folder)  # Delete old folder
-            os.mkdir(output_folder)  # Recreate the folder
+            # shutil.copy2(args['output_folder'], new_folder)
+            execute('mv ' + args['output_folder'] + ' ' + new_folder, verbose=True)
+        #     shutil.rmtree(args['output_folder'])  # Delete old folder
+        #
+        #     os.mkdir(args['output_folder'])  # Recreate the folder
+        # elif sys.stdout.isatty():  # check if this was called from an interactive terminal (i.e., not from roslaunch )
+        #     while True:
+        #         msg = Fore.YELLOW + "To continue, the directory '{}' will be deleted.\n"
+        #         msg = msg + "Do you wish to continue? [y/N] " + Style.RESET_ALL
+        #         answer = raw_input(msg.format(args['output_folder']))
+        #         if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
+        #             if answer[0].lower() == 'n':
+        #                 sys.exit(1)
+        #             else:
+        #                 break
+        #         else:
+        #             sys.exit(1)  # defaults to N
+        #
+        #     shutil.rmtree(args['output_folder'])  # Delete old folder
+        #     os.mkdir(args['output_folder'])  # Recreate the folder
+        # else:
+        #     print(Fore.YELLOW + 'Dataset ' + args['output_folder'] +
+        #           'exists. If you want to delete the existing folder, add the "--overwrite" (or overwrite:=true for '
+        #           'launch files) flag.' + Style.RESET_ALL)
+        #     sys.exit(1)  # defaults to N
 
-        self.output_folder = output_folder
+        exit(0)
+
+        self.output_folder = args['output_folder']
         self.listener = TransformListener()
         self.sensors = {}
         self.sensor_labelers = {}
@@ -52,7 +96,8 @@ class DataCollectorAndLabeler:
         self.collections = {}
         self.bridge = CvBridge()
 
-        self.config = loadJSONConfig(calibration_file)
+        # self.config = loadJSONConfig(calibration_file)
+        self.config = yaml.load(open(args['calibration_file']), Loader=yaml.CLoader)
         if self.config is None:
             sys.exit(1)  # loadJSON should tell you why.
 
@@ -71,7 +116,7 @@ class DataCollectorAndLabeler:
                            'calibration_child': value['child_link']}
 
             # TODO replace by utils function
-            print("Waiting for message "+ value['topic_name'] + ' ...')
+            print("Waiting for message " + value['topic_name'] + ' ...')
             msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
             print('... received!')
             connection_header = msg._connection_header['type'].split('/')
@@ -107,7 +152,7 @@ class DataCollectorAndLabeler:
             self.sensors[sensor_key] = sensor_dict
 
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
-                                                    marker_size, self.config['calibration_pattern'])
+                                                    args['marker_size'], self.config['calibration_pattern'])
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 

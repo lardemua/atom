@@ -60,6 +60,8 @@
         # the aruco dictionary used by the pattern.
         # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
         "dictionary": "DICT_5X5_100",
+        # Mesh file (collada.dae or stl) for showing pattern on rviz
+        "mesh_file": "/home/mike/catkin_ws/src/calibration/AtlasCarCalibration/interactive_calibration/meshes/charuco_5X5_800x600.dae",
         # The border width from the edge corner to the pattern physical edge.
         # This is used for 3D sensors and lidars.
         "border_size": 0.5,

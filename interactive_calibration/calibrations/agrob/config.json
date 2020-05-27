@@ -33,6 +33,7 @@
         "fixed": false,
         "pattern_type": "charuco",
         "dictionary": "DICT_5X5_100",
+        "mesh_file": "/home/mike/catkin_ws/src/calibration/AtlasCarCalibration/interactive_calibration/meshes/charuco_5X5_800x600.dae",
         "border_size": 0.03,
         "dimension": {"x": 11, "y": 8},
         "size": 0.06,
