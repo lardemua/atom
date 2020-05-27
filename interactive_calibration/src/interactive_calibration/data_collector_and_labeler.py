@@ -173,7 +173,7 @@ class DataCollectorAndLabeler:
         stamps, average_time, max_delta = self.getLabelersTimeStatistics()
 
         if max_delta is not None:  # if max_delta is None (only one sensor), continue
-            if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):  # times are close enough?
+            if max_delta.to_sec() > float(self.config['max_duration_bekween_msgs']):  # times are close enough?
                 rospy.logwarn('Max duration between msgs in collection is ' + str(max_delta.to_sec()) +
                               '. Not saving collection.')
                 self.unlockAllLabelers()
