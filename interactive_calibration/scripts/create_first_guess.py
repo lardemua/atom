@@ -16,7 +16,7 @@ from interactive_markers.menu_handler import MenuHandler
 from urdf_parser_py.urdf import URDF
 
 # __self__ imports
-from interactive_calibration.utilities import loadJSONConfig
+# from interactive_calibration.utilities import loadJSONConfig
 from interactive_calibration.sensor import Sensor
 
 
@@ -63,21 +63,21 @@ class InteractiveFirstGuess(object):
         print('Number of sensors: ' + str(len(self.config['sensors'])))
 
         # Init interaction
-        self.server = InteractiveMarkerServer("interactive_first_guess")
+        self.server = InteractiveMarkerServer('first_guess_node')
         self.menu = MenuHandler()
 
-        self.menu.insert("Save sensors configuration",     callback=self.onSaveFirstGuess)
+        self.menu.insert("Save sensors configuration", callback=self.onSaveFirstGuess)
         self.menu.insert("Reset to initial configuration", callback=self.onReset)
 
         # For each node generate an interactive marker.
         for name, sensor in self.config['sensors'].items():
             print(Fore.BLUE + '\nSensor name is ' + name + Style.RESET_ALL)
             params = {
-                "frame_world":      self.config['world_link'],
+                "frame_world": self.config['world_link'],
                 "frame_opt_parent": sensor['parent_link'],
-                "frame_opt_child":  sensor['child_link'],
-                "frame_sensor":     sensor['link'],
-                "marker_scale":     self.args['marker_scale']}
+                "frame_opt_child": sensor['child_link'],
+                "frame_sensor": sensor['link'],
+                "marker_scale": self.args['marker_scale']}
             # Append to the list of sensors
             self.sensors.append(Sensor(name, self.server, self.menu, **params))
 
@@ -110,24 +110,29 @@ class InteractiveFirstGuess(object):
 if __name__ == "__main__":
 
     # Parse command line arguments
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-f", "--filename", type=str, required=False, default="/calibrations/atlascar2/atlascar2_first_guess.urdf.xacro",
-                    help="Full path and name of the first guess xacro file. Starting from the root of the interactive calibration ros package")
-    ap.add_argument("-s", "--marker_scale",     type=float, default=0.6, help='Scale of the interactive markers.')
-    ap.add_argument("-c", "--calibration_file", type=str, required=False, help='full path to calibration file.')
+    ap = argparse.ArgumentParser(description='Create first guess. Sets up rviz interactive markers that allow the '
+                                             'user to define the position and orientation of each of the sensors '
+                                             'listed in the config.yml.')
+    ap.add_argument("-f", "--filename", type=str, required=True, default="/calibrations/atlascar2"
+                                                                         "/atlascar2_first_guess.urdf.xacro",
+                    help="Full path and name of the first guess xacro file. Starting from the root of the interactive "
+                         "calibration ros package")
+    ap.add_argument("-s", "--marker_scale", type=float, default=0.6, help='Scale of the interactive markers.')
+    ap.add_argument("-c", "--calibration_file", type=str, required=True, help='full path to calibration file.')
 
-    # args = vars(ap.parse_args())
-    print('\n\n')
-    print(sys.argv)
-    print('\n\n')
-
-    args = vars(ap.parse_args())
-    # args = vars(ap.parse_known_args(['filename', 'marker_scale', 'calibration_file']))
-    # print('\n\n' + str(args) + '\n\n')
-    # exit(0)
+    # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
+    # filter this argv. in addition, the first argument is the node name, which should also not be given to the
+    # parser.
+    argv_filtered = []
+    for i, argv in enumerate(sys.argv):
+        if (not all(x in argv for x in ['__', ':='])) and (i != 0):
+            argv_filtered.append(argv)
+    # print('\n' + str(sys.argv))
+    # print('\n' + str(argv_filtered))
+    args = vars(ap.parse_args(args=argv_filtered))
 
     # Initialize ROS stuff
-    rospy.init_node("sensors_first_guess")
+    rospy.init_node("first_guess_node")
 
     # Launch the application !!
     first_guess = InteractiveFirstGuess(args)
