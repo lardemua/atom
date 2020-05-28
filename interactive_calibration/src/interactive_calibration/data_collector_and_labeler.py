@@ -22,7 +22,7 @@ from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
 from utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
-from interactive_calibration.utilities import loadJSONConfig
+from interactive_calibration.utilities import loadConfig
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
 
@@ -71,8 +71,7 @@ class DataCollectorAndLabeler:
         self.collections = {}
         self.bridge = CvBridge()
 
-        # self.config = loadJSONConfig(calibration_file)
-        self.config = yaml.load(open(args['calibration_file']), Loader=yaml.CLoader)
+        self.config = loadConfig(args['calibration_file'])
         if self.config is None:
             sys.exit(1)  # loadJSON should tell you why.
 

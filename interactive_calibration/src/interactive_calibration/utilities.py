@@ -3,6 +3,8 @@ import math
 import numpy as np
 
 import json
+import yaml
+
 import jsonschema
 
 import rospy
@@ -11,6 +13,17 @@ from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from json_minify import json_minify
 
+
+def loadConfig(filename):
+    """Load configuration from a yml file"""
+    try:
+        with open(filename, 'r') as f:
+            obj = yaml.load(f, Loader=yaml.SafeLoader)
+    except OSError as e:
+        print("I/O error({0}): {1}".format(e.errno, e.strerror))
+        return None
+
+    return obj
 
 def loadJSONConfig(filename):
     """Load configuration from a json file"""

@@ -16,7 +16,7 @@ from interactive_markers.menu_handler import MenuHandler
 from urdf_parser_py.urdf import URDF
 
 # __self__ imports
-# from interactive_calibration.utilities import loadJSONConfig
+from interactive_calibration.utilities import loadConfig
 from interactive_calibration.sensor import Sensor
 
 
@@ -40,21 +40,12 @@ class InteractiveFirstGuess(object):
         if not rospy.has_param('/robot_description'):
             rospy.logerr("Parameter '/robot_description' must exist to continue")
             sys.exit(1)
-
-        # self.config = loadJSONConfig(self.args['calibration_file'])
-        self.config = yaml.load(open(self.args['calibration_file']), Loader=yaml.CLoader)
-
-        if self.config is None:
-            sys.exit(1)  # loadJSON should tell you why.
-
-        # self.config = CalibConfig()
-        # ok = self.config.loadJSON(self.args['calibration_file'])
-        # # Exit if it fails to open a valid calibration file
-        # if not ok:
-        #     sys.exit(1)
-
         # Load the urdf from /robot_description
         self.urdf = URDF.from_parameter_server()
+
+        self.config = loadConfig(self.args['calibration_file'])
+        if self.config is None:
+            sys.exit(1)  # loadJSON should tell you why.
 
         # ok = validateLinks(self.config.world_link, self.config.sensors, self.urdf)
         # if not ok:
