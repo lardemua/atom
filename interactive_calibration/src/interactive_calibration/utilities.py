@@ -1,19 +1,19 @@
+__all__ = []
+
 import itertools
 import math
 import numpy as np
 
 import json
+import os
 import subprocess
-
 import yaml
-
 import jsonschema
-
 import rospy
 from rospy_message_converter import message_converter
-
 from sensor_msgs.msg import *
 from json_minify import json_minify
+
 
 def execute(cmd, blocking=True, verbose=True):
     """ @brief Executes the command in the shell in a blocking or non-blocking manner
@@ -29,7 +29,22 @@ def execute(cmd, blocking=True, verbose=True):
                 print line,
             p.wait()
 
-def loadConfig(filename):
+
+def resolvePath(path, verbose=False):
+    """ Resolves path by replacing environment variables, common notations (e.g. ~ for home/user)"""
+
+    print('Input path: ' + path)
+    path = os.path.expanduser(path)
+    path = os.path.expandvars(path)
+    path = os.path.abspath(path)
+    path = os.path.normpath(path)
+
+    print('Output path: ' + path)
+
+    return path
+
+
+def loadYMLConfig(filename):
     """Load configuration from a yml file"""
     try:
         with open(filename, 'r') as f:
@@ -39,6 +54,7 @@ def loadConfig(filename):
         return None
 
     return obj
+
 
 def loadJSONConfig(filename):
     """Load configuration from a json file"""
