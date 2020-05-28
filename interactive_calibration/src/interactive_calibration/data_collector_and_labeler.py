@@ -22,23 +22,10 @@ from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
 from utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
-from interactive_calibration.utilities import loadConfig
+from interactive_calibration.utilities import loadConfig, execute
 from interactive_calibration.interactive_data_labeler import InteractiveDataLabeler
 
 
-def execute(cmd, blocking=True, verbose=True):
-    """ @brief Executes the command in the shell in a blocking or non-blocking manner
-        @param cmd a string with teh command to execute
-        @return
-    """
-    if verbose:
-        print "Executing command: " + cmd
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    if blocking:  # if blocking is True:
-        for line in p.stdout.readlines():
-            if verbose:
-                print line,
-            p.wait()
 
 
 class DataCollectorAndLabeler:

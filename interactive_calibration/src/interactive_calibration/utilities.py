@@ -3,6 +3,8 @@ import math
 import numpy as np
 
 import json
+import subprocess
+
 import yaml
 
 import jsonschema
@@ -13,6 +15,19 @@ from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from json_minify import json_minify
 
+def execute(cmd, blocking=True, verbose=True):
+    """ @brief Executes the command in the shell in a blocking or non-blocking manner
+        @param cmd a string with teh command to execute
+        @return
+    """
+    if verbose:
+        print "Executing command: " + cmd
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if blocking:  # if blocking is True:
+        for line in p.stdout.readlines():
+            if verbose:
+                print line,
+            p.wait()
 
 def loadConfig(filename):
     """Load configuration from a yml file"""

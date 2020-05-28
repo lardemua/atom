@@ -9,24 +9,9 @@ import rospkg
 import subprocess
 from colorama import Style, Fore
 from datetime import datetime
+from interactive_calibration.utilities import execute
 
 import rospy
-
-
-def execute(cmd, blocking=True, verbose=False):
-    """ @brief Executes the command in the shell in a blocking or non-blocking manner
-        @param cmd a string with teh command to execute
-        @return
-    """
-    if verbose:
-        print "Executing command: " + cmd
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    if blocking:  # if blocking is True:
-        for line in p.stdout.readlines():
-            if verbose:
-                print line,
-            p.wait()
-
 
 if __name__ == "__main__":
     # Parse command line arguments
