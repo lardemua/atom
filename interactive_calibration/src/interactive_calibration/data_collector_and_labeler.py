@@ -44,47 +44,19 @@ def execute(cmd, blocking=True, verbose=True):
 class DataCollectorAndLabeler:
 
     def __init__(self, args, server, menu_handler):
-        # def __init__(self, output_folder, server, menu_handler, marker_size, calibration_file, args):
 
-        interactive = sys.stdin.isatty() and sys.stdout.isatty()
-        print("is interactive = " + str(interactive))
-        exit(0)
-
-        if os.path.exists(args['output_folder']):
+        if os.path.exists(args['output_folder']): # if dataset path exists, move it to a backup location
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
             basename = os.path.basename(args['output_folder'])
-            new_folder = '/tmp/dataset_backups/' + basename + '_' + dt_string
-            print('Dataset ' + Fore.YELLOW + args['output_folder'] + Style.RESET_ALL +
-                  ' exists. Moving it to a new folder: ' + Fore.YELLOW + new_folder + Style.RESET_ALL)
+            backup_folder = '/tmp/' + basename + '_' + dt_string
+            print('\n\nWarning: Dataset ' + Fore.YELLOW + args['output_folder'] + Style.RESET_ALL +
+                  ' exists.\nMoving it to a new folder: ' + Fore.YELLOW + backup_folder + '\nThis will be deleted after a restart!' + Style.RESET_ALL + '\n\n')
 
-            # shutil.copy2(args['output_folder'], new_folder)
-            execute('mv ' + args['output_folder'] + ' ' + new_folder, verbose=True)
-        #     shutil.rmtree(args['output_folder'])  # Delete old folder
-        #
-        #     os.mkdir(args['output_folder'])  # Recreate the folder
-        # elif sys.stdout.isatty():  # check if this was called from an interactive terminal (i.e., not from roslaunch )
-        #     while True:
-        #         msg = Fore.YELLOW + "To continue, the directory '{}' will be deleted.\n"
-        #         msg = msg + "Do you wish to continue? [y/N] " + Style.RESET_ALL
-        #         answer = raw_input(msg.format(args['output_folder']))
-        #         if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
-        #             if answer[0].lower() == 'n':
-        #                 sys.exit(1)
-        #             else:
-        #                 break
-        #         else:
-        #             sys.exit(1)  # defaults to N
-        #
-        #     shutil.rmtree(args['output_folder'])  # Delete old folder
-        #     os.mkdir(args['output_folder'])  # Recreate the folder
-        # else:
-        #     print(Fore.YELLOW + 'Dataset ' + args['output_folder'] +
-        #           'exists. If you want to delete the existing folder, add the "--overwrite" (or overwrite:=true for '
-        #           'launch files) flag.' + Style.RESET_ALL)
-        #     sys.exit(1)  # defaults to N
+            time.sleep(3)
+            execute('mv ' + args['output_folder'] + ' ' + backup_folder, verbose=True)
 
-        exit(0)
+        os.mkdir(args['output_folder'])  # Recreate the folder
 
         self.output_folder = args['output_folder']
         self.listener = TransformListener()
