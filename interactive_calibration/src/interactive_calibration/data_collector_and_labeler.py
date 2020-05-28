@@ -50,10 +50,13 @@ class DataCollectorAndLabeler:
             dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
             basename = os.path.basename(args['output_folder'])
             backup_folder = '/tmp/' + basename + '_' + dt_string
-            print('\n\nWarning: Dataset ' + Fore.YELLOW + args['output_folder'] + Style.RESET_ALL +
-                  ' exists.\nMoving it to a new folder: ' + Fore.YELLOW + backup_folder + '\nThis will be deleted after a restart!' + Style.RESET_ALL + '\n\n')
 
-            time.sleep(3)
+            time.sleep(2)
+            print('\n\nWarning: Dataset ' + Fore.YELLOW + args['output_folder'] + Style.RESET_ALL +
+                  ' exists.\nMoving it to a new folder: ' + Fore.YELLOW + backup_folder +
+                  '\nThis will be deleted after a system reboot!' + Style.RESET_ALL + '\n\n')
+            time.sleep(2)
+
             execute('mv ' + args['output_folder'] + ' ' + backup_folder, verbose=True)
 
         os.mkdir(args['output_folder'])  # Recreate the folder
