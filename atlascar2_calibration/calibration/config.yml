@@ -1,6 +1,16 @@
 {
-  # Robotic system description and bag file info
-  "description_file": "/home/mike/catkin_ws/src/atlascar2/atlascar2_description/urdf/atlascar2.urdf.xacro",
+  # Robotic system description and bag file info. You can use an Uniform Resource Identifier (URI) string or a local path.
+  # Know schemas: [file, package]. The package is for designating a ros package such as the calibration_pkg the example
+  # bellow.
+  #    Example 1: file:///home/mike/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  #    Example 2: package://calibration_pkg/urdf/description.xacro
+  # It is also possible to put in just a path,
+  #    Example 3: /home/mike/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  # and to include common path symbols (~) or environment variables
+  #    Example 4: ~/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  #    Example 5: /home/$(USER)/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  # This is valid for description_file, bag_file and calibration_pattern/mesh_file
+  "description_file": "package://atlascar2_description/urdf/atlascar2.urdf.xacro",
   "bag_file": "/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag",
 
    # Specify all sensors that are used in the calibration: Each sensor should have:
@@ -60,8 +70,8 @@
         # the aruco dictionary used by the pattern.
         # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
         "dictionary": "DICT_5X5_100",
-        # Mesh file (collada.dae or stl) for showing pattern on rviz
-        "mesh_file": "/home/mike/catkin_ws/src/calibration/AtlasCarCalibration/interactive_calibration/meshes/charuco_5X5_800x600.dae",
+        # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path. See above description_file.
+        "mesh_file": "package://interactive_calibration/meshes/charuco_5X5_800x600.dae",
         # The border width from the edge corner to the pattern physical edge.
         # This is used for 3D sensors and lidars.
         "border_size": 0.5,

@@ -1,18 +1,20 @@
-__all__ = []
-
 import itertools
 import math
 import numpy as np
 
 import json
 import os
+import rospkg
 import subprocess
+from colorama import Fore
+
 import yaml
 import jsonschema
 import rospy
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from json_minify import json_minify
+from urlparse import urlparse
 
 
 def execute(cmd, blocking=True, verbose=True):
@@ -33,15 +35,47 @@ def execute(cmd, blocking=True, verbose=True):
 def resolvePath(path, verbose=False):
     """ Resolves path by replacing environment variables, common notations (e.g. ~ for home/user)"""
 
-    print('Input path: ' + path)
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)
     path = os.path.abspath(path)
     path = os.path.normpath(path)
-
-    print('Output path: ' + path)
-
     return path
+
+
+def uriReader(resource):
+    uri = urlparse(resource)
+    # print(uri)
+    if uri.scheme == 'package':  # using a ros package uri
+        print('This is a ros package')
+        rospack = rospkg.RosPack()
+        assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
+        fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
+    elif uri.scheme == 'file':  # local file
+        print('This is a local file')
+        fullpath = resolvePath(uri.netloc + uri.path)
+    elif uri.scheme == '':  # no scheme, assume local file
+        print('This is a local file')
+        fullpath = resolvePath(uri.netloc + uri.path)
+    else:
+        raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')
+
+    assert (os.path.exists(fullpath)), Fore.RED + fullpath + ' does not exist. Check your config.yml description file'
+    return fullpath, os.path.basename(fullpath), uri
+
+
+def loadConfig(filename, check_paths=True):
+    config = loadYMLConfig(filename)
+
+    # Check if description file is ok
+    fullpath, name, uri = uriReader(config['description_file'])
+
+    # Check if bag_file is ok
+    fullpath, name, uri = uriReader(config['bag_file'])
+
+    # Check if calibration_pattern/mesh_file is ok
+    fullpath, name, uri = uriReader(config['calibration_pattern']['mesh_file'])
+
+    return config
 
 
 def loadYMLConfig(filename):

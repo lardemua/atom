@@ -18,10 +18,11 @@ from colorama import Style, Fore
 import rosbag
 import rospy
 from urdf_parser_py.urdf import URDF
-from interactive_calibration.utilities import execute
-
 
 # Add displays as a function of the sensors used
+from interactive_calibration.utilities import resolvePath, execute, loadConfig, uriReader
+
+
 def create_display(display_type, options={}):
     display_dicts = {
         'rviz/Image': {'Name': 'TopCRGBDCamera-Image', 'Min Value': 0, 'Enabled': False, 'Value': False,
@@ -100,43 +101,42 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
-    # Check paths
+    # Initial setup
     # --------------------------------------------------------------------------
     package_name = os.path.basename(args['name'])
     rospack = rospkg.RosPack()
     interactive_calibration_path = rospack.get_path('interactive_calibration')
-    try:
-        verified_package_path = rospack.get_path(package_name)
-    except:
-        s = Fore.YELLOW + 'Package ' + package_name + 'not found under ROS. Are you sure the path you gave in under ' \
-                                                      'your $ROS_PACKAGE_PATH? Calibration package will not work if ' \
-                                                      'not under the $ROS_PACKAGE_PATH. Please fix this. ' + \
-            Style.RESET_ALL
-        raise ValueError(s)
-
-    print('Verified package path in ' + verified_package_path)
-
     rviz_set_initial_estimate = 'set_initial_estimate.rviz'
     rviz_collect_data = 'collect_data.rviz'
+
+    # Check if package is under $ROS_PACKAGE_PATH, abort if not
+    assert (package_name in rospack.list()), \
+        Fore.YELLOW + package_name + ' not found under ROS. Are you sure the path you gave in under your ' \
+                                     '$ROS_PACKAGE_PATH? Calibration package will not work if it is not under the ' \
+                                     '$ROS_PACKAGE_PATH. Please fix this before running the package configuration. ' \
+        + Style.RESET_ALL
+
+    package_path = rospack.get_path(package_name)  # full path to the package, including its name.
+    package_base_path = os.path.dirname(package_path)  # parent path where the package is located
 
     # --------------------------------------------------------------------------
     # Read the config.yml file
     # --------------------------------------------------------------------------
-    config_file = verified_package_path + '/calibration/config.yml'
-    config = yaml.load(open(config_file), Loader=yaml.CLoader)
-    # print('\nconfig=' + str(config))
+    config_file = package_path + '/calibration/config.yml'
+    config = loadConfig(config_file)
 
     # --------------------------------------------------------------------------
     # Setup the description file
     # --------------------------------------------------------------------------
-    description_file = verified_package_path + '/urdf/description.urdf.xacro'
-    # Create a symbolic link to the given xacro
-    execute('ln -fs ' + config['description_file'] + ' ' + description_file)
+    description_file_in,_,_ = uriReader(config['description_file'])
+    description_file_out = package_path + '/urdf/description.urdf.xacro'
+    execute('ln -fs ' + description_file_in + ' ' + description_file_out)  # Create a symlink to the given xacro
 
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bag = rosbag.Bag(config['bag_file'])
+    bagfile,_,_ = uriReader(config['bag_file'])
+    bag = rosbag.Bag(bagfile)
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
     bag_topics = bag_info[1]
@@ -151,11 +151,11 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Check the description file
     urdf_file = '/tmp/description.urdf'
-    execute('xacro ' + description_file + ' -o ' + urdf_file)  # create a temp urdf file
+    execute('xacro ' + description_file_out + ' -o ' + urdf_file)  # create a temp urdf file
     try:
         description = URDF.from_xml_file(urdf_file)  # read teh urdf file
     except:
-        raise ValueError('Could not parse description file ' + description_file)
+        raise ValueError('Could not parse description file ' + description_file_out)
 
     # print(description)
     # --------------------------------------------------------------------------
@@ -190,13 +190,12 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the playback launch file
     # --------------------------------------------------------------------------
-    playbag_launch_file = verified_package_path + '/launch/playbag.launch'
+    playbag_launch_file = package_path + '/launch/playbag.launch'
     print('Setting up ' + playbag_launch_file + ' launch file ...')
     f = open(playbag_launch_file, 'w')
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-
 
     f.write('<launch>\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
@@ -257,14 +256,15 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the set_initial_estimate launch file
     # --------------------------------------------------------------------------
-    set_initial_estimate_launch_file = verified_package_path + '/launch/set_initial_estimate.launch'
+    set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
     print('Setting up ' + set_initial_estimate_launch_file + ' launch file ...')
     f = open(set_initial_estimate_launch_file, 'w')
 
     f.write('<launch>\n' +
             '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- ' + os.path.basename(set_initial_estimate_launch_file) + ': runs bringup for initial parameter setting through rviz interactive '
-            'markers-->\n' +
+            '<!-- ' + os.path.basename(
+        set_initial_estimate_launch_file) + ': runs bringup for initial parameter setting through rviz interactive '
+                                            'markers-->\n' +
             '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '\n' +
@@ -273,7 +273,7 @@ if __name__ == "__main__":
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '<arg name="config_file" default="$(find ' + package_name + ')/calibration/config.yml"/>\n' +
             '<arg name="output_file" default="$(find ' + package_name + ')/urdf/initial_estimate.urdf.xacro"/>\n'
-            '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_set_initial_estimate + '"/>\n'
+                                                                        '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_set_initial_estimate + '"/>\n'
             )
 
     f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
@@ -296,13 +296,14 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the data collection launch file
     # --------------------------------------------------------------------------
-    data_collection_launch_file = verified_package_path + '/launch/collect_data.launch'
+    data_collection_launch_file = package_path + '/launch/collect_data.launch'
     print('Setting up ' + data_collection_launch_file + ' launch file ...')
     f = open(data_collection_launch_file, 'w')
 
     f.write('<launch>\n' +
             '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- ' + os.path.basename(data_collection_launch_file) + ': runs bringup collecting data from a bag file. -->\n' +
+            '<!-- ' + os.path.basename(
+        data_collection_launch_file) + ': runs bringup collecting data from a bag file. -->\n' +
             '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
             '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
             '\n' +
@@ -313,7 +314,7 @@ if __name__ == "__main__":
             '<arg name="overwrite" default="false"/>\n'   '<!-- overwrite output folder if it exists -->\n' +
             '<arg name="marker_size" default="0.5"/>\n' +
             '<arg name="config_file" default="$(find ' + package_name + ')/calibration/config.yml"/>\n'
-            '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_collect_data + '"/>\n'
+                                                                        '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_collect_data + '"/>\n'
             )
 
     f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
@@ -420,7 +421,7 @@ if __name__ == "__main__":
 
     vm['Displays'] = displays
     vm['Window Geometry'] = wg
-    yaml.dump(rviz, open(verified_package_path + '/rviz/' + rviz_set_initial_estimate, 'w'))
+    yaml.dump(rviz, open(package_path + '/rviz/' + rviz_set_initial_estimate, 'w'))
 
     # --------------------------------------------------------------------------
     # Create the rviz config file for the collect_data
@@ -447,7 +448,7 @@ if __name__ == "__main__":
     displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'ManualDataLabeler-InteractiveMarkers',
                                                                'Update Topic': 'data_labeler/update'}))
 
-    cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys()))) # Access with:  color_map_sensors[idx, :]
+    cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))  # Access with:  color_map_sensors[idx, :]
 
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
@@ -534,10 +535,13 @@ if __name__ == "__main__":
     #     print(str(display) + '\n')
     vm['Displays'] = displays
     vm['Window Geometry'] = wg
-    yaml.dump(rviz, open(verified_package_path + '/rviz/' + rviz_collect_data, 'w'))
+    yaml.dump(rviz, open(package_path + '/rviz/' + rviz_collect_data, 'w'))
 
     # Print final message
-    print('\nSuccessfully configured calibration package ' + Fore.BLUE +  package_name + Style.RESET_ALL + '. You can use the launch files:')
+    print(
+            '\nSuccessfully configured calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL + '. You can use the launch files:')
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(playbag_launch_file) + Style.RESET_ALL)
-    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(set_initial_estimate_launch_file) + Style.RESET_ALL)
-    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(data_collection_launch_file) + Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(
+        set_initial_estimate_launch_file) + Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(
+        data_collection_launch_file) + Style.RESET_ALL)
