@@ -46,15 +46,15 @@ def uriReader(resource):
     uri = urlparse(resource)
     # print(uri)
     if uri.scheme == 'package':  # using a ros package uri
-        print('This is a ros package')
+        # print('This is a ros package')
         rospack = rospkg.RosPack()
         assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
         fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
     elif uri.scheme == 'file':  # local file
-        print('This is a local file')
+        # print('This is a local file')
         fullpath = resolvePath(uri.netloc + uri.path)
     elif uri.scheme == '':  # no scheme, assume local file
-        print('This is a local file')
+        # print('This is a local file')
         fullpath = resolvePath(uri.netloc + uri.path)
     else:
         raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')

@@ -40,6 +40,7 @@ class InteractiveFirstGuess(object):
         if not rospy.has_param('/robot_description'):
             rospy.logerr("Parameter '/robot_description' must exist to continue")
             sys.exit(1)
+
         # Load the urdf from /robot_description
         self.urdf = URDF.from_parameter_server()
 
