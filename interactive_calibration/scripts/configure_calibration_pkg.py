@@ -122,8 +122,7 @@ if __name__ == "__main__":
 
     # Template engine setup
     file_loader = FileSystemLoader(interactive_calibration_path + '/templates')
-    env = Environment(loader=file_loader,undefined=jinja2.StrictUndefined )
-
+    env = Environment(loader=file_loader, undefined=jinja2.strict_undefined)
 
     # Date
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -143,7 +142,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     description_file_in, _, _ = uriReader(config['description_file'])
     description_file_out = package_path + '/urdf/description.urdf.xacro'
-    execute('ln -fs ' + description_file_in + ' ' + description_file_out, verbose=False)  # Create a symlink to the given xacro
+    execute('ln -fs ' + description_file_in + ' ' + description_file_out,
+            verbose=False)  # Create a symlink to the given xacro
 
     # --------------------------------------------------------------------------
     # Read the bag file
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the rviz config file for the collect_data
     # --------------------------------------------------------------------------
-    #TODO continue here
+    # TODO continue here
     rviz_file_template = interactive_calibration_path + '/templates/config.rviz'
     print('Setting up ' + rviz_collect_data + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.FullLoader)
