@@ -12,6 +12,7 @@ from copy import deepcopy
 from datetime import date, datetime
 from matplotlib import cm
 import numpy
+import jinja2
 import yaml
 from colorama import Style, Fore
 import rosbag
@@ -20,7 +21,7 @@ from urdf_parser_py.urdf import URDF
 from jinja2 import Environment, FileSystemLoader
 
 # Add displays as a function of the sensors used
-from interactive_calibration.utilities import resolvePath, execute, loadConfig, uriReader
+from interactive_calibration.utilities import resolvePath, execute, loadConfig, uriReader, colormapToRVizColor
 
 
 def create_display(display_type, options={}):
@@ -121,7 +122,8 @@ if __name__ == "__main__":
 
     # Template engine setup
     file_loader = FileSystemLoader(interactive_calibration_path + '/templates')
-    env = Environment(loader=file_loader)
+    env = Environment(loader=file_loader,undefined=jinja2.StrictUndefined )
+
 
     # Date
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -130,19 +132,24 @@ if __name__ == "__main__":
     # Read the config.yml file
     # --------------------------------------------------------------------------
     config_file = package_path + '/calibration/config.yml'
+    print('Loading config file ' + config_file)
     config = loadConfig(config_file)
+
+    # Sensors colormap. Access with:  color_map_sensors[idx, :]
+    cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
 
     # --------------------------------------------------------------------------
     # Setup the description file
     # --------------------------------------------------------------------------
     description_file_in, _, _ = uriReader(config['description_file'])
     description_file_out = package_path + '/urdf/description.urdf.xacro'
-    execute('ln -fs ' + description_file_in + ' ' + description_file_out)  # Create a symlink to the given xacro
+    execute('ln -fs ' + description_file_in + ' ' + description_file_out, verbose=False)  # Create a symlink to the given xacro
 
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
     bag_file, _, _ = uriReader(config['bag_file'])
+    print('Loading bagfile ' + bag_file)
     bag = rosbag.Bag(bag_file)
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
@@ -158,7 +165,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Check the description file
     urdf_file = '/tmp/description.urdf'
-    execute('xacro ' + description_file_out + ' -o ' + urdf_file)  # create a temp urdf file
+    print('Parsing description file ' + description_file_out)
+    execute('xacro ' + description_file_out + ' -o ' + urdf_file, verbose=False)  # create a temp urdf file
     try:
         description = URDF.from_xml_file(urdf_file)  # read teh urdf file
     except:
@@ -168,6 +176,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Verifications (run as much as we can think of to see if something is wrong)
     # --------------------------------------------------------------------------
+    print('Running verifications ... please wait ...')
 
     compressed_topics = {}  # a list of compressed topics to decompress in the launch file
     # Check if config sensor topics exist in the bag file
@@ -198,7 +207,7 @@ if __name__ == "__main__":
     # Create the playback launch file
     # --------------------------------------------------------------------------
     playbag_launch_file = package_path + '/launch/playbag.launch'
-    print('Setting up ' + playbag_launch_file + ' launch file ...')
+    print('Setting up ' + playbag_launch_file + ' ...')
 
     template = env.get_template('playbag.launch')
     with open(playbag_launch_file, 'w') as f:
@@ -215,7 +224,7 @@ if __name__ == "__main__":
     # Create the set_initial_estimate launch file
     # --------------------------------------------------------------------------
     set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
-    print('Setting up ' + set_initial_estimate_launch_file + ' launch file ...')
+    print('Setting up ' + set_initial_estimate_launch_file + ' ...')
 
     template = env.get_template(os.path.basename(set_initial_estimate_launch_file))
     with open(set_initial_estimate_launch_file, 'w') as f:
@@ -229,7 +238,7 @@ if __name__ == "__main__":
     # Create the data collection launch file
     # --------------------------------------------------------------------------
     data_collection_launch_file = package_path + '/launch/collect_data.launch'
-    print('Setting up ' + data_collection_launch_file + ' launch file ...')
+    print('Setting up ' + data_collection_launch_file + ' ...')
 
     template = env.get_template(os.path.basename(data_collection_launch_file))
     with open(data_collection_launch_file, 'w') as f:
@@ -240,123 +249,96 @@ if __name__ == "__main__":
                                    }))
 
     # --------------------------------------------------------------------------
+    # Create the rviz config core displays (used in several rviz config files)
+    # --------------------------------------------------------------------------
+    # TODO change rviz fixed_frame according to args['world_link']
+    core_displays = []
+
+    # Create grid, tf and robot model displays
+    rendered = env.get_template('/rviz/Grid.rviz').render(c={'Reference_Frame': config['world_link']})
+    core_displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+    rendered = env.get_template('/rviz/TF.rviz').render(c={'Name': 'TF'})
+    core_displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+    rendered = env.get_template('/rviz/RobotModel.rviz').render(c={'Name': 'RobotModel'})
+    core_displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+    # --------------------------------------------------------------------------
     # Create the rviz config file for the set_initial_estimate
     # --------------------------------------------------------------------------
     rviz_file_template = interactive_calibration_path + '/templates/config.rviz'
+    print('Setting up ' + rviz_set_initial_estimate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
-    vm = rviz['Visualization Manager']
-    wg = rviz['Window Geometry']
-    displays = vm['Displays']
-    for i, vm_display in enumerate(displays):
-        print('Display ' + str(i) + ' is ' + vm_display['Name'] + ' Class ' + Fore.RED + vm_display[
-            'Class'] + Style.RESET_ALL)
-        print(vm_display)
+    displays = core_displays  # start with the core displays
 
-    displays = []
-
-    # Create grid, tf and robot model displays
-    t = env.get_template('/rviz/Grid.rviz')
-    r = t.render(c={'Name': 'Grid', 'Reference_Frame': 'base_link'})
-    displays.append(yaml.load(r, Loader=yaml.SafeLoader))
-
-    t = env.get_template('/rviz/TF.rviz')
-    r = t.render(c={'Name': 'TF'})
-    displays.append(yaml.load(r, Loader=yaml.SafeLoader))
-
-    t = env.get_template('/rviz/RobotModel.rviz')
-    r = t.render(c={'Name': 'RobotModel'})
-    displays.append(yaml.load(r, Loader=yaml.SafeLoader))
-
-    displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'MoveSensors-InteractiveMarkers',
-                                                               'Update Topic': 'first_guess_node/update'}))
-
-    cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
-    # Access with:  color_map_sensors[idx, :]
+    # Create interactive marker display for moving the sensors
+    rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(c={'Name': 'MoveSensors-InteractiveMarker',
+                                                                          'Update_Topic': 'set_initial_estimate/update'}
+                                                                       )
+    displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
+        color = colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
         if topic in bag_topics:
             msg_type = bag_info[1][topic].msg_type
-        elif topic_compressed in bag_topics:
-            msg_type = bag_info[1][topic_compressed].msg_type
         else:
-            raise ValueError('Could not find topic ' + topic + ' in bag file.')
+            msg_type = bag_info[1][topic_compressed].msg_type
 
-        print('Generating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
+        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
 
-        if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
+        if msg_type == 'sensor_msgs/CompressedImage' or \
+                msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
 
-            display_name = sensor_key + '-Image'
-
-            # Raw data Image
-            displays.append(
-                create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
-            wg[display_name] = {'collapsed': True}
-            # TODO cannot disable the marker
+            # Raw image
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Image',
+                                                                      'Image_Topic': topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # Camera
-            display_name = sensor_key + '-Camera'
-            displays.append(
-                create_display('rviz/Camera', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
-            wg[display_name] = {'collapsed': True}
+            rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Camera',
+                                                                       'Image_Topic': topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/LaserScan':
 
-            display_name = sensor_key + '-LaserScan'
-            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + \
-                    str(int(cm_sensors[idx, 2] * 255))
-
             # Raw data
-            displays.append(deepcopy(create_display('rviz/LaserScan',
-                                                    {'Name': display_name, 'Topic': topic, 'Enabled': True,
-                                                     'Color': color})))
-            wg[display_name] = {'collapsed': True}
-
-            # TODO Data clusters
+            rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-LaserScan',
+                                                                          'Topic': topic,
+                                                                          'Color': color})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/PointCloud2':
 
-            display_name = sensor_key + '-PointCloud2'
-            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + str(
-                int(cm_sensors[idx, 2] * 255))
-
             # Raw data
-            displays.append(deepcopy(create_display('rviz/PointCloud2',
-                                                    {'Name': display_name, 'Topic': topic, 'Enabled': True,
-                                                     'Color': color, 'Style': 'Points', 'Size (m)': 0.2,
-                                                     'Alpha': 1})))
+            rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
+                                                                            'Topic': topic,
+                                                                            'Color': color,
+                                                                            'Style': 'Points',
+                                                                            'Size__m_': 0.2,
+                                                                            'Alpha': 1})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
         else:
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + msg_type + ')' + Style.RESET_ALL)
 
-    vm['Displays'] = displays
-    vm['Window Geometry'] = wg
+    rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_set_initial_estimate, 'w'))
 
     # --------------------------------------------------------------------------
     # Create the rviz config file for the collect_data
     # --------------------------------------------------------------------------
+    #TODO continue here
     rviz_file_template = interactive_calibration_path + '/templates/config.rviz'
+    print('Setting up ' + rviz_collect_data + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.FullLoader)
-    # rviz = yaml.load(open(verified_package_path + rviz_file), Loader=yaml.FullLoader) # to print current yaml
-    vm = rviz['Visualization Manager']
-    wg = rviz['Window Geometry']
-    displays = vm['Displays']
-    for i, vm_display in enumerate(displays):
-        print('Display ' + str(i) + ' is ' + vm_display['Name'] + ' Class ' + Fore.RED + vm_display[
-            'Class'] + Style.RESET_ALL)
-        print(vm_display)
+    displays = core_displays  # start with the core displays
 
-    displays = []
-
-    # Create grid, tf and robot model displays
-    displays.append(create_display('rviz/grid', {'Name': 'Grid', 'Reference Frame': config['world_link']}))
-    displays.append(create_display('rviz/tf'))
-
-    displays.append(create_display('rviz/RobotModel'))
-
+    # Add interactive maker display to handle sensor manual labeling
     displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'ManualDataLabeler-InteractiveMarkers',
                                                                'Update Topic': 'data_labeler/update'}))
 
@@ -373,7 +355,7 @@ if __name__ == "__main__":
         else:
             raise ValueError('Could not find topic ' + topic + ' in bag file.')
 
-        print('Generating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
+        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
 
         if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
 
@@ -382,20 +364,15 @@ if __name__ == "__main__":
             # Raw data Image
             displays.append(
                 create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
-            wg[display_name] = {'collapsed': True}
-            # TODO cannot disable the marker
 
             # Labeled data Image
             display_name = sensor_key + '-Labels' + '-Image'
             displays.append(create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic + '/labeled',
                                                           'Enabled': False}))
-            wg[display_name] = {'collapsed': True}
-
             # Camera
             display_name = sensor_key + '-Camera'
             displays.append(
                 create_display('rviz/Camera', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
-            wg[display_name] = {'collapsed': True}
 
         elif msg_type == 'sensor_msgs/LaserScan':
 
@@ -442,11 +419,7 @@ if __name__ == "__main__":
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + msg_type + ')' + Style.RESET_ALL)
 
-    # for display in displays:
-    #     print('\n' + display['Name'] + '\n')
-    #     print(str(display) + '\n')
-    vm['Displays'] = displays
-    vm['Window Geometry'] = wg
+    rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_collect_data, 'w'))
 
     # Print final message

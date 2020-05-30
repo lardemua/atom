@@ -293,3 +293,8 @@ def getAverageTime(stamps):
     print("avg_duration = " + str(avg_duration))
 
     return avg_time
+
+def colormapToRVizColor(color):
+    """ Converts a Matbplotlib colormap into an rviz display color format."""
+    return str(int(color[0] * 255)) + '; ' + str(int(color[1] * 255)) + '; ' + str(
+                int(color[2] * 255))

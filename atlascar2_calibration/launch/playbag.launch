@@ -1,0 +1,45 @@
+<launch>
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
+<!-- playbag.launch : Plays back the bag file. Sets up image decompressors if needed, reads the urdf robot description -->
+<!-- This file was generated automatically by the script configure_calibration_pkg.py on the 30/05/2020 15:40:31-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Parameters-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- bag_file: you can give another bagfile to the launch file using this arg-->
+<arg name="bag_file" default="/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag"/>
+<!-- bag_start: starting time for playing back the bag file. Check "rosbag play -h"-->
+<arg name="bag_start" default="0"/>
+<arg name ="bag_rate" default ="1" />
+<arg name="description_file" default="$(find atlascar2_calibration)/urdf/description.urdf.xacro"/>
+<arg name="rviz_file" default="$(find atlascar2_calibration)/rviz/set_initial_estimate.rviz"/>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Load robot description and tf generators -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<param name = "robot_description" command = "$(find xacro)/xacro $(arg description_file)" />
+<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Playback the bag file -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<param name="/use_sim_time" value="true"/>
+<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>
+
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Image Topic Decompression -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<node pkg="image_transport" type="republish" name="republish_top_left_camera" output="screen" args="compressed in:=/top_left_camera/image_color raw out:=/top_left_camera/image_color"/>
+<node pkg="image_transport" type="republish" name="republish_top_right_camera" output="screen" args="compressed in:=/top_right_camera/image_color raw out:=/top_right_camera/image_color"/>
+
+
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Visualization -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>
+
+</launch>

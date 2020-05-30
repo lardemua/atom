@@ -123,7 +123,7 @@ if __name__ == "__main__":
     args['output_folder'] = os.path.expandvars(args['output_folder'])
 
     # Initialize ROS stuff
-    rospy.init_node("collect_and_label")
+    rospy.init_node("collect_data")
     # rospack = rospkg.RosPack()  # get an instance of RosPack with the default search paths
     server = InteractiveMarkerServer("data_labeler")
     robot_description = rospy.get_param('/robot_description')

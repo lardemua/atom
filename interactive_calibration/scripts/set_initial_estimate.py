@@ -55,7 +55,7 @@ class InteractiveFirstGuess(object):
         print('Number of sensors: ' + str(len(self.config['sensors'])))
 
         # Init interaction
-        self.server = InteractiveMarkerServer('first_guess_node')
+        self.server = InteractiveMarkerServer('set_initial_estimate')
         self.menu = MenuHandler()
 
         self.menu.insert("Save sensors configuration", callback=self.onSaveFirstGuess)
@@ -124,12 +124,9 @@ if __name__ == "__main__":
     args = vars(ap.parse_args(args=argv_filtered))
 
     # Initialize ROS stuff
-    rospy.init_node("first_guess_node")
+    rospy.init_node("set_initial_estimate")
 
     # Launch the application !!
     first_guess = InteractiveFirstGuess(args)
     first_guess.init()
-
-    print('Changes applied ...')
-
     rospy.spin()

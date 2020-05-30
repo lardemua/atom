@@ -77,7 +77,7 @@ Now you are able to see the atlas car model with the sensors in their first posi
 
 Then, in a new terminal:
 ```
-rosrun interactive_calibration create_first_guess.py -s 0.5 -f /calibrations/atlascar2/first_guess.urdf.xacro -c ~/catkin_ws/src/AtlasCarCalibration/interactive_calibration/calibrations/atlascar2/atlascar2_calibration.json
+rosrun interactive_calibration set_initial_estimate.py -s 0.5 -f /calibrations/atlascar2/first_guess.urdf.xacro -c ~/catkin_ws/src/AtlasCarCalibration/interactive_calibration/calibrations/atlascar2/atlascar2_calibration.json
 ```
 
 Now you can move the green markers and save the new sensors configuration.

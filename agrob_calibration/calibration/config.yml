@@ -13,8 +13,8 @@
   #    Example 4: ~/catkin_ws/src/calibration_pkg/urdf/description.xacro
   #    Example 5: /home/$(USER)/catkin_ws/src/calibration_pkg/urdf/description.xacro
   # This is valid for description_file, bag_file and calibration_pattern/mesh_file
-  "description_file": "package://calibration_pkg/urdf/description.xacro",
-  "bag_file": "/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag",
+  "description_file": "package://agrob_description/urdf/agrob.urdf.xacro",
+  "bag_file": "~/bagfiles/agrob/agrob_calibration_2020-05-20-12-2/calibration_2020-05-20-12-25-58_0.bag",
 
    # Specify all sensors that are used in the calibration: Each sensor should have:
    # <sensor_name>: {"link": <The frame of the sensor's data. The value of the sensor's message.header.frame_id.>,
@@ -23,25 +23,24 @@
    #                 "topic_name" : <Name of the ros message topic that contains this sensor's data.>
    #                } 
    #
-    "sensors": {
-        # Examples
-         "right_camera": {
-                "link": "right_camera_optical",
-                "parent_link": "base_link",
-                "child_link": "right_camera",
-                "topic_name": "/right_camera/image_color"
+   "sensors": {
+        "right_camera": {
+            "link": "zed_right_camera_optical_frame",
+            "parent_link": "zed_camera_center",
+            "child_link" : "zed_right_camera_frame",
+            "topic_name" : "/zed/zed_node/right/image"
         },
         "left_camera": {
-                "link": "left_camera_optical",
-                "parent_link": "base_link",
-                "child_link": "left_camera",
-                "topic_name": "/left_camera/image_color"
+            "link": "zed_left_camera_optical_frame",
+            "parent_link": "zed_camera_center",
+            "child_link" : "zed_left_camera_frame",
+            "topic_name" : "/zed/zed_node/left/image"
         },
-       "center_lidar": {
-                "link": "center_lidar",
-                "parent_link": "some_parent_link",
-                "child_link": "some_child_link",
-                "topic_name": "/center_lidar/scan"
+        "vlp16": {
+           "link": "velodyne",
+           "parent_link": "tower_link",
+           "child_link": "vlp16_frame",
+           "topic_name": "/velodyne_points"
         }
     },
 
@@ -62,12 +61,12 @@
         # Suported pattern are:
         # - chessboard
         # - charuco
-        "pattern_type": "chessboard",
+        "pattern_type": "charuco",
         # If the pattern type is "charuco" you need to define
         # the aruco dictionary used by the pattern.
         # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
         # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path. See above description_file.
-        "mesh_file": "package://calibration_pkg/meshes/charuco_5X5_800x600.dae",
+        "mesh_file": "package://interactive_calibration/meshes/charuco_5X5_800x600.dae",
         "dictionary": "DICT_5X5_100",
         # The border width from the edge corner to the pattern physical edge.
         # This is used for 3D sensors and lidars.
@@ -77,11 +76,11 @@
         # its detector. Internally we add a +1 to Y and X dimensions to account for
         # that. Therfore, the number of corners should be used even for the charuco
         # pattern.
-        "dimension": {"x": 9, "y": 6},
+        "dimension": {"x": 11, "y": 8},
         # The length of the a square edge.
-        "size": 0.101,
+        "size": 0.06,
         # The length of the charuco inner marker.
-        "inner_size": 0.014
+        "inner_size": 0.045
     },
 
     # Miscellaneous information

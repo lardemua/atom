@@ -1,7 +1,7 @@
 <launch>
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
-<!-- {{ c.filename }} : runs bringup collecting data from a bag file. -->
-<!-- This file was generated automatically by the script configure_calibration_pkg.py on the {{ c.date }}-->
+<!-- set_initial_estimate.launch : runs bringup collecting data from a bag file. -->
+<!-- This file was generated automatically by the script configure_calibration_pkg.py on the 30/05/2020 16:17:39-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -12,13 +12,13 @@
 <arg name="overwrite" default="false"/>
 <!-- overwrite output folder if it exists -->
 <arg name="marker_size" default="0.5"/>
-<arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
-<arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_collect_data }}"/>
+<arg name="config_file" default="$(find agrob_calibration)/calibration/config.yml"/>
+<arg name="rviz_file" default="$(find agrob_calibration)/rviz/collect_data.rviz"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Call play bag launch file -->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<include file="$(find {{ c.package_name }})/launch/playbag.launch">
+<include file="$(find agrob_calibration)/launch/playbag.launch">
    <arg name="rviz_file" value="$(arg rviz_file)"/>
 </include>
 
