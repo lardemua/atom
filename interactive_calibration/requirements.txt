@@ -1,4 +1,5 @@
 rospy_message_converter
 opencv-contrib-python
 JSON-minify
+jinja2
 

@@ -10,14 +10,13 @@ import subprocess
 from copy import deepcopy
 from datetime import date, datetime
 from matplotlib import cm
-
 import numpy
 import yaml
 from colorama import Style, Fore
-
 import rosbag
 import rospy
 from urdf_parser_py.urdf import URDF
+from jinja2 import Environment, FileSystemLoader
 
 # Add displays as a function of the sensors used
 from interactive_calibration.utilities import resolvePath, execute, loadConfig, uriReader
@@ -119,6 +118,13 @@ if __name__ == "__main__":
     package_path = rospack.get_path(package_name)  # full path to the package, including its name.
     package_base_path = os.path.dirname(package_path)  # parent path where the package is located
 
+    # Template engine setup
+    file_loader = FileSystemLoader(interactive_calibration_path + '/templates')
+    env = Environment(loader=file_loader)
+
+    # Date
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
     # --------------------------------------------------------------------------
     # Read the config.yml file
     # --------------------------------------------------------------------------
@@ -128,14 +134,14 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Setup the description file
     # --------------------------------------------------------------------------
-    description_file_in,_,_ = uriReader(config['description_file'])
+    description_file_in, _, _ = uriReader(config['description_file'])
     description_file_out = package_path + '/urdf/description.urdf.xacro'
     execute('ln -fs ' + description_file_in + ' ' + description_file_out)  # Create a symlink to the given xacro
 
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bagfile,_,_ = uriReader(config['bag_file'])
+    bagfile, _, _ = uriReader(config['bag_file'])
     bag = rosbag.Bag(bagfile)
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
@@ -192,147 +198,45 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     playbag_launch_file = package_path + '/launch/playbag.launch'
     print('Setting up ' + playbag_launch_file + ' launch file ...')
-    f = open(playbag_launch_file, 'w')
 
-    now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-
-    f.write('<launch>\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- playbag.launch : Plays back the bag file. Sets up image decompressors if needed, reads the urdf '
-            'robot description -->\n' +
-            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Parameters-->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- bag_file: you can give another bagfile to the launch file using this arg-->\n' +
-            '<arg name="bag_file" default="' + config['bag_file'] + '"/>\n' +
-            '<!-- bag_start: starting time for playing back the bag file. Check "rosbag play -h"-->\n' +
-            '<arg name="bag_start" default="0"/>\n' +
-            '<arg name ="bag_rate" default ="1" />\n' +
-            '<arg name="description_file" default="$(find ' + package_name + ')/urdf/description.urdf.xacro"/>\n' +
-            '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_set_initial_estimate + '"/>\n' +
-            '\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Load robot description and tf generators -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<param name = "robot_description" command = "$(find xacro)/xacro $(arg description_file)" />\n' +
-            '<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>\n' +
-            # '<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">\n' +
-            # '    <param name="use_gui" value="true"/>\n' +
-            # '</node>\n' +
-            '\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Playback the bag file -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<param name="/use_sim_time" value="true"/>\n' +
-            '<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args=" $(arg bag_file) --clock -r $('
-            'arg bag_rate) -l -s $(arg bag_start) /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>\n'
-            )
-
-    if compressed_topics:
-        f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-                '<!-- Image Topic Decompression -->\n' +
-                '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n')
-
-    for compressed_topic in compressed_topics:  # add decompressors if needed
-        sensor_key = compressed_topics[compressed_topic]['sensor_key']
-        f.write('<node pkg="image_transport" type="republish" name="republish_' + sensor_key +
-                '" output="screen" args="compressed in:=' + compressed_topic + ' raw out:=' + compressed_topic +
-                '"/>\n')
-
-    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Visualization -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>\n'
-            )
-
-    f.write('\n</launch>')
-    f.close()
+    template = env.get_template('playbag.launch')
+    with open(playbag_launch_file, 'w') as f:
+        f.write(template.render(c={'filename': os.path.basename(playbag_launch_file),
+                                   'date': dt_string,
+                                   'bag_file': bagfile,
+                                   'package_name': package_name,
+                                   'rviz_set_initial_estimate': rviz_set_initial_estimate,
+                                   'use_compressed_topics': bool(compressed_topics),
+                                   'compressed_topics': compressed_topics
+                                   }))
 
     # --------------------------------------------------------------------------
     # Create the set_initial_estimate launch file
     # --------------------------------------------------------------------------
     set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
     print('Setting up ' + set_initial_estimate_launch_file + ' launch file ...')
-    f = open(set_initial_estimate_launch_file, 'w')
 
-    f.write('<launch>\n' +
-            '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- ' + os.path.basename(
-        set_initial_estimate_launch_file) + ': runs bringup for initial parameter setting through rviz interactive '
-                                            'markers-->\n' +
-            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Parameters-->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<arg name="config_file" default="$(find ' + package_name + ')/calibration/config.yml"/>\n' +
-            '<arg name="output_file" default="$(find ' + package_name + ')/urdf/initial_estimate.urdf.xacro"/>\n'
-                                                                        '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_set_initial_estimate + '"/>\n'
-            )
-
-    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Call play bag launch file -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
-            '<include file="$(find ' + package_name + ')/launch/playbag.launch">\n' +
-            '   <arg name="rviz_file" value="$(arg rviz_file)"/>\n' +
-            '</include>\n')
-
-    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Start set initial estimate node -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
-            '<node name="first_guess_node" pkg="interactive_calibration" type="create_first_guess.py" args="-s 0.5 -f '
-            '$(arg output_file) -c $(arg config_file)" required="true" output="screen"/>\n '
-            )
-
-    f.write('\n</launch>')
-    f.close()
+    template = env.get_template(os.path.basename(set_initial_estimate_launch_file))
+    with open(set_initial_estimate_launch_file, 'w') as f:
+        f.write(template.render(c={'filename': os.path.basename(set_initial_estimate_launch_file),
+                                   'date': dt_string,
+                                   'package_name': package_name,
+                                   'rviz_set_initial_estimate': rviz_set_initial_estimate,
+                                   }))
 
     # --------------------------------------------------------------------------
     # Create the data collection launch file
     # --------------------------------------------------------------------------
     data_collection_launch_file = package_path + '/launch/collect_data.launch'
     print('Setting up ' + data_collection_launch_file + ' launch file ...')
-    f = open(data_collection_launch_file, 'w')
 
-    f.write('<launch>\n' +
-            '<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- ' + os.path.basename(
-        data_collection_launch_file) + ': runs bringup collecting data from a bag file. -->\n' +
-            '<!-- This file was generated automatically by the script configure_calibration_pkg.py on the ' + dt_string + '-->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Parameters-->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<arg name="output_folder"/>\n'   '<!-- folder of the output dataset -->\n' +
-            '<arg name="overwrite" default="false"/>\n'   '<!-- overwrite output folder if it exists -->\n' +
-            '<arg name="marker_size" default="0.5"/>\n' +
-            '<arg name="config_file" default="$(find ' + package_name + ')/calibration/config.yml"/>\n'
-                                                                        '<arg name="rviz_file" default="$(find ' + package_name + ')/rviz/' + rviz_collect_data + '"/>\n'
-            )
-
-    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Call play bag launch file -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
-            '<include file="$(find ' + package_name + ')/launch/playbag.launch">\n' +
-            '   <arg name="rviz_file" value="$(arg rviz_file)"/>\n' +
-            '</include>\n')
-
-    f.write('\n<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n' +
-            '<!-- Start data collector node -->\n' +
-            '<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->\n'
-            '<node name="collect_data_node" pkg="interactive_calibration" type="collect_and_label_data.py" args="-s '
-            '$(arg marker_size) -o $(arg output_folder) -c $(arg config_file)" required="true" output="screen"/>\n '
-            )
-
-    f.write('\n</launch>')
-    f.close()
+    template = env.get_template(os.path.basename(data_collection_launch_file))
+    with open(data_collection_launch_file, 'w') as f:
+        f.write(template.render(c={'filename': os.path.basename(set_initial_estimate_launch_file),
+                                   'date': dt_string,
+                                   'package_name': package_name,
+                                   'rviz_collect_data': rviz_collect_data,
+                                   }))
 
     # --------------------------------------------------------------------------
     # Create the rviz config file for the set_initial_estimate
