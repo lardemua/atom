@@ -7,6 +7,7 @@ import argparse
 import os
 import rospkg
 import subprocess
+import sys
 from copy import deepcopy
 from datetime import date, datetime
 from matplotlib import cm
@@ -141,8 +142,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bagfile, _, _ = uriReader(config['bag_file'])
-    bag = rosbag.Bag(bagfile)
+    bag_file, _, _ = uriReader(config['bag_file'])
+    bag = rosbag.Bag(bag_file)
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
     bag_topics = bag_info[1]
@@ -203,7 +204,7 @@ if __name__ == "__main__":
     with open(playbag_launch_file, 'w') as f:
         f.write(template.render(c={'filename': os.path.basename(playbag_launch_file),
                                    'date': dt_string,
-                                   'bag_file': bagfile,
+                                   'bag_file': bag_file,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                    'use_compressed_topics': bool(compressed_topics),
@@ -254,10 +255,17 @@ if __name__ == "__main__":
     displays = []
 
     # Create grid, tf and robot model displays
-    displays.append(create_display('rviz/grid', {'Name': 'Grid', 'Reference Frame': config['world_link']}))
-    displays.append(create_display('rviz/tf'))
+    t = env.get_template('/rviz/Grid.rviz')
+    r = t.render(c={'Name': 'Grid', 'Reference_Frame': 'base_link'})
+    displays.append(yaml.load(r, Loader=yaml.SafeLoader))
 
-    displays.append(create_display('rviz/RobotModel'))
+    t = env.get_template('/rviz/TF.rviz')
+    r = t.render(c={'Name': 'TF'})
+    displays.append(yaml.load(r, Loader=yaml.SafeLoader))
+
+    t = env.get_template('/rviz/RobotModel.rviz')
+    r = t.render(c={'Name': 'RobotModel'})
+    displays.append(yaml.load(r, Loader=yaml.SafeLoader))
 
     displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'MoveSensors-InteractiveMarkers',
                                                                'Update Topic': 'first_guess_node/update'}))
