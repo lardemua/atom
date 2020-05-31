@@ -174,19 +174,7 @@ Visualization Manager:
     Update Topic: data_labeler/update
     Value: true
   - Class: rviz/Image
-    Enabled: false
-    Image Topic: /zed/zed_node/left/image
-    Max Value: 1
-    Median window: 5
-    Min Value: 0
-    Name: left_camera-Image
-    Normalize Range: true
-    Queue Size: 2
-    Transport Hint: raw
-    Unreliable: false
-    Value: false
-  - Class: rviz/Image
-    Enabled: false
+    Enabled: true
     Image Topic: /zed/zed_node/left/image/labeled
     Max Value: 1
     Median window: 5
@@ -198,53 +186,20 @@ Visualization Manager:
     Unreliable: false
     Value: false
   - Class: rviz/Camera
-    Enabled: false
+    Enabled: true
     Image Rendering: background and overlay
-    Image Topic: /zed/zed_node/left/image
-    Name: left_camera-Camera
+    Image Topic: /zed/zed_node/left/image/labeled
+    Name: left_camera-Labels-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw
     Unreliable: false
     Value: false
     Visibility:
-      Camera: true
-      DataLabeler-InteractiveMarkers: false
-      FirstGuess-InteractiveMarkers: true
-      FrontalLaser-PointCloud2: true
-      Grid: true
-      Left-LaserScan: true
-      LeftLaser-Clusters: true
-      LeftLaser-Labels: false
-      Right-LaserScan: true
-      RightLaser-Clusters: true
-      RightLaser-Labels: false
-      RobotModel: false
-      TF: false
-      TopCRGBD-PointCloud2: true
-      TopCRGBDCam-Image-Labelled: true
-      TopCRGBDCamera-Image: true
-      TopLeft-Camera: true
-      TopLeft-Image: true
-      TopLeftImage-Labeled: true
-      TopRight-Image: true
-      TopRightImage-Labeled: true
       Value: true
     Zoom Factor: 1
   - Class: rviz/Image
-    Enabled: false
-    Image Topic: /zed/zed_node/right/image
-    Max Value: 1
-    Median window: 5
-    Min Value: 0
-    Name: right_camera-Image
-    Normalize Range: true
-    Queue Size: 2
-    Transport Hint: raw
-    Unreliable: false
-    Value: false
-  - Class: rviz/Image
-    Enabled: false
+    Enabled: true
     Image Topic: /zed/zed_node/right/image/labeled
     Max Value: 1
     Median window: 5
@@ -256,37 +211,16 @@ Visualization Manager:
     Unreliable: false
     Value: false
   - Class: rviz/Camera
-    Enabled: false
+    Enabled: true
     Image Rendering: background and overlay
-    Image Topic: /zed/zed_node/right/image
-    Name: right_camera-Camera
+    Image Topic: /zed/zed_node/right/image/labeled
+    Name: right_camera-Labels-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw
     Unreliable: false
     Value: false
     Visibility:
-      Camera: true
-      DataLabeler-InteractiveMarkers: false
-      FirstGuess-InteractiveMarkers: true
-      FrontalLaser-PointCloud2: true
-      Grid: true
-      Left-LaserScan: true
-      LeftLaser-Clusters: true
-      LeftLaser-Labels: false
-      Right-LaserScan: true
-      RightLaser-Clusters: true
-      RightLaser-Labels: false
-      RobotModel: false
-      TF: false
-      TopCRGBD-PointCloud2: true
-      TopCRGBDCam-Image-Labelled: true
-      TopCRGBDCamera-Image: true
-      TopLeft-Camera: true
-      TopLeft-Image: true
-      TopLeftImage-Labeled: true
-      TopRight-Image: true
-      TopRightImage-Labeled: true
       Value: true
     Zoom Factor: 1
   - Alpha: 1

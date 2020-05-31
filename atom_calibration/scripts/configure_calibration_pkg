@@ -342,37 +342,29 @@ if __name__ == "__main__":
     displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'ManualDataLabeler-InteractiveMarkers',
                                                                'Update Topic': 'data_labeler/update'}))
 
-    cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))  # Access with:  color_map_sensors[idx, :]
-
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
+        color = utilities.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
         if topic in bag_topics:
             msg_type = bag_info[1][topic].msg_type
-        elif topic_compressed in bag_topics:
-            msg_type = bag_info[1][topic_compressed].msg_type
         else:
-            raise ValueError('Could not find topic ' + topic + ' in bag file.')
+            msg_type = bag_info[1][topic_compressed].msg_type
 
         print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
 
-        if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
+        if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # displays for camera sensor
 
-            display_name = sensor_key + '-Image'
+            # Image
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
+                                                                      'Image_Topic': topic + '/labeled'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            # Raw data Image
-            displays.append(
-                create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
-
-            # Labeled data Image
-            display_name = sensor_key + '-Labels' + '-Image'
-            displays.append(create_display('rviz/Image', {'Name': display_name, 'Image Topic': topic + '/labeled',
-                                                          'Enabled': False}))
             # Camera
-            display_name = sensor_key + '-Camera'
-            displays.append(
-                create_display('rviz/Camera', {'Name': display_name, 'Image Topic': topic, 'Enabled': False}))
+            rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Labels' + '-Camera',
+                                                                       'Image_Topic': topic + '/labeled'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/LaserScan':
 

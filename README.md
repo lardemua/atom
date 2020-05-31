@@ -57,14 +57,14 @@ rosrun <your_robot_calibration> configure
 
 This will create a set of files for launching the system, configuring rviz, etc.
 
-# Set initial estimate
+## Set initial estimate
 
 Iterative optimization methods are often sensitive to the initial parameter configuration. Here, the optimization parameters represent the poses of each sensor. **ATOM** provides an interactive framework based on rviz which allows the user to set the pose of the sensors while having immediate visual feedback.
 
 To set an initial estimate run:
-   ```bash
-   roslaunch <your_robot_calibration> set_initial_estimate.launch 
-   ```
+```bash
+roslaunch <your_robot_calibration> set_initial_estimate.launch 
+```
 
 Here are a couple of examples:
 
@@ -72,8 +72,12 @@ Here are a couple of examples:
 ------------- | -------------
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate_agrob.gif" width="450"/>
 
+## Collect data 
 
- 
+To run a system calibration, one requires sensor data collected at different time instants. We refer to these as **data collections**. To collect data, the user should launch:
+```bash
+roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder>
+```
 
 # Contributors
 
@@ -82,6 +86,11 @@ Here are a couple of examples:
  * Eurico Pedrosa - University of Aveiro
  * Tiago Madeira - University of Aveiro
  * André Aguiar - INESC TEC
+
+# Maintainers
+
+ * Miguel Riem Oliveira - University of Aveiro
+ * Eurico Pedrosa - University of Aveiro
 
 # AtlasCarCalibration
 Reading the sensors starting position of a robot xacro file (atlas car sample) and create interactive markers associated to them.
