@@ -66,8 +66,12 @@ To set an initial estimate run:
    roslaunch <your_robot_calibration> set_initial_estimate.launch 
    ```
 
-<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate.gif" width="900"/>
+Here is an example for the [Atlascar2](https://github.com/lardemua/atlascar2).
+<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate_atlascar2.gif" width="900"/>
 
+
+And another for the [AgrobV2](https://github.com/aaguiar96/agrob).
+<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate_agrob.gif" width="900"/>
  
 
 # Contributors

@@ -1,0 +1,26 @@
+<launch>
+<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
+<!-- set_initial_estimate.launch: runs bringup for initial parameter setting through rviz interactive markers-->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the 31/05/2020 18:09:28-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Parameters-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<arg name="config_file" default="$(find agrob_calibration)/calibration/config.yml"/>
+<arg name="output_file" default="$(find agrob_calibration)/urdf/initial_estimate.urdf.xacro"/>
+<arg name="rviz_file" default="$(find agrob_calibration)/rviz/set_initial_estimate.rviz"/>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Call play bag launch file -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<include file="$(find agrob_calibration)/launch/playbag.launch">
+   <arg name="rviz_file" value="$(arg rviz_file)"/>
+</include>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Start set initial estimate node -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<node name="set_initial_estimate" pkg="atom_calibration" type="set_initial_estimate" args="-s 0.5 -f $(arg output_file) -c $(arg config_file)" required="true" output="screen"/>
+ 
+</launch>

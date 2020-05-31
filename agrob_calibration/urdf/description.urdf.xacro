@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="agrob">
+
+    <xacro:include filename="$(find hector_xacro_tools)/urdf/inertia_tensors.urdf.xacro"/>
+    <xacro:include filename="$(find husky_description)/urdf/husky.urdf.xacro" />
+    <xacro:include filename="$(find hector_sensors_description)/urdf/vlp16.urdf.xacro" />
+
+    <xacro:macro name="agrob" params="prefix">
+
+    <material name="towercolor">
+        <color rgba="0.86 0.86 0.86 1"/>
+    </material>
+
+
+        <!-- ###################################################### -->
+        <!--To replace the need to add this in the launch file-->
+        <!--<node pkg="tf" type="static_transform_publisher" name="vlp16_to_velodyne" args="0 0 0 0 0 0 1 /vlp16_frame /velodyne 10" />-->
+        <link name="velodyne">
+        </link>
+
+        <joint name="vlp16_frame_to_velodyne" type="fixed">
+          <parent link="vlp16_frame"/>
+          <child link="velodyne"/>
+          <origin xyz="0 0 0" rpy="0 0 1" />
+        </joint>
+        <!--This must be removed once the bags have the correct velodyne link-->
+        <!-- ###################################################### -->
+
+        <!-- velodyne-16 model -->
+        <xacro:vlp16_model name="vlp16" parent="tower_link">
+            <origin xyz="0 0.6327 0" rpy="-1.57 0 0"/>
+        </xacro:vlp16_model>
+
+        <!-- zed camera model -->
+        <link name="zed_camera_center">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://agrob_description/meshes/ZED.stl" />
+                </geometry>
+                <material name="light_grey">
+                    <color rgba="0.8 0.8 0.8 0.8"/>
+                </material>
+            </visual>
+        </link>
+
+        <!-- tower model -->
+        <link name="tower_link">
+          <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+              <mesh filename="package://agrob_description/meshes/agrob_tower.STL" />
+            </geometry>
+            <material name="towercolor" />
+          </visual>
+        </link>
+
+        <!-- base to tower joint -->
+        <joint name="top_plate_front_link_tower_link" type="fixed">
+          <parent link="top_plate_front_link"/>
+          <child link="tower_link"/>
+          <origin xyz="-0.14 0 0" rpy="1.57 0 0" />
+        </joint>
+
+        <!-- tower to ZED camera center joint -->
+        <joint name="tower_link_zed_camera_center" type="fixed">
+          <parent link="tower_link"/>
+          <child link="zed_camera_center"/>
+          <origin xyz="0.05 0.580 0" rpy="-1.57 0 0" />
+        </joint>
+
+        <!-- Left ZED Camera -->
+        <joint name="zed_left_camera_joint" type="fixed">
+          <parent link="zed_camera_center"/>
+          <child link="zed_left_camera_frame"/>
+          <origin xyz="0 0.06 0" rpy="0 0 0" />
+        </joint>
+
+        <link name="zed_left_camera_frame" />
+
+        <joint name="zed_left_camera_optical_joint" type="fixed">
+          <origin xyz="0 0 0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+          <parent link="zed_left_camera_frame"/>
+          <child link="zed_left_camera_optical_frame"/>
+        </joint>
+
+        <link name="zed_left_camera_optical_frame"/>
+
+        <!-- Right ZED Camera -->
+        <joint name="zed_right_camera_joint" type="fixed">
+          <parent link="zed_camera_center"/>
+          <child link="zed_right_camera_frame"/>
+          <origin xyz="0 -0.06 0" rpy="0 0 0" />
+        </joint>
+
+        <link name="zed_right_camera_frame" />
+
+        <joint name="zed_right_camera_optical_joint" type="fixed">
+          <origin xyz="0 0 0" rpy="-1.57079632679 0.0 -1.57079632679"/>
+          <parent link="zed_right_camera_frame"/>
+          <child link="zed_right_camera_optical_frame"/>
+        </joint>
+
+        <link name="zed_right_camera_optical_frame"/>
+
+    </xacro:macro>
+
+    <!-- Call the xacro macro-->
+    <xacro:agrob prefix=""/>
+
+</robot>

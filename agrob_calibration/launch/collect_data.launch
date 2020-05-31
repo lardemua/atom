@@ -1,0 +1,30 @@
+<launch>
+<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
+<!-- set_initial_estimate.launch : runs bringup collecting data from a bag file. -->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the 31/05/2020 18:09:28-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Parameters-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<arg name="output_folder"/>
+<!-- folder of the output dataset -->
+<arg name="overwrite" default="false"/>
+<!-- overwrite output folder if it exists -->
+<arg name="marker_size" default="0.5"/>
+<arg name="config_file" default="$(find agrob_calibration)/calibration/config.yml"/>
+<arg name="rviz_file" default="$(find agrob_calibration)/rviz/collect_data.rviz"/>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Call play bag launch file -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<include file="$(find agrob_calibration)/launch/playbag.launch">
+   <arg name="rviz_file" value="$(arg rviz_file)"/>
+</include>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Start data collector node -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<node name="collect_data" pkg="atom_calibration" type="collect_data" args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file)" required="true" output="screen"/>
+ 
+</launch>
