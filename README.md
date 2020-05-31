@@ -1,7 +1,15 @@
-# ATOM Calibration
+# <img align="left" width="100" height="100" src="https://github.com/lardemua/atom/blob/master/docs/atom_logo.jpg?raw=true/100/100"> ATOM Calibration 
+###### **A**tomic **T**ransformation **O**ptimization **M**ethod Calibration 
 
-<img align="left" width="100" height="100" src="https://github.com/lardemua/atom/blob/master/docs/atom_logo.jpg?raw=true/100/100">
-(under construction)
+Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description (e.g. a xacro-robot state publisher tandem).
+
+# Contributors
+
+   Miguel Riem Oliveira - University of Aveiro
+   Afonso Castro - University of Aveiro
+Eurico Pedrosa - University of Aveiro
+Tiago Madeira - University of Aveiro
+André Aguiar - INESC TEC
 
 # AtlasCarCalibration
 Reading the sensors starting position of a robot xacro file (atlas car sample) and create interactive markers associated to them.
