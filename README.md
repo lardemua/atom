@@ -66,14 +66,14 @@ To set an initial estimate run:
    roslaunch <your_robot_calibration> set_initial_estimate.launch 
    ```
 
-<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate.gif"/>
+<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate.gif" width="900"/>
 
  
 
 # Contributors
 
  * Miguel Riem Oliveira - University of Aveiro
- *  Afonso Castro - University of Aveiro
+ * Afonso Castro - University of Aveiro
  * Eurico Pedrosa - University of Aveiro
  * Tiago Madeira - University of Aveiro
  * André Aguiar - INESC TEC
