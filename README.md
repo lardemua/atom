@@ -5,11 +5,11 @@ Atom is a set of calibration tools for multi-sensor, multi-modal, robotic system
 
 # Contributors
 
-   Miguel Riem Oliveira - University of Aveiro
-   Afonso Castro - University of Aveiro
-Eurico Pedrosa - University of Aveiro
-Tiago Madeira - University of Aveiro
-André Aguiar - INESC TEC
+   -Miguel Riem Oliveira - University of Aveiro
+   -Afonso Castro - University of Aveiro
+   -Eurico Pedrosa - University of Aveiro
+   -Tiago Madeira - University of Aveiro
+   -André Aguiar - INESC TEC
 
 # AtlasCarCalibration
 Reading the sensors starting position of a robot xacro file (atlas car sample) and create interactive markers associated to them.
