@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<robot name="visual">
+
+  <material name="blue">
+    <color rgba="0 0 0.8 1"/>
+  </material>
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+  <material name="Kinect2Grey">
+      <color rgba="0.15 0.15 0.15 1.0"/>
+  </material>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.6" radius="0.2"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+  </link>
+
+  <link name="right_leg">
+    <visual>
+      <geometry>
+        <box size="0.6 0.1 0.2"/>
+      </geometry>
+      <origin rpy="0 1.57075 0" xyz="0 0 -0.3"/>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <joint name="base_to_right_leg" type="fixed">
+    <parent link="base_link"/>
+    <child link="right_leg"/>
+    <origin xyz="-5 -0.22 0.25"/>
+  </joint>
+
+  <joint name="base_to_sensor_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="my_test_sensor_link"/>
+    <origin rpy="0 1.57075 0" xyz="1 0 0"/>
+  </joint>
+
+
+  <link name="my_test_sensor_link">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <!-- these meshes were exported in mm, so scale back to m -->
+          <mesh filename="package://interactive_marker_test/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Kinect2Grey"/>
+      </visual>
+    </link>
+
+  <sensor name="my_test_sensor_sensor" update_rate="20">
+    <parent link="my_test_sensor_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <camera>
+      <image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>
+    </camera>
+  </sensor>
+
+  <!--<joint name="base_to_sensor2" type="fixed">-->
+    <!--<parent link="base_link"/>-->
+    <!--<child link="my_test_sensor2"/>-->
+    <!--<origin rpy="0 1.57075 0" xyz="1 4 0"/>-->
+  <!--</joint>-->
+
+
+  <!--<link name="my_test_sensor2">-->
+      <!--<visual>-->
+        <!--<origin rpy="0 0 0" xyz="0 0 0"/>-->
+        <!--<geometry>-->
+          <!--&lt;!&ndash; these meshes were exported in mm, so scale back to m &ndash;&gt;-->
+          <!--<mesh filename="package://atom_calibration/meshes/kinect2_origin_on_rgb_optical_frame.stl" scale="0.001 0.001 0.001"/>-->
+        <!--</geometry>-->
+        <!--<material name="Kinect2Grey"/>-->
+      <!--</visual>-->
+    <!--</link>-->
+
+  <!--<sensor name="my_test_sensor2" update_rate="20">-->
+    <!--<parent link="my_test_sensor2"/>-->
+    <!--<origin xyz="0 0 0" rpy="0 0 0"/>-->
+    <!--<camera>-->
+      <!--<image width="640" height="480" hfov="1.5708" format="RGB8" near="0.01" far="50.0"/>-->
+    <!--</camera>-->
+  <!--</sensor>-->
+</robot>

@@ -1,0 +1,70 @@
+<launch>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Parameters-->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!--    <arg name="bag" default="$(find atom_calibration)/calibrations/atlascar2/27-05-2019_with_chessboard.bag"/>-->
+<!--    <arg name="bag" default="$(find atom_calibration)/calibrations/atlascar2/calibration_31_05_2019_fixed.bag"/>-->
+<!--    <arg name="bag" default="/tmp/bag_file_2019-09-24-01-13-19.bag"/>-->
+    <arg name="read_first_guess" default="false"/>
+    <arg name="read_optimized" default="false"/>
+<!--    <arg name="bag" default="$(env HOME)/bagfiles/bag_file_2019-09-24-01-20-41.bag"/>-->
+    <arg name="bag" default="$(env HOME)/bagfiles/calibration_5_dez_2019.bag"/>
+    <arg name="bag_start" default="0"/>
+    <arg name="xacro_file" default="$(find atlascar2_description)/urdf/atlascar2.urdf.xacro"/>
+    <arg name="xacro_file_first_guess" default="$(find atom_calibration)/calibrations/atlascar2/first_guess.urdf.xacro"/>
+    <arg name="xacro_file_optimized" default="$(find atom_calibration)/calibrations/atlascar2/optimized.urdf.xacro"/>
+    <arg name="rviz_config_file" default="$(find atom_calibration)/calibrations/atlascar2/calibration.rviz"/>
+
+    <arg name="rate" default="1"/>
+
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Load robot description file based on whether or not we are reading the first guess or optimized xacro file.-->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <group if="$(arg read_optimized)">
+        <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_optimized)"/>
+    </group>
+
+    <group unless="$(arg read_optimized)">
+        <group if="$(arg read_first_guess)">
+            <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>
+        </group>
+
+        <group unless="$(arg read_first_guess)">
+            <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+        </group>
+    </group>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Robot and joint state publisher for generating tfs -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+
+    <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"> -->
+        <!-- <param name="use_gui" value="true"/> -->
+    <!-- </node> -->
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Visualization -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config_file)" required="false"/> -->
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Playing back bag files -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--To put together the ros bag and the robot state publisher one must use sim_time=true and &#45;&#45;clock-->
+    <param name="/use_sim_time" value="true"/>
+    <!--    <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r .2 -l /tf:=/tf_dev_null &#45;&#45;clock"/>-->
+    <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l &#45;&#45;clock"/>-->
+    <include file="$(find atlascar2_bringup)/launch/playback_sensor_data.launch">
+        <arg name="bag" value="$(arg bag)" />
+        <arg name="rate" value="$(arg rate)" />
+    </include>
+
+    <node name="thr1" pkg="topic_tools" type="throttle" args="messages /top_left_camera/image_color 1 /left_camera/image_color" />
+    <node name="thr2" pkg="topic_tools" type="throttle" args="messages /top_left_camera/camera_info 1 /left_camera/camera_info" />
+    <node name="thr3" pkg="topic_tools" type="throttle" args="messages /top_right_camera/image_color 1 /right_camera/image_color" />
+    <node name="thr4" pkg="topic_tools" type="throttle" args="messages /top_right_camera/camera_info 1 /right_camera/camera_info" />
+
+</launch>

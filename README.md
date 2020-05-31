@@ -1,5 +1,6 @@
-# Atomic
+# ATOM Calibration
 
+<img align="left" width="100" height="100" src="docs/atom_logo.jpg/100/100">
 (under construction)
 
 # AtlasCarCalibration
@@ -70,25 +71,25 @@ First , add this package to your catkin workspace source.
 
 Run the command:
 ```
-roslaunch interactive_calibration atlascar2_calibration.launch 
+roslaunch atom_calibration atlascar2_calibration.launch 
 ```
 
 Rviz will open. It is better if you check the Fixed Frame: it must be 'base_link'. 
 You must also add the location and name of the file that will store the first guess data with the -f argument. 
-Location is given starting from the path of the interactive_calibration ros package.
+Location is given starting from the path of the atom_calibration ros package.
 Besides that, it is also required the path to the calibration JSON file.
 Now you are able to see the atlas car model with the sensors in their first position.
 
 Then, in a new terminal:
 ```
-rosrun interactive_calibration set_initial_estimate.py -s 0.5 -f /calibrations/atlascar2/first_guess.urdf.xacro -c ~/catkin_ws/src/AtlasCarCalibration/interactive_calibration/calibrations/atlascar2/atlascar2_calibration.json
+rosrun atom_calibration set_initial_estimate -s 0.5 -f /calibrations/atlascar2/first_guess.urdf.xacro -c ~/catkin_ws/src/AtlasCarCalibration/atom_calibration/calibrations/atlascar2/atlascar2_calibration.json
 ```
 
 Now you can move the green markers and save the new sensors configuration.
 Kill the booth process in the terminals, and run:
 
 ```
-roslaunch interactive_calibration atlascar2_calibration.launch read_first_guess:=true
+roslaunch atom_calibration atlascar2_calibration.launch read_first_guess:=true
 ```
 Now you will see the atlas car model with the sensors in the updated position (don't forget: Fixed Frame should be 'base_link').
 
@@ -96,7 +97,7 @@ To continue the AtlasCar2 multi-modal sensors calibration, it is required to col
 ## For PR2 robot model
 For seeing the PR2 model instead of the AtlasCar2, just run the command (it's the same but with the car_model argument set as false)
 ```
-roslaunch interactive_calibration rviz.launch car_model:=false read_first_guess:=false
+roslaunch atom_calibration rviz.launch car_model:=false read_first_guess:=false
 ```
 You need to set Fixed Frame as 'base_footprint' in order to see the urdf robot model.
 
@@ -111,7 +112,7 @@ git clone https://github.com/aaguiar96/agrob
 
 For running a bag file run 
 ```bash
-roslaunch interactive_calibration agrob_calibration.launch bag:=<path_to_your_bag_file>
+roslaunch atom_calibration agrob_calibration.launch bag:=<path_to_your_bag_file>
 ```
 
 
@@ -120,7 +121,7 @@ roslaunch interactive_calibration agrob_calibration.launch bag:=<path_to_your_ba
 In order to visualize the calibration graphs you may run:
 
 ```
-rosrun interactive_calibration draw_calibration_graph.py -w {world_frame}
+rosrun atom_calibration draw_calibration_graph.py -w {world_frame}
 ```
 
 Annotated tf trees are displayed to better understand the calibration process. Here are some examples for the PR2 robot:
@@ -157,7 +158,7 @@ rosbag record /left_laser/laserscan /right_laser/laser_scan
 # Run cos optimization first test
 
 ```
-rosrun interactive_calibration first_optimization.py
+rosrun atom_calibration first_optimization.py
 ```
 
 If it not works, run first 
@@ -171,7 +172,7 @@ chmod +xfirst_optimization.py
 #### To convert from an RWHE dataset run
 
 ```
-rosrun interactive_calibration convert_from_rwhe_dataset.py -out /home/mike/datasets/kuka_1 -rwhe /home/mike/workingcopy/RWHE-Calib/Datasets/kuka_1/ -s hand_camera -json /home/mike/catkin_ws/src/AtlasCarCalibration/interactive_calibration/calibrations/rwhe_kuka/config.json 
+rosrun atom_calibration convert_from_rwhe_dataset.py -out /home/mike/datasets/kuka_1 -rwhe /home/mike/workingcopy/RWHE-Calib/Datasets/kuka_1/ -s hand_camera -json /home/mike/catkin_ws/src/AtlasCarCalibration/atom_calibration/calibrations/rwhe_kuka/config.json 
 ```
 
 Note that you must define the sensor's name with the -s argument. To run this conversion you must also have a config.json file. 
@@ -212,7 +213,7 @@ Here's what I am using, its in **calibrations/rwhe_kuka**:
 Use this script:
 
 ```
-rosrun interactive_calibration convert_to_rwhe_dataset.py
+rosrun atom_calibration convert_to_rwhe_dataset.py
 ```
 
 
@@ -227,7 +228,7 @@ will add this later ...
 Here's an example:
 
 ```
-rosrun interactive_calibration convert_to_tabb_dataset.py -json /home/mike/datasets/eye_in_hand10/data_collected.json -out /home/mike/datasets/eye_in_hand10_converted_to_tabb
+rosrun atom_calibration convert_to_tabb_dataset.py -json /home/mike/datasets/eye_in_hand10/data_collected.json -out /home/mike/datasets/eye_in_hand10_converted_to_tabb
 ```
 
 

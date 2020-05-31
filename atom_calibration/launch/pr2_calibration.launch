@@ -1,0 +1,46 @@
+<launch>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Parameters-->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <arg name="bag" default="$(find atom_calibration)/calibrations/pr2/2011-01-21-09-01-36.bag"/>
+<!--    <arg name="bag" default="$(find atom_calibration)/calibrations/pr2/pr2_test.bag"/>-->
+    <arg name="xacro_file" default="$(find atom_calibration)/calibrations/pr2/pr2_no_arms.xacro"/>
+    <arg name="xacro_file_first_guess" default="$(find atom_calibration)/calibrations/pr2/pr2_no_arms_first_guess.xacro"/>
+    <arg name="rviz_config_file" default="$(find atom_calibration)/calibrations/pr2/config.rviz"/>
+    <arg name="read_first_guess" default="false"/>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Load robot description file based on whether or not we are reading the first guess xacro file.-->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <group if="$(arg read_first_guess)">
+        <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file_first_guess)"/>
+    </group>
+
+    <group unless="$(arg read_first_guess)">
+        <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+    </group>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Robot and joint state publisher for generating tfs -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <param name="use_gui" value="true"/>
+    </node>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Visualization -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config_file)" required="false"/>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!-- Playing back bag files -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+    <!--To put together the ros bag and the robot state publisher one must use sim_time=true and &#45;&#45;clock-->
+    <param name="/use_sim_time" value="true"/>
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l /tf:=/tf_dev_null --clock"/>
+    <!--<node pkg="rosbag" type="play" name="rosbag_play" output="screen" args="$(arg bag) -r 1 -l &#45;&#45;clock"/>-->
+
+</launch>

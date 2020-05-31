@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="xacro_file"  default="$(find atom_calibration)/calibrations/ur10e/both_eyes/ur10e.urdf.xacro" />
+    <arg name="rviz_config" default="$(find atom_calibration)/calibrations/ur10e/eye_in_hand_chess/rviz.rviz" />
+
+    <param name="robot_description" command="$(find xacro)/xacro $(arg xacro_file)"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" required="false"/>
+</launch>

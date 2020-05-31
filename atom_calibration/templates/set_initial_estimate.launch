@@ -1,20 +1,20 @@
 <launch>
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
-<!-- set_initial_estimate.launch: runs bringup for initial parameter setting through rviz interactive markers-->
-<!-- This file was generated automatically by the script configure_calibration_pkg on the 31/05/2020 09:04:41-->
+<!-- {{ c.filename }}: runs bringup for initial parameter setting through rviz interactive markers-->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the {{ c.date }}-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Parameters-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<arg name="config_file" default="$(find atlascar2_calibration)/calibration/config.yml"/>
-<arg name="output_file" default="$(find atlascar2_calibration)/urdf/initial_estimate.urdf.xacro"/>
-<arg name="rviz_file" default="$(find atlascar2_calibration)/rviz/set_initial_estimate.rviz"/>
+<arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
+<arg name="output_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
+<arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Call play bag launch file -->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<include file="$(find atlascar2_calibration)/launch/playbag.launch">
+<include file="$(find {{ c.package_name }})/launch/playbag.launch">
    <arg name="rviz_file" value="$(arg rviz_file)"/>
 </include>
 

@@ -1,7 +1,7 @@
 <launch>
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
-<!-- set_initial_estimate.launch : runs bringup collecting data from a bag file. -->
-<!-- This file was generated automatically by the script configure_calibration_pkg on the 31/05/2020 09:04:41-->
+<!-- {{ c.filename }} : runs bringup collecting data from a bag file. -->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the {{ c.date }}-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -12,13 +12,13 @@
 <arg name="overwrite" default="false"/>
 <!-- overwrite output folder if it exists -->
 <arg name="marker_size" default="0.5"/>
-<arg name="config_file" default="$(find atlascar2_calibration)/calibration/config.yml"/>
-<arg name="rviz_file" default="$(find atlascar2_calibration)/rviz/collect_data.rviz"/>
+<arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
+<arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_collect_data }}"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Call play bag launch file -->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<include file="$(find atlascar2_calibration)/launch/playbag.launch">
+<include file="$(find {{ c.package_name }})/launch/playbag.launch">
    <arg name="rviz_file" value="$(arg rviz_file)"/>
 </include>
 
