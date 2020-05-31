@@ -83,6 +83,11 @@ roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dat
 ------------- | -------------
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/collect_data_agrob.gif" width="450"/>
 
+A dataset is a folder which contains a set of collections. There, a _data_collected.json_ file stores all the information required for the calibration.
+
+<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/viewing_data_collected_json.gif" width="900"/> 
+
+
 # Contributors
 
  * Miguel Riem Oliveira - University of Aveiro
