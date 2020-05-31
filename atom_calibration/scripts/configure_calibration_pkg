@@ -270,7 +270,7 @@ if __name__ == "__main__":
     rviz_file_template = atom_calibration_path + '/templates/config.rviz'
     print('Setting up ' + rviz_set_initial_estimate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
-    displays = core_displays  # start with the core displays
+    displays = deepcopy(core_displays)  # start with the core displays
 
     # Create interactive marker display for moving the sensors
     rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(c={'Name': 'MoveSensors-InteractiveMarker',
@@ -336,7 +336,7 @@ if __name__ == "__main__":
     rviz_file_template = atom_calibration_path + '/templates/config.rviz'
     print('Setting up ' + rviz_collect_data + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.FullLoader)
-    displays = core_displays  # start with the core displays
+    displays = deepcopy(core_displays)  # start with the core displays
 
     # Add interactive maker display to handle sensor manual labeling
     displays.append(create_display('rviz/InteractiveMarkers', {'Name': 'ManualDataLabeler-InteractiveMarkers',
@@ -362,48 +362,52 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # Camera
-            rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Labels' + '-Camera',
-                                                                       'Image_Topic': topic + '/labeled'})
+            rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Camera',
+                                                                       'Image_Topic': topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/LaserScan':
 
-            display_name = sensor_key + '-LaserScan'
-            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + \
-                    str(int(cm_sensors[idx, 2] * 255))
+            rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-LaserScan',
+                                                                          'Topic': topic,
+                                                                          'Color': color})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            # Raw data
-            displays.append(deepcopy(create_display('rviz/LaserScan',
-                                                    {'Name': display_name, 'Topic': topic, 'Enabled': True,
-                                                     'Color': color})))
-
-            # Data labels
-            display_name = sensor_key + '-Labels-PointCloud2'
-            displays.append(deepcopy(create_display('rviz/PointCloud2',
-                                                    {'Name': display_name, 'Topic': topic + '/labeled', 'Enabled': True,
-                                                     'Color': color, 'Style': 'Spheres', 'Size (m)': 0.2,
-                                                     'Alpha': 0.05})))
+            # Labels
+            rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-Labels-PointCloud2',
+                                                                            'Topic': topic + '/labeled',
+                                                                            'Color': color,
+                                                                            'Color_Transformer': 'FlatColor',
+                                                                            'Style': 'Spheres',
+                                                                            'Size__m_': 0.2,
+                                                                            'Alpha': 0.05})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # TODO Data clusters
 
         elif msg_type == 'sensor_msgs/PointCloud2':
 
-            display_name = sensor_key + '-PointCloud2'
-            color = str(int(cm_sensors[idx, 0] * 255)) + '; ' + str(int(cm_sensors[idx, 1] * 255)) + '; ' + str(
-                int(cm_sensors[idx, 2] * 255))
-
             # Raw data
-            displays.append(deepcopy(create_display('rviz/PointCloud2',
-                                                    {'Name': display_name, 'Topic': topic, 'Enabled': True,
-                                                     'Color': color, 'Style': 'Points', 'Size (m)': 0.2,
-                                                     'Alpha': 1})))
+            rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
+                                                                            'Topic': topic,
+                                                                            'Color': color,
+                                                                            'Color_Transformer': 'AxisColor',
+                                                                            'Axis': 'Z',
+                                                                            'Style': 'Points',
+                                                                            'Size__m_': 0.2,
+                                                                            'Alpha': 1})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # Labeled data
-            display_name = sensor_key + '-Labels-PointCloud2'
-            displays.append(deepcopy(create_display('rviz/PointCloud2',
-                                                    {'Name': display_name, 'Topic': topic + '/labeled', 'Enabled': True,
-                                                     'Color': color, 'Style': 'Spheres', 'Size (m)': 0.2,
-                                                     'Alpha': 0.05})))
+            rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-Labels-PointCloud2',
+                                                                            'Topic': topic + '/labeled',
+                                                                            'Color': color,
+                                                                            'Color_Transformer': 'FlatColor',
+                                                                            'Style': 'Spheres',
+                                                                            'Size__m_': 0.2,
+                                                                            'Alpha': 0.05})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
         else:
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + msg_type + ')' + Style.RESET_ALL)

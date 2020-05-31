@@ -1,9 +1,9 @@
 # <img align="left" width="175" height="226" src="https://github.com/lardemua/atom/blob/master/docs/logo.png?raw=true/100/100"> ATOM Calibration 
-###### **A**tomic **T**ransformation **O**ptimization **M**ethod Calibration 
+###### A Calibration Framework using the **A**tomic **T**ransformation **O**ptimization **M**ethod 
 
-Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description (e.g. a xacro-robot state publisher tandem).
+Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description. Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
-# How to Use
+# How to Use - Quick Start
 
 Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline:
 1. **Create a calibration package** for you robotic system
@@ -24,7 +24,7 @@ _<your_robot_calibration>/calibration/config.yml_ with your system information.
    roslaunch <your_robot_calibration> collect_data.launch 
    ```
 
-# System calibration
+# System calibration - Detailed Description
 
 To calibrate your robot you must define your robotic system, (e.g. <your_robot>). You should also have a **system description** in the form of an urdf or a xacro file(s). This is normally stored in a ros package named **<your_robot>_description**. 
 
@@ -78,6 +78,10 @@ To run a system calibration, one requires sensor data collected at different tim
 ```bash
 roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder>
 ```
+
+[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
+------------- | -------------
+<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/collect_data_agrob.gif" width="450"/>
 
 # Contributors
 

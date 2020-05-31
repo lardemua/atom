@@ -5,10 +5,10 @@ Autocompute Value Bounds:
   Max Value: 10
   Min Value: -10
   Value: true
-Axis: Z
+Axis: {{ c.Axis | default("Z") }}
 Channel Name: intensity
 Color: {{ c.Color | default("255; 255; 255") }}
-Color Transformer: ""
+Color Transformer: {{ c.Color_Transformer | default("RGB8") }}
 Decay Time: 0
 Enabled: {{ c.Enabled | default(true) }}
 Invert Rainbow: false
