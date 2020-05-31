@@ -66,8 +66,9 @@ To set an initial estimate run:
    roslaunch <your_robot_calibration> set_initial_estimate.launch 
    ```
 
-<img src="https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif" width="40" height="40" />
+<img src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate.gif"/>
 
+ width="40" height="40" 
 
 # Contributors
 
