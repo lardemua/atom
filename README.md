@@ -3,13 +3,161 @@
 
 Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description (e.g. a xacro-robot state publisher tandem).
 
+# How to Use
+
+Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline:
+1. **Create a calibration package** for you robotic system
+   ```bash
+   rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
+   ```
+2. **Configure your calibration package** - edit the file 
+_<your_robot_calibration>/calibration/config.yml_ with your system information.
+   ```bash
+   rosrun <your_robot_calibration> configure 
+   ```
+3. **Set initial estimate** - deployment of interactive tools based on rviz that allow the user to set the pose of the sensors to be calibrated, while receiving visual feedback;
+   ```bash
+   roslaunch <your_robot_calibration> set_initial_estimate.launch 
+   ```
+4. **Collect Data** - Extraction of snapshots of data (ta.k.a., collections)
+   ```bash
+   roslaunch <your_robot_calibration> collect_data.launch 
+   ```
+
+# System calibration
+
+To calibrate your robot you must define your robotic system, (e.g. <your_robot>). You should also have a **system description** in the form of an urdf or a xacro file(s). This is normally stored in a ros package named **<your_robot>_description**. 
+
+Finally, **ATOM** requires a bagfile with a recording of the data from the sensors you wish to calibrate. Transformations in the bagfile (i.e. topics /tf and /tf_static) will be ignored, so that they do not collide with the ones being published by the _robot_state_publisher_. Thus, if your robotic system contains moving parts, the bagfile should also record the _sensor_msgs/JointState_ message. 
+
+It is also possible to record compressed images, since **ATOM** can decompress them while playing back the bagfile.
+
+## Creating a calibration package
+
+To start you should create a calibration ros package specific for your robot. **ATOM** provides a script for this:
+```bash
+rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
+```
+
+This will create the ros package <your_robot_calibration> in the current folder, but you can also specify the folder, e.g.:
+```bash
+rosrun atom_calibration create_calibration_pkg --name ~/my/path/<your_robot_calibration>
+```
+
+## Configuring a calibration package
+
+Once your calibration package is created you will have to configure the calibration procedure by editing the 
+_<your_robot_calibration>/calibration/config.yml_ file with your system information. 
+
+Here is an example of a config.yml file:
+
+```YAML
+#         ATOMIC Framework         #
+# Calibration tools for multi-sensor, multi-modal, robotic systems
+
+{
+  # Robotic system description and bag file info. You can use an Uniform Resource Identifier (URI) string or a local path.
+  # Know schemas: [file, package]. The package is for designating a ros package such as the calibration_pkg the example
+  # bellow.
+  #    Example 1: file:///home/mike/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  #    Example 2: package://calibration_pkg/urdf/description.xacro
+  # It is also possible to put in just a path,
+  #    Example 3: /home/mike/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  # and to include common path symbols (~) or environment variables
+  #    Example 4: ~/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  #    Example 5: /home/$(USER)/catkin_ws/src/calibration_pkg/urdf/description.xacro
+  # This is valid for description_file, bag_file and calibration_pattern/mesh_file
+  "description_file": "package://calibration_pkg/urdf/description.xacro",
+  "bag_file": "/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag",
+
+   # Specify all sensors that are used in the calibration: Each sensor should have:
+   # <sensor_name>: {"link": <The frame of the sensor's data. The value of the sensor's message.header.frame_id.>,
+   #                 "parent_link": <Parent frame of the transformation to be calibrated.>,
+   #                 "child_link" : <Child frame of the transformation to be calibrated.>,
+   #                 "topic_name" : <Name of the ros message topic that contains this sensor's data.>
+   #                } 
+   #
+    "sensors": {
+        # Examples
+         "right_camera": {
+                "link": "right_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "right_camera",
+                "topic_name": "/right_camera/image_color"
+        },
+        "left_camera": {
+                "link": "left_camera_optical",
+                "parent_link": "base_link",
+                "child_link": "left_camera",
+                "topic_name": "/left_camera/image_color"
+        },
+       "center_lidar": {
+                "link": "center_lidar",
+                "parent_link": "some_parent_link",
+                "child_link": "some_child_link",
+                "topic_name": "/center_lidar/scan"
+        }
+    },
+
+    # This section describes the properties of the calibration pattern used
+    # for calibration.
+    "calibration_pattern" : {
+        # The frame id (or link) of the pattern.
+        # This link transformation will be optimized.
+        "link": "chessboard_link",
+        # The parent frame id (or link) of the pattern.
+        # For example, in hand-eye calibration the parent link
+        # of the pattern can be the end-effector or the base of the arm
+        "parent_link": "base_link",
+        # Defines if the pattern link is the same in all collections (i.e. fixed=true),
+        # or each collection will have its own estimative of the link transformation.
+        "fixed": false,
+        # The type of pattern used for the calibration.
+        # Suported pattern are:
+        # - chessboard
+        # - charuco
+        "pattern_type": "chessboard",
+        # If the pattern type is "charuco" you need to define
+        # the aruco dictionary used by the pattern.
+        # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
+        # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path. See above description_file.
+        "mesh_file": "package://calibration_pkg/meshes/charuco_5X5_800x600.dae",
+        "dictionary": "DICT_5X5_100",
+        # The border width from the edge corner to the pattern physical edge.
+        # This is used for 3D sensors and lidars.
+        "border_size": 0.5,
+        # The number of corners the pattern has in the X and Y dimentions.
+        # Note: The charuco detector uses the number of squares per dimension in
+        # its detector. Internally we add a +1 to Y and X dimensions to account for
+        # that. Therfore, the number of corners should be used even for the charuco
+        # pattern.
+        "dimension": {"x": 9, "y": 6},
+        # The length of the a square edge.
+        "size": 0.101,
+        # The length of the charuco inner marker.
+        "inner_size": 0.014
+    },
+
+    # Miscellaneous information
+    "anchored_sensor": "right_camera",     # Anchor a given sensor, making it immovable during the optimization.
+    "world_link": "base_link",             # Frame of reference for the optimization procedure. Must exist in the
+                                           # transformation chains of all the sensors which are being calibrated.
+    "max_duration_between_msgs": 10000000  # Max time delta between sensor data messages when creating a collection.
+}
+```
+
+   ```bash
+   rosrun <your_robot_calibration> configure 
+   ```
+
 # Contributors
 
-   Miguel Riem Oliveira - University of Aveiro
-   Afonso Castro - University of Aveiro
-Eurico Pedrosa - University of Aveiro
-Tiago Madeira - University of Aveiro
-André Aguiar - INESC TEC
+ * Miguel Riem Oliveira - University of Aveiro
+ * Afonso Castro - University of Aveiro
+ * Eurico Pedrosa - University of Aveiro
+ * Tiago Madeira - University of Aveiro
+ * André Aguiar - INESC TEC
+ 
 
 # AtlasCarCalibration
 Reading the sensors starting position of a robot xacro file (atlas car sample) and create interactive markers associated to them.
