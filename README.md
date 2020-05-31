@@ -47,23 +47,35 @@ rosrun atom_calibration create_calibration_pkg --name ~/my/path/<your_robot_cali
 ## Configuring a calibration package
 
 Once your calibration package is created you will have to configure the calibration procedure by editing the 
-_<your_robot_calibration>/calibration/config.yml_ file with your system information. 
+_<your_robot_calibration>/calibration/config.yml_ file with your system information. Here is an example of a [config.yml](templates/config.yml) file.
 
-Here is an example of a config.yml file:
+After filling the config.yml file, you can run the package configuration:
 
+```bash
+rosrun <your_robot_calibration> configure 
+```
 
+This will create a set of files for launching the system, configuring rviz, etc.
 
+# Set initial estimate
+
+Iterative optimization methods are often sensitive to the initial parameter configuration. Here, the optimization parameters represent the poses of each sensor. **ATOM** provides an interactive framework based on rviz which allows the user to set the pose of the sensors while having immediate visual feedback.
+
+To set an initial estimate run:
    ```bash
-   rosrun <your_robot_calibration> configure 
+   roslaunch <your_robot_calibration> set_initial_estimate.launch 
    ```
+
+<img src="https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif" width="40" height="40" />
+
 
 # Contributors
 
-   Miguel Riem Oliveira - University of Aveiro
-   Afonso Castro - University of Aveiro
-Eurico Pedrosa - University of Aveiro
-Tiago Madeira - University of Aveiro
-André Aguiar - INESC TEC
+ * Miguel Riem Oliveira - University of Aveiro
+ *  Afonso Castro - University of Aveiro
+ * Eurico Pedrosa - University of Aveiro
+ * Tiago Madeira - University of Aveiro
+ * André Aguiar - INESC TEC
 
 # AtlasCarCalibration
 Reading the sensors starting position of a robot xacro file (atlas car sample) and create interactive markers associated to them.
