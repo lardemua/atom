@@ -1,6 +1,6 @@
 # ATOM Calibration
 
-<img align="left" width="100" height="100" src="docs/atom_logo.jpg/100/100">
+<img align="left" width="100" height="100" src="https://github.com/lardemua/atom/blob/master/docs/atom_logo.jpg?raw=true/100/100">
 (under construction)
 
 # AtlasCarCalibration
