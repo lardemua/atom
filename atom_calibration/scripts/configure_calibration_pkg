@@ -268,7 +268,7 @@ if __name__ == "__main__":
     # TODO continue here
     rviz_file_template = atom_calibration_path + '/templates/config.rviz'
     print('Setting up ' + rviz_collect_data + ' ...')
-    rviz = yaml.load(open(rviz_file_template), Loader=yaml.FullLoader)
+    rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
     displays = deepcopy(core_displays)  # start with the core displays
 
     # Add interactive maker display to handle sensor manual labeling
