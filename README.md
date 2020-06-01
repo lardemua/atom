@@ -1,7 +1,11 @@
 # <img align="left" width="175" height="226" src="https://github.com/lardemua/atom/blob/master/docs/logo.png?raw=true/100/100"> ATOM Calibration 
 ###### A Calibration Framework using the **A**tomic **T**ransformation **O**ptimization **M**ethod 
 
-Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description. Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
+Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. 
+
+It is based on the optimization of atomic transformations as provided by a ros based robot description. 
+
+Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
 # How to Use - Quick Start
 
