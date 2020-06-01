@@ -2,7 +2,7 @@
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
 <!-- playbag.launch : Plays back the bag file. Sets up image decompressors if needed, reads the urdf robot description -->
-<!-- This file was generated automatically by the script configure_calibration_pkg on the 31/05/2020 21:34:37-->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the 01/06/2020 01:06:41-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
@@ -12,7 +12,7 @@
 <arg name="bag_file" default="/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag"/>
 <!-- bag_start: starting time for playing back the bag file. Check "rosbag play -h"-->
 <arg name="bag_start" default="0"/>
-<arg name ="bag_rate" default ="0.2" />
+<arg name ="bag_rate" default ="1" />
 <arg name="description_file" default="$(find atlascar2_calibration)/urdf/description.urdf.xacro"/>
 <arg name="rviz_file" default="$(find atlascar2_calibration)/rviz/set_initial_estimate.rviz"/>
 

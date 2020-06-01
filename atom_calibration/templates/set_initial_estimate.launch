@@ -10,12 +10,19 @@
 <arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
 <arg name="output_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
 <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
+<!-- arguments to be passed onto playbag.launch  -->
+<arg name="bag_file" default="{{ c.bag_file }}"/>
+<arg name="bag_start" default="0"/>
+<arg name ="bag_rate" default ="1" />
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Call play bag launch file -->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <include file="$(find {{ c.package_name }})/launch/playbag.launch">
    <arg name="rviz_file" value="$(arg rviz_file)"/>
+   <arg name="bag_file" value="$(arg bag_file)"/>
+   <arg name="bag_start" value="$(arg bag_start)"/>
+   <arg name="bag_rate" value="$(arg bag_rate)"/>
 </include>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

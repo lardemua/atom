@@ -232,6 +232,7 @@ if __name__ == "__main__":
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
+                                   'bag_file': bag_file
                                    }))
 
     # --------------------------------------------------------------------------
@@ -246,6 +247,7 @@ if __name__ == "__main__":
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_collect_data': rviz_collect_data,
+                                   'bag_file': bag_file
                                    }))
 
     # --------------------------------------------------------------------------
