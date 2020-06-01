@@ -1,353 +1,75 @@
 <?xml version="1.0"?>
-<robot name="atlas" version="1.0">
-  <link name="base_link"/>
-  <link name="base_footprint"/>
-  <link name="model">
-    <visual>
-      <origin xyz="-0.9 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://atlascar2_description/meshes/mitsubishi_miev.dae"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="base_link_to_base_footprint" type="fixed">
-    <origin xyz="0.0 0.0 -0.305" rpy="0.0 0.0 0.0"/>
-    <parent link="base_link"/>
-    <child link="base_footprint"/>
-  </joint>
-  <joint name="base_footprint_to_model" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57079632679"/>
-    <parent link="base_footprint"/>
-    <child link="model"/>
-  </joint>
-  <link name="top_right_camera">
-    <inertial>
-      <mass value="0.085"/>
-      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
-    </inertial>
-    <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.0754 0.029 0.035"/>
-      </geometry>
-      <material name="dark_grey"/>
-    </visual>
-    <collision>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.0754 0.029 0.035"/>
-      </geometry>
-    </collision>
-  </link>
-  <link name="top_right_camera_optical"/>
-  <joint name="top_right_camera_optical_joint" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="-1.570796 0.0 -1.570796"/>
-    <parent link="top_right_camera"/>
-    <child link="top_right_camera_optical"/>
-  </joint>
-  <gazebo reference="top_right_camera_optical"><material>Gazebo/Grey</material>
-    <sensor name="top_right_camera" type="camera">
-      <update_rate>120</update_rate>
-      <camera name="top_right_camera">
-        <pose>0 0 0 0 -1.5707 1.5707</pose>
-        <horizontal_fov>1.0471975512</horizontal_fov>
-        <image>
-          <width>1272</width>
-          <height>1016</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.5</near>
-          <far>300</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <plugin filename="libgazebo_ros_camera.so" name="camera_controller">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>120</updateRate>
-        <cameraName>top_right_camera</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>top_right_camera_optical</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-      </plugin>
-    </sensor>
-  </gazebo>
-  <joint name="base_link_to_top_right_camera" type="fixed">
-    <origin xyz="-1.55 -0.22 1.35" rpy="0.0 0.4 0.0"/>
-    <parent link="base_link"/>
-    <child link="top_right_camera"/>
-  </joint>
-  <link name="top_left_camera">
-    <inertial>
-      <mass value="0.085"/>
-      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
-    </inertial>
-    <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.0754 0.029 0.035"/>
-      </geometry>
-      <material name="dark_grey"/>
-    </visual>
-    <collision>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.0754 0.029 0.035"/>
-      </geometry>
-    </collision>
-  </link>
-  <link name="top_left_camera_optical"/>
-  <joint name="top_left_camera_optical_joint" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="-1.570796 0.0 -1.570796"/>
-    <parent link="top_left_camera"/>
-    <child link="top_left_camera_optical"/>
-  </joint>
-  <gazebo reference="top_left_camera_optical"><material>Gazebo/Grey</material>
-    <sensor name="top_left_camera" type="camera">
-      <update_rate>120</update_rate>
-      <camera name="top_left_camera">
-        <pose>0 0 0 0 -1.5707 1.5707</pose>
-        <horizontal_fov>1.0471975512</horizontal_fov>
-        <image>
-          <width>1272</width>
-          <height>1016</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.5</near>
-          <far>300</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <plugin filename="libgazebo_ros_camera.so" name="camera_controller">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>120</updateRate>
-        <cameraName>top_left_camera</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>top_left_camera_optical</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-      </plugin>
-    </sensor>
-  </gazebo>
-  <joint name="base_link_to_top_left_camera" type="fixed">
-    <origin xyz="-1.55 0.22 1.35" rpy="0.0 0.4 0.0"/>
-    <parent link="base_link"/>
-    <child link="top_left_camera"/>
-  </joint>
-  <link name="frontal_laser_mount_link">
-    <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-      <mass value="0.001"/>
-      <inertia ixx="1e-06" ixy="0.0" ixz="0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
-    </inertial>
-  </link>
-  <joint name="frontal_laser_joint" type="fixed">
-    <origin xyz="0.044 0.02325 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="frontal_laser_mount_link"/>
-    <child link="frontal_laser"/>
-  </joint>
-  <link name="frontal_laser">
-    <inertial>
-      <origin xyz="0.0026 -0.02325 -0.0" rpy="0 0 0"/>
-      <mass value="1.0"/>
-      <inertia ixx="0.00290035300653" ixy="0.0" ixz="0.0" iyy="0.00136918611899" iyz="0.0" izz="0.00297887297512"/>
-    </inertial>
-    <visual>
-      <origin xyz="-0.044 -0.02325 -0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://sick_ldmrs_description/meshes/sick_ldmrs.dae"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="-0.044 -0.02325 -0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://sick_ldmrs_description/meshes/sick_ldmrs.dae"/>
-      </geometry>
-    </collision>
-  </link>
-  <joint name="base_link_to_frontal_laser_mount_link" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="base_link"/>
-    <child link="frontal_laser_mount_link"/>
-  </joint>
-  <link name="right_laser">
-    <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-      <mass value="1.1"/>
-      <inertia ixx="0.00307156543804" ixy="0.0" ixz="0.0" iyy="0.00312849041527" iyz="0.0" izz="0.00196432421427"/>
-    </inertial>
-    <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://lms1xx/meshes/sick-lms1xx.dae"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.105 0.1 0.1"/>
-      </geometry>
-    </collision>
-  </link>
-  <gazebo reference="right_laser"><turnGravityOff>true</turnGravityOff>
-    <sensor name="right_laser" type="ray">
-      <pose>0 0 0 0 0 0</pose>
-      <visualize>false</visualize>
-      <update_rate>50</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>720</samples>
-            <resolution>1</resolution>
-            <min_angle>-2.35619</min_angle>
-            <max_angle>2.35619</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.1</min>
-          <max>30.0</max>
-          <resolution>0.01</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.001</stddev>
-        </noise>
-      </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_laser">
-        <topicName>scan</topicName>
-        <frameName>right_laser</frameName>
-        <robotNamespace>/</robotNamespace>
-      </plugin>
-    </sensor>
-  </gazebo>
-  <joint name="base_link_to_right_laser" type="fixed">
-    <origin xyz="-0.0700000077486 -0.759999990463 0.415406376123" rpy="-0.266168578321 0.257209574616 -0.820021803209"/>
-    <parent link="base_link"/>
-    <child link="right_laser"/>
-  </joint>
-  <link name="left_laser">
-    <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-      <mass value="1.1"/>
-      <inertia ixx="0.00307156543804" ixy="0.0" ixz="0.0" iyy="0.00312849041527" iyz="0.0" izz="0.00196432421427"/>
-    </inertial>
-    <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://lms1xx/meshes/sick-lms1xx.dae"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.105 0.1 0.1"/>
-      </geometry>
-    </collision>
-  </link>
-  <gazebo reference="left_laser"><turnGravityOff>true</turnGravityOff>
-    <sensor name="left_laser" type="ray">
-      <pose>0 0 0 0 0 0</pose>
-      <visualize>false</visualize>
-      <update_rate>50</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>720</samples>
-            <resolution>1</resolution>
-            <min_angle>-2.35619</min_angle>
-            <max_angle>2.35619</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.1</min>
-          <max>30.0</max>
-          <resolution>0.01</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.001</stddev>
-        </noise>
-      </ray>
-      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_laser">
-        <topicName>scan</topicName>
-        <frameName>left_laser</frameName>
-        <robotNamespace>/</robotNamespace>
-      </plugin>
-    </sensor>
-  </gazebo>
-  <joint name="base_link_to_left_laser" type="fixed">
-    <origin xyz="-0.0700000077486 0.646739602089 0.270000010729" rpy="0.144066710269 0.142593988487 0.795706699574"/>
-    <parent link="base_link"/>
-    <child link="left_laser"/>
-  </joint>
-  <link name="top_center_rgbd_camera_link">
-    <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <mass value="0.2"/>
-      <inertia ixx="0.00058083" ixy="0.0" ixz="0.0" iyy="3.0833e-05" iyz="0.0" izz="0.00059083"/>
-    </inertial>
-    <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://atlascar2_description/meshes/asus_xtion/asus_xtion_simple.dae"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://atlascar2_description/meshes/asus_xtion/asus_xtion_simple.dae"/>
-      </geometry>
-    </collision>
-  </link>
-  <joint name="top_center_rgbd_camera_depth_joint" type="fixed">
-    <origin xyz="0.0 0.049 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="top_center_rgbd_camera_link"/>
-    <child link="top_center_rgbd_camera_depth_frame"/>
-  </joint>
-  <link name="top_center_rgbd_camera_depth_frame"/>
-  <joint name="top_center_rgbd_camera_depth_optical_joint" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
-    <parent link="top_center_rgbd_camera_depth_frame"/>
-    <child link="top_center_rgbd_camera_depth_optical_frame"/>
-  </joint>
-  <link name="top_center_rgbd_camera_depth_optical_frame"/>
-  <joint name="top_center_rgbd_camera_rgb_joint" type="fixed">
-    <origin xyz="0.0 0.022 0.0" rpy="0.0 0.0 0.0"/>
-    <parent link="top_center_rgbd_camera_link"/>
-    <child link="top_center_rgbd_camera_rgb_frame"/>
-  </joint>
-  <link name="top_center_rgbd_camera_rgb_frame"/>
-  <joint name="top_center_rgbd_camera_rgb_optical_joint" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="-1.57079632679 0.0 -1.57079632679"/>
-    <parent link="top_center_rgbd_camera_rgb_frame"/>
-    <child link="top_center_rgbd_camera_rgb_optical_frame"/>
-  </joint>
-  <link name="top_center_rgbd_camera_rgb_optical_frame"/>
-  <joint name="base_link_to_top_center_rgbd_camera" type="fixed">
-    <origin xyz="-1.51 -0.01 1.338" rpy="-0.0 0.207 -0.0"/>
-    <parent link="base_link"/>
-    <child link="top_center_rgbd_camera_link"/>
-  </joint>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="atlas">
+  <xacro:include filename="$(find atlascar2_description)/urdf/atlascar2_model_macro.urdf.xacro"/>
+  <xacro:include filename="$(find pointgrey_camera_description)/urdf/pointgrey_flea3.urdf.xacro"/>
+  <xacro:include filename="$(find sick_ldmrs_description)/urdf/sick_ldmrs_macros.urdf.xacro"/>
+  <xacro:include filename="$(find lms1xx)/urdf/sick_lms1xx.urdf.xacro"/>
+  <xacro:include filename="$(find atlascar2_description)/urdf/asus_xtion.urdf.xacro"/>
+
+  <xacro:macro name="atlascar2" params="prefix">
+    <!-- links -->
+    <link name="${prefix}base_link"/>
+    <link name="${prefix}base_footprint"/>
+    <!-- car model -->
+    <xacro:atlascar2_model prefix="${prefix}"/>
+    <!-- joints -->
+    <joint name="${prefix}base_link_to_${prefix}base_footprint" type="fixed">
+      <origin xyz="0 0 -0.305" rpy="0 0 0"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}base_footprint"/>
+    </joint>
+    <joint name="${prefix}base_footprint_to_${prefix}model" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 ${pi/2}"/>
+      <parent link="${prefix}base_footprint"/>
+      <child link="${prefix}model"/>
+    </joint>
+    <!-- top-right-camera -->
+    <xacro:pointgrey_flea3 name="${prefix}top_right_camera" frame="${prefix}top_right_camera"/>
+    <joint name="${prefix}base_link_to_${prefix}top_right_camera" type="fixed">
+      <origin xyz="-1.55 -0.22 1.35" rpy="0 0.4 0"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}top_right_camera"/>
+    </joint>
+    <!-- top-left-camera -->
+    <xacro:pointgrey_flea3 name="${prefix}top_left_camera" frame="${prefix}top_left_camera"/>
+    <joint name="${prefix}base_link_to_${prefix}top_left_camera" type="fixed">
+      <origin xyz="-1.55 0.22 1.35" rpy="0 0.4 0"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}top_left_camera"/>
+    </joint>
+    <!-- laser sensor lms_ldmrs400001 -->
+    <xacro:sick_ldmrs name="${prefix}frontal_laser"/>
+    <joint name="${prefix}base_link_to_${prefix}frontal_laser_mount_link" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}frontal_laser_mount_link"/>
+    </joint>
+    <!-- left lms151 laser -->
+    <xacro:sick_lms1xx frame="${prefix}right_laser"/>
+    <joint name="${prefix}base_link_to_${prefix}right_laser" type="fixed">
+      <origin xyz="-0.07 -0.76 0.27" rpy="0 0 ${-0.7854}"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}right_laser"/>
+    </joint>
+    <!-- right lms151 laser -->
+    <xacro:sick_lms1xx frame="${prefix}left_laser"/>
+    <joint name="${prefix}base_link_to_${prefix}left_laser" type="fixed">
+      <origin xyz="-0.07 0.76  0.27" rpy="0 0 ${0.7854}"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}left_laser"/>
+    </joint>
+    <!-- RGB-D camera -->
+    <xacro:asus_camera_model name="${prefix}top_center_rgbd_camera"/>
+    <joint name="${prefix}base_link_to_${prefix}top_center_rgbd_camera" type="fixed">
+      <!--            <origin xyz="-1.510 -0.010 1.397" rpy="-0.000 0.223 -0.000" />-->
+      <origin xyz="-1.510 -0.010 1.338" rpy="-0.000 0.207 -0.000"/>
+      <!--            <origin xyz="-1.51 -0.01 1.27" rpy="0 0.4 0" />-->
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}top_center_rgbd_camera_link"/>
+    </joint>
+  </xacro:macro>
+
+      <!-- Call the xacro macro-->
+    <xacro:atlascar2 prefix=""/>
+
 </robot>

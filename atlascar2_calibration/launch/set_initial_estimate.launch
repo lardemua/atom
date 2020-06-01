@@ -1,7 +1,7 @@
 <launch>
 <!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
 <!-- set_initial_estimate.launch: runs bringup for initial parameter setting through rviz interactive markers-->
-<!-- This file was generated automatically by the script configure_calibration_pkg on the 01/06/2020 01:06:41-->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the 01/06/2020 01:17:30-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

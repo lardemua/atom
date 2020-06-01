@@ -79,8 +79,8 @@ Visualization Manager:
     Enable Transparency: true
     Enabled: true
     Name: ManualDataLabeler-InteractiveMarkers
-    Show Axes: false
-    Show Descriptions: false
+    Show Axes: true
+    Show Descriptions: true
     Show Visual Aids: false
     Update Topic: data_labeler/update
     Value: true

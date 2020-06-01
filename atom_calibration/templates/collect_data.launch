@@ -13,11 +13,12 @@
 <!-- overwrite output folder if it exists -->
 <arg name="marker_size" default="0.5"/>
 <arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
+<arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
 <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_collect_data }}"/>
 <!-- arguments to be passed onto playbag.launch  -->
 <arg name="bag_file" default="{{ c.bag_file }}"/>
 <arg name="bag_start" default="0"/>
-<arg name ="bag_rate" default ="1" />
+<arg name="bag_rate" default ="1" />
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Call play bag launch file -->
