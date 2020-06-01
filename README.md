@@ -79,6 +79,13 @@ To run a system calibration, one requires sensor data collected at different tim
 roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder>
 ```
 
+Depending on the size and number of topics in the bag file, it may be necessary (it often is) to reduce the playback rate of the bag file.
+```bash
+roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder> bag_rate:=<playback_rate>
+```
+
+Here are some examples of the system collecting data:
+
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
 ------------- | -------------
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/collect_data_agrob.gif" width="450"/>
@@ -86,6 +93,7 @@ roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dat
 A dataset is a folder which contains a set of collections. There, a _data_collected.json_ file stores all the information required for the calibration.
 
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/viewing_data_collected_json.gif" width="600"/> 
+
 
 
 # Contributors
