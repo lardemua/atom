@@ -1,4 +1,0 @@
-#!/bin/sh
-# Auto generated on 31/05/2020 08:59:04
-#      ATOMIC Framework
-rosrun atom_calibration configure_calibration_pkg -n ur10e_eye_to_base_calibration
