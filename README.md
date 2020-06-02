@@ -1,4 +1,4 @@
-# <img align="left" width="175" height="226" src="https://github.com/lardemua/atom/blob/master/docs/logo.png?raw=true/100/100"> ATOM Calibration 
+# <img align="left" width="175" height="226" src="https://github.com/lardemua/atom/blob/master/docs/logo2.png?raw=true/100/100"> ATOM Calibration 
 ###### A Calibration Framework using the **A**tomic **T**ransformation **O**ptimization **M**ethod 
 
 Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. 
