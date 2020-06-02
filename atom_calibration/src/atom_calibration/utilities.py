@@ -43,7 +43,7 @@ def resolvePath(path, verbose=False):
 
 
 def uriReader(resource):
-    uri = urlparse(resource)
+    uri = urlparse(str(resource))
     # print(uri)
     if uri.scheme == 'package':  # using a ros package uri
         # print('This is a ros package')

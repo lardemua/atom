@@ -98,7 +98,9 @@ def setupVisualization(dataset, args):
 
         # TODO If no mesh is given, or if mesh_file does not exist, issue a warning and create a drawing of the
         #  pattern with lines m.mesh_resource = 'package://atom_calibration/meshes/charuco_5x5.dae'
-        m.mesh_resource = 'file://' + str(uriReader(str(dataset['calibration_config']['calibration_pattern']['mesh_file'])))
+        file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
+        # file = '/home/mike/catkin_ws/src/calibration/atom/atom_calibration/meshes/charuco_5x5.dae'
+        m.mesh_resource = 'file://' + file  # mesh_resource needs uri format
         m.mesh_use_embedded_materials = True
         markers.markers.append(m)
 
