@@ -4,7 +4,6 @@
 Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. 
 
 It is based on the optimization of atomic transformations as provided by a ros based robot description. 
-
 Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
 # How to Use - Quick Start
