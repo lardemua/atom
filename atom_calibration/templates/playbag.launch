@@ -1,6 +1,5 @@
 <launch>
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
+<!-- %%%%%%%%%% ATOM Calibration Framework %%%%%%%%%%%%%%-->
 <!-- {{ c.filename }} : Plays back the bag file. Sets up image decompressors if needed, reads the urdf robot description -->
 <!-- This file was generated automatically by the script configure_calibration_pkg on the {{ c.date }}-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

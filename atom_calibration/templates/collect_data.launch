@@ -1,5 +1,5 @@
 <launch>
-<!-- %%%%%%%%%%%%% ATOMIC Framework %%%%%%%%%%%%%%%%%%%%%-->
+<!-- %%%%%%%%%% ATOM Calibration Framework %%%%%%%%%%%%%%-->
 <!-- {{ c.filename }} : runs bringup collecting data from a bag file. -->
 <!-- This file was generated automatically by the script configure_calibration_pkg on the {{ c.date }}-->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

@@ -17,9 +17,6 @@
 
 <!--    <param name="robot_description" value=""/>-->
 
-    <node pkg="atom_calibration" type="create_initial_robot_description.py" name="create_initial_robot_description"
-          args="_xacro_file:=$(arg xacro_file) _prefix:=$(arg prefix)" output="screen"/>
-
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
     <!-- Load robot description file based on whether or not we are reading the first guess xacro file.-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

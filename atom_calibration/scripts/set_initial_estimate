@@ -12,7 +12,7 @@ from interactive_markers.menu_handler import MenuHandler
 from urdf_parser_py.urdf import URDF
 
 # __self__ imports
-from atom_calibration.utilities import loadConfig
+from atom_calibration.utilities import loadConfig, filterLaunchArguments
 from atom_calibration.sensor import Sensor
 
 
@@ -108,16 +108,7 @@ if __name__ == "__main__":
     ap.add_argument("-s", "--marker_scale", type=float, default=0.6, help='Scale of the interactive markers.')
     ap.add_argument("-c", "--calibration_file", type=str, required=True, help='full path to calibration file.')
 
-    # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
-    # filter this argv. in addition, the first argument is the node name, which should also not be given to the
-    # parser.
-    argv_filtered = []
-    for i, argv in enumerate(sys.argv):
-        if (not all(x in argv for x in ['__', ':='])) and (i != 0):
-            argv_filtered.append(argv)
-    # print('\n' + str(sys.argv))
-    # print('\n' + str(argv_filtered))
-    args = vars(ap.parse_args(args=argv_filtered))
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
 
     # Initialize ROS stuff
     rospy.init_node("set_initial_estimate")

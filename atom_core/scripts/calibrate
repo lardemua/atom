@@ -24,10 +24,12 @@ import OptimizationUtils.OptimizationUtils as OptimizationUtils
 # from test.sensor_pose_json_v2.chessboard import createChessBoardData
 # from test.sensor_pose_json_v2.visualization import *
 
+import atom_calibration.utilities as utilities
 import atom_core.getters_and_setters as getters_and_setters
 import atom_core.objective_function as objective_function
 import atom_core.chessboard as chessboard
 import atom_core.visualization as visualization
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -87,23 +89,19 @@ def main():
                     help="Remove any collection which does not have a detection for all sensors.",
                     action='store_true', default=False)
 
-    # Check https://stackoverflow.com/questions/52431265/how-to-use-a-lambda-as-parameter-in-python-argparse
-    def create_lambda_with_globals(s):
-        return eval(s, globals())
-
-    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=create_lambda_with_globals,
+    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=utilities.create_lambda_with_globals,
                     help='A string to be evaluated into a lambda function that receives a sensor name as input and '
                          'returns True or False to indicate if the sensor should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
                          'sensors left_laser and frontal_camera')
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=create_lambda_with_globals,
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=utilities.create_lambda_with_globals,
                     help='A string to be evaluated into a lambda function that receives a collection name as input and '
                          'returns True or False to indicate if the collection should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
 
-    args = vars(ap.parse_args())
+    args = vars(ap.parse_args(args=utilities.filterLaunchArguments(sys.argv)))
     print("\nArgument list=" + str(args) + '\n')
 
     # ---------------------------------------
@@ -116,7 +114,8 @@ def main():
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
     """ Loads a json file containing the detections"""
-    f = open(args['json_file'], 'r')
+    json_file, _, _ = utilities.uriReader(args['json_file'])
+    f = open(json_file, 'r')
     dataset_sensors = json.load(f)
 
     # Load images from files into memory. Images in the json file are stored in separate png files and in their place
@@ -126,7 +125,7 @@ def main():
             if not sensor['msg_type'] == 'Image':  # nothing to do here.
                 continue
 
-            filename = os.path.dirname(args['json_file']) + '/' + collection['data'][sensor_key]['data_file']
+            filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
             collection['data'][sensor_key]['data'] = cv2.imread(filename)
 
     if not args['collection_selection_function'] is None:
@@ -273,7 +272,7 @@ def main():
 
         # Translation -------------------------------------
         initial_translation = getters_and_setters.getterSensorTranslation(dataset_sensors, sensor_key=sensor_key,
-                                                      collection_key=selected_collection_key)
+                                                                          collection_key=selected_collection_key)
 
         if sensor_key == dataset_sensors['calibration_config']['anchored_sensor']:
             bound_max = [x + sys.float_info.epsilon for x in initial_translation]
@@ -296,7 +295,7 @@ def main():
 
         # Rotation --------------------------------------
         initial_rotation = getters_and_setters.getterSensorRotation(dataset_sensors, sensor_key=sensor_key,
-                                                collection_key=selected_collection_key)
+                                                                    collection_key=selected_collection_key)
 
         if sensor_key == dataset_sensors['calibration_config']['anchored_sensor']:
             bound_max = [x + sys.float_info.epsilon for x in initial_rotation]
@@ -337,8 +336,10 @@ def main():
         # setterChessBoardTranslation(dataset_sensors, initial_translation, collection_key)
 
         opt.pushParamVector(group_name='C_' + collection_key + '_t', data_key='dataset_sensors',
-                            getter=partial(getters_and_setters.getterChessBoardTranslation, collection_key=collection_key),
-                            setter=partial(getters_and_setters.setterChessBoardTranslation, collection_key=collection_key),
+                            getter=partial(getters_and_setters.getterChessBoardTranslation,
+                                           collection_key=collection_key),
+                            setter=partial(getters_and_setters.setterChessBoardTranslation,
+                                           collection_key=collection_key),
                             suffix=['x', 'y', 'z'])
         # ,bound_max=bound_max, bound_min=bound_min)
 
@@ -420,7 +421,8 @@ def main():
         opt.addDataModel('graphics', graphics)
 
         # opt.setVisualizationFunction(visualizationFunction, False, niterations=1, figures=[])
-        opt.setVisualizationFunction(visualization.visualizationFunction, args['ros_visualization'], niterations=1, figures=[])
+        opt.setVisualizationFunction(visualization.visualizationFunction, args['ros_visualization'], niterations=1,
+                                     figures=[])
 
     # ---------------------------------------
     # --- Start Optimization

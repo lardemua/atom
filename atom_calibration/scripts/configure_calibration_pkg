@@ -35,8 +35,6 @@ if __name__ == "__main__":
     package_name = os.path.basename(args['name'])
     rospack = rospkg.RosPack()
     atom_calibration_path = rospack.get_path('atom_calibration')
-    rviz_set_initial_estimate = 'set_initial_estimate.rviz'
-    rviz_collect_data = 'collect_data.rviz'
 
     # Check if package is under $ROS_PACKAGE_PATH, abort if not
     assert (package_name in rospack.list()), \
@@ -47,6 +45,13 @@ if __name__ == "__main__":
 
     package_path = rospack.get_path(package_name)  # full path to the package, including its name.
     package_base_path = os.path.dirname(package_path)  # parent path where the package is located
+
+    rviz_set_initial_estimate = 'set_initial_estimate.rviz'
+    rviz_collect_data = 'collect_data.rviz'
+    rviz_calibrate = 'calibrate.rviz'
+    set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
+    data_collection_launch_file = package_path + '/launch/collect_data.launch'
+    calibrate_launch_file = package_path + '/launch/calibrate.launch'
 
     # Template engine setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
@@ -154,12 +159,12 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the set_initial_estimate launch file
     # --------------------------------------------------------------------------
-    set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
-    print('Setting up ' + set_initial_estimate_launch_file + ' ...')
+    launch_file = set_initial_estimate_launch_file
+    print('Setting up ' + launch_file + ' ...')
 
-    template = env.get_template(os.path.basename(set_initial_estimate_launch_file))
-    with open(set_initial_estimate_launch_file, 'w') as f:
-        f.write(template.render(c={'filename': os.path.basename(set_initial_estimate_launch_file),
+    template = env.get_template(os.path.basename(launch_file))
+    with open(launch_file, 'w') as f:
+        f.write(template.render(c={'filename': os.path.basename(launch_file),
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
@@ -169,16 +174,30 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the data collection launch file
     # --------------------------------------------------------------------------
-    data_collection_launch_file = package_path + '/launch/collect_data.launch'
-    print('Setting up ' + data_collection_launch_file + ' ...')
+    launch_file = data_collection_launch_file
+    print('Setting up ' + launch_file + ' ...')
 
-    template = env.get_template(os.path.basename(data_collection_launch_file))
-    with open(data_collection_launch_file, 'w') as f:
-        f.write(template.render(c={'filename': os.path.basename(set_initial_estimate_launch_file),
+    template = env.get_template(os.path.basename(launch_file))
+    with open(launch_file, 'w') as f:
+        f.write(template.render(c={'filename': os.path.basename(launch_file),
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_collect_data': rviz_collect_data,
                                    'bag_file': bag_file
+                                   }))
+
+    # --------------------------------------------------------------------------
+    # Create the calibrate launch file
+    # --------------------------------------------------------------------------
+    launch_file = calibrate_launch_file
+    print('Setting up ' + launch_file + ' ...')
+
+    template = env.get_template(os.path.basename(launch_file))
+    with open(launch_file, 'w') as f:
+        f.write(template.render(c={'filename': os.path.basename(launch_file),
+                                   'date': dt_string,
+                                   'package_name': package_name,
+                                   'rviz_calibrate': rviz_calibrate
                                    }))
 
     # --------------------------------------------------------------------------
@@ -272,9 +291,10 @@ if __name__ == "__main__":
     displays = deepcopy(core_displays)  # start with the core displays
 
     # Add interactive maker display to handle sensor manual labeling
-    rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(c={'Name': 'ManualDataLabeler-InteractiveMarkers',
-                                                                          'Update_Topic': 'data_labeler/update'}
-                                                                       )
+    rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
+        c={'Name': 'ManualDataLabeler-InteractiveMarkers',
+           'Update_Topic': 'data_labeler/update'}
+        )
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Generate rviz displays according to the sensor types
@@ -358,3 +378,5 @@ if __name__ == "__main__":
         set_initial_estimate_launch_file) + Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(
         data_collection_launch_file) + Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(
+        calibrate_launch_file) + Style.RESET_ALL)

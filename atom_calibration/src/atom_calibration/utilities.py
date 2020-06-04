@@ -17,6 +17,22 @@ from json_minify import json_minify
 from urlparse import urlparse
 
 
+# Check https://stackoverflow.com/questions/52431265/how-to-use-a-lambda-as-parameter-in-python-argparse
+def create_lambda_with_globals(s):
+    return eval(s, globals())
+
+def filterLaunchArguments(argvs):
+    # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
+    # filter this argv. in addition, the first argument is the node name, which should also not be given to the
+    # parser.
+
+    argvs_filtered = []
+    for i, argv in enumerate(argvs):
+        if (not all(x in argv for x in ['__', ':='])) and (i != 0):
+            argvs_filtered.append(argv)
+
+    return argvs_filtered
+
 def execute(cmd, blocking=True, verbose=True):
     """ @brief Executes the command in the shell in a blocking or non-blocking manner
         @param cmd a string with teh command to execute

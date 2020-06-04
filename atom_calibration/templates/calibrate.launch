@@ -1,0 +1,47 @@
+<launch>
+<!-- %%%%%%%%%% ATOM Calibration Framework %%%%%%%%%%%%%%-->
+<!-- {{ c.filename }} : Runs an optimization to calibrate the robot's sensors. -->
+<!-- This file was generated automatically by the script configure_calibration_pkg on the {{ c.date }}-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Parameters-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!--<arg name="marker_size" default="0.5"/>-->
+<arg name="dataset_file"/>
+<arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_calibrate }}"/>
+<arg name="single_pattern" default="false"/>
+<arg name="use_incomplete_collections" default="false"/>
+<arg name="sensor_selection_function" default="lambda sensor_name: True"/>
+<arg name="collection_selection_function" default="lambda collection_name: True"/>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Start calibrate node -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+
+<group if="$(arg single_pattern)">
+    <group if="$(arg use_incomplete_collections)">
+        <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern --use_incomplete_collections" required="true" output="screen"/>
+    </group>
+
+    <group unless="$(arg use_incomplete_collections)">
+        <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern" required="true" output="screen"/>
+    </group>
+</group>
+
+<group unless="$(arg single_pattern)">
+    <group if="$(arg use_incomplete_collections)">
+        <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --use_incomplete_collections" required="true" output="screen"/>
+    </group>
+
+    <group unless="$(arg use_incomplete_collections)">
+        <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization" required="true" output="screen"/>
+    </group>
+</group>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- Visualization -->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>
+
+</launch>

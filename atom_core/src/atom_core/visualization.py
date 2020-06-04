@@ -31,7 +31,7 @@ from open3d import *
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 from OptimizationUtils import utilities
-from atom_calibration.utilities import uriReader
+from atom_calibration.utilities import uriReader, execute
 
 
 def genCollectionPrefix(collection_key, string):
@@ -54,10 +54,17 @@ def setupVisualization(dataset, args):
     graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
     now = rospy.Time.now()
 
-    # Parse robot description from the ros parameter '/robot_description'
-    # TODO the ros xacro file could be stored in the json file for usage here
-    rospy.loginfo('Reading xml xacro file ...')
-    xml_robot = URDF.from_parameter_server()
+    # Parse xacro description file
+    description_file = dataset['calibration_config']['description_file']
+    rospy.loginfo('Reading description file ' + description_file + '...')
+    # xml_robot = URDF.from_parameter_server()
+    urdf_file = '/tmp/description.urdf'
+    print('Parsing description file ' + description_file)
+    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=False)  # create a temp urdf file
+    try:
+        xml_robot = URDF.from_xml_file(urdf_file)  # read teh urdf file
+    except:
+        raise ValueError('Could not parse description file ' + description_file)
 
     pattern = dataset['calibration_config']['calibration_pattern']
     graphics['pattern']['colormap'] = cm.plasma(
