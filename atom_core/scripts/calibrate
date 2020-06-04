@@ -58,10 +58,13 @@ def walk(node):
 
 def fitPlaneLTSQ(XYZ):
     (rows, cols) = XYZ.shape
+    print(XYZ.shape)
     G = np.ones((rows, 3))
     G[:, 0] = XYZ[:, 0]  # X
     G[:, 1] = XYZ[:, 1]  # Y
     Z = XYZ[:, 2]
+    print(type(G))
+    print(type(Z))
     (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z, rcond=None)
     normal = (a, b, -1)
     nn = np.linalg.norm(normal)

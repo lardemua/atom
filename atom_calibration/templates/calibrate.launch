@@ -12,8 +12,8 @@
 <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_calibrate }}"/>
 <arg name="single_pattern" default="false"/>
 <arg name="use_incomplete_collections" default="false"/>
-<arg name="sensor_selection_function" default="lambda sensor_name: True"/>
-<arg name="collection_selection_function" default="lambda collection_name: True"/>
+<arg name="ssf" default="lambda sensor_name: True"/>
+<arg name="csf" default="lambda collection_name: True"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Start calibrate node -->
