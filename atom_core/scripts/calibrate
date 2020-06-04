@@ -14,16 +14,11 @@ import json
 import sys
 import argparse
 from colorama import Fore, Style
-
 import cv2
+import signal
+import sys
 
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
-
-# # from getters_and_setters import *
-# from objective_function import *
-# from test.sensor_pose_json_v2.chessboard import createChessBoardData
-# from test.sensor_pose_json_v2.visualization import *
-
 import atom_calibration.utilities as utilities
 import atom_core.getters_and_setters as getters_and_setters
 import atom_core.objective_function as objective_function
@@ -34,6 +29,10 @@ import atom_core.visualization as visualization
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    print('Stopping optimization (Ctrl+C pressed)')
+    sys.exit(0)
+
 
 def is_jsonable(x):
     try:
@@ -78,6 +77,10 @@ def main():
     # ---------------------------------------
     # --- Parse command line argument
     # ---------------------------------------
+    signal.signal(signal.SIGINT, signal_handler)
+    # print('Press Ctrl+C')
+    # signal.pause()
+
     ap = argparse.ArgumentParser()
     ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)

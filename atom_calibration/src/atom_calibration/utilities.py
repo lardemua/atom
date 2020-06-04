@@ -21,6 +21,7 @@ from urlparse import urlparse
 def create_lambda_with_globals(s):
     return eval(s, globals())
 
+
 def filterLaunchArguments(argvs):
     # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
     # filter this argv. in addition, the first argument is the node name, which should also not be given to the
@@ -32,6 +33,7 @@ def filterLaunchArguments(argvs):
             argvs_filtered.append(argv)
 
     return argvs_filtered
+
 
 def execute(cmd, blocking=True, verbose=True):
     """ @brief Executes the command in the shell in a blocking or non-blocking manner
@@ -310,7 +312,8 @@ def getAverageTime(stamps):
 
     return avg_time
 
+
 def colormapToRVizColor(color):
     """ Converts a Matbplotlib colormap into an rviz display color format."""
     return str(int(color[0] * 255)) + '; ' + str(int(color[1] * 255)) + '; ' + str(
-                int(color[2] * 255))
+        int(color[2] * 255))

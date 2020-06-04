@@ -27,11 +27,13 @@ from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
 from matplotlib import cm
 from open3d import *
 
+from OptimizationUtils import utilities
+from atom_calibration.utilities import uriReader, execute
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-from OptimizationUtils import utilities
-from atom_calibration.utilities import uriReader, execute
+
 
 
 def genCollectionPrefix(collection_key, string):
@@ -55,12 +57,12 @@ def setupVisualization(dataset, args):
     now = rospy.Time.now()
 
     # Parse xacro description file
-    description_file = dataset['calibration_config']['description_file']
+    description_file,_,_ = uriReader(dataset['calibration_config']['description_file'])
     rospy.loginfo('Reading description file ' + description_file + '...')
     # xml_robot = URDF.from_parameter_server()
     urdf_file = '/tmp/description.urdf'
     print('Parsing description file ' + description_file)
-    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=False)  # create a temp urdf file
+    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create a temp urdf file
     try:
         xml_robot = URDF.from_xml_file(urdf_file)  # read teh urdf file
     except:
