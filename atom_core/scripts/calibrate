@@ -19,6 +19,7 @@ import signal
 import sys
 
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
+import OptimizationUtils.utilities as optimization_utilities  # @migueloliveira should we use this here?
 import atom_calibration.utilities as utilities
 import atom_core.getters_and_setters as getters_and_setters
 import atom_core.objective_function as objective_function
@@ -53,6 +54,19 @@ def walk(node):
             elif isinstance(item, np.ndarray):
                 node[key] = item.tolist()
             pass
+
+
+def fitPlaneLTSQ(XYZ):
+    (rows, cols) = XYZ.shape
+    G = np.ones((rows, 3))
+    G[:, 0] = XYZ[:, 0]  # X
+    G[:, 1] = XYZ[:, 1]  # Y
+    Z = XYZ[:, 2]
+    (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z, rcond=None)
+    normal = (a, b, -1)
+    nn = np.linalg.norm(normal)
+    normal = normal / nn
+    return (c, normal)
 
 
 # Save to json file
@@ -216,6 +230,50 @@ def main():
                 points[:, 3] = 1
                 collection['labels'][sensor_key]['labelled_points'] = points
 
+                # ------------------------------------------------------------------------------------------------
+                # -------- Convert cloud labelled points to 2D pattern frame
+                # ------------------------------------------------------------------------------------------------
+                # - Compute pattern reference system
+                c, normal = fitPlaneLTSQ(points[:, 0:3])
+                X = points[0, 0:3] - points[1, 0:3]  # TODO: check if points are collinear
+                Z = normal
+                Y = np.cross(Z, X)
+                # - Compute homogeneous transformation
+                T = np.zeros((4, 4), np.float32)
+                R = np.zeros((3, 3), np.float32)
+                R[:, 0] = X
+                R[:, 1] = Y
+                R[:, 2] = Z
+                trans = np.average(points[:, 0:3], axis=0)
+                T[0:3, 0:3] = R
+                T[0:3, 3] = trans
+                T[3, 3] = 1
+                # - Convert to ros tf and save in transforms dictionary
+                import tf
+                euler = tf.transformations.euler_from_matrix(R)
+                quat = tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2])
+                parent = sensor['parent']
+                child = 'pattern_local_link'
+                key = optimization_utilities.generateKey(parent, child)
+                collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
+                                                 'trans': list(trans)}
+                # - Convert velodyne points into the 2D pattern reference frame
+                pts_in_pattern = np.dot(np.linalg.inv(T), points.transpose())
+                pts_in_pattern = pts_in_pattern.transpose()[:, 0:2]
+                print(pts_in_pattern.shape)
+                # - Compute polygonal boundary using convex hull (@migueloliveira: we should add these to requirements.txt right?)
+                import alphashape
+                from descartes import PolygonPatch
+                alpha_shape = alphashape.alphashape(pts_in_pattern, 0.)
+                # - Visualize projection and convex hull result
+                import matplotlib.pyplot as plt
+                fig, ax = plt.subplots()
+                ax.scatter(pts_in_pattern[:, 0], pts_in_pattern[:, 1])
+                ax.add_patch(PolygonPatch(alpha_shape, alpha=0.2))
+                plt.show()
+
+                # - @migueloliveira the code bellow is the approach to find the extrema points with the circle
+                #   but it is still using raw velodyne points. So, don't look at it now :)
                 # ------------------------------------------------------------------------------------------------
                 # -------- Compute LiDAR points on pattern extrema
                 # ------------------------------------------------------------------------------------------------
