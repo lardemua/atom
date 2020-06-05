@@ -7,6 +7,7 @@ import argparse
 import os
 import rospkg
 import sys
+from colorama import Style, Fore
 
 import rospy
 from visualization_msgs.msg import InteractiveMarkerControl, Marker, InteractiveMarker
@@ -110,6 +111,7 @@ if __name__ == "__main__":
     ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str,
                     required=True)
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
+    ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true', default=False)
 
     # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
     # filter this argv. in addition, the first argument is the node name, which should also not be given to the
@@ -121,6 +123,12 @@ if __name__ == "__main__":
     args = vars(ap.parse_args(args=argv_filtered))
     args['output_folder'] = os.path.expanduser(args['output_folder'])
     args['output_folder'] = os.path.expandvars(args['output_folder'])
+
+    if args['output_folder'] == os.getenv("HOME"):
+        print('\nError: Dataset ' + Fore.RED + args['output_folder'] + Style.RESET_ALL +
+              ' is the same as $HOME path. Are you sure you know what your are doing?\n' + Style.RESET_ALL)
+        rospy.signal_shutdown()
+
 
     # Initialize ROS stuff
     rospy.init_node("collect_data")

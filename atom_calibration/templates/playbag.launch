@@ -12,7 +12,7 @@
 <!-- bag_start: starting time for playing back the bag file. Check "rosbag play -h"-->
 <arg name="bag_start" default="0"/>
 <arg name ="bag_rate" default ="1" />
-<arg name="description_file" default="$(find {{ c.package_name }})/urdf/description.urdf.xacro"/>
+<arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
 <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->

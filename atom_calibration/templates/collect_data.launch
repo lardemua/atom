@@ -33,6 +33,12 @@
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!-- Start data collector node -->
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-<node name="collect_data" pkg="atom_calibration" type="collect_data" args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file)" required="true" output="screen"/>
- 
+ <group if="$(arg overwrite)">
+     <node name="collect_data" pkg="atom_calibration" type="collect_data" args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) --overwrite" required="true" output="screen"/>
+ </group>
+
+ <group unless="$(arg overwrite)">
+    <node name="collect_data" pkg="atom_calibration" type="collect_data" args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file)" required="true" output="screen"/>
+ </group>
+
 </launch>

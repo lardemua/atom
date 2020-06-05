@@ -26,13 +26,16 @@ from atom_calibration.utilities import loadConfig, execute
 from atom_calibration.interactive_data_labeler import InteractiveDataLabeler
 
 
-
-
 class DataCollectorAndLabeler:
 
     def __init__(self, args, server, menu_handler):
 
-        if os.path.exists(args['output_folder']): # if dataset path exists, move it to a backup location
+        if os.path.exists(args['output_folder']) and not args['overwrite']:  # dataset path exists, abort
+            print('\n\nError: Dataset ' + Fore.RED + args['output_folder'] + Style.RESET_ALL +
+                  ' exists.\nIf you want to replace it add a "--overwrite" flag. Style.RESET_ALL\n\n')
+            rospy.signal_shutdown()
+
+        elif os.path.exists(args['output_folder']) and args['overwrite']:  # move existing path to a backup location
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
             basename = os.path.basename(args['output_folder'])
