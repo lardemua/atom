@@ -65,7 +65,8 @@ def fitPlaneLTSQ(XYZ):
     Z = XYZ[:, 2]
     print(type(G))
     print(type(Z))
-    (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z, rcond=None)
+    # (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z, rcond=None)
+    (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z)
     normal = (a, b, -1)
     nn = np.linalg.norm(normal)
     normal = normal / nn
@@ -73,7 +74,6 @@ def fitPlaneLTSQ(XYZ):
 
 
 # Save to json file
-
 def createJSONFile(output_file, input):
     D = deepcopy(input)
 
