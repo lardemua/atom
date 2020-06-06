@@ -16,6 +16,7 @@ from interactive_markers.interactive_marker_server import InteractiveMarkerServe
 from interactive_markers.menu_handler import MenuHandler
 
 from atom_calibration.data_collector_and_labeler import DataCollectorAndLabeler
+import atom_calibration.utilities as utilities
 
 server = None
 menu_handler = MenuHandler()
@@ -113,19 +114,13 @@ if __name__ == "__main__":
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
     ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true', default=False)
 
-    # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
-    # filter this argv. in addition, the first argument is the node name, which should also not be given to the
-    # parser.
-    argv_filtered = []
-    for i, argv in enumerate(sys.argv):
-        if (not all(x in argv for x in ['__', ':='])) and (i != 0):
-            argv_filtered.append(argv)
-    args = vars(ap.parse_args(args=argv_filtered))
-    args['output_folder'] = os.path.expanduser(args['output_folder'])
-    args['output_folder'] = os.path.expandvars(args['output_folder'])
+    args = vars(ap.parse_args(args=utilities.filterLaunchArguments(sys.argv)))
+    print("\nArgument list=" + str(args) + '\n')
 
-    if args['output_folder'] == os.getenv("HOME"):
-        print('\nError: Dataset ' + Fore.RED + args['output_folder'] + Style.RESET_ALL +
+    output_folder = utilities.resolvePath(args['output_folder'])
+
+    if output_folder == os.getenv("HOME"):
+        print('\nError: Dataset ' + Fore.RED + output_folder + Style.RESET_ALL +
               ' is the same as $HOME path. Are you sure you know what your are doing?\n' + Style.RESET_ALL)
         rospy.signal_shutdown()
 

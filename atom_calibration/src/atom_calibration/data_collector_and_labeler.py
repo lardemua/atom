@@ -24,34 +24,37 @@ from sensor_msgs.msg import *
 from utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
 from atom_calibration.utilities import loadConfig, execute
 from atom_calibration.interactive_data_labeler import InteractiveDataLabeler
+import atom_calibration.utilities as utilities
 
 
 class DataCollectorAndLabeler:
 
     def __init__(self, args, server, menu_handler):
 
-        if os.path.exists(args['output_folder']) and not args['overwrite']:  # dataset path exists, abort
-            print('\n\nError: Dataset ' + Fore.RED + args['output_folder'] + Style.RESET_ALL +
+        self.output_folder = utilities.resolvePath(args['output_folder'])
+
+        if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
+            print('\n\nError: Dataset ' + Fore.RED + self.output_folder + Style.RESET_ALL +
                   ' exists.\nIf you want to replace it add a "--overwrite" flag. Style.RESET_ALL\n\n')
             rospy.signal_shutdown()
 
-        elif os.path.exists(args['output_folder']) and args['overwrite']:  # move existing path to a backup location
+        elif os.path.exists(self.output_folder) and args['overwrite']:  # move existing path to a backup location
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
-            basename = os.path.basename(args['output_folder'])
+            basename = os.path.basename(self.output_folder)
             backup_folder = '/tmp/' + basename + '_' + dt_string
 
             time.sleep(2)
-            print('\n\nWarning: Dataset ' + Fore.YELLOW + args['output_folder'] + Style.RESET_ALL +
+            print('\n\nWarning: Dataset ' + Fore.YELLOW + self.output_folder + Style.RESET_ALL +
                   ' exists.\nMoving it to a new folder: ' + Fore.YELLOW + backup_folder +
                   '\nThis will be deleted after a system reboot!' + Style.RESET_ALL + '\n\n')
             time.sleep(2)
 
-            execute('mv ' + args['output_folder'] + ' ' + backup_folder, verbose=True)
+            execute('mv ' + self.output_folder + ' ' + backup_folder, verbose=True)
 
-        os.mkdir(args['output_folder'])  # Recreate the folder
+        os.mkdir(self.output_folder)  # Recreate the folder
 
-        self.output_folder = args['output_folder']
+
         self.listener = TransformListener()
         self.sensors = {}
         self.sensor_labelers = {}

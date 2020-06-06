@@ -58,14 +58,10 @@ def walk(node):
 
 def fitPlaneLTSQ(XYZ):
     (rows, cols) = XYZ.shape
-    print(XYZ.shape)
     G = np.ones((rows, 3))
     G[:, 0] = XYZ[:, 0]  # X
     G[:, 1] = XYZ[:, 1]  # Y
     Z = XYZ[:, 2]
-    print(type(G))
-    print(type(Z))
-    # (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z, rcond=None)
     (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z)
     normal = (a, b, -1)
     nn = np.linalg.norm(normal)
@@ -235,19 +231,55 @@ def main():
 
                 # ------------------------------------------------------------------------------------------------
                 # -------- Convert cloud labelled points to 2D pattern frame
+                # MIGUEL'S ATTEMPT, TO BE FUSED LATER ON
                 # ------------------------------------------------------------------------------------------------
-                # - Compute pattern reference system
-                c, normal = fitPlaneLTSQ(points[:, 0:3])
-                X = points[0, 0:3] - points[1, 0:3]  # TODO: check if points are collinear
-                Z = normal
-                Y = np.cross(Z, X)
+                c, normal = fitPlaneLTSQ(points[:, 0:3])  # Fit plane to points
+                plane_a, plane_b, plane_c = normal[0], normal[1], normal[2]
+                point = np.array([0.0, 0.0, c])
+                plane_d = -point.dot(normal)
+                print('normal=' + str(normal))
+
+                # Define a point in the plane which is the first of the list, projected to the plane
+                # use average y and z values (since velodyne uses x forward) to put origin on the center of the pattern
+                pt_avg = np.average(points[:, 0:3], axis=0)
+                print('pt_avg=' + str(pt_avg))
+
+                y, z = pt_avg[1], pt_avg[2]
+                x = (- plane_b * y - plane_c * z - plane_d) / plane_a
+                p0 = np.array([x, y, z])
+
+                print('p0=' + str(p0))
+                # Define a second point. We use the first point from the list of points, and project it to the plane
+                idx = 0
+                y, z = points[idx, 1], points[idx, 2]
+                x = (- plane_b * y - plane_c * z - plane_d) / plane_a
+                p1 = np.array([x, y, z])
+                print('p1=' + str(p1))
+
+                # Define a rotation matrix, and the n (direction vector along the x axis), s and a vectors:
+                #        n    s    a
+                # R = [ r11  r12  r13 ]
+                #     [ r21  r22  r23 ]
+                #     [ r31  r32  r33 ]
+                n = p1 - p0  # semi-arbitrary x-axis: only constraint is that it is coplanar with the plane. This is
+                # ensured since both p0 and p1 lie on the plane
+                a = normal  # z axis must have the direction normal to the plane
+                s = np.cross(a, n)  # y axis is the cross product of z axis per the x axis
+
+                def getUnitVector(v):
+                    return v / np.linalg.norm(v)
+
+                n, s, a = getUnitVector(n), getUnitVector(s), getUnitVector(a)
+                print('n=' + str(n))
+                print('s=' + str(s))
+                print('a=' + str(a))
                 # - Compute homogeneous transformation
                 T = np.zeros((4, 4), np.float32)
                 R = np.zeros((3, 3), np.float32)
-                R[:, 0] = X
-                R[:, 1] = Y
-                R[:, 2] = Z
-                trans = np.average(points[:, 0:3], axis=0)
+                R[:, 0] = n
+                R[:, 1] = s
+                R[:, 2] = a
+                trans = p0  # we use on of the points in the plane to define the translation
                 T[0:3, 0:3] = R
                 T[0:3, 3] = trans
                 T[3, 3] = 1
@@ -260,11 +292,39 @@ def main():
                 key = optimization_utilities.generateKey(parent, child)
                 collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
                                                  'trans': list(trans)}
+
+                # ------------------------------------------------------------------------------------------------
+                # -------- Convert cloud labelled points to 2D pattern frame
+                # ------------------------------------------------------------------------------------------------
+                # - Compute pattern reference system
+                # c, normal = fitPlaneLTSQ(points[:, 0:3])
+                # X = points[0, 0:3] - points[1, 0:3]  # TODO: check if points are collinear
+                # # Andre: The problem is here. X
+                # Z = normal
+                # Y = np.cross(Z, X)
+                # # - Compute homogeneous transformation
+                # T = np.zeros((4, 4), np.float32)
+                # R = np.zeros((3, 3), np.float32)
+                # R[:, 0] = X
+                # R[:, 1] = Y
+                # R[:, 2] = Z
+                # trans = np.average(points[:, 0:3], axis=0)
+                # T[0:3, 0:3] = R
+                # T[0:3, 3] = trans
+                # T[3, 3] = 1
+                # # - Convert to ros tf and save in transforms dictionary
+                # import tf
+                # euler = tf.transformations.euler_from_matrix(R)
+                # quat = tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2])
+                # parent = sensor['parent']
+                # child = 'pattern_local_link'
+                # key = optimization_utilities.generateKey(parent, child)
+                # collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
+                #                                  'trans': list(trans)}
                 # - Convert velodyne points into the 2D pattern reference frame
                 pts_in_pattern = np.dot(np.linalg.inv(T), points.transpose())
                 pts_in_pattern = pts_in_pattern.transpose()[:, 0:2]
                 print(pts_in_pattern.shape)
-                # - Compute polygonal boundary using convex hull (@migueloliveira: we should add these to requirements.txt right?)
                 import alphashape
                 from descartes import PolygonPatch
                 alpha_shape = alphashape.alphashape(pts_in_pattern, 0.)
@@ -305,6 +365,8 @@ def main():
                 # Delete duplicates from extrema points array
                 unique_extrema_points = list(set(map(tuple, extrema_points)))
                 collection['labels'][sensor_key]['limit_points'] = unique_extrema_points
+
+                break
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER
