@@ -22,10 +22,15 @@ _<your_robot_calibration>/calibration/config.yml_ with your system information.
    ```bash
    roslaunch <your_robot_calibration> set_initial_estimate.launch 
    ```
-4. **Collect Data** - Extraction of snapshots of data (ta.k.a., collections)
+4. **Collect Data** - Extraction of snapshots of data (a.k.a., collections)
    ```bash
-   roslaunch <your_robot_calibration> collect_data.launch 
+   roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
    ```
+   
+5. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
+```bash
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
+```
 
 # System calibration - Detailed Description
 
@@ -97,7 +102,43 @@ A dataset is a folder which contains a set of collections. There, a _data_collec
 
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/viewing_data_collected_json.gif" width="600"/> 
 
+## Calibrate sensors
 
+Finally, a system calibration is called through:
+
+```bash
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
+```
+
+You can also define the following additional arguments:
+
+```bash
+single_pattern:=true
+                    show a single pattern instead of one per collection.
+
+use_incomplete_collections:=true
+                    Remove any collection which does not have a detection
+                    for all sensors.
+
+-ssf "SENSOR_SELECTION_FUNCTION"
+                    A string to be evaluated as a lambda function that
+                    receives a sensor name as input and returns True or
+                    False to indicate if the sensor should be loaded (and
+                    used in the optimization). The Syntax is lambda name:
+                    f(x), where f(x) is the function in python language.
+                    Example: "lambda name: name in ["left_laser",
+                    "frontal_camera"]" , to load only sensors left_laser
+                    and frontal_camera
+
+-csf "COLLECTION_SELECTION_FUNCTION"
+                    A string to be evaluated into a lambda function that
+                    receives a collection name as input and returns True
+                    or False to indicate if the collection should be
+                    loaded (and used in the optimization). The Syntax is
+                    lambda name: f(x), where f(x) is the function in
+                    python language. Example: "lambda name: int(name) > 5" ,
+                    to load only collections 6, 7, etc .
+```
 
 # Contributors
 
