@@ -4,5 +4,9 @@ JSON-minify
 jinja2
 alphashape
 descartes
+colorama
+
+
+
 
 
