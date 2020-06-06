@@ -6,6 +6,36 @@ Atom is a set of calibration tools for multi-sensor, multi-modal, robotic system
 It is based on the optimization of atomic transformations as provided by a ros based robot description. 
 Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
+# Table of Contents
+- [How to Use - Quick Start](#how-to-use---quick-start)
+- [System calibration - Detailed Description](#system-calibration---detailed-description)
+  * [Creating a calibration package](#creating-a-calibration-package)
+  * [Configuring a calibration package](#configuring-a-calibration-package)
+  * [Set initial estimate](#set-initial-estimate)
+  * [Collect data](#collect-data)
+  * [Calibrate sensors](#calibrate-sensors)
+- [Contributors](#contributors)
+- [Maintainers](#maintainers)
+- [AtlasCarCalibration](#atlascarcalibration)
+- [Installation](#installation)
+  * [Using PR2 robot instead of AtlasCar2](#using-pr2-robot-instead-of-atlascar2)
+- [Usage Instructions](#usage-instructions)
+  * [For PR2 robot model](#for-pr2-robot-model)
+- [Agrob](#agrob)
+  * [Visualizing the calibration graphs](#visualizing-the-calibration-graphs)
+- [Known problems](#known-problems)
+  * [urdf model not showing on rviz or urdf model showed up misplaced](#urdf-model-not-showing-on-rviz-or-urdf-model-showed-up-misplaced)
+- [Recording a bag file of the ATLASCAR2](#recording-a-bag-file-of-the-atlascar2)
+- [Run cos optimization first test](#run-cos-optimization-first-test)
+- [Convert to and from RWHE Datasets](#convert-to-and-from-rwhe-datasets)
+      - [To convert from an RWHE dataset run](#to-convert-from-an-rwhe-dataset-run)
+      - [To convert to an RWHE dataset run](#to-convert-to-an-rwhe-dataset-run)
+- [Convert to and from Tabb Datasets](#convert-to-and-from-tabb-datasets)
+      - [To convert from an Tabb dataset run](#to-convert-from-an-tabb-dataset-run)
+      - [To convert to an Tabb dataset run](#to-convert-to-an-tabb-dataset-run)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 # How to Use - Quick Start
 
 Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline:
@@ -31,6 +61,8 @@ _<your_robot_calibration>/calibration/config.yml_ with your system information.
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
 ```
+
+
 
 # System calibration - Detailed Description
 
