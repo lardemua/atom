@@ -21,11 +21,13 @@ import atom_calibration.utilities as utilities
 server = None
 menu_handler = MenuHandler()
 
+
 def menuFeedback(feedback):
     handle = feedback.menu_entry_id
     if handle == 1:  # collect snapshot
         print('Save collection selected')
         data_collector.saveCollection()
+
 
 def initMenu():
     menu_handler.insert("Save collection", callback=menuFeedback)
@@ -112,7 +114,8 @@ if __name__ == "__main__":
     ap.add_argument('-o', '--output_folder', help='Output folder to where the collected data will be stored.', type=str,
                     required=True)
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
-    ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true', default=False)
+    ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true',
+                    default=False)
 
     args = vars(ap.parse_args(args=utilities.filterLaunchArguments(sys.argv)))
     print("\nArgument list=" + str(args) + '\n')
@@ -123,7 +126,6 @@ if __name__ == "__main__":
         print('\nError: Dataset ' + Fore.RED + output_folder + Style.RESET_ALL +
               ' is the same as $HOME path. Are you sure you know what your are doing?\n' + Style.RESET_ALL)
         rospy.signal_shutdown()
-
 
     # Initialize ROS stuff
     rospy.init_node("collect_data")
