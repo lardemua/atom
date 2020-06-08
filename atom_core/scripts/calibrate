@@ -148,6 +148,7 @@ def main():
         deleted = []
         for collection_key in dataset['collections'].keys():
             if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
+                # if int(collection_key) is not 12:
                 deleted.append(collection_key)
                 del dataset['collections'][collection_key]
         print("Deleted collections: " + str(deleted))
@@ -232,30 +233,25 @@ def main():
 
                 # ------------------------------------------------------------------------------------------------
                 # -------- Convert cloud labelled points to 2D pattern frame
-                # MIGUEL'S ATTEMPT, TO BE FUSED LATER ON
                 # ------------------------------------------------------------------------------------------------
                 c, normal = fitPlaneLTSQ(points[:, 0:3])  # Fit plane to points
                 plane_a, plane_b, plane_c = normal[0], normal[1], normal[2]
                 point = np.array([0.0, 0.0, c])
                 plane_d = -point.dot(normal)
-                print('normal=' + str(normal))
 
                 # Define a point in the plane which is the first of the list, projected to the plane
                 # use average y and z values (since velodyne uses x forward) to put origin on the center of the pattern
                 pt_avg = np.average(points[:, 0:3], axis=0)
-                print('pt_avg=' + str(pt_avg))
 
                 y, z = pt_avg[1], pt_avg[2]
                 x = (- plane_b * y - plane_c * z - plane_d) / plane_a
                 p0 = np.array([x, y, z])
 
-                print('p0=' + str(p0))
                 # Define a second point. We use the first point from the list of points, and project it to the plane
                 idx = 0
                 y, z = points[idx, 1], points[idx, 2]
                 x = (- plane_b * y - plane_c * z - plane_d) / plane_a
                 p1 = np.array([x, y, z])
-                print('p1=' + str(p1))
 
                 # Define a rotation matrix, and the n (direction vector along the x axis), s and a vectors:
                 #        n    s    a
@@ -271,10 +267,7 @@ def main():
                     return v / np.linalg.norm(v)
 
                 n, s, a = getUnitVector(n), getUnitVector(s), getUnitVector(a)
-                print('n=' + str(n))
-                print('s=' + str(s))
-                print('a=' + str(a))
-                # - Compute homogeneous transformation
+                # - Compute homogeneous transformation from velodyne to local reference system
                 T = np.zeros((4, 4), np.float32)
                 R = np.zeros((3, 3), np.float32)
                 R[:, 0] = n
@@ -293,70 +286,32 @@ def main():
                 collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
                                                  'trans': list(trans)}
 
-                # ------------------------------------------------------------------------------------------------
-                # -------- Convert cloud labelled points to 2D pattern frame
-                # ------------------------------------------------------------------------------------------------
-                # - Compute pattern reference system
-                # c, normal = fitPlaneLTSQ(points[:, 0:3])
-                # X = points[0, 0:3] - points[1, 0:3]  # TODO: check if points are collinear
-                # # Andre: The problem is here. X
-                # Z = normal
-                # Y = np.cross(Z, X)
-                # # - Compute homogeneous transformation
-                # T = np.zeros((4, 4), np.float32)
-                # R = np.zeros((3, 3), np.float32)
-                # R[:, 0] = X
-                # R[:, 1] = Y
-                # R[:, 2] = Z
-                # trans = np.average(points[:, 0:3], axis=0)
-                # T[0:3, 0:3] = R
-                # T[0:3, 3] = trans
-                # T[3, 3] = 1
-                # # - Convert to ros tf and save in transforms dictionary
-                # import tf
-                # euler = tf.transformations.euler_from_matrix(R)
-                # quat = tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2])
-                # parent = sensor['parent']
-                # child = 'pattern_local_link'
-                # key = optimization_utilities.generateKey(parent, child)
-                # collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
-                #                                  'trans': list(trans)}
                 # - Convert velodyne points into the 2D pattern reference frame
                 pts_in_pattern = np.dot(np.linalg.inv(T), points.transpose())
                 pts_in_pattern = pts_in_pattern.transpose()[:, 0:2]
-                print(pts_in_pattern.shape)
-                import alphashape
-                from descartes import PolygonPatch
-                alpha_shape = alphashape.alphashape(pts_in_pattern, 0.)
-                # - Visualize projection and convex hull result
-                import matplotlib.pyplot as plt
-                fig, ax = plt.subplots()
-                ax.scatter(pts_in_pattern[:, 0], pts_in_pattern[:, 1])
-                ax.add_patch(PolygonPatch(alpha_shape, alpha=0.2))
-                plt.show()
 
-                # - @migueloliveira the code bellow is the approach to find the extrema points with the circle
-                #   but it is still using raw velodyne points. So, don't look at it now :)
                 # ------------------------------------------------------------------------------------------------
-                # -------- Compute LiDAR points on pattern extrema
+                # -------- Find extrema points using circle radius fitting
                 # ------------------------------------------------------------------------------------------------
                 # CONFIGURATIONS
-                radius = 2.  # circle radius in meters
                 start_angle = 0.  # start angle increment in 0 radians
                 end_angle = 2. * np.pi  # end the angle increment when we complete the whole circle
                 angle_step = 0.05 * np.pi / 180.  # angle step in radians
+                # Compute circle radius using the higher distance between two points in the array
+                pts_copy_a = list(pts_in_pattern)
+                pts_copy_b = list(pts_in_pattern)
+                radius = np.max(distance.cdist(pts_copy_a, pts_copy_b, 'euclidean')) / 2. + 0.1
                 # Compute a circle of points outside the pattern and find the pattern point closer to each source point
                 extrema_points = []
-                seed_point = points[np.shape(points)[0] / 2, 0:3]
+                seed_point = np.average(pts_in_pattern, axis=0)
                 th = start_angle
                 print('Computing 3D cloud pattern limit points for collection ' + str(collection_key))
                 while th < end_angle:
                     # Compute the source points out of the pattern bounds
-                    source_pt = [[seed_point[0],
-                                  seed_point[1] + radius * np.cos(th),
-                                  seed_point[2] + radius * np.sin(th)]]
+                    source_pt = [[seed_point[0] + radius * np.cos(th),
+                                  seed_point[1] + radius * np.sin(th)]]
                     # Compute point that is more distant from the seed point
-                    c_idx = np.argmin(distance.cdist(source_pt, points[:, 0:3], 'euclidean'))
+                    c_idx = np.argmin(distance.cdist(source_pt, pts_in_pattern[:, :], 'euclidean'))
                     extrema_points.append(points[c_idx, 0:3])
 
                     th += angle_step
@@ -365,8 +320,6 @@ def main():
                 # Delete duplicates from extrema points array
                 unique_extrema_points = list(set(map(tuple, extrema_points)))
                 collection['labels'][sensor_key]['limit_points'] = unique_extrema_points
-
-                break
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER
