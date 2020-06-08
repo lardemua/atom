@@ -371,6 +371,7 @@ if __name__ == "__main__":
     print('Setting up ' + rviz_calibrate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
     displays = deepcopy(core_displays)  # start with the core displays
+    displays.pop() # remove the last item, which is the robot model
 
     # Add interactive maker display for showing robot meshes
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
@@ -381,8 +382,8 @@ if __name__ == "__main__":
 
     # Add a maker array display for showing labelled data
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
-        c={'Name': 'LabelledData-MarkerArray',
-           'Marker_Topic': 'calibrate/LabelledData'}
+        c={'Name': 'Patterns-MarkerArray',
+           'Marker_Topic': 'calibrate/patterns'}
     )
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 

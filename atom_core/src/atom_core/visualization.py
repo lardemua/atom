@@ -30,10 +30,10 @@ from open3d import *
 from OptimizationUtils import utilities
 from atom_calibration.utilities import uriReader, execute
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-
 
 
 def genCollectionPrefix(collection_key, string):
@@ -57,7 +57,7 @@ def setupVisualization(dataset, args):
     now = rospy.Time.now()
 
     # Parse xacro description file
-    description_file,_,_ = uriReader(dataset['calibration_config']['description_file'])
+    description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
     rospy.loginfo('Reading description file ' + description_file + '...')
     # xml_robot = URDF.from_parameter_server()
     urdf_file = '/tmp/description.urdf'
@@ -69,10 +69,11 @@ def setupVisualization(dataset, args):
         raise ValueError('Could not parse description file ' + description_file)
 
     pattern = dataset['calibration_config']['calibration_pattern']
+
+    # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
     graphics['pattern']['colormap'] = cm.plasma(
         np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
-    # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
     graphics['collections']['colormap'] = cm.tab20b(np.linspace(0, 1, len(dataset['collections'].keys())))
     for idx, collection_key in enumerate(sorted(dataset['collections'].keys())):
         graphics['collections'][str(collection_key)] = {'color': graphics['collections']['colormap'][idx, :]}
@@ -92,26 +93,6 @@ def setupVisualization(dataset, args):
                               namespace=collection_key,
                               rgba=rgba)
         markers.markers.extend(m.markers)
-
-    # Draw the chessboard
-    for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
-        rgba = graphics['collections'][collection_key]['color']
-        # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
-        m = Marker(header=Header(frame_id=genCollectionPrefix(collection_key, 'pattern_link'), stamp=now),
-                   ns=str(collection_key), id=idx + 5000, frame_locked=True,
-                   type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
-                   pose=Pose(position=Point(x=0, y=0, z=0),
-                             orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                   scale=Vector3(x=1.0, y=1.0, z=1.0),
-                   color=ColorRGBA(r=1, g=1, b=1, a=1))
-
-        # TODO If no mesh is given, or if mesh_file does not exist, issue a warning and create a drawing of the
-        #  pattern with lines m.mesh_resource = 'package://atom_calibration/meshes/charuco_5x5.dae'
-        file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
-        # file = '/home/mike/catkin_ws/src/calibration/atom/atom_calibration/meshes/charuco_5x5.dae'
-        m.mesh_resource = 'file://' + file  # mesh_resource needs uri format
-        m.mesh_use_embedded_materials = True
-        markers.markers.append(m)
 
         if args['single_pattern']:  # Only draw one pattern if args say so.
             break
@@ -255,28 +236,90 @@ def setupVisualization(dataset, args):
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
-    for idx, (collection_chess_key, collection_chess) in enumerate(dataset['collections'].items()):
-        # Draw pattern limit points
-        frame_id = 'c' + collection_chess_key + '_pattern_link'
+
+
+
+    for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
+        # Draw pattern frame lines_sampled (top, left, right, bottom)
+        frame_id = 'c' + collection_key + '_pattern_link'
         marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                        ns=str(collection_chess_key) + '-pattern', id=id, frame_locked=True,
+                        ns=str(collection_key) + '-frame_sampled', id=id, frame_locked=True,
                         type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                         pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                        scale=Vector3(x=0.015, y=0.015, z=0.015),
-                        color=ColorRGBA(r=graphics['collections'][collection_chess_key]['color'][0],
-                                        g=graphics['collections'][collection_chess_key]['color'][1],
-                                        b=graphics['collections'][collection_chess_key]['color'][2], a=1.0))
+                        scale=Vector3(x=0.025, y=0.025, z=0.025),
+                        color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                        g=graphics['collections'][collection_key]['color'][1],
+                                        b=graphics['collections'][collection_key]['color'][2], a=1.0))
 
-        for idx in range(0, dataset['chessboards']['limit_points'].shape[1]):
-            marker.points.append(Point(x=dataset['chessboards']['limit_points'][0, idx],
-                                       y=dataset['chessboards']['limit_points'][1, idx],
-                                       z=dataset['chessboards']['limit_points'][2, idx]))
+        pts = []
+        pts.extend(dataset['patterns']['frame']['lines_sampled']['left'])
+        pts.extend(dataset['patterns']['frame']['lines_sampled']['right'])
+        pts.extend(dataset['patterns']['frame']['lines_sampled']['top'])
+        pts.extend(dataset['patterns']['frame']['lines_sampled']['bottom'])
+        for pt in pts:
+            marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
 
-        id += 1
         markers.markers.append(marker)
 
-    graphics['ros']['MarkersLabelledData'] = markers
-    graphics['ros']['PubLabelledData'] = rospy.Publisher('~LabelledData', MarkerArray, queue_size=0, latch=True)
+        # Draw corners
+        frame_id = 'c' + collection_key + '_pattern_link'
+        marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-corners', id=id, frame_locked=True,
+                        type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                        pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.045, y=0.045, z=0.045),
+                        color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                        g=graphics['collections'][collection_key]['color'][1],
+                                        b=graphics['collections'][collection_key]['color'][2], a=1.0))
+
+        for idx_corner, pt in enumerate(dataset['patterns']['corners']):
+            marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
+            marker.colors.append(ColorRGBA(r=graphics['pattern']['colormap'][idx_corner, 0],
+                                            g= graphics['pattern']['colormap'][idx_corner,1],
+                                            b=graphics['pattern']['colormap'][idx_corner, 2], a=0.4))
+
+        markers.markers.append(marker)
+
+        # Draw transitions
+        frame_id = 'c' + collection_key + '_pattern_link'
+        marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-transitions', id=id, frame_locked=True,
+                        type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
+                        pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.015, y=0.015, z=0),
+                        color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                        g=graphics['collections'][collection_key]['color'][1],
+                                        b=graphics['collections'][collection_key]['color'][2], a=1.0))
+
+        pts = dataset['patterns']['transitions']['vertical']
+        pts.extend(dataset['patterns']['transitions']['horizontal'])
+        for pt in pts:
+            marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
+
+        markers.markers.append(marker)
+
+        # Draw the mesh, if one is provided
+        if not dataset['calibration_config']['calibration_pattern']['mesh_file'] == "":
+            rgba = graphics['collections'][collection_key]['color']
+            # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
+            m = Marker(header=Header(frame_id=genCollectionPrefix(collection_key, 'pattern_link'), stamp=now),
+                       ns=str(collection_key), id=idx + 5000, frame_locked=True,
+                       type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
+                       pose=Pose(position=Point(x=0, y=0, z=0),
+                                 orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                       scale=Vector3(x=1.0, y=1.0, z=1.0),
+                       color=ColorRGBA(r=1, g=1, b=1, a=1))
+
+            #TODO If no mesh is given, or if mesh_file does not exist, issue a warning and create a drawing of the
+            # pattern with lines m.mesh_resource = 'package://atom_calibration/meshes/charuco_5x5.dae'
+            file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
+            # file = '/home/mike/catkin_ws/src/calibration/atom/atom_calibration/meshes/charuco_5x5.dae'
+            m.mesh_resource = 'file://' + file  # mesh_resource needs uri format
+            m.mesh_use_embedded_materials = True
+            markers.markers.append(m)
+
+    graphics['ros']['MarkersPattern'] = markers
+    graphics['ros']['PubPattern'] = rospy.Publisher('~patterns', MarkerArray, queue_size=0, latch=True)
 
     # Create LaserBeams Publisher -----------------------------------------------------------
     # This one is recomputed every time in the objective function, so just create the generic properties.
@@ -328,11 +371,10 @@ def setupVisualization(dataset, args):
 def visualizationFunction(models):
     # Get the data from the models
     args = models['args']
-    collections = models['dataset_sensors']['collections']
-    sensors = models['dataset_sensors']['sensors']
-    # pattern = models['dataset_sensors']['pattern']
-    pattern = models['dataset_sensors']['chessboards']
-    config = models['dataset_sensors']['calibration_config']
+    collections = models['dataset']['collections']
+    sensors = models['dataset']['sensors']
+    patterns = models['dataset']['patterns']
+    config = models['dataset']['calibration_config']
     graphics = models['graphics']
 
     now = rospy.Time.now()  # time used to publish all visualization messages
@@ -361,16 +403,16 @@ def visualizationFunction(models):
     graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
     # Publishes the chessboards transforms
-    for idx, (collection_chess_key, collection_chess) in enumerate(pattern['collections'].items()):
+    for idx, (collection_chess_key, collection_chess) in enumerate(patterns['collections'].items()):
         parent = 'base_link'
         child = 'c' + collection_chess_key + '_pattern_link'
         graphics['ros']['tf_broadcaster'].sendTransform(collection_chess['trans'], collection_chess['quat'],
                                                         now, child, parent)
 
     # Publish Labelled Data
-    for marker in graphics['ros']['MarkersLabelledData'].markers:
+    for marker in graphics['ros']['MarkersPattern'].markers:
         marker.header.stamp = now
-    graphics['ros']['PubLabelledData'].publish(graphics['ros']['MarkersLabelledData'])
+    graphics['ros']['PubPattern'].publish(graphics['ros']['MarkersPattern'])
 
     # Publish Laser Beams
     for marker in graphics['ros']['MarkersLaserBeams'].markers:

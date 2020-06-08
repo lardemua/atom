@@ -117,25 +117,33 @@ def objectiveFunction(data):
     # print('Calling objective function.')
 
     # Get the data from the model
-    dataset_sensors = data['dataset_sensors']
-    dataset_chessboards = data['dataset_sensors']['chessboards']
-    dataset_chessboard_points = data['dataset_chessboard_points']  # TODO should be integrated into chessboards
+    dataset = data['dataset']
+    patterns = data['dataset']['patterns']
+    # dataset_chessboard_points = data['dataset_chessboard_points']  # TODO should be integrated into chessboards
     args = data['args']
     if args['view_optimization'] or args['ros_visualization']:
         dataset_graphics = data['graphics']
 
     r = {}  # Initialize residuals dictionary.
-    for collection_key, collection in dataset_sensors['collections'].items():
-        for sensor_key, sensor in dataset_sensors['sensors'].items():
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
             if sensor['msg_type'] == 'Image':
                 # Compute chessboard points in local sensor reference frame
-                trans = dataset_chessboards['collections'][collection_key]['trans']
-                quat = dataset_chessboards['collections'][collection_key]['quat']
+                trans = patterns['collections'][collection_key]['trans']
+                quat = patterns['collections'][collection_key]['quat']
                 root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
-                pts_in_root = np.dot(root_to_chessboard, dataset_chessboard_points['points'])
+
+                pts_in_pattern = np.array([[item['x'] for item in patterns['corners']],  # convert list to numpy array
+                                           [item['x'] for item in patterns['corners']]], np.float)
+                pts_in_pattern = np.vstack((pts_in_pattern, np.zeros((1, pts_in_pattern.shape[1]))))  # add z = 0
+                pts_in_pattern = np.vstack((pts_in_pattern, np.ones((1, pts_in_pattern.shape[1]))))  # homogenize
+
+
+
+                pts_in_root = np.dot(root_to_chessboard, pts_in_pattern)
 
                 sensor_to_root = np.linalg.inv(utilities.getAggregateTransform(sensor['chain'],
                                                                                collection['transforms']))
@@ -155,6 +163,7 @@ def objectiveFunction(data):
                 # See issue #106
                 pixs, valid_pixs, dists = utilities.projectWithoutDistortion(P, width, height, pts_sensor[0:3, :])
 
+
                 pixs_ground_truth = collection['labels'][sensor_key]['idxs']
                 array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
                 for idx, pix_ground_truth in enumerate(pixs_ground_truth):
@@ -162,25 +171,29 @@ def objectiveFunction(data):
                     array_gt[1][idx] = pix_ground_truth['y']
 
                 # Compute the error as the average of the Euclidean distances between detected and projected pixels
-                # for idx in range(0, dataset_chessboards['number_corners']):
+                # for idx in range(0, patterns['number_corners']):
                 #     e1 = math.sqrt(
                 #         (pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
                 #     raw_residuals.append(e1)
                 #     error_sum += e1
 
+                nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
+                ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
+                number_corners = nx*ny
+
                 idx = 0
                 rname = collection_key + '_' + sensor_key + '_0'
                 r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
-                idx = dataset_chessboards['chess_num_x'] - 1
+                idx = nx - 1
                 rname = collection_key + '_' + sensor_key + '_1'
                 r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
-                idx = dataset_chessboards['number_corners'] - dataset_chessboards['chess_num_x']
+                idx = number_corners - nx
                 rname = collection_key + '_' + sensor_key + '_2'
                 r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
-                idx = dataset_chessboards['number_corners'] - 1
+                idx = number_corners - 1
                 rname = collection_key + '_' + sensor_key + '_3'
                 r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
@@ -213,28 +226,41 @@ def objectiveFunction(data):
                 root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
                 pts_in_root = np.dot(root_to_sensor, pts_in_laser)
 
-                trans = dataset_chessboards['collections'][collection_key]['trans']
-                quat = dataset_chessboards['collections'][collection_key]['quat']
+                trans = patterns['collections'][collection_key]['trans']
+                quat = patterns['collections'][collection_key]['quat']
                 chessboard_to_root = np.linalg.inv(utilities.translationQuaternionToTransform(trans, quat))
                 pts_in_chessboard = np.dot(chessboard_to_root, pts_in_root)
 
                 # --- Residuals: longitudinal error for extrema
-                pts_canvas_in_chessboard = dataset_chessboards['limit_points'][0:2, :].transpose()
+                pts = []
+                pts.extend(patterns['frame']['lines_sampled']['left'])
+                pts.extend(patterns['frame']['lines_sampled']['right'])
+                pts.extend(patterns['frame']['lines_sampled']['top'])
+                pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                pts_canvas_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+
+                # pts_canvas_in_chessboard = patterns['limit_points'][0:2, :].transpose()
 
                 # compute minimum distance to inner_pts for right most edge (first in pts_in_chessboard list)
                 extrema_right = np.reshape(pts_in_chessboard[0:2, 0], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eright'
                 r[rname] = float(
-                    np.amin(distance.cdist(extrema_right.transpose(), pts_canvas_in_chessboard, 'euclidean')))
+                    np.amin(distance.cdist(extrema_right.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
 
                 # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
                 extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eleft'
                 r[rname] = float(
-                    np.amin(distance.cdist(extrema_left.transpose(), pts_canvas_in_chessboard, 'euclidean')))
+                    np.amin(distance.cdist(extrema_left.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
 
                 # --- Residuals: Longitudinal distance for inner points
-                pts_inner_in_chessboard = dataset_chessboards['inner_points'][0:2, :].transpose()
+                pts = []
+                pts.extend(patterns['frame']['lines_sampled']['left'])
+                pts.extend(patterns['frame']['lines_sampled']['right'])
+                pts.extend(patterns['frame']['lines_sampled']['top'])
+                pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                pts_inner_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+                # pts_inner_in_chessboard = patterns['inner_points'][0:2, :].transpose()
                 edges2d_in_chessboard = pts_in_chessboard[0:2, collection['labels'][sensor_key]['edge_idxs']]  # this
                 # is a longitudinal residual, so ignore z values.
 
@@ -243,7 +269,7 @@ def objectiveFunction(data):
                     # becomes a shape (2,) which the function cdist does not support.
 
                     rname = collection_key + '_' + sensor_key + '_inner_' + str(idx)
-                    r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard, 'euclidean')))
+                    r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean')))
 
                 # --- Residuals: Beam direction distance from point to chessboard plan
                 # For computing the intersection we need:
@@ -258,8 +284,8 @@ def objectiveFunction(data):
 
                 # Compute p_co. It can be any point in the chessboard plane. Lets transform the origin of the
                 # chessboard to the laser reference frame
-                trans = dataset_chessboards['collections'][collection_key]['trans']
-                quat = dataset_chessboards['collections'][collection_key]['quat']
+                trans = patterns['collections'][collection_key]['trans']
+                quat = patterns['collections'][collection_key]['quat']
                 root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
                 laser_to_chessboard = np.dot(np.linalg.inv(root_to_sensor), root_to_chessboard)
 
@@ -316,8 +342,8 @@ def objectiveFunction(data):
 
                 # Compute p_co. It can be any point in the chessboard plane. Lets transform the origin of the
                 # chessboard to the 3D cloud reference frame
-                trans = dataset_chessboards['collections'][collection_key]['trans']
-                quat = dataset_chessboards['collections'][collection_key]['quat']
+                trans = patterns['collections'][collection_key]['trans']
+                quat = patterns['collections'][collection_key]['quat']
                 root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
                 lidar_to_chessboard = np.dot(np.linalg.inv(root_to_sensor), root_to_chessboard)
 
@@ -370,8 +396,8 @@ def objectiveFunction(data):
                 root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
                 pts_in_root = np.dot(root_to_sensor, points.transpose())
 
-                trans = dataset_chessboards['collections'][collection_key]['trans']
-                quat = dataset_chessboards['collections'][collection_key]['quat']
+                trans = patterns['collections'][collection_key]['trans']
+                quat = patterns['collections'][collection_key]['quat']
 
                 # Save residuals
                 # rname = collection_key + '_' + sensor_key + '_cd_' + str(3)
@@ -386,8 +412,8 @@ def objectiveFunction(data):
 
     # Message type normalization. Pixels and meters should be weighted based on an adhoc defined meter_to_pixel factor.
     meter_to_pixel_factor = 200  # trial and error, the best technique around :-)
-    for collection_key, collection in dataset_sensors['collections'].items():
-        for sensor_key, sensor in dataset_sensors['sensors'].items():
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
@@ -397,8 +423,8 @@ def objectiveFunction(data):
                 rn.update({k: rn[k] * meter_to_pixel_factor for k in pair_keys})  # update the normalized dictionary.
 
     # Intra and Inter collection-sensor pair normalization.
-    for collection_key, collection in dataset_sensors['collections'].items():
-        for sensor_key, sensor in dataset_sensors['sensors'].items():
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
@@ -420,8 +446,8 @@ def objectiveFunction(data):
                 beam_keys = [k for k in pair_keys if '_beam' in k]
                 rn.update({k: 0.5 / len(beam_keys) * rn[k] for k in beam_keys})
 
-    # for collection_key, collection in dataset_sensors['collections'].items():
-    #     for sensor_key, sensor in dataset_sensors['sensors'].items():
+    # for collection_key, collection in dataset['collections'].items():
+    #     for sensor_key, sensor in dataset['sensors'].items():
     #         pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]
     #         extrema_keys = [k for k in pair_keys if 'eleft' in k or 'eright' in k]
     #         inner_keys = [k for k in pair_keys if 'inner' in k]
@@ -432,11 +458,11 @@ def objectiveFunction(data):
     #
     # per_col_sensor = {str(c): {str(s): {'avg': mean([r[k] for k in r.keys() if c == k.split('_')[0] and s in k]),
     #                                     'navg': mean([rn[k] for k in rn.keys() if c == k.split('_')[0] and s in k])}
-    #                            for s in dataset_sensors['sensors']} for c in dataset_sensors['collections']}
+    #                            for s in dataset['sensors']} for c in dataset['collections']}
     #
     per_sensor = {str(sensor_key): {'avg': mean([r[k] for k in r.keys() if sensor_key in k]),
                                     'navg': mean([rn[k] for k in rn.keys() if sensor_key in k])}
-                  for sensor_key in dataset_sensors['sensors']}
+                  for sensor_key in dataset['sensors']}
 
     per_msg_type = {'Image': {'avg': mean([r[k] for k in r.keys() if 'camera' in k]),
                               'navg': mean([rn[k] for k in rn.keys() if 'camera' in k])},
