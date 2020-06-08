@@ -147,8 +147,8 @@ def main():
     if not args['collection_selection_function'] is None:
         deleted = []
         for collection_key in dataset_sensors['collections'].keys():
-            # if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
-            if int(collection_key) is not 12:
+            if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
+                # if int(collection_key) is not 12:
                 deleted.append(collection_key)
                 del dataset_sensors['collections'][collection_key]
         print("Deleted collections: " + str(deleted))
@@ -288,31 +288,31 @@ def main():
 
                 # - Convert velodyne points into the 2D pattern reference frame
                 pts_in_pattern = np.dot(np.linalg.inv(T), points.transpose())
-                pts_in_pattern_ = pts_in_pattern.transpose()
                 pts_in_pattern = pts_in_pattern.transpose()[:, 0:2]
 
                 # ------------------------------------------------------------------------------------------------
                 # -------- Find extrema points using circle radius fitting
                 # ------------------------------------------------------------------------------------------------
                 # CONFIGURATIONS
-                radius = 1.  # circle radius in meters
                 start_angle = 0.  # start angle increment in 0 radians
                 end_angle = 2. * np.pi  # end the angle increment when we complete the whole circle
                 angle_step = 0.05 * np.pi / 180.  # angle step in radians
+                # Compute circle radius using the higher distance between two points in the array
+                pts_copy_a = list(pts_in_pattern)
+                pts_copy_b = list(pts_in_pattern)
+                radius = np.max(distance.cdist(pts_copy_a, pts_copy_b, 'euclidean')) / 2. + 0.1
                 # Compute a circle of points outside the pattern and find the pattern point closer to each source point
                 extrema_points = []
-                seed_point = points[np.shape(pts_in_pattern)[0] / 2, :]
+                seed_point = np.average(pts_in_pattern, axis=0)
                 th = start_angle
                 print('Computing 3D cloud pattern limit points for collection ' + str(collection_key))
-                source_pts = []
                 while th < end_angle:
                     # Compute the source points out of the pattern bounds
-                    source_pt = [[seed_point[1] + radius * np.cos(th),
-                                  seed_point[2] + radius * np.sin(th)]]
+                    source_pt = [[seed_point[0] + radius * np.cos(th),
+                                  seed_point[1] + radius * np.sin(th)]]
                     # Compute point that is more distant from the seed point
                     c_idx = np.argmin(distance.cdist(source_pt, pts_in_pattern[:, :], 'euclidean'))
                     extrema_points.append(points[c_idx, 0:3])
-                    source_pts.append(source_pt[0])
 
                     th += angle_step
                     # ----------------
