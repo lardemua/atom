@@ -236,9 +236,6 @@ def setupVisualization(dataset, args):
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
-
-
-
     for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
         # Draw pattern frame lines_sampled (top, left, right, bottom)
         frame_id = 'c' + collection_key + '_pattern_link'
@@ -267,7 +264,7 @@ def setupVisualization(dataset, args):
                         ns=str(collection_key) + '-corners', id=id, frame_locked=True,
                         type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                         pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                        scale=Vector3(x=0.08, y=0.08, z=0.08),
+                        scale=Vector3(x=0.02, y=0.02, z=0.02),
                         color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                         g=graphics['collections'][collection_key]['color'][1],
                                         b=graphics['collections'][collection_key]['color'][2], a=1.0))
@@ -276,7 +273,7 @@ def setupVisualization(dataset, args):
             marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
             marker.colors.append(ColorRGBA(r=graphics['pattern']['colormap'][idx_corner, 0],
                                             g= graphics['pattern']['colormap'][idx_corner,1],
-                                            b=graphics['pattern']['colormap'][idx_corner, 2], a=0.4))
+                                            b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
 
         markers.markers.append(marker)
 
