@@ -43,6 +43,8 @@ def createpatternLabels(args, dataset, step=0.02):
     nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
     ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
     square = dataset['calibration_config']['calibration_pattern']['size']
+    border = dataset['calibration_config']['calibration_pattern']['border_size']
+
 
     patterns = {  # All coordinates in the pattern's local coordinate system. Since z=0 for all points, it is omitted.
         'corners': [],  # [{'idx': 0, 'x': 3, 'y': 4}, ..., ] # Pattern's visual markers
@@ -75,10 +77,10 @@ def createpatternLabels(args, dataset, step=0.02):
 
         # ---------------- Frame ----------------
         # Corners
-        patterns['frame']['corners']['top_left'] = {'x': -square, 'y': -square}
-        patterns['frame']['corners']['top_right'] = {'x': nx * square, 'y': -square}
-        patterns['frame']['corners']['bottom_right'] = {'x': nx * square, 'y': ny * square}
-        patterns['frame']['corners']['bottom_left'] = {'x': -square, 'y': ny * square}
+        patterns['frame']['corners']['top_left'] = {'x': -square - border, 'y': -square - border}
+        patterns['frame']['corners']['top_right'] = {'x': nx * square + border, 'y': -square - border}
+        patterns['frame']['corners']['bottom_right'] = {'x': nx * square + border, 'y': ny * square + border}
+        patterns['frame']['corners']['bottom_left'] = {'x': -square - border, 'y': ny * square + border}
 
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
@@ -125,10 +127,10 @@ def createpatternLabels(args, dataset, step=0.02):
 
         # ---------------- Frame ----------------
         # Corners
-        patterns['frame']['corners']['top_left'] = {'x': -square, 'y': -square}
-        patterns['frame']['corners']['top_right'] = {'x': nx * square, 'y': -square}
-        patterns['frame']['corners']['bottom_right'] = {'x': nx * square, 'y': ny * square}
-        patterns['frame']['corners']['bottom_left'] = {'x': -square, 'y': ny * square}
+        patterns['frame']['corners']['top_left'] = {'x': -square-border, 'y': -square-border}
+        patterns['frame']['corners']['top_right'] = {'x': nx * square+border, 'y': -square-border}
+        patterns['frame']['corners']['bottom_right'] = {'x': nx * square+border, 'y': ny * square+border}
+        patterns['frame']['corners']['bottom_left'] = {'x': -square-border, 'y': ny * square+border}
 
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(patterns['frame']['corners']['top_left'],

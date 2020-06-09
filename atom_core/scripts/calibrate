@@ -148,7 +148,6 @@ def main():
         deleted = []
         for collection_key in dataset['collections'].keys():
             if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
-                # if int(collection_key) is not 12:
                 deleted.append(collection_key)
                 del dataset['collections'][collection_key]
         print("Deleted collections: " + str(deleted))
@@ -505,6 +504,9 @@ def main():
     # ---------------------------------------
     # --- Start Optimization
     # ---------------------------------------
+    while True:
+        opt.callObjectiveFunction()
+
     print('Initializing optimization ...')
     # opt.startOptimization(optimization_options={'ftol': 1e-4, 'xtol': 1e-4, 'gtol': 1e-4, 'diff_step': 1e-4,
     #                                             'x_scale': 'jac'})

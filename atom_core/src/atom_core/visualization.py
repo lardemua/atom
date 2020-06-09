@@ -265,9 +265,9 @@ def setupVisualization(dataset, args):
         frame_id = 'c' + collection_key + '_pattern_link'
         marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                         ns=str(collection_key) + '-corners', id=id, frame_locked=True,
-                        type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                        type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                         pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                        scale=Vector3(x=0.045, y=0.045, z=0.045),
+                        scale=Vector3(x=0.08, y=0.08, z=0.08),
                         color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                         g=graphics['collections'][collection_key]['color'][1],
                                         b=graphics['collections'][collection_key]['color'][2], a=1.0))
@@ -303,7 +303,7 @@ def setupVisualization(dataset, args):
             rgba = graphics['collections'][collection_key]['color']
             # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
             m = Marker(header=Header(frame_id=genCollectionPrefix(collection_key, 'pattern_link'), stamp=now),
-                       ns=str(collection_key), id=idx + 5000, frame_locked=True,
+                       ns=str(collection_key) + '-mesh', id=idx + 5000, frame_locked=True,
                        type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
                        pose=Pose(position=Point(x=0, y=0, z=0),
                                  orientation=Quaternion(x=0, y=0, z=0, w=1)),
