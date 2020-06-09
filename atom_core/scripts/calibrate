@@ -167,7 +167,7 @@ def main():
     # ---------------------------------------
     # --- CREATE CHESSBOARD DATASET
     # ---------------------------------------
-    dataset['patterns'] = patterns.createpatternLabels(args, dataset)
+    dataset['patterns'] = patterns.createPatternLabels(args, dataset)
 
     # ---------------------------------------
     # --- FILTER SOME OF THE ELEMENTS LOADED, TO USE ONLY A SUBSET IN THE CALIBRATION

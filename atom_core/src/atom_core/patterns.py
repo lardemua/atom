@@ -34,7 +34,7 @@ def sampleLineSegment(p0, p1, step):
     return pts
 
 
-def createpatternLabels(args, dataset, step=0.02):
+def createPatternLabels(args, dataset, step=0.02):
     """
     Creates the necessary data related to the chessboard calibration pattern
     :return: a dataset_chessboard dictionaryint((((args['chess_num_y'] * factor) - 1) * n) + 1) * (args['chess_num_x'] * factor)
@@ -43,8 +43,12 @@ def createpatternLabels(args, dataset, step=0.02):
     nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
     ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
     square = dataset['calibration_config']['calibration_pattern']['size']
-    border = dataset['calibration_config']['calibration_pattern']['border_size']
-
+    # Border can be a scalar or {'x': ..., 'y': ...}
+    if type(dataset['calibration_config']['calibration_pattern']['border_size']) is dict:
+        border_x = dataset['calibration_config']['calibration_pattern']['border_size']['x']
+        border_y = dataset['calibration_config']['calibration_pattern']['border_size']['y']
+    else:
+        border_x = border_y = dataset['calibration_config']['calibration_pattern']['border_size']
 
     patterns = {  # All coordinates in the pattern's local coordinate system. Since z=0 for all points, it is omitted.
         'corners': [],  # [{'idx': 0, 'x': 3, 'y': 4}, ..., ] # Pattern's visual markers
@@ -77,10 +81,10 @@ def createpatternLabels(args, dataset, step=0.02):
 
         # ---------------- Frame ----------------
         # Corners
-        patterns['frame']['corners']['top_left'] = {'x': -square - border, 'y': -square - border}
-        patterns['frame']['corners']['top_right'] = {'x': nx * square + border, 'y': -square - border}
-        patterns['frame']['corners']['bottom_right'] = {'x': nx * square + border, 'y': ny * square + border}
-        patterns['frame']['corners']['bottom_left'] = {'x': -square - border, 'y': ny * square + border}
+        patterns['frame']['corners']['top_left'] = {'x': -square - border_x, 'y': -square - border_y}
+        patterns['frame']['corners']['top_right'] = {'x': nx * square + border_x, 'y': -square - border_y}
+        patterns['frame']['corners']['bottom_right'] = {'x': nx * square + border_x, 'y': ny * square + border_y}
+        patterns['frame']['corners']['bottom_left'] = {'x': -square - border_x, 'y': ny * square + border_y}
 
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
@@ -127,10 +131,10 @@ def createpatternLabels(args, dataset, step=0.02):
 
         # ---------------- Frame ----------------
         # Corners
-        patterns['frame']['corners']['top_left'] = {'x': -square-border, 'y': -square-border}
-        patterns['frame']['corners']['top_right'] = {'x': nx * square+border, 'y': -square-border}
-        patterns['frame']['corners']['bottom_right'] = {'x': nx * square+border, 'y': ny * square+border}
-        patterns['frame']['corners']['bottom_left'] = {'x': -square-border, 'y': ny * square+border}
+        patterns['frame']['corners']['top_left'] = {'x': -square - border_x, 'y': -square - border_y}
+        patterns['frame']['corners']['top_right'] = {'x': nx * square + border_x, 'y': -square - border_y}
+        patterns['frame']['corners']['bottom_right'] = {'x': nx * square + border_x, 'y': ny * square + border_y}
+        patterns['frame']['corners']['bottom_left'] = {'x': -square - border_x, 'y': ny * square + border_y}
 
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
