@@ -47,8 +47,10 @@ class Sensor:
         self.opt_parent_link = frame_opt_parent
         self.opt_child_link = frame_opt_child
         self.sensor_link = frame_sensor
+
+        print('Collecting transforms...')
         self.updateAll()  # update all the transformations
-        # print('Collected pre, opt and pos transforms.')
+        print('Collected pre, opt and pos transforms.')
         #
         # print('preT:\n' + str(self.preT))
         # print('optT:\n' + str(self.optT))
@@ -110,11 +112,12 @@ class Sensor:
         self.posT = self.updateT(self.opt_child_link, self.sensor_link, rospy.Time.now())
 
     def updateT(self, parent_link, child_link, stamp):
-        # self.listener.waitForTransform(parent_link, child_link, stamp, rospy.Duration(3.0))
-        # (trans, quat) = self.listener.lookupTransform(parent_link, child_link, stamp)
+        try:
+            self.listener.waitForTransform(parent_link, child_link, rospy.Time(), rospy.Duration(1.0))
+            (trans, quat) = self.listener.lookupTransform(parent_link, child_link, rospy.Time())
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            raise ValueError('Could not get transform from ' + parent_link + ' to ' + child_link + '(max 1 secs)')
 
-        self.listener.waitForTransform(parent_link, child_link, rospy.Time(), rospy.Duration(1.0))
-        (trans, quat) = self.listener.lookupTransform(parent_link, child_link, rospy.Time())
         T = TransformationT(parent_link, child_link)
         T.setTranslation(trans)
         T.setQuaternion(quat)

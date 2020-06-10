@@ -34,8 +34,8 @@ class DataCollectorAndLabeler:
         self.output_folder = utilities.resolvePath(args['output_folder'])
 
         if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
-            print('\n\nError: Dataset ' + Fore.RED + self.output_folder + Style.RESET_ALL +
-                  ' exists.\nIf you want to replace it add a "--overwrite" flag. Style.RESET_ALL\n\n')
+            print('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
+                  ' exists.\nIf you want to replace it add a "--overwrite" flag.' + Style.RESET_ALL + '\n')
             rospy.signal_shutdown()
 
         elif os.path.exists(self.output_folder) and args['overwrite']:  # move existing path to a backup location

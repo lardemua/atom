@@ -19,16 +19,12 @@ from atom_calibration.sensor import Sensor
 class InteractiveFirstGuess(object):
 
     def __init__(self, args):
-        # command line arguments
-        self.args = args
-        # calibration config
-        self.config = None
-        # sensors
-        self.sensors = []
-        # robot URDF
-        self.urdf = None
-        # interactive markers server
-        self.server = None
+
+        self.args = args  # command line arguments
+        self.config = None  # calibration config
+        self.sensors = []  # sensors
+        self.urdf = None  # robot URDF
+        self.server = None  # interactive markers server
         self.menu = None
 
     def init(self):
@@ -68,6 +64,7 @@ class InteractiveFirstGuess(object):
                 "marker_scale": self.args['marker_scale']}
             # Append to the list of sensors
             self.sensors.append(Sensor(name, self.server, self.menu, **params))
+            print('... done')
 
         self.server.applyChanges()
 
@@ -96,7 +93,6 @@ class InteractiveFirstGuess(object):
 
 
 if __name__ == "__main__":
-
     # Parse command line arguments
     ap = argparse.ArgumentParser(description='Create first guess. Sets up rviz interactive markers that allow the '
                                              'user to define the position and orientation of each of the sensors '
