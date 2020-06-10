@@ -137,7 +137,7 @@ def objectiveFunction(data):
                 root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
 
                 pts_in_pattern = np.array([[item['x'] for item in patterns['corners']],  # convert list to numpy array
-                                           [item['x'] for item in patterns['corners']]], np.float)
+                                           [item['y'] for item in patterns['corners']]], np.float)
                 pts_in_pattern = np.vstack((pts_in_pattern, np.zeros((1, pts_in_pattern.shape[1]))))  # add z = 0
                 pts_in_pattern = np.vstack((pts_in_pattern, np.ones((1, pts_in_pattern.shape[1]))))  # homogenize
 
@@ -408,6 +408,7 @@ def objectiveFunction(data):
                 raise ValueError("Unknown sensor msg_type")
 
     # --- Normalization of residuals.
+    #TODO put normalized residuals to the square
     rn = deepcopy(r)  # make a copy of the non normalized dictionary.
 
     # Message type normalization. Pixels and meters should be weighted based on an adhoc defined meter_to_pixel factor.
