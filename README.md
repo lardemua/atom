@@ -62,8 +62,6 @@ _<your_robot_calibration>/calibration/config.yml_ with your system information.
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
 ```
 
-
-
 # System calibration - Detailed Description
 
 To calibrate your robot you must define your robotic system, (e.g. <your_robot>). You should also have a **system description** in the form of an urdf or a xacro file(s). This is normally stored in a ros package named **<your_robot>_description**. 
@@ -111,6 +109,10 @@ Here are a couple of examples:
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
 ------------- | -------------
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/set_initial_estimate_agrob.gif" width="450"/>
+
+[UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)  | ...
+------------- | -------------
+<img align="center" src="https://github.com/lardemua/atom/blob/master/docs/ur10e_hand_in_eye_set_initial_estimate.gif" width="450"/>  | ...
 
 ## Collect data 
 

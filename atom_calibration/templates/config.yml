@@ -13,8 +13,8 @@
   #    Example 4: ~/catkin_ws/src/calibration_pkg/urdf/description.xacro
   #    Example 5: /home/$(USER)/catkin_ws/src/calibration_pkg/urdf/description.xacro
   # This is valid for description_file, bag_file and calibration_pattern/mesh_file
-  "description_file": "package://calibration_pkg/urdf/description.xacro",
-  "bag_file": "/home/mike/bagfiles/calibration_5_dez_2019_03m-07m.bag",
+  "description_file": "package://calibration_pkg/urdf/description.urdf.xacro",
+  "bag_file": "/path/to/your/bag/file.bag",
 
    # Specify all sensors that are used in the calibration: Each sensor should have:
    # <sensor_name>: {"link": <The frame of the sensor's data. The value of the sensor's message.header.frame_id.>,
