@@ -329,6 +329,7 @@ def objectiveFunction(data):
                 # Get the 3D LiDAR labelled points for the given collection
                 points = collection['labels'][sensor_key]['labelled_points']
 
+
                 # ------------------------------------------------------------------------------------------------
                 # --- Beam Distance Residuals: Distance from 3D range sensor point to chessboard plan
                 # ------------------------------------------------------------------------------------------------
@@ -393,16 +394,37 @@ def objectiveFunction(data):
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the corners of the cloud
                 # ------------------------------------------------------------------------------------------------
-                # Compute the coordinate of the laser points in the chessboard reference frame
+
+                pts = collection['labels'][sensor_key]['limit_points']
+                detected_limit_points_in_sensor = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+
+                # Compute the coordinate of the points in the pattern reference frame
                 root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
-                pts_in_root = np.dot(root_to_sensor, points.transpose())
+                detected_limit_points_in_root = np.dot(root_to_sensor, detected_limit_points_in_sensor)
 
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
+                chessboard_to_root = np.linalg.inv(utilities.translationQuaternionToTransform(trans, quat))
+                detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
+
+                pts = []
+                pts.extend(patterns['frame']['lines_sampled']['left'])
+                pts.extend(patterns['frame']['lines_sampled']['right'])
+                pts.extend(patterns['frame']['lines_sampled']['top'])
+                pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+
+                # TODO Now we must compare the X and Y coordinates of detected_limit_points_in_pattern with the
+                #  coordinates of ground_truth_limit_points_in_pattern. For each point in
+                #  detected_limit_points_in_pattern we must find the minimum distance to all the
+                #  ground_truth_limit_points_in_pattern
+
+                # It is late, I am going to be. Andre, you pick up from here?
+
 
                 # Save residuals
-                # rname = collection_key + '_' + sensor_key + '_cd_' + str(3)
-                # r[rname] = abs(distance.cdist(lidar_top_right, pattern_top_right, 'euclidean')[0, 0])
+                rname = collection_key + '_' + sensor_key + '_cd_' + str(3)
+                r[rname] = abs(distance.cdist(lidar_top_right, pattern_top_right, 'euclidean')[0, 0])
                 # ------------------------------------------------------------------------------------------------
 
             else:

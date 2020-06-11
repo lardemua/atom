@@ -27,6 +27,7 @@ import atom_core.objective_function as objective_function
 import atom_core.patterns as patterns
 import atom_core.visualization as visualization
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -310,6 +311,7 @@ def main():
                     source_pt = [[seed_point[0] + radius * np.cos(th),
                                   seed_point[1] + radius * np.sin(th)]]
                     # Compute point that is more distant from the seed point
+                    # TODO Andre: more distant or closer?
                     c_idx = np.argmin(distance.cdist(source_pt, pts_in_pattern[:, :], 'euclidean'))
                     extrema_points.append(points[c_idx, 0:3])
 
@@ -318,7 +320,11 @@ def main():
 
                 # Delete duplicates from extrema points array
                 unique_extrema_points = list(set(map(tuple, extrema_points)))
-                collection['labels'][sensor_key]['limit_points'] = unique_extrema_points
+
+                # TODO Andre check, changed the representation from a list of tuples to the usual dict based rep.
+                collection['labels'][sensor_key]['limit_points'] = []
+                for pt in unique_extrema_points:  # To use the same representation for points we use, i.e. {'x': ...}.
+                    collection['labels'][sensor_key]['limit_points'].append({'x': pt[0], 'y': pt[1], 'z': pt[2]})
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER

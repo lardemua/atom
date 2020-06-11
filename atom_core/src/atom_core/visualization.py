@@ -82,7 +82,6 @@ def setupVisualization(dataset, args):
     # for idx, sensor_key in enumerate(sorted(dataset['sensors'].keys())):
     #     dataset['sensors'][str(sensor_key)]['color'] = color_map_sensors[idx, :]
 
-
     # Create robot meshes ------------------------------------------------------------------
     # for visualizing the robot meshes on all collections
     markers = MarkerArray()
@@ -94,8 +93,6 @@ def setupVisualization(dataset, args):
                               namespace=collection_key,
                               rgba=rgba)
         markers.markers.extend(m.markers)
-
-
 
     graphics['ros']['robot_mesh_markers'] = markers
 
@@ -118,7 +115,7 @@ def setupVisualization(dataset, args):
                 graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
                     rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
 
-    # Create LabelledData publishers ----------------------------------------------------------
+    # Create Labeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
     id = 0
     for collection_key, collection in dataset['collections'].items():
@@ -225,15 +222,15 @@ def setupVisualization(dataset, args):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.4)
                                 )
 
-                limit_points = np.array(collection['labels'][sensor_key]['limit_points'])
-                for idx in range(0, np.shape(limit_points)[0]):
-                    marker.points.append(Point(x=limit_points[idx, 0], y=limit_points[idx, 1],
-                                               z=limit_points[idx, 2]))
+                # TODO Andre, changed this as well
+                for pt in collection['labels'][sensor_key]['limit_points']:
+                    marker.points.append(Point(x=pt['x'], y=pt['y'], z=pt['z']))
 
                 id += 1
-
                 markers.markers.append(copy.deepcopy(marker))
 
+    graphics['ros']['MarkersLabeled'] = markers
+    graphics['ros']['PubLabeled'] = rospy.Publisher('~labeled_data', MarkerArray, queue_size=0, latch=True)
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
@@ -275,8 +272,8 @@ def setupVisualization(dataset, args):
         for idx_corner, pt in enumerate(dataset['patterns']['corners']):
             marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
             marker.colors.append(ColorRGBA(r=graphics['pattern']['colormap'][idx_corner, 0],
-                                            g= graphics['pattern']['colormap'][idx_corner,1],
-                                            b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
+                                           g=graphics['pattern']['colormap'][idx_corner, 1],
+                                           b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
 
         markers.markers.append(marker)
 
@@ -409,10 +406,15 @@ def visualizationFunction(models):
         graphics['ros']['tf_broadcaster'].sendTransform(collection_chess['trans'], collection_chess['quat'],
                                                         now, child, parent)
 
-    # Publish Labelled Data
+    # Publish patterns
     for marker in graphics['ros']['MarkersPattern'].markers:
         marker.header.stamp = now
     graphics['ros']['PubPattern'].publish(graphics['ros']['MarkersPattern'])
+
+    # Publish Labelled Data
+    for marker in graphics['ros']['MarkersLabeled'].markers:
+        marker.header.stamp = now
+    graphics['ros']['PubLabeled'].publish(graphics['ros']['MarkersLabeled'])
 
     # Publish Laser Beams
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
