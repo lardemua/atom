@@ -141,8 +141,6 @@ def objectiveFunction(data):
                 pts_in_pattern = np.vstack((pts_in_pattern, np.zeros((1, pts_in_pattern.shape[1]))))  # add z = 0
                 pts_in_pattern = np.vstack((pts_in_pattern, np.ones((1, pts_in_pattern.shape[1]))))  # homogenize
 
-
-
                 pts_in_root = np.dot(root_to_chessboard, pts_in_pattern)
 
                 sensor_to_root = np.linalg.inv(utilities.getAggregateTransform(sensor['chain'],
@@ -163,7 +161,6 @@ def objectiveFunction(data):
                 # See issue #106
                 pixs, valid_pixs, dists = utilities.projectWithoutDistortion(P, width, height, pts_sensor[0:3, :])
 
-
                 pixs_ground_truth = collection['labels'][sensor_key]['idxs']
                 array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
                 for idx, pix_ground_truth in enumerate(pixs_ground_truth):
@@ -179,7 +176,7 @@ def objectiveFunction(data):
 
                 nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
                 ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
-                number_corners = nx*ny
+                number_corners = nx * ny
 
                 idx = 0
                 rname = collection_key + '_' + sensor_key + '_0'
@@ -245,13 +242,15 @@ def objectiveFunction(data):
                 extrema_right = np.reshape(pts_in_chessboard[0:2, 0], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eright'
                 r[rname] = float(
-                    np.amin(distance.cdist(extrema_right.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
+                    np.amin(
+                        distance.cdist(extrema_right.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
 
                 # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
                 extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eleft'
                 r[rname] = float(
-                    np.amin(distance.cdist(extrema_left.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
+                    np.amin(
+                        distance.cdist(extrema_left.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
 
                 # --- Residuals: Longitudinal distance for inner points
                 pts = []
@@ -329,7 +328,6 @@ def objectiveFunction(data):
                 # Get the 3D LiDAR labelled points for the given collection
                 points = collection['labels'][sensor_key]['labelled_points']
 
-
                 # ------------------------------------------------------------------------------------------------
                 # --- Beam Distance Residuals: Distance from 3D range sensor point to chessboard plan
                 # ------------------------------------------------------------------------------------------------
@@ -346,16 +344,16 @@ def objectiveFunction(data):
                 # chessboard to the 3D cloud reference frame
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
-                root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
-                lidar_to_chessboard = np.dot(np.linalg.inv(root_to_sensor), root_to_chessboard)
+                root_to_pattern = utilities.translationQuaternionToTransform(trans, quat)
+                lidar_to_pattern = np.dot(np.linalg.inv(root_to_sensor), root_to_pattern)
 
                 # Origin of the chessboard (0, 0, 0, 1) homogenized to the 3D range sensor reference frame
                 p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
-                p_co_in_lidar = np.dot(lidar_to_chessboard, p_co_in_chessboard)
+                p_co_in_lidar = np.dot(lidar_to_pattern, p_co_in_chessboard)
 
                 # Compute p_no. First compute an aux point (p_caux) and then use the normal vector from p_co to p_caux.
                 p_caux_in_chessboard = np.array([[0], [0], [1], [1]], np.float)  # along the zz axis (plane normal)
-                p_caux_in_lidar = np.dot(lidar_to_chessboard, p_caux_in_chessboard)
+                p_caux_in_lidar = np.dot(lidar_to_pattern, p_caux_in_chessboard)
 
                 p_no_in_lidar = np.array([[p_caux_in_lidar[0] - p_co_in_lidar[0]],
                                           [p_caux_in_lidar[1] - p_co_in_lidar[1]],
@@ -366,7 +364,7 @@ def objectiveFunction(data):
                     marker = [x for x in dataset_graphics['ros']['MarkersLaserBeams'].markers if
                               x.ns == str(collection_key) + '-' + str(sensor_key)][0]
                     marker.points = []
-                    rviz_p0_in_laser = Point(0, 0, 0)
+                    rviz_p0_in_lidar = Point(0, 0, 0)
 
                 # Define p0 - the origin of 3D range sensor reference frame - to compute the line that intercepts the
                 # chessboard plane in the loop
@@ -388,15 +386,17 @@ def objectiveFunction(data):
                     r[rname] = abs(distance_two_3D_points(p0_in_lidar, pt_intersection) - rho)
 
                     if args['ros_visualization']:
-                        marker.points.append(deepcopy(rviz_p0_in_laser))
+                        marker.points.append(deepcopy(rviz_p0_in_lidar))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
                 # ------------------------------------------------------------------------------------------------
-                # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the corners of the cloud
+                # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
 
                 pts = collection['labels'][sensor_key]['limit_points']
-                detected_limit_points_in_sensor = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+                detected_limit_points_in_sensor = np.array(
+                    [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
+                    np.float)
 
                 # Compute the coordinate of the points in the pattern reference frame
                 root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
@@ -406,32 +406,36 @@ def objectiveFunction(data):
                 quat = patterns['collections'][collection_key]['quat']
                 chessboard_to_root = np.linalg.inv(utilities.translationQuaternionToTransform(trans, quat))
                 detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
+                print('DETECTED')
+                print(detected_limit_points_in_pattern)
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
                 pts.extend(patterns['frame']['lines_sampled']['right'])
                 pts.extend(patterns['frame']['lines_sampled']['top'])
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
-                ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+                ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
+                                                                np.float)
+                print('GROUNDTRUTH')
+                print(ground_truth_limit_points_in_pattern)
 
-                # TODO Now we must compare the X and Y coordinates of detected_limit_points_in_pattern with the
-                #  coordinates of ground_truth_limit_points_in_pattern. For each point in
-                #  detected_limit_points_in_pattern we must find the minimum distance to all the
-                #  ground_truth_limit_points_in_pattern
-
-                # It is late, I am going to be. Andre, you pick up from here?
-
-
-                # Save residuals
-                # rname = collection_key + '_' + sensor_key + '_cd_' + str(3)
-                # r[rname] = abs(distance.cdist(lidar_top_right, pattern_top_right, 'euclidean')[0, 0])
+                # Compute and save residuals
+                rs = []
+                for idx in range(detected_limit_points_in_pattern.shape[1]):
+                    m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
+                    rname = collection_key + '_' + sensor_key + '_ld_' + str(idx)
+                    r[rname] = np.min(
+                        distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
+                    rs.append(r[rname])
+                print('RESIDUALS')
+                print(rs)
                 # ------------------------------------------------------------------------------------------------
 
             else:
                 raise ValueError("Unknown sensor msg_type")
 
     # --- Normalization of residuals.
-    #TODO put normalized residuals to the square
+    # TODO put normalized residuals to the square
     rn = deepcopy(r)  # make a copy of the non normalized dictionary.
 
     # Message type normalization. Pixels and meters should be weighted based on an adhoc defined meter_to_pixel factor.

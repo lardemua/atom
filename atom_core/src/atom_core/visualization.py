@@ -224,7 +224,7 @@ def setupVisualization(dataset, args):
 
                 # TODO Andre, changed this as well
                 for pt in collection['labels'][sensor_key]['limit_points']:
-                    marker.points.append(Point(x=pt['x'], y=pt['y'], z=pt['z']))
+                    marker.points.append(Point(x=pt[0], y=pt[1], z=pt[2]))
 
                 id += 1
                 markers.markers.append(copy.deepcopy(marker))
