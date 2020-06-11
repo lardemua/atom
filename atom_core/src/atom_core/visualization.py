@@ -82,10 +82,11 @@ def setupVisualization(dataset, args):
     # for idx, sensor_key in enumerate(sorted(dataset['sensors'].keys())):
     #     dataset['sensors'][str(sensor_key)]['color'] = color_map_sensors[idx, :]
 
-    # Create the markers array for visualizing the robot meshes on all collections
+
+    # Create robot meshes ------------------------------------------------------------------
+    # for visualizing the robot meshes on all collections
     markers = MarkerArray()
     for collection_key, collection in dataset['collections'].items():
-        print("Collection : " + str(collection_key))
         rgba = graphics['collections'][collection_key]['color']
         rgba[3] = 0.4  # change the alpha
         rgba = [.5, .5, .5, 0.7]  # best color we could find
@@ -94,8 +95,7 @@ def setupVisualization(dataset, args):
                               rgba=rgba)
         markers.markers.extend(m.markers)
 
-        if args['single_pattern']:  # Only draw one pattern if args say so.
-            break
+
 
     graphics['ros']['robot_mesh_markers'] = markers
 
@@ -108,7 +108,8 @@ def setupVisualization(dataset, args):
 
             if sensor['msg_type'] == 'Image':
                 msg_type = sensor_msgs.msg.Image
-                topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/image_raw'
+                topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
+                topic_name = '~c' + str(collection_key) + topic + '/labeled'
                 graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
                     topic_name, msg_type, queue_size=0, latch=True)}
 
@@ -236,6 +237,8 @@ def setupVisualization(dataset, args):
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
+    markers = MarkerArray()
+
     for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
         # Draw pattern frame lines_sampled (top, left, right, bottom)
         frame_id = 'c' + collection_key + '_pattern_link'
@@ -311,6 +314,9 @@ def setupVisualization(dataset, args):
             m.mesh_resource = 'file://' + file  # mesh_resource needs uri format
             m.mesh_use_embedded_materials = True
             markers.markers.append(m)
+
+        if args['single_pattern']:  # Only draw one pattern if args say so.
+            break
 
     graphics['ros']['MarkersPattern'] = markers
     graphics['ros']['PubPattern'] = rospy.Publisher('~patterns', MarkerArray, queue_size=0, latch=True)

@@ -301,7 +301,7 @@ def objectiveFunction(data):
                                           [p_caux_in_laser[2] - p_co_in_laser[2]],
                                           [1]], np.float)  # plane normal
 
-                if args['view_optimization']:
+                if args['ros_visualization']:
                     marker = [x for x in dataset_graphics['ros']['MarkersLaserBeams'].markers if
                               x.ns == str(collection_key) + '-' + str(sensor_key)][0]
                     marker.points = []
@@ -319,9 +319,10 @@ def objectiveFunction(data):
                     rname = collection_key + '_' + sensor_key + '_beam_' + str(idx)
                     r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho)
 
-                    if args['view_optimization']:
+                    if args['ros_visualization']:
                         marker.points.append(deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
+
 
             elif sensor['msg_type'] == 'PointCloud2':
 

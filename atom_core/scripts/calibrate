@@ -525,6 +525,9 @@ def main():
     createJSONFile(os.path.dirname(json_file) + '/results.json', dataset)
     print('File saved.')
 
+    while True:
+        opt.callObjectiveFunction()
+
     # # ---------------------------------------
     # # --- Save updated xacro
     # # ---------------------------------------

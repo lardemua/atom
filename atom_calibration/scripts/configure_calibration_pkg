@@ -381,24 +381,65 @@ if __name__ == "__main__":
     )
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-    # Add a maker array display for showing labelled data
+    # Add a maker array display for showing the patterns
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         c={'Name': 'Patterns-MarkerArray',
            'Marker_Topic': 'calibrate/patterns'}
     )
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-    # Add interactive maker display for showing laser beams
-    rendered = env.get_template('/rviz/MarkerArray.rviz').render(
-        c={'Name': 'LaserBeams-MarkerArray',
-           'Marker_Topic': 'calibrate/LaserBeams'}
-    )
     # Add a maker array display for miscellaneous information
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         c={'Name': 'Miscellaneous-MarkerArray',
            'Marker_Topic': 'calibrate/Miscellaneous'}
     )
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+    # Check if 2d lidars exist, if so add laser beams marker
+    msg_types = []
+    for idx, sensor_key in enumerate(config['sensors']):
+        topic = config['sensors'][sensor_key]['topic_name']
+        topic_compressed = topic + '/compressed'
+        if topic in bag_topics:
+            msg_type = bag_info[1][topic].msg_type
+        else:
+            msg_type = bag_info[1][topic_compressed].msg_type
+
+        msg_types.append(msg_type)
+
+    if 'sensor_msgs/LaserScan' in msg_types: # we have 2D lidar data, add laser beams marker
+        # Add interactive maker display for showing laser beams
+        rendered = env.get_template('/rviz/MarkerArray.rviz').render(
+            c={'Name': 'LaserBeams-MarkerArray',
+               'Marker_Topic': 'calibrate/LaserBeams'}
+        )
+        displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+
+    # Generate rviz displays according to the sensor types
+    for idx, sensor_key in enumerate(config['sensors']):
+        color = utilities.colormapToRVizColor(cm_sensors[idx, :])
+        topic = config['sensors'][sensor_key]['topic_name']
+        topic_compressed = topic + '/compressed'
+        if topic in bag_topics:
+            msg_type = bag_info[1][topic].msg_type
+        else:
+            msg_type = bag_info[1][topic_compressed].msg_type
+
+        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + msg_type + ')')
+
+        if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # displays for camera sensor
+
+            # Image
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
+                                                                      'Image_Topic': 'calibrate/c0' + topic + '/labeled'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+        elif msg_type == 'sensor_msgs/LaserScan':
+            pass
+
+        elif msg_type == 'sensor_msgs/PointCloud2':
+            pass
 
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_calibrate, 'w'))
