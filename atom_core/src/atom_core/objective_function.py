@@ -423,8 +423,8 @@ def objectiveFunction(data):
 
 
                 # Save residuals
-                rname = collection_key + '_' + sensor_key + '_cd_' + str(3)
-                r[rname] = abs(distance.cdist(lidar_top_right, pattern_top_right, 'euclidean')[0, 0])
+                # rname = collection_key + '_' + sensor_key + '_cd_' + str(3)
+                # r[rname] = abs(distance.cdist(lidar_top_right, pattern_top_right, 'euclidean')[0, 0])
                 # ------------------------------------------------------------------------------------------------
 
             else:
