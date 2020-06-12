@@ -51,7 +51,7 @@ def setupVisualization(dataset, args):
     graphics = {'collections': {}, 'sensors': {}, 'pattern': {}, 'ros': {}, 'args': args}
 
     # Initialize ROS stuff
-    rospy.init_node("calibua")
+    rospy.init_node("calibrate")
     graphics['ros']['tf_broadcaster'] = tf.TransformBroadcaster()
     graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
     now = rospy.Time.now()
