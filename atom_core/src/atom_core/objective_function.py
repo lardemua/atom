@@ -132,87 +132,73 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'Image':
-                # Compute chessboard points in local sensor reference frame
-                trans = patterns['collections'][collection_key]['trans']
-                quat = patterns['collections'][collection_key]['quat']
-                root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
 
-                pts_ground_truth = []
+                # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
+                # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
+                pts_in_pattern_list = []  # Collect the points
                 for pt_detected in collection['labels'][sensor_key]['idxs']:
                     id_detected = pt_detected['id']
-                    pt_ground_truth = [item for item in patterns['corners'] if item['id'] == id_detected][0]
-                    pts_ground_truth.append(pt_ground_truth)
+                    point = [item for item in patterns['corners'] if item['id'] == id_detected][0]
+                    pts_in_pattern_list.append(point)
 
-                pts_in_pattern = np.array([[item['x'] for item in pts_ground_truth],  # convert list to numpy array
-                                           [item['y'] for item in pts_ground_truth]], np.float)
-                # pts_in_pattern = np.array([[item['x'] for item in patterns['corners']],  # convert list to numpy array
-                #                            [item['y'] for item in patterns['corners']]], np.float)
-                pts_in_pattern = np.vstack((pts_in_pattern, np.zeros((1, pts_in_pattern.shape[1]))))  # add z = 0
-                pts_in_pattern = np.vstack((pts_in_pattern, np.ones((1, pts_in_pattern.shape[1]))))  # homogenize
+                pts_in_pattern = np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
+                                           [item['y'] for item in pts_in_pattern_list],
+                                           [0 for _ in pts_in_pattern_list],
+                                           [1 for _ in pts_in_pattern_list]], np.float)
 
-                pts_in_root = np.dot(root_to_chessboard, pts_in_pattern)
-
+                # Transform pattern corners from the pattern frame to the sensor frame ---------------------------------
+                trans = patterns['collections'][collection_key]['trans']
+                quat = patterns['collections'][collection_key]['quat']
+                root_to_pattern = utilities.translationQuaternionToTransform(trans, quat)
                 sensor_to_root = np.linalg.inv(utilities.getAggregateTransform(sensor['chain'],
                                                                                collection['transforms']))
-                pts_sensor = np.dot(sensor_to_root, pts_in_root)
+                sensor_to_pattern = np.dot(sensor_to_root, root_to_pattern)
+                pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
-                # K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
-                P = np.ndarray((3, 4), buffer=np.array(sensor['camera_info']['P']), dtype=np.float)
-                # P = P[0:3, 0:3]
-                # print('P = \n' + str(P))
+                # Project points to the image of the sensor ------------------------------------------------------------
+                w = collection['data'][sensor_key]['width']
+                h = collection['data'][sensor_key]['height']
+                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
+                # P = np.ndarray((3, 4), buffer=np.array(sensor['camera_info']['P']), dtype=np.float)
                 # D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
-                width = collection['data'][sensor_key]['width']
-                height = collection['data'][sensor_key]['height']
 
-                # pixs, valid_pixs, dists = utilities.projectToCamera(K, D, width, height, pts_sensor[0:3, :])
-                # pixs, valid_pixs, dists = utilities.projectToCamera(P, D, width, height, pts_sensor[0:3, :])
-                # pixs, valid_pixs, dists = utilities.projectWithoutDistortion(K, width, height, pts_sensor[0:3, :])
+                # pts_in_image, _, _ = utilities.projectToCamera(K, D, width, height, pts_in_sensor[0:3, :])
+                # pts_in_image, _, _ = utilities.projectToCamera(P, D, width, height, pts_in_sensor[0:3, :])
+                pts_in_image, _, _ = utilities.projectWithoutDistortion(K, w, h, pts_in_sensor[0:3, :])
                 # See issue #106
-                pixs, valid_pixs, dists = utilities.projectWithoutDistortion(P, width, height, pts_sensor[0:3, :])
+                # pts_in_image, _, _ = utilities.projectWithoutDistortion(P, width, height, pts_in_sensor[0:3, :])
 
-                pixs_ground_truth = collection['labels'][sensor_key]['idxs']
+                # Get the detected points to use as ground truth--------------------------------------------------------
+                pts_detected_in_image = np.array([[item['x'] for item in collection['labels'][sensor_key]['idxs']],
+                                                  [item['y'] for item in collection['labels'][sensor_key]['idxs']]],
+                                                  dtype=np.float)
 
-                array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
-                for idx, pix_ground_truth in enumerate(pixs_ground_truth):
-                    array_gt[0][idx] = pix_ground_truth['x']
-                    array_gt[1][idx] = pix_ground_truth['y']
-
-                # Compute the error as the average of the Euclidean distances between detected and projected pixels
-                # for idx in range(0, patterns['number_corners']):
-                #     e1 = math.sqrt(
-                #         (pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
-                #     raw_residuals.append(e1)
-                #     error_sum += e1
-
-                nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
-                ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
-                number_corners = nx * ny
-
+                # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
                 for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
                     rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(label_idx['id'])
-                    r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 +
-                                         (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                    r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
+                                         (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
 
                 # idx = 0
                 # rname = collection_key + '_' + sensor_key + '_0'
-                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                # r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 + (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
                 #
                 # idx = nx - 1
                 # rname = collection_key + '_' + sensor_key + '_1'
-                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                # r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 + (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
                 #
                 # idx = number_corners - nx
                 # rname = collection_key + '_' + sensor_key + '_2'
-                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                # r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 + (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
                 #
                 # idx = number_corners - 1
                 # rname = collection_key + '_' + sensor_key + '_3'
-                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                # r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 + (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
-                for idx in range(0, pixs.shape[1]):
-                    idxs_projected.append({'x': pixs[0][idx], 'y': pixs[1][idx]})
+                for idx in range(0, pts_in_image.shape[1]):
+                    idxs_projected.append({'x': pts_in_image[0][idx], 'y': pts_in_image[1][idx]})
                 collection['labels'][sensor_key]['idxs_projected'] = idxs_projected  # store projections
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
@@ -300,8 +286,8 @@ def objectiveFunction(data):
                 # chessboard to the laser reference frame
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
-                root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
-                laser_to_chessboard = np.dot(np.linalg.inv(root_to_sensor), root_to_chessboard)
+                root_to_pattern = utilities.translationQuaternionToTransform(trans, quat)
+                laser_to_chessboard = np.dot(np.linalg.inv(root_to_sensor), root_to_pattern)
 
                 p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
                 p_co_in_laser = np.dot(laser_to_chessboard, p_co_in_chessboard)
