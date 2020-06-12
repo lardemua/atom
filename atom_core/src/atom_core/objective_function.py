@@ -170,7 +170,6 @@ def objectiveFunction(data):
                 # See issue #106
                 pixs, valid_pixs, dists = utilities.projectWithoutDistortion(P, width, height, pts_sensor[0:3, :])
 
-
                 pixs_ground_truth = collection['labels'][sensor_key]['idxs']
 
                 array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
@@ -420,8 +419,8 @@ def objectiveFunction(data):
                 quat = patterns['collections'][collection_key]['quat']
                 chessboard_to_root = np.linalg.inv(utilities.translationQuaternionToTransform(trans, quat))
                 detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
-                print('DETECTED')
-                print(detected_limit_points_in_pattern)
+                # print('DETECTED')
+                # print(detected_limit_points_in_pattern)
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
@@ -430,8 +429,8 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                 np.float)
-                print('GROUNDTRUTH')
-                print(ground_truth_limit_points_in_pattern)
+                # print('GROUNDTRUTH')
+                # print(ground_truth_limit_points_in_pattern)
 
                 # Compute and save residuals
                 rs = []
@@ -441,8 +440,8 @@ def objectiveFunction(data):
                     r[rname] = np.min(
                         distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
                     rs.append(r[rname])
-                print('RESIDUALS')
-                print(rs)
+                # print('RESIDUALS')
+                # print(rs)
                 # exit(0)
                 # ------------------------------------------------------------------------------------------------
 
@@ -457,10 +456,10 @@ def objectiveFunction(data):
     meter_to_pixel_factor = 200  # trial and error, the best technique around :-)
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
-            if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
+            if not collection['labels'][sensor_key]['detected']:  # pattern not detected by sensor in collection
                 continue
 
-            if sensor['msg_type'] == 'LaserScan':
+            if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
                 pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]  #
                 # compute the residual keys that belong to this collection-sensor pair.
                 rn.update({k: rn[k] * meter_to_pixel_factor for k in pair_keys})  # update the normalized dictionary.
@@ -489,6 +488,10 @@ def objectiveFunction(data):
                 beam_keys = [k for k in pair_keys if '_beam' in k]
                 rn.update({k: 0.5 / len(beam_keys) * rn[k] for k in beam_keys})
 
+            elif sensor['msg_type'] == 'PointCloud2':  # Intra normalization: p
+                pass
+                # TODO
+
     # for collection_key, collection in dataset['collections'].items():
     #     for sensor_key, sensor in dataset['sensors'].items():
     #         pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]
@@ -503,20 +506,40 @@ def objectiveFunction(data):
     #                                     'navg': mean([rn[k] for k in rn.keys() if c == k.split('_')[0] and s in k])}
     #                            for s in dataset['sensors']} for c in dataset['collections']}
     #
-    per_sensor = {str(sensor_key): {'avg': mean([r[k] for k in r.keys() if sensor_key in k]),
-                                    'navg': mean([rn[k] for k in rn.keys() if sensor_key in k])}
-                  for sensor_key in dataset['sensors']}
 
-    per_msg_type = {'Image': {'avg': mean([r[k] for k in r.keys() if 'camera' in k]),
-                              'navg': mean([rn[k] for k in rn.keys() if 'camera' in k])},
-                    # 'LaserScan': {'avg': mean([r[k] for k in r.keys() if 'laser' in k]),
-                    #               'navg': mean([rn[k] for k in rn.keys() if 'laser' in k])}
-                    }
+    per_sensor = {}
+    for sensor_key, sensor in dataset['sensors'].items():
+        per_sensor[str(sensor_key)] = {'avg': mean([r[k] for k in r.keys() if sensor_key in k]),
+                                       'navg': mean([rn[k] for k in rn.keys() if sensor_key in k])}
+
+    # Get a list of all msg_types
+    msg_types = []
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+            if not sensor['msg_type'] in msg_types:
+                msg_types.append(sensor['msg_type'])
+
+        break  # one collection is enough to get msg_type
+
+    per_msg_type = {}
+    for msg_type in msg_types:
+        total = 0
+        ntotal = 0
+        n = 0
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor['msg_type'] == msg_type:
+                values = [r[k] for k in r.keys() if sensor_key in k]
+                total += sum(values)
+                ntotal += sum([rn[k] for k in rn.keys() if sensor_key in k])
+                n += len(values)
+
+        per_msg_type[msg_type] = {'avg': total / n, 'navg': ntotal / n}
+
     # report = {'0-per_col_sensor': per_col_sensor, '1-per_sensor': per_sensor, '2-per_msg_type': per_msg_type}
     report = {'1-per_sensor': per_sensor, '2-per_msg_type': per_msg_type}
 
     pp = pprint.PrettyPrinter(indent=2)
     pp.pprint(report)
 
-    # return rn  # Return the residuals
-    return r  # Return the residuals
+    return rn  # Return the residuals
+    # return r  # Return the residuals
