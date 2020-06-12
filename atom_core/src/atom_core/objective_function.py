@@ -127,6 +127,7 @@ def objectiveFunction(data):
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
@@ -161,11 +162,19 @@ def objectiveFunction(data):
                 # See issue #106
                 pixs, valid_pixs, dists = utilities.projectWithoutDistortion(P, width, height, pts_sensor[0:3, :])
 
+
                 pixs_ground_truth = collection['labels'][sensor_key]['idxs']
                 array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
                 for idx, pix_ground_truth in enumerate(pixs_ground_truth):
                     array_gt[0][idx] = pix_ground_truth['x']
                     array_gt[1][idx] = pix_ground_truth['y']
+
+                # corners = np.zeros((2, len(labels['idxs'])), dtype=np.float32)
+                # ids = range(0, len(labels['idxs']))
+                # for idx, point in enumerate(labels['idxs']):
+                #     corners[0, idx] = point['x']
+                #     corners[1, idx] = point['y']
+                #     ids[idx] = point['id']
 
                 # Compute the error as the average of the Euclidean distances between detected and projected pixels
                 # for idx in range(0, patterns['number_corners']):
@@ -322,9 +331,7 @@ def objectiveFunction(data):
                         marker.points.append(deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
-
             elif sensor['msg_type'] == 'PointCloud2':
-
                 # Get the 3D LiDAR labelled points for the given collection
                 points = collection['labels'][sensor_key]['labelled_points']
 
@@ -429,6 +436,7 @@ def objectiveFunction(data):
                     rs.append(r[rname])
                 print('RESIDUALS')
                 print(rs)
+                exit(0)
                 # ------------------------------------------------------------------------------------------------
 
             else:
@@ -503,4 +511,5 @@ def objectiveFunction(data):
     pp = pprint.PrettyPrinter(indent=2)
     pp.pprint(report)
 
-    return rn  # Return the residuals
+    # return rn  # Return the residuals
+    return r  # Return the residuals
