@@ -164,17 +164,12 @@ def objectiveFunction(data):
 
 
                 pixs_ground_truth = collection['labels'][sensor_key]['idxs']
+                # print(pixs_ground_truth)
+                # exit(0)
                 array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
                 for idx, pix_ground_truth in enumerate(pixs_ground_truth):
                     array_gt[0][idx] = pix_ground_truth['x']
                     array_gt[1][idx] = pix_ground_truth['y']
-
-                # corners = np.zeros((2, len(labels['idxs'])), dtype=np.float32)
-                # ids = range(0, len(labels['idxs']))
-                # for idx, point in enumerate(labels['idxs']):
-                #     corners[0, idx] = point['x']
-                #     corners[1, idx] = point['y']
-                #     ids[idx] = point['id']
 
                 # Compute the error as the average of the Euclidean distances between detected and projected pixels
                 # for idx in range(0, patterns['number_corners']):
@@ -187,21 +182,26 @@ def objectiveFunction(data):
                 ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
                 number_corners = nx * ny
 
-                idx = 0
-                rname = collection_key + '_' + sensor_key + '_0'
-                r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                for idx in range(0, len(dataset['patterns']['corners'])):
+                    rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(idx)
+                    r[rname] = math.sqrt(
+                        (pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
-                idx = nx - 1
-                rname = collection_key + '_' + sensor_key + '_1'
-                r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
-
-                idx = number_corners - nx
-                rname = collection_key + '_' + sensor_key + '_2'
-                r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
-
-                idx = number_corners - 1
-                rname = collection_key + '_' + sensor_key + '_3'
-                r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                # idx = 0
+                # rname = collection_key + '_' + sensor_key + '_0'
+                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                #
+                # idx = nx - 1
+                # rname = collection_key + '_' + sensor_key + '_1'
+                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                #
+                # idx = number_corners - nx
+                # rname = collection_key + '_' + sensor_key + '_2'
+                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                #
+                # idx = number_corners - 1
+                # rname = collection_key + '_' + sensor_key + '_3'
+                # r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
@@ -436,7 +436,7 @@ def objectiveFunction(data):
                     rs.append(r[rname])
                 print('RESIDUALS')
                 print(rs)
-                exit(0)
+                # exit(0)
                 # ------------------------------------------------------------------------------------------------
 
             else:
