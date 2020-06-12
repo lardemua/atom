@@ -105,7 +105,7 @@ def main():
     ap.add_argument("-uic", "--use_incomplete_collections",
                     help="Remove any collection which does not have a detection for all sensors.",
                     action='store_true', default=False)
-    ap.add_argument("-upd", "--use_partial_detections",
+    ap.add_argument("-rpd", "--remove_partial_detections",
                     help="Remove detected labels which are only partial. Used or the Charuco.",
                     action='store_true', default=False)
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=utilities.create_lambda_with_globals,
@@ -165,19 +165,17 @@ def main():
                     del dataset['collections'][collection_key]
                     break
 
-    if not args['use_partial_detections']:
+    if args['remove_partial_detections']:
         number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
                             int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
         # Deleting labels in which not all corners are found:
         for collection_key, collection in dataset['collections'].items():
             for sensor_key, sensor in dataset['sensors'].items():
-                if collection['labels'][sensor_key]['detected']:
-
+                if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
-                        print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' removed label from ' +
+                        print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
                               collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
-                    break
 
     print("\nCollections studied:\n " + str(dataset['collections'].keys()))
 
@@ -463,10 +461,12 @@ def main():
             params.extend(opt.getParamsContainingPattern('C_' + collection_key + '_'))  # pattern related params
 
             if sensor['msg_type'] == 'Image':  # if sensor is a camera use four residuals
-                for idx in range(0, len(dataset['patterns']['corners'])):
-                    # for idx in range(0, 4):
-                    # for idx in range(0, 4):
-                    opt.pushResidual(name=collection_key + '_' + sensor_key + '_' + str(idx), params=params)
+                # for idx in range(0, 4):
+                # for idx in range(0, len()):
+                # for idx in range(0, len(dataset['patterns']['corners'])):
+                for idx in collection['labels'][sensor_key]['idxs']:
+                    rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(idx['id'])
+                    opt.pushResidual(name=rname, params=params)
 
             elif sensor['msg_type'] == 'LaserScan':  # if sensor is a 2D lidar add two residuals
 

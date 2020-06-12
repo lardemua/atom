@@ -76,7 +76,7 @@ def createPatternLabels(args, dataset, step=0.02):
         idx = 0
         for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
             for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
-                patterns['corners'].append({'idx': idx, 'x': col * square, 'y': row * square})
+                patterns['corners'].append({'id': idx, 'x': col * square, 'y': row * square})
                 idx += 1
 
         # ---------------- Frame ----------------
@@ -126,7 +126,7 @@ def createPatternLabels(args, dataset, step=0.02):
         idx = 0
         for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
             for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
-                patterns['corners'].append({'idx': idx, 'x': col * square, 'y': row * square})
+                patterns['corners'].append({'id': idx, 'x': col * square, 'y': row * square})
                 idx += 1
 
         # ---------------- Frame ----------------

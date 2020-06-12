@@ -137,8 +137,16 @@ def objectiveFunction(data):
                 quat = patterns['collections'][collection_key]['quat']
                 root_to_chessboard = utilities.translationQuaternionToTransform(trans, quat)
 
-                pts_in_pattern = np.array([[item['x'] for item in patterns['corners']],  # convert list to numpy array
-                                           [item['y'] for item in patterns['corners']]], np.float)
+                pts_ground_truth = []
+                for pt_detected in collection['labels'][sensor_key]['idxs']:
+                    id_detected = pt_detected['id']
+                    pt_ground_truth = [item for item in patterns['corners'] if item['id'] == id_detected][0]
+                    pts_ground_truth.append(pt_ground_truth)
+
+                pts_in_pattern = np.array([[item['x'] for item in pts_ground_truth],  # convert list to numpy array
+                                           [item['y'] for item in pts_ground_truth]], np.float)
+                # pts_in_pattern = np.array([[item['x'] for item in patterns['corners']],  # convert list to numpy array
+                #                            [item['y'] for item in patterns['corners']]], np.float)
                 pts_in_pattern = np.vstack((pts_in_pattern, np.zeros((1, pts_in_pattern.shape[1]))))  # add z = 0
                 pts_in_pattern = np.vstack((pts_in_pattern, np.ones((1, pts_in_pattern.shape[1]))))  # homogenize
 
@@ -164,8 +172,7 @@ def objectiveFunction(data):
 
 
                 pixs_ground_truth = collection['labels'][sensor_key]['idxs']
-                # print(pixs_ground_truth)
-                # exit(0)
+
                 array_gt = np.zeros(pixs.shape, dtype=np.float)  # transform to np array
                 for idx, pix_ground_truth in enumerate(pixs_ground_truth):
                     array_gt[0][idx] = pix_ground_truth['x']
@@ -182,10 +189,10 @@ def objectiveFunction(data):
                 ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
                 number_corners = nx * ny
 
-                for idx in range(0, len(dataset['patterns']['corners'])):
-                    rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(idx)
-                    r[rname] = math.sqrt(
-                        (pixs[0, idx] - array_gt[0, idx]) ** 2 + (pixs[1, idx] - array_gt[1, idx]) ** 2)
+                for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
+                    rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(label_idx['id'])
+                    r[rname] = math.sqrt((pixs[0, idx] - array_gt[0, idx]) ** 2 +
+                                         (pixs[1, idx] - array_gt[1, idx]) ** 2)
 
                 # idx = 0
                 # rname = collection_key + '_' + sensor_key + '_0'
