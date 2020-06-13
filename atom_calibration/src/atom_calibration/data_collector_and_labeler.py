@@ -199,12 +199,14 @@ class DataCollectorAndLabeler:
 
         all_sensor_data_dict = {}
         all_sensor_labels_dict = {}
-        for sensor_name, sensor in self.sensors.iteritems():
-            print('collect sensor: ' + sensor_name)
 
-            msg = copy.deepcopy(self.sensor_labelers[sensor_name].msg)
-            labels = copy.deepcopy(self.sensor_labelers[sensor_name].labels)
+        for sensor_key, sensor in self.sensors.iteritems():
+            print('collect sensor: ' + sensor_key)
 
+            msg = copy.deepcopy(self.sensor_labelers[sensor_key].msg)
+            labels = copy.deepcopy(self.sensor_labelers[sensor_key].labels)
+
+            print('sensor' + sensor_key)
             # TODO add exception also for point cloud and depth image
             # Update sensor data ---------------------------------------------
             if sensor['msg_type'] == 'Image':  # Special case of requires saving image data as png separate files
@@ -227,7 +229,7 @@ class DataCollectorAndLabeler:
 
             # Update sensor labels ---------------------------------------------
             if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
-                all_sensor_labels_dict[sensor_name] = labels
+                all_sensor_labels_dict[sensor_key] = labels
             else:
                 raise ValueError('Unknown message type.')
 
@@ -237,6 +239,7 @@ class DataCollectorAndLabeler:
 
         # Save to json file
         D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config}
+        print('Saving file ' + self.output_folder + '/data_collected.json')
         self.createJSONFile(self.output_folder + '/data_collected.json', D)
 
         self.unlockAllLabelers()

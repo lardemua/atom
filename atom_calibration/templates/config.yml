@@ -67,7 +67,7 @@
         # the aruco dictionary used by the pattern.
         # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
         # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path. See above description_file.
-        "mesh_file": "package://calibration_pkg/meshes/charuco_5X5_800x600.dae",
+        "mesh_file": "package://some_package/meshes/some.dae",
         "dictionary": "DICT_5X5_100",
         # The border width from the edge corner to the pattern physical edge. Used for 3D sensors and lidars.
         # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
