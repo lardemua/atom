@@ -100,8 +100,6 @@ def main():
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action='store_true')
     ap.add_argument("-si", "--show_images", help="shows images for each camera", action='store_true', default=False)
-    ap.add_argument("-sp", "--single_pattern", help="show a single pattern instead of one per collection.",
-                    action='store_true', default=False)
     ap.add_argument("-uic", "--use_incomplete_collections",
                     help="Remove any collection which does not have a detection for all sensors.",
                     action='store_true', default=False)
