@@ -1,5 +1,7 @@
+
 import itertools
 import math
+import re
 import numpy as np
 
 import json
@@ -9,11 +11,9 @@ import subprocess
 from colorama import Fore
 
 import yaml
-import jsonschema
 import rospy
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
-from json_minify import json_minify
 from urlparse import urlparse
 
 
@@ -59,6 +59,33 @@ def resolvePath(path, verbose=False):
     path = os.path.normpath(path)
     return path
 
+def expandToLaunchEnv(path):
+
+    if path[0] == '~':
+        path = os.path.expanduser('~') + path[1:]
+
+    if '$' not in path:
+        return path
+
+    evars = re.compile(r'\$(\w+|\{[^}]*\})')
+    i = 0
+    while True:
+        m = evars.search(path, i)
+        if not m:
+            break
+
+        i, j = m.span(0)
+        name = m.group(1)
+        if name.startswith('{') and name.endswith('}'):
+            name = name[1:-1]
+
+        tail = path[j:]
+        path = path[:i] + '$(env {})'.format(name)
+        i = len(path)
+        path += tail
+
+    return path
+
 
 def uriReader(resource):
     uri = urlparse(str(resource))
@@ -68,17 +95,22 @@ def uriReader(resource):
         rospack = rospkg.RosPack()
         assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
         fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
+        relpath = '$(find {}){}'.format(uri.netloc, uri.path)
+
     elif uri.scheme == 'file':  # local file
         # print('This is a local file')
         fullpath = resolvePath(uri.netloc + uri.path)
+        relpath = fullpath
     elif uri.scheme == '':  # no scheme, assume local file
         # print('This is a local file')
-        fullpath = resolvePath(uri.netloc + uri.path)
+
+        fullpath = resolvePath(uri.path)
+        relpath = expandToLaunchEnv(uri.path)
     else:
         raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')
 
     assert (os.path.exists(fullpath)), Fore.RED + fullpath + ' does not exist. Check your config.yml description file'
-    return fullpath, os.path.basename(fullpath), uri
+    return fullpath, os.path.basename(fullpath), relpath
 
 
 def loadConfig(filename, check_paths=True):
@@ -106,84 +138,6 @@ def loadYMLConfig(filename):
         return None
 
     return obj
-
-
-def loadJSONConfig(filename):
-    """Load configuration from a json file"""
-    try:
-        with open(filename, 'r') as f:
-            obj = json.loads(json_minify(f.read()))
-
-        _validateJSONConfig(obj)
-    except OSError as e:
-        print("I/O error({0}): {1}".format(e.errno, e.strerror))
-        return None
-    except jsonschema.exceptions.ValidationError as e:
-        print("Invalid calibration JSON: {} @ /{}".format(e.message, "/".join([str(x) for x in e.path])))
-        return None
-
-    return obj
-
-
-def _validateJSONConfig(obj):
-    # Tedious work!!!!
-    schema = {
-        "type": "object",
-        "required": ["sensors", "world_link", "calibration_pattern"],
-        "properties": {
-            "sensors": {
-                "type": "object",
-                "patternProperties": {
-                    "^(.*)$": {
-                        "type": "object",
-                        "required": ["link", "parent_link", "child_link"],
-                        "additionalProperties": False,
-                        "properties": {
-                            "link": {"type": "string"},
-                            "parent_link": {"type": "string"},
-                            "child_link": {"type": "string"},
-                            "topic_name": {"type": "string"},
-                        }
-                    }
-                }
-            },
-            "anchored_sensor": {"type": "string"},
-            "world_link": {"type": "string"},
-            "max_duration_between_msgs": {"type": "number"},
-            "calibration_pattern": {
-                "type": "object",
-                "required": ["link", "parent_link", "pattern_type", "dimension", "size", "border_size"],
-                "additionalProperties": False,
-                "properties": {
-                    "link": {"type": "string"},
-                    "parent_link": {"type": "string"},
-                    "origin": {
-                        "type": "array",
-                        "minItems": 6,
-                        "maxItems": 6,
-                        "items": {"type": "number"}
-                    },
-                    "fixed": {"type": "boolean"},
-                    "pattern_type": {"type": "string"},
-                    "dictionary": {"type": "string"},
-                    "dimension": {
-                        "type": "object",
-                        "required": ["x", "y"],
-                        "additionalProperties": False,
-                        "properties": {
-                            "x": {"type": "number"},
-                            "y": {"type": "number"},
-                        }
-                    },
-                    "size": {"type": "number"},
-                    "inner_size": {"type": "number"},
-                    "border_size": {"type": "number"}
-                }
-            }
-        }
-    }
-
-    jsonschema.validate(obj, schema)
 
 
 def validateLinks(world_link, sensors, urdf):
