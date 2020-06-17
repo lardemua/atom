@@ -62,7 +62,7 @@ def resolvePath(path, verbose=False):
 def expandToLaunchEnv(path):
 
     if path[0] == '~':
-        path = os.path.expanduser('~') + path[1:]
+        path = '$(env HOME)' + path[1:]
 
     if '$' not in path:
         return path
