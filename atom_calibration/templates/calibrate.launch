@@ -1,12 +1,38 @@
-<launch>
-<!-- %%%%%%%%%% ATOM Calibration Framework %%%%%%%%%%%%%%-->
-<!-- {{ c.filename }} : Runs an optimization to calibrate the robot's sensors. -->
-<!-- This file was generated automatically by the script configure_calibration_pkg on the {{ c.date }}-->
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<?xml version="1.0"?>
+<!--
 
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+          █████╗ ████████╗ ██████╗ ███╗   ███╗
+         ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║
+         ███████║   ██║   ██║   ██║██╔████╔██║
+         ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║
+  __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _
+ / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |
+ | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __
+ |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+ | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <
+ |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
+ https://github.com/lardemua/atom
+-->
+
+<!-- WARNING WARNING WARNING WARNING auto-generated file!! -->
+<!-- Only modify this file if you know what you are doing! -->
+
+<!--
+@file {{c.filename}} Runs an optimization to calibrate the robot's sensors.
+
+@arg dataset_file JSON file that contains the data collection.
+@arg single_pattern If true, the pattern will have the same pose for all collections.
+@arg use_incomplete_collections Allow the use of collection without a pattern detection
+    in all sensors.
+@arg ssf Sensor selection function in the form "lambda name: <selection-code>"
+@arg csf Collection selection function in the form "lambda id: <selection-code>"
+
+-->
+
+<launch>
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Parameters-->
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <!--<arg name="marker_size" default="0.5"/>-->
 <arg name="dataset_file"/>
 <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_calibrate }}"/>
@@ -14,11 +40,10 @@
 <arg name="use_incomplete_collections" default="false"/>
 <arg name="ssf" default="lambda sensor_name: True"/>
 <arg name="csf" default="lambda collection_name: True"/>
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Start calibrate node -->
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-
 <group if="$(arg single_pattern)">
     <group if="$(arg use_incomplete_collections)">
         <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
@@ -38,10 +63,11 @@
         <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
     </group>
 </group>
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Visualization -->
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 </launch>

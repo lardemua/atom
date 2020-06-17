@@ -146,14 +146,15 @@ if __name__ == "__main__":
 
     template = env.get_template('playbag.launch')
     with open(playbag_launch_file, 'w') as f:
-        f.write(template.render(c={'filename': os.path.basename(playbag_launch_file),
+        output = template.render(c={'filename': os.path.basename(playbag_launch_file),
                                    'date': dt_string,
                                    'bag_file': bag_file,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                    'use_compressed_topics': bool(compressed_topics),
                                    'compressed_topics': compressed_topics
-                                   }))
+                                   })
+        f.write(output.encode('utf-8'))
 
     # --------------------------------------------------------------------------
     # Create the set_initial_estimate launch file
@@ -163,12 +164,13 @@ if __name__ == "__main__":
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'w') as f:
-        f.write(template.render(c={'filename': os.path.basename(launch_file),
+        output = template.render(c={'filename': os.path.basename(launch_file),
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                    'bag_file': bag_file
-                                   }))
+                                   })
+        f.write(output.encode('utf-8'))
 
     # --------------------------------------------------------------------------
     # Create the data collection launch file
@@ -178,12 +180,13 @@ if __name__ == "__main__":
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'w') as f:
-        f.write(template.render(c={'filename': os.path.basename(launch_file),
+        output = template.render(c={'filename': os.path.basename(launch_file),
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_collect_data': rviz_collect_data,
                                    'bag_file': bag_file
-                                   }))
+                                   })
+        f.write(output.encode('utf-8'))
 
     # --------------------------------------------------------------------------
     # Create the calibrate launch file
@@ -193,11 +196,12 @@ if __name__ == "__main__":
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'w') as f:
-        f.write(template.render(c={'filename': os.path.basename(launch_file),
+        output = template.render(c={'filename': os.path.basename(launch_file),
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_calibrate': rviz_calibrate
-                                   }))
+                                   })
+        f.write(output.encode('utf-8'))
 
     # --------------------------------------------------------------------------
     # Create the rviz config core displays (used in several rviz config files)
