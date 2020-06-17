@@ -19,6 +19,7 @@
   <exec_depend>urdfdom_py</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>interactive_markers</exec_depend>
+  <exec_depend>rviz_visual_tools</exec_depend>
 
   <exec_depend>python-rospkg</exec_depend>
   <exec_depend>python-colorama</exec_depend>

@@ -22,8 +22,10 @@
 #       Example 2: file://home/user/ros_workspace/your_package/urdf/description.urdf.xacro
 #
 #   - Path Expansion
-#       Example 1: $(HOME)/user/$(YOUR_VARIABLE)/your_package/urdf/description.urdf.xacro
+#       Example 1: ${HOME}/user/${YOUR_VARIABLE}/your_package/urdf/description.urdf.xacro
 #       Example 2: ~/user/ros_workspace/your_package/urdf/description.urdf.xacro
+#
+#       NOTE: It is up to you to guarantee the environment variable exists.
 #
 #   - ROS Package Reference
 #       Example: package://your_package/urdf/description.urdf.xacro

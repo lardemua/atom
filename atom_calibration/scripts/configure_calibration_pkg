@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bag_file, _, _ = utilities.uriReader(config['bag_file'])
+    bag_file, _, bag_file_rel = utilities.uriReader(config['bag_file'])
     print('Loading bagfile ' + bag_file)
     bag = rosbag.Bag(bag_file)
     bag_info = bag.get_type_and_topic_info()
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     with open(playbag_launch_file, 'w') as f:
         output = template.render(c={'filename': os.path.basename(playbag_launch_file),
                                    'date': dt_string,
-                                   'bag_file': bag_file,
+                                   'bag_file': bag_file_rel,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                    'use_compressed_topics': bool(compressed_topics),
@@ -168,7 +168,7 @@ if __name__ == "__main__":
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
-                                   'bag_file': bag_file
+                                   'bag_file': bag_file_rel
                                    })
         f.write(output.encode('utf-8'))
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
                                    'date': dt_string,
                                    'package_name': package_name,
                                    'rviz_collect_data': rviz_collect_data,
-                                   'bag_file': bag_file
+                                   'bag_file': bag_file_rel
                                    })
         f.write(output.encode('utf-8'))
 
