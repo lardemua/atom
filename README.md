@@ -39,6 +39,12 @@ Moreover, **ATOM** provides several scripts to facilitate all the steps of a cal
 # How to Use - Quick Start
 
 Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline:
+
+0. **Prepare you environment** (OPTIONAL) - define environment variables for easy cross machine access to data
+   ```bash
+   export ROS_BAGS="$HOME/bagfiles"
+   export ATOM_DATASETS="$HOME/datasets"
+   ```
 1. **Create a calibration package** for you robotic system
    ```bash
    rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
