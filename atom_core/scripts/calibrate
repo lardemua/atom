@@ -24,7 +24,6 @@ import OptimizationUtils.OptimizationUtils as OptimizationUtils
 import OptimizationUtils.utilities as optimization_utilities
 
 # own packages
-import atom_calibration.utilities as utilities
 import atom_core.getters_and_setters as getters_and_setters
 import atom_core.objective_function as objective_function
 import atom_core.patterns as patterns
@@ -109,19 +108,23 @@ def main():
     ap.add_argument("-rpd", "--remove_partial_detections",
                     help="Remove detected labels which are only partial. Used or the Charuco.",
                     action='store_true', default=False)
-    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=utilities.create_lambda_with_globals,
+    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help='A string to be evaluated into a lambda function that receives a sensor name as input and '
                          'returns True or False to indicate if the sensor should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
                          'sensors left_laser and frontal_camera')
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=utilities.create_lambda_with_globals,
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help='A string to be evaluated into a lambda function that receives a collection name as input and '
                          'returns True or False to indicate if the collection should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
 
-    args = vars(ap.parse_args(args=utilities.filterLaunchArguments(sys.argv)))
+    # Filter unwanted arguments.
+    # Roslaunch adds two arguments (__name and __log) that break our parser
+    arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
+
+    args = vars(ap.parse_args(args=arglist))
     print("\nArgument list=" + str(args) + '\n')
 
     # ---------------------------------------
@@ -133,8 +136,13 @@ def main():
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
-    """ Loads a json file containing the detections"""
-    json_file, _, _ = utilities.uriReader(args['json_file'])
+    # Loads a json file containing the detections
+    #
+    # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
+    #   and our guide lines is to use environment variables, which the shell already expands.
+    #   Furthermore, the URI resolver required an import from a `top-level` package which does
+    #   not make sense in a `core` package.
+    json_file = args['json_file']
     f = open(json_file, 'r')
     dataset = json.load(f)
 
@@ -527,8 +535,7 @@ def main():
     print('Initializing optimization ...')
     # opt.startOptimization(optimization_options={'ftol': 1e-4, 'xtol': 1e-4, 'gtol': 1e-4, 'diff_step': 1e-3,
     #                                             'x_scale': 'jac'})
-    opt.startOptimization(optimization_options={'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': 1e-3,
-                                                'x_scale': 'jac'})
+    opt.startOptimization(optimization_options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6})
     # TODO diff step as None
 
     # print('\n-----------------')
