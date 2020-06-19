@@ -1,17 +1,19 @@
 
-import itertools
-import math
-import re
-import numpy as np
-
-import json
+# stdlib
 import os
-import rospkg
+import re
+import math
+import json
+import itertools
 import subprocess
-from colorama import Fore
 
+# 3rd-party
+import numpy as np
+import rospkg
 import yaml
 import rospy
+
+from colorama import Fore
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from urlparse import urlparse
@@ -240,7 +242,7 @@ def getMaxTimeDelta(stamps):
 
 def getMaxTime(stamps):
     reference_time = rospy.Time.now()  # get a time at the start of this call
-    durations = [(stamp - reference_time).to_sec() for stamp in stamps]
+    durations = [abs((stamp - reference_time).to_sec()) for stamp in stamps]
 
     max_duration = max(durations)
     max_time = reference_time + rospy.Duration(max_duration)

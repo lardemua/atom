@@ -3,9 +3,7 @@
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """
 
-# -------------------------------------------------------------------------------
-# --- IMPORTS (standard, then third party, then my own modules)
-# -------------------------------------------------------------------------------
+# 3rd-party
 import numpy as np
 from scipy.spatial import distance
 from tf import transformations

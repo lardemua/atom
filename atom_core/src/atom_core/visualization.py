@@ -3,31 +3,33 @@
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """
 
-# -------------------------------------------------------------------------------
-# --- IMPORTS (standard, then third party, then my own modules)
-# -------------------------------------------------------------------------------
+# stdlib
 import copy
-import cv2
 import math
 import os
 import pprint
 
+# 3rd-party
+import cv2
 import ros_numpy
 import rospy
+import tf
+
 from rospy_message_converter import message_converter
 from rospy_urdf_to_rviz_converter.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from std_msgs.msg import Header, ColorRGBA
 from urdf_parser_py.urdf import URDF
-
-import tf
-from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, sensor_msgs, CameraInfo
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
+from cv_bridge import CvBridge
+
 from matplotlib import cm
 from open3d import *
 
 from OptimizationUtils import utilities
+
+# own packages
 from atom_calibration.utilities import uriReader, execute
 
 

@@ -1,18 +1,19 @@
+
+# stdlib
 import copy
 import json
 import os
 import shutil
 import subprocess
 import time
+from datetime import datetime
 
-import yaml
-
-import cv2
+# 3rd-party
 import tf
+import cv2
+import yaml
 import numpy
 import ros_numpy
-
-from datetime import datetime
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
@@ -21,6 +22,7 @@ from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
+# local packages
 from utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
 from atom_calibration.utilities import loadConfig, execute
 from atom_calibration.interactive_data_labeler import InteractiveDataLabeler

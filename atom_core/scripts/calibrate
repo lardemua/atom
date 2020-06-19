@@ -3,24 +3,27 @@
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """
 
-# -------------------------------------------------------------------------------
-# --- IMPORTS (standard, then third party, then own modules)
-# -------------------------------------------------------------------------------
+# stdlib
 import os
-from copy import deepcopy
-import numpy as np
-from functools import partial
+import signal
+import sys
 import json
 import sys
 import argparse
-from colorama import Fore, Style
-import cv2
-import signal
-import sys
+
+from copy import deepcopy
+from functools import partial
+
+# 3rd-party
 import tf
+import cv2
+import numpy as np
+from colorama import Fore, Style
 
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
 import OptimizationUtils.utilities as optimization_utilities
+
+# own packages
 import atom_calibration.utilities as utilities
 import atom_core.getters_and_setters as getters_and_setters
 import atom_core.objective_function as objective_function

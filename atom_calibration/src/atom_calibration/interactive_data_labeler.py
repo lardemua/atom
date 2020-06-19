@@ -1,37 +1,38 @@
 #!/usr/bin/env python
 
-# ------------------------
-#    IMPORT MODULES      #
-# ------------------------
+# stdlib
 import os
 import sys
-import struct
-import threading
-from __builtin__ import enumerate
 import math
-import random  # Added by Andre Aguiar (is that ok?)
-import scipy.spatial  # Added by Andre Aguiar (is that ok?)
+import struct
+import random
+import threading
+from ctypes import *  # Convert float to uint32
 
+from __builtin__ import enumerate
+from copy import deepcopy
+
+# 3rd-party
 import cv2
 import rospy
-import ros_numpy  # Added by Andre Aguiar (it that ok?) - i think this on have to be added to the requirements.txt
+import numpy as np
+import ros_numpy
+import scipy.spatial
+
+import sensor_msgs.point_cloud2 as pc2
+
 from cv_bridge import CvBridge
 from matplotlib import cm
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
 from sensor_msgs.msg import *
-import atom_calibration.utilities
-import numpy as np
-
-from ctypes import *  # Convert float to uint32
 from sensor_msgs.msg import PointCloud2, PointField
-import sensor_msgs.point_cloud2 as pc2
-from copy import deepcopy
-
-from atom_calibration import patterns
-
 from image_geometry import PinholeCameraModel
+
+# local packages
+from atom_calibration import patterns
+import atom_calibration.utilities
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [

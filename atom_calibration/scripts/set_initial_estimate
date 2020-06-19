@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 
+# stdlib
 import sys
 import os.path
 import argparse
-from colorama import Fore, Style
+
+# 3rd-party
 import yaml
 import rospkg
 import rospy
+
+from colorama import Fore, Style
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
 from urdf_parser_py.urdf import URDF
 
-# __self__ imports
+# local packages
 from atom_calibration.utilities import loadConfig, filterLaunchArguments
 from atom_calibration.sensor import Sensor
 

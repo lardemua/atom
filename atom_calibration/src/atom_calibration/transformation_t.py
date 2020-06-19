@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-# ------------------------
-#    IMPORT MODULES      #
-# ------------------------
+# stdlib
 import copy
 
+# 3rd-party
 import numpy as np
 import cv2
 import tf
+
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from tf.listener import TransformListener

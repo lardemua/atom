@@ -1,20 +1,23 @@
-# -------------------------------------------------------------------------------
-# --- IMPORTS (standard, then third party, then my own modules)
-# -------------------------------------------------------------------------------
+
+# stdlib
 import pprint
-from copy import deepcopy
 import math
+from copy import deepcopy
+
+# 3rd-party
 import numpy as np
 from statistics import mean
 
 import rospy
+import ros_numpy
+
+from scipy.spatial import distance
+
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
-from scipy.spatial import distance
 from sensor_msgs.msg import CameraInfo
 from visualization_msgs.msg import MarkerArray, Marker
-import ros_numpy  # Added by Andre Aguiar (it that ok?) - i think this on have to be added to the requirements.txt
 
 import OptimizationUtils.utilities as utilities
 

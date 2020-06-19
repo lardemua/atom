@@ -3,19 +3,17 @@
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """
 
-# -------------------------------------------------------------------------------
-# --- IMPORTS (standard, then third party, then my own modules)
-# -------------------------------------------------------------------------------
+# stdlib
 import math
-import numpy as np
 import pprint
 from copy import deepcopy
 
+# 3rd-party
+import numpy as np
 import cv2
 from tf import transformations
 
 from OptimizationUtils import utilities
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS

@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
-# ------------------------
-#    IMPORT MODULES      #
-# ------------------------
-import argparse
+# stdlib
 import os
-import rospkg
+import argparse
 import subprocess
+
+# 3rd-party
+import rospy
+import rospkg
+
 from colorama import Style, Fore
 from datetime import datetime
-import rospy
+
+# local packages
 from atom_calibration.utilities import resolvePath, execute
 
 if __name__ == "__main__":
