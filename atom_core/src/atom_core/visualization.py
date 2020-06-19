@@ -90,7 +90,7 @@ def setupVisualization(dataset, args):
     for collection_key, collection in dataset['collections'].items():
         rgba = graphics['collections'][collection_key]['color']
         rgba[3] = 0.4  # change the alpha
-        rgba = [.5, .5, .5, 0.7]  # best color we could find
+        # rgba = [.5, .5, .5, 0.7]  # best color we could find
         m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                               namespace=collection_key,
                               rgba=rgba)
@@ -309,8 +309,8 @@ def setupVisualization(dataset, args):
                        scale=Vector3(x=1.0, y=1.0, z=1.0),
                        color=ColorRGBA(r=1, g=1, b=1, a=1))
 
-            file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
-            m.mesh_resource = 'file://' + file  # mesh_resource needs uri format
+            mesh_file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
+            m.mesh_resource = 'file://' + mesh_file  # mesh_resource needs uri format
             m.mesh_use_embedded_materials = True
             markers.markers.append(m)
 

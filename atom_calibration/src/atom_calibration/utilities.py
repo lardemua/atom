@@ -18,8 +18,6 @@ from sensor_msgs.msg import *
 from urlparse import urlparse
 
 
-
-
 # Check https://stackoverflow.com/questions/52431265/how-to-use-a-lambda-as-parameter-in-python-argparse
 def create_lambda_with_globals(s):
     return eval(s, globals())
@@ -119,7 +117,26 @@ def uriReader(resource):
     return fullpath, os.path.basename(fullpath), relpath
 
 
-# def verifyConfig(config_file):
+def verifyConfig(config, template_config, upper_key=None):
+    missing_keys = []
+    for key in template_config:
+        print('Checking key ' + key)
+        if not key in config:
+            missing_keys.append(upper_key + '/' + key)
+            print(str(key) + ' is not here: ' + str(config))
+        elif type(config[key]) is dict and not key == 'sensors':
+            print('key ' + key + ' is a dict')
+
+            if upper_key is None:
+                mk = verifyConfig(config[key], template_config[key], key)
+            else:
+                mk = verifyConfig(config[key], template_config[key], upper_key + '/' + key)
+            missing_keys.extend(mk)
+
+
+
+    return missing_keys
+
 
 def loadConfig(filename, check_paths=True):
     config = loadYMLConfig(filename)
@@ -128,12 +145,12 @@ def loadConfig(filename, check_paths=True):
     rospack = rospkg.RosPack()
     template_file = rospack.get_path('atom_calibration') + '/templates/config.yml'
     template_config = loadYMLConfig(template_file)
+    missing_parameters = verifyConfig(config, template_config)
 
-    if not all(key in config for key in template_config):
-        missing_keys =  [key for key in template_config if key not in config]
+    if missing_parameters: # list is not empty
         raise ValueError(Fore.RED + 'Your config file ' + filename +
-                         ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE + str(missing_keys)
-                         + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
+                         ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
+                         str(missing_parameters) + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
                          ' rosrun <your_robot>_calibration configure' + Fore.RESET)
 
     # Check if description file is ok
