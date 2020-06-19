@@ -1,4 +1,3 @@
-
 # stdlib
 import os
 import re
@@ -17,6 +16,8 @@ from colorama import Fore
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from urlparse import urlparse
+
+
 
 
 # Check https://stackoverflow.com/questions/52431265/how-to-use-a-lambda-as-parameter-in-python-argparse
@@ -61,7 +62,10 @@ def resolvePath(path, verbose=False):
     path = os.path.normpath(path)
     return path
 
+
 def expandToLaunchEnv(path):
+    if len(path) == 0:  # if path is empty, path[0] does not exist
+        return path
 
     if path[0] == '~':
         path = '$(env HOME)' + path[1:]
@@ -115,8 +119,22 @@ def uriReader(resource):
     return fullpath, os.path.basename(fullpath), relpath
 
 
+# def verifyConfig(config_file):
+
 def loadConfig(filename, check_paths=True):
     config = loadYMLConfig(filename)
+
+    # Check if config has all the necessary keys.
+    rospack = rospkg.RosPack()
+    template_file = rospack.get_path('atom_calibration') + '/templates/config.yml'
+    template_config = loadYMLConfig(template_file)
+
+    if not all(key in config for key in template_config):
+        missing_keys =  [key for key in template_config if key not in config]
+        raise ValueError(Fore.RED + 'Your config file ' + filename +
+                         ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE + str(missing_keys)
+                         + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
+                         ' rosrun <your_robot>_calibration configure' + Fore.RESET)
 
     # Check if description file is ok
     fullpath, name, uri = uriReader(config['description_file'])

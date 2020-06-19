@@ -19,6 +19,7 @@ import atom_calibration.utilities as utilities
 from atom_calibration.data_collector_and_labeler import DataCollectorAndLabeler
 
 
+
 server = None
 menu_handler = MenuHandler()
 
@@ -127,6 +128,7 @@ if __name__ == "__main__":
         print('\nError: Dataset ' + Fore.RED + output_folder + Style.RESET_ALL +
               ' is the same as $HOME path. Are you sure you know what your are doing?\n' + Style.RESET_ALL)
         rospy.signal_shutdown()
+
 
     # Initialize ROS stuff
     rospy.init_node("collect_data")
