@@ -120,20 +120,18 @@ def uriReader(resource):
 def verifyConfig(config, template_config, upper_key=None):
     missing_keys = []
     for key in template_config:
-        print('Checking key ' + key)
+        # print('Checking key ' + key)
         if not key in config:
             missing_keys.append(upper_key + '/' + key)
-            print(str(key) + ' is not here: ' + str(config))
+            # print(str(key) + ' is not here: ' + str(config))
         elif type(config[key]) is dict and not key == 'sensors':
-            print('key ' + key + ' is a dict')
+            # print('key ' + key + ' is a dict')
 
             if upper_key is None:
                 mk = verifyConfig(config[key], template_config[key], key)
             else:
                 mk = verifyConfig(config[key], template_config[key], upper_key + '/' + key)
             missing_keys.extend(mk)
-
-
 
     return missing_keys
 
@@ -147,7 +145,7 @@ def loadConfig(filename, check_paths=True):
     template_config = loadYMLConfig(template_file)
     missing_parameters = verifyConfig(config, template_config)
 
-    if missing_parameters: # list is not empty
+    if missing_parameters:  # list is not empty
         raise ValueError(Fore.RED + 'Your config file ' + filename +
                          ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
                          str(missing_parameters) + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
