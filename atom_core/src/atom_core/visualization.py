@@ -39,8 +39,19 @@ from atom_calibration.utilities import uriReader, execute
 
 
 def genCollectionPrefix(collection_key, string):
-    """" Standarized form of deriving a name with a collection related prefix. """
+    """ SStandardized form of deriving a name with a collection related prefix. """
     return 'c' + str(collection_key) + '_' + str(string)
+
+
+def generateName(name, prefix='', suffix='', separator='_'):
+    """ Standardized form of deriving a name with a prefix or a suffix with _ separating them. """
+
+    if prefix:
+        prefix = prefix + separator
+
+    if suffix:
+        suffix = separator + suffix
+    return str(prefix) + str(name) + str(suffix)
 
 
 def setupVisualization(dataset, args):
@@ -73,7 +84,7 @@ def setupVisualization(dataset, args):
     pattern = dataset['calibration_config']['calibration_pattern']
 
     # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
-    graphics['pattern']['colormap'] = cm.plasma(
+    graphics['pattern']['colormap'] = cm.gist_rainbow(
         np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
     graphics['collections']['colormap'] = cm.tab20b(np.linspace(0, 1, len(dataset['collections'].keys())))
@@ -88,9 +99,9 @@ def setupVisualization(dataset, args):
     # for visualizing the robot meshes on all collections
     markers = MarkerArray()
     for collection_key, collection in dataset['collections'].items():
-        rgba = graphics['collections'][collection_key]['color']
-        rgba[3] = 0.4  # change the alpha
-        # rgba = [.5, .5, .5, 0.7]  # best color we could find
+        # rgba = graphics['collections'][collection_key]['color']
+        # rgba[3] = 0.4  # change the alpha
+        rgba = [.5, .5, .5, 0.7]  # best color we could find
         m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                               namespace=collection_key,
                               rgba=rgba)
@@ -240,7 +251,13 @@ def setupVisualization(dataset, args):
 
     for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
         # Draw pattern frame lines_sampled (top, left, right, bottom)
-        frame_id = 'c' + collection_key + '_pattern_link'
+
+        if not dataset['calibration_config']['calibration_pattern']['fixed']:  # Draw a pattern per collection
+            frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
+                                    prefix='c' + collection_key)
+        else:  # fixed pattern, draw a single pattern
+            frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'])
+
         marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                         ns=str(collection_key) + '-frame_sampled', id=id, frame_locked=True,
                         type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
@@ -261,7 +278,6 @@ def setupVisualization(dataset, args):
         markers.markers.append(marker)
 
         # Draw corners
-        frame_id = 'c' + collection_key + '_pattern_link'
         marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                         ns=str(collection_key) + '-corners', id=id, frame_locked=True,
                         type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
@@ -280,7 +296,6 @@ def setupVisualization(dataset, args):
         markers.markers.append(marker)
 
         # Draw transitions
-        frame_id = 'c' + collection_key + '_pattern_link'
         marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                         ns=str(collection_key) + '-transitions', id=id, frame_locked=True,
                         type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
@@ -301,7 +316,7 @@ def setupVisualization(dataset, args):
         if not dataset['calibration_config']['calibration_pattern']['mesh_file'] == "":
             rgba = graphics['collections'][collection_key]['color']
             # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
-            m = Marker(header=Header(frame_id=genCollectionPrefix(collection_key, 'pattern_link'), stamp=now),
+            m = Marker(header=Header(frame_id=frame_id, stamp=now),
                        ns=str(collection_key) + '-mesh', id=idx + 5000, frame_locked=True,
                        type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
                        pose=Pose(position=Point(x=0, y=0, z=0),
@@ -401,12 +416,13 @@ def visualizationFunction(models):
     # Publish the models
     graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
+    # Not needed now that pattern transforms are added to the collection['transforms']
     # Publishes the chessboards transforms
-    for idx, (collection_chess_key, collection_chess) in enumerate(patterns['collections'].items()):
-        parent = 'base_link'
-        child = 'c' + collection_chess_key + '_pattern_link'
-        graphics['ros']['tf_broadcaster'].sendTransform(collection_chess['trans'], collection_chess['quat'],
-                                                        now, child, parent)
+    # for idx, (collection_pattern_key, collection_pattern) in enumerate(patterns['collections'].items()):
+    #     parent = 'base_link'
+    #     child = 'c' + collection_pattern_key + '_pattern_link'
+    #     graphics['ros']['tf_broadcaster'].sendTransform(collection_pattern['trans'], collection_pattern['quat'],
+    #                                                     now, child, parent)
 
     # Publish patterns
     for marker in graphics['ros']['MarkersPattern'].markers:
@@ -438,26 +454,27 @@ def visualizationFunction(models):
                     diagonal = math.sqrt(width ** 2 + height ** 2)
                     cm = graphics['pattern']['colormap']
 
-                    # Draw projected points (as dots)
+                    # Draw projected points (as crosses)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
+                        utilities.drawCross2D(image, x, y, int(8E-3 * diagonal) + 2, color=color, thickness=2)
 
                     # Draw ground truth points (as squares)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        utilities.drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
+                        utilities.drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
-                    # Draw initial projected points (as crosses)
+                    # Draw initial projected points (as dots)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        # utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
 
                     msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 
@@ -477,4 +494,3 @@ def visualizationFunction(models):
                 pass
             else:
                 raise ValueError("Unknown sensor msg_type")
-

@@ -18,6 +18,39 @@ import OptimizationUtils.utilities as utilities
 # ------------  Sensors -----------------
 # Each sensor will have a position (tx,ty,tz) and a rotation (r1,r2,r3)
 
+def getterTransform(dataset, transform_key, collection_name):
+    # The pose must be returned as a list of translation vector and rotation, i.e. [tx, ty, tz, r1, r2, r3] where r1,
+    # r2,r3 are angles of the Rodrigues rotation vector.
+
+    trans = dataset['collections'][collection_name]['transforms'][transform_key]['trans']
+    quat = dataset['collections'][collection_name]['transforms'][transform_key]['quat']
+
+    # Convert from (trans, quat) to [tx, ty, tz, r1, r2, r3] format
+    h_matrix = transformations.quaternion_matrix(quat)  # quaternion to homogeneous matrix
+    matrix = h_matrix[0:3, 0:3]  # non-homogeneous matrix 3x3
+    rod = utilities.matrixToRodrigues(matrix).tolist()  # matrix to Rodrigues
+    return trans + rod
+
+
+def setterTransform(dataset, values, transform_key, collection_name=None):
+    # The pose must be returned as a list of translation vector and rotation, i.e. [tx, ty, tz, r1, r2, r3] where r1,
+    # r2,r3 are angles of the Rodrigues rotation vector.
+
+    # Convert from [tx, ty, tz, r1, r2, r3] format to trans and quat format
+    trans, rod = values[0:3], values[3:]
+    matrix = utilities.rodriguesToMatrix(rod)
+    h_matrix = np.identity(4)
+    h_matrix[0:3, 0:3] = matrix
+    quat = transformations.quaternion_from_matrix(h_matrix)
+
+    if collection_name is None:  # if collection_name is None, set all collections with the same value
+        for collection_key in dataset['collections']:
+            dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = trans  # set the translation
+            dataset['collections'][collection_key]['transforms'][transform_key]['quat'] = quat  # set the quaternion
+    else:
+        dataset['collections'][collection_name]['transforms'][transform_key]['trans'] = trans  # set the translation
+        dataset['collections'][collection_name]['transforms'][transform_key]['quat'] = quat  # set the quaternion
+
 def getterSensorTranslation(data, sensor_key, collection_key):
     calibration_parent = data['sensors'][sensor_key]['calibration_parent']
     calibration_child = data['sensors'][sensor_key]['calibration_child']

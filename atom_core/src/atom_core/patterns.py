@@ -15,6 +15,7 @@ from tf import transformations
 
 from OptimizationUtils import utilities
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -62,8 +63,7 @@ def createPatternLabels(args, dataset, step=0.02):
         # Transitions from black to white squares. Just a set of sampled points
         'transitions': {'vertical': [],  # [{'x': 3, 'y': 4}, ..., {'x': 30, 'y': 40}]},
                         'horizontal': []},  # [{'x': 3, 'y': 4}, ..., {'x': 30, 'y': 40}]},
-        'collections': {},  # {'collection_key': {'trans': ..., 'quat': 4}, ...}
-
+        'transforms_initial': {},  # {'collection_key': {'trans': ..., 'quat': 4}, ...}
     }
 
     if dataset['calibration_config']['calibration_pattern']['pattern_type'] == 'chessboard':
@@ -169,7 +169,8 @@ def createPatternLabels(args, dataset, step=0.02):
     # Create first guess for pattern pose
     # -----------------------------------
     for collection_key, collection in dataset['collections'].items():
-        flg_detected_chessboard = False
+        flg_detected_pattern = False
+        patterns['transforms_initial'][str(collection_key)] = {'detected': False}  # by default no detection
         for sensor_key, sensor in dataset['sensors'].items():
 
             if not collection['labels'][sensor_key]['detected']:  # if chessboard not detected by sensor in collection
@@ -208,15 +209,19 @@ def createPatternLabels(args, dataset, step=0.02):
                 T[0:3, 3] = 0  # remove translation component from 4x4 matrix
 
                 print('Creating first guess for collection ' + collection_key + ' using sensor ' + sensor_key)
-                patterns['collections'][str(collection_key)] = {
-                    'trans': list(root_T_chessboard[0:3, 3]),
-                    'quat': list(transformations.quaternion_from_matrix(T))}
 
-                flg_detected_chessboard = True
+                parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+                child = dataset['calibration_config']['calibration_pattern']['link']
+                patterns['transforms_initial'][str(collection_key)] = \
+                    {'detected': True, 'sensor': sensor_key, 'parent': parent, 'child': child,
+                     'trans': list(root_T_chessboard[0:3, 3]), 'quat': list(transformations.quaternion_from_matrix(T)),
+                     }
+
+                flg_detected_pattern = True
                 break  # don't search for this collection's chessboard on anymore sensors
 
-        if not flg_detected_chessboard:  # Abort when the chessboard is not detected by any camera on this collection
-            raise ValueError('Collection ' + collection_key + ' could not find chessboard.')
+        if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
+            raise ValueError('Collection ' + collection_key + ' could not find pattern.')
 
     return patterns
 
@@ -433,7 +438,7 @@ def createPatternLabels(args, dataset, step=0.02):
     # dataset_chessboard_points = {'points': chessboard_points, 'l_points': pts_l_chess, 'i_points': pts_i_chess}
     #
     # for collection_key, collection in dataset['collections'].items():
-    #     flg_detected_chessboard = False
+    #     flg_detected_pattern = False
     #     for sensor_key, sensor in dataset['sensors'].items():
     #
     #         if not collection['labels'][sensor_key]['detected']:  # if chessboard not detected by sensor in collection
@@ -476,10 +481,10 @@ def createPatternLabels(args, dataset, step=0.02):
     #                 'trans': list(root_T_chessboard[0:3, 3]),
     #                 'quat': list(transformations.quaternion_from_matrix(T))}
     #
-    #             flg_detected_chessboard = True
+    #             flg_detected_pattern = True
     #             break  # don't search for this collection's chessboard on anymore sensors
     #
-    #     if not flg_detected_chessboard:  # Abort when the chessboard is not detected by any camera on this collection
+    #     if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
     #         raise ValueError('Collection ' + collection_key + ' could not find chessboard.')
     #
     # return dataset_chessboards, dataset_chessboard_points

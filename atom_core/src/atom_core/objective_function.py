@@ -1,4 +1,3 @@
-
 # stdlib
 import pprint
 import math
@@ -6,6 +5,8 @@ from copy import deepcopy
 
 # 3rd-party
 import numpy as np
+from mercurial.config import config
+
 from statistics import mean
 
 import rospy
@@ -19,7 +20,7 @@ from rospy_message_converter import message_converter
 from sensor_msgs.msg import CameraInfo
 from visualization_msgs.msg import MarkerArray, Marker
 
-import OptimizationUtils.utilities as utilities
+import OptimizationUtils.utilities as optimization_utilities
 
 
 # -------------------------------------------------------------------------------
@@ -149,36 +150,83 @@ def objectiveFunction(data):
                                            [0 for _ in pts_in_pattern_list],
                                            [1 for _ in pts_in_pattern_list]], np.float)
 
+                # print("x = " + str(pts_in_pattern[0, :]))
+                # print("y = " + str(pts_in_pattern[1, :]))
+
+                # pts_in_pattern = np.array([[item['x'] for item in patterns['corners']],
+                #                            [item['y'] for item in patterns['corners']],
+                #                            [0 for _ in pts_in_pattern_list],
+                #                            [1 for _ in pts_in_pattern_list]],
+                #                           dtype=np.float)
+
+                # print("x = " + str(pts_in_pattern[0, :]))
+                # print("y = " + str(pts_in_pattern[1, :]))
+                # exit(0)
+
                 # Transform pattern corners from the pattern frame to the sensor frame ---------------------------------
-                trans = patterns['collections'][collection_key]['trans']
-                quat = patterns['collections'][collection_key]['quat']
-                root_to_pattern = utilities.translationQuaternionToTransform(trans, quat)
-                sensor_to_root = np.linalg.inv(utilities.getAggregateTransform(sensor['chain'],
-                                                                               collection['transforms']))
-                sensor_to_pattern = np.dot(sensor_to_root, root_to_pattern)
-                pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
+                # parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+                # child = dataset['calibration_config']['calibration_pattern']['link']
+                # transform_key = optimization_utilities.generateKey(parent, child)
+                # trans = collection['transforms'][transform_key]['trans']
+                # quat = collection['transforms'][transform_key]['quat']
+                # root_to_pattern = optimization_utilities.translationQuaternionToTransform(trans, quat)
+                # print("root_to_pattern\n" + str(root_to_pattern))
+                #
+                # sensor_to_root = np.linalg.inv(optimization_utilities.getAggregateTransform(sensor['chain'],
+                #                                                                             collection['transforms']))
+                # print("sensor_to_root\n" + str(sensor_to_root))
+                #
+                # sensor_to_pattern = np.dot(sensor_to_root, root_to_pattern)
+                # print("sensor_to_pattern\n" + str(sensor_to_pattern))
+                #
+                #
+                # from_frame = dataset['calibration_config']['calibration_pattern']['parent_link']
+                # to_frame = dataset['calibration_config']['calibration_pattern']['link']
+                # new_root_to_pattern = optimization_utilities.getTransform(from_frame, to_frame,
+                #                                                           collection['transforms'])
+                # print("new root_to_pattern\n" + str(new_root_to_pattern))
+                #
+                # from_frame = sensor['parent']
+                # to_frame = dataset['calibration_config']['world_link']
+                # new_sensor_to_root = optimization_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                # print("new_sensor_to_root\n" + str(new_sensor_to_root))
+
+                from_frame = sensor['parent']
+                to_frame = dataset['calibration_config']['calibration_pattern']['link']
+                new_sensor_to_pattern = optimization_utilities.getTransform(from_frame, to_frame,
+                                                                            collection['transforms'])
+                # print("new sensor_to_pattern\n" + str(new_sensor_to_pattern))
+
+                pts_in_sensor = np.dot(new_sensor_to_pattern, pts_in_pattern)
+                # print("new pts_in_sensor")
+                # print("x = " + str(pts_in_sensor[0, :]))
+                # print("y = " + str(pts_in_sensor[1, :]))
+                # print("z = " + str(pts_in_sensor[2, :]))
+
+                # print("\n2:\n" + str(pts_in_sensor))
 
                 # Project points to the image of the sensor ------------------------------------------------------------
                 w = collection['data'][sensor_key]['width']
                 h = collection['data'][sensor_key]['height']
                 K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
-                # P = np.ndarray((3, 4), buffer=np.array(sensor['camera_info']['P']), dtype=np.float)
+                P = np.ndarray((3, 4), buffer=np.array(sensor['camera_info']['P']), dtype=np.float)
                 # D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
 
                 # pts_in_image, _, _ = utilities.projectToCamera(K, D, width, height, pts_in_sensor[0:3, :])
                 # pts_in_image, _, _ = utilities.projectToCamera(P, D, width, height, pts_in_sensor[0:3, :])
-                pts_in_image, _, _ = utilities.projectWithoutDistortion(K, w, h, pts_in_sensor[0:3, :])
+                # pts_in_image, _, _ = optimization_utilities.projectWithoutDistortion(K, w, h, pts_in_sensor[0:3, :])
                 # See issue #106
-                # pts_in_image, _, _ = utilities.projectWithoutDistortion(P, width, height, pts_in_sensor[0:3, :])
+                pts_in_image, _, _ = optimization_utilities.projectWithoutDistortion(P, w, h, pts_in_sensor[0:3, :])
 
                 # Get the detected points to use as ground truth--------------------------------------------------------
                 pts_detected_in_image = np.array([[item['x'] for item in collection['labels'][sensor_key]['idxs']],
                                                   [item['y'] for item in collection['labels'][sensor_key]['idxs']]],
-                                                  dtype=np.float)
+                                                 dtype=np.float)
 
                 # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
+                # print(collection['labels'][sensor_key]['idxs'])
                 for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
-                    rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(label_idx['id'])
+                    rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
                                          (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
 
@@ -224,12 +272,12 @@ def objectiveFunction(data):
                     pts_in_laser[3, idx] = 1
 
                 # Compute the coordinate of the laser points in the chessboard reference frame
-                root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
+                root_to_sensor = optimization_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
                 pts_in_root = np.dot(root_to_sensor, pts_in_laser)
 
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
-                chessboard_to_root = np.linalg.inv(utilities.translationQuaternionToTransform(trans, quat))
+                chessboard_to_root = np.linalg.inv(optimization_utilities.translationQuaternionToTransform(trans, quat))
                 pts_in_chessboard = np.dot(chessboard_to_root, pts_in_root)
 
                 # --- Residuals: longitudinal error for extrema
@@ -289,7 +337,7 @@ def objectiveFunction(data):
                 # chessboard to the laser reference frame
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
-                root_to_pattern = utilities.translationQuaternionToTransform(trans, quat)
+                root_to_pattern = optimization_utilities.translationQuaternionToTransform(trans, quat)
                 laser_to_chessboard = np.dot(np.linalg.inv(root_to_sensor), root_to_pattern)
 
                 p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
@@ -340,13 +388,13 @@ def objectiveFunction(data):
                 # p_no Is a normal vector defining the plane direction (does not need to be normalized).
 
                 # Compute the homogeneous transformation from the root base_link to the sensor's reference frame
-                root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
+                root_to_sensor = optimization_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
 
                 # Compute p_co. It can be any point in the chessboard plane. Lets transform the origin of the
                 # chessboard to the 3D cloud reference frame
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
-                root_to_pattern = utilities.translationQuaternionToTransform(trans, quat)
+                root_to_pattern = optimization_utilities.translationQuaternionToTransform(trans, quat)
                 lidar_to_pattern = np.dot(np.linalg.inv(root_to_sensor), root_to_pattern)
 
                 # Origin of the chessboard (0, 0, 0, 1) homogenized to the 3D range sensor reference frame
@@ -401,12 +449,12 @@ def objectiveFunction(data):
                     np.float)
 
                 # Compute the coordinate of the points in the pattern reference frame
-                root_to_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
+                root_to_sensor = optimization_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
                 detected_limit_points_in_root = np.dot(root_to_sensor, detected_limit_points_in_sensor)
 
                 trans = patterns['collections'][collection_key]['trans']
                 quat = patterns['collections'][collection_key]['quat']
-                chessboard_to_root = np.linalg.inv(utilities.translationQuaternionToTransform(trans, quat))
+                chessboard_to_root = np.linalg.inv(optimization_utilities.translationQuaternionToTransform(trans, quat))
                 detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
                 # print('DETECTED')
                 # print(detected_limit_points_in_pattern)
@@ -530,5 +578,6 @@ def objectiveFunction(data):
     pp = pprint.PrettyPrinter(indent=2)
     pp.pprint(report)
 
-    return rn  # Return the residuals
-    # return r  # Return the residuals
+    # print(r)
+    # return rn  # Return the residuals
+    return r  # Return the residuals
