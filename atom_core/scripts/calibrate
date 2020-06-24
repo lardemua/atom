@@ -380,9 +380,12 @@ def main():
         'anchored_sensor'] + Style.RESET_ALL)
 
     anchored_sensor = dataset['calibration_config']['anchored_sensor']
-    anchored_parent = dataset['sensors'][anchored_sensor]['calibration_parent']
-    anchored_child = dataset['sensors'][anchored_sensor]['calibration_child']
-    anchored_transform_key = opt_utilities.generateKey(anchored_parent, anchored_child)
+    if anchored_sensor in dataset['sensors']:
+        anchored_parent = dataset['sensors'][anchored_sensor]['calibration_parent']
+        anchored_child = dataset['sensors'][anchored_sensor]['calibration_child']
+        anchored_transform_key = opt_utilities.generateKey(anchored_parent, anchored_child)
+    else:
+        anchored_transform_key = '' # not transform is anchored
     # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are being optimized
 
     print('Creating parameters ...')
