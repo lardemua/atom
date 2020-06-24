@@ -21,7 +21,7 @@ import numpy as np
 from colorama import Fore, Style
 
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
-import OptimizationUtils.utilities as optimization_utilities
+import OptimizationUtils.utilities as opt_utilities
 
 # own packages
 import atom_core.getters_and_setters as getters_and_setters
@@ -102,6 +102,16 @@ def main():
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action='store_true')
     ap.add_argument("-si", "--show_images", help="shows images for each camera", action='store_true', default=False)
+    ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera instrinsics to the optimization",
+                    action='store_true', default=False)
+    ap.add_argument("-od", "--optimize_distortion", help="Adds camera distortion parameters to the optimization",
+                    action='store_true', default=False)
+    ap.add_argument("-fec", "--four_extrema_corners", help="Uses only the four extrema corners for camera "
+                                                           "optimizations, i.e. top left and right, bottom left and "
+                                                           "right. This speeds up the optimization procedure (since "
+                                                           "the number of residuals greatly reduces) but may result "
+                                                           "in a less accurate calibration",
+                    action='store_true', default=False)
     ap.add_argument("-uic", "--use_incomplete_collections",
                     help="Remove any collection which does not have a detection for all sensors.",
                     action='store_true', default=False)
@@ -305,7 +315,7 @@ def main():
                 quat = tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2])
                 parent = sensor['parent']
                 child = 'pattern_link_from_' + parent
-                key = optimization_utilities.generateKey(parent, child)
+                key = opt_utilities.generateKey(parent, child)
                 collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
                                                  'trans': list(trans)}
 
@@ -345,7 +355,7 @@ def main():
                 collection['labels'][sensor_key]['limit_points'] = unique_extrema_points
 
     # ---------------------------------------
-    # --- SETUP OPTIMIZER
+    # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
     opt = OptimizationUtils.Optimizer()
     opt.addDataModel('args', args)
@@ -355,12 +365,13 @@ def main():
     # transformation.
     selected_collection_key = dataset['collections'].keys()[0]
 
-    # ------------  Sensors -----------------
+    # ---------------------------------------
+    # --- SETUP OPTIMIZER: Add sensor parameters
+    # ---------------------------------------
     # Each sensor will have a position (tx,ty,tz) and a rotation (r1,r2,r3)
 
     # Add parameters related to the sensors
-    translation_delta = 0.01
-
+    translation_delta = 0.2
     # TODO temporary placement of top_left_camera
     # for collection_key, collection in dataset['collections'].items():
     #     collection['transforms']['base_link-top_left_camera']['trans'] = [-1.48, 0.22, 1.35]
@@ -368,86 +379,120 @@ def main():
     print('Anchored sensor is ' + Fore.GREEN + dataset['calibration_config'][
         'anchored_sensor'] + Style.RESET_ALL)
 
+    anchored_sensor = dataset['calibration_config']['anchored_sensor']
+    anchored_parent = dataset['sensors'][anchored_sensor]['calibration_parent']
+    anchored_child = dataset['sensors'][anchored_sensor]['calibration_child']
+    anchored_transform_key = opt_utilities.generateKey(anchored_parent, anchored_child)
+    # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are being optimized
+
     print('Creating parameters ...')
+    # Steaming from the config json, we define a transform to be optimized for each sensor. It could happen that two
+    # or more sensors define the same transform to be optimized (#120). To cope with this we first create a list of
+    # transformations to be optimized and then compute the unique set of that list.
+    transforms_set = set()
     for sensor_key, sensor in dataset['sensors'].items():
+        transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
+        transforms_set.add(transform_key)
 
-        # Translation -------------------------------------
-        initial_translation = getters_and_setters.getterSensorTranslation(dataset, sensor_key=sensor_key,
-                                                                          collection_key=selected_collection_key)
+    for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
+        initial_transform = getters_and_setters.getterTransform(dataset, transform_key=transform_key,
+                                                                collection_name=collection_key)
 
-        if sensor_key == dataset['calibration_config']['anchored_sensor']:
-            bound_max = [x + sys.float_info.epsilon for x in initial_translation]
-            bound_min = [x - sys.float_info.epsilon for x in initial_translation]
+        if transform_key == anchored_transform_key:
+            bound_max = [x + sys.float_info.epsilon for x in initial_transform]
+            bound_min = [x - sys.float_info.epsilon for x in initial_transform]
         else:
-            # bound_max = [x + translation_delta for x in initial_translation]
-            # bound_min = [x - translation_delta for x in initial_translation]
-            bound_max = [+np.inf for x in initial_translation]
-            bound_min = [-np.inf for x in initial_translation]
-            if 'laser' in sensor_key:
-                bound_max[2] = initial_translation[2] + translation_delta
-                bound_min[2] = initial_translation[2] - translation_delta
+            bound_max = [+np.inf for x in initial_transform]
+            bound_min = [-np.inf for x in initial_transform]
 
-        opt.pushParamVector(group_name='S_' + sensor_key + '_t', data_key='dataset',
-                            getter=partial(getters_and_setters.getterSensorTranslation, sensor_key=sensor_key,
-                                           collection_key=selected_collection_key),
-                            setter=partial(getters_and_setters.setterSensorTranslation, sensor_key=sensor_key),
-                            suffix=['x', 'y', 'z'],
-                            bound_max=bound_max, bound_min=bound_min)
+        opt.pushParamVector(group_name=transform_key, data_key='dataset',
+                            getter=partial(getters_and_setters.getterTransform, transform_key=transform_key,
+                                           collection_name=selected_collection_key),
+                            setter=partial(getters_and_setters.setterTransform, transform_key=transform_key,
+                                           collection_name=None),
+                            suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'], bound_max=bound_max, bound_min=bound_min)
 
-        # Rotation --------------------------------------
-        initial_rotation = getters_and_setters.getterSensorRotation(dataset, sensor_key=sensor_key,
-                                                                    collection_key=selected_collection_key)
+    # Intrinsics
+    # TODO bound_min and max for intrinsics
+    if args['optimize_intrinsics']:
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
+                opt.pushParamVector(group_name=str(sensor_key) + '_intrinsics', data_key='dataset',
+                                    getter=partial(getters_and_setters.getterCameraPMatrix, sensor_key=sensor_key),
+                                    setter=partial(getters_and_setters.setterCameraPMatrix, sensor_key=sensor_key),
+                                    suffix=['_fx_p', '_fy_p', '_cx_p', '_cy_p'])
+    # TODO handle optimize_distortion
 
-        if sensor_key == dataset['calibration_config']['anchored_sensor']:
-            bound_max = [x + sys.float_info.epsilon for x in initial_rotation]
-            bound_min = [x - sys.float_info.epsilon for x in initial_rotation]
-        else:
-            bound_max = [+np.inf for x in initial_rotation]
-            bound_min = [-np.inf for x in initial_rotation]
-
-        opt.pushParamVector(group_name='S_' + sensor_key + '_r', data_key='dataset',
-                            getter=partial(getters_and_setters.getterSensorRotation, sensor_key=sensor_key,
-                                           collection_key=selected_collection_key),
-                            setter=partial(getters_and_setters.setterSensorRotation, sensor_key=sensor_key),
-                            suffix=['1', '2', '3'],
-                            bound_max=bound_max, bound_min=bound_min)
-
-        if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
-            # opt.pushParamVector(group_name='S_' + sensor_key + '_I_', data_key='dataset',
-            #                     getter=partial(getterCameraIntrinsics, sensor_key=sensor_key),
-            #                     setter=partial(setterCameraIntrinsics, sensor_key=sensor_key),
-            #                     suffix=['fx', 'fy', 'cx', 'cy', 'd0', 'd1', 'd2', 'd3', 'd4'])
-            opt.pushParamVector(group_name='S_' + sensor_key + '_P_', data_key='dataset',
-                                getter=partial(getters_and_setters.getterCameraPMatrix, sensor_key=sensor_key),
-                                setter=partial(getters_and_setters.setterCameraPMatrix, sensor_key=sensor_key),
-                                suffix=['fx_p', 'fy_p', 'cx_p', 'cy_p'])
-
-    # ------------  Patterns -----------------
+    # ---------------------------------------
+    # --- SETUP OPTIMIZER: Add pattern(s) parameters
+    # ---------------------------------------
     # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
 
-    # Add translation and rotation parameters related to the Chessboards
-    for collection_key in dataset['patterns']['collections']:
-        # bound_max = [x + translation_delta for x in initial_values]
-        # bound_min = [x - translation_delta for x in initial_values]
+    if not dataset['calibration_config']['calibration_pattern']['fixed']:  # Pattern not fixed -------------------------
+        # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
+        # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
+        # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
+        # publishing ROS, but we must add this to the parameter name.
+        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+        child = dataset['calibration_config']['calibration_pattern']['link']
+        transform_key = opt_utilities.generateKey(parent, child)
 
-        # initial_translation = getterChessBoardTranslation(dataset,collection_key)
-        # initial_translation[0] += 0.9
-        # initial_translation[1] += 0.7
-        # initial_translation[2] += 0.7
-        # setterChessBoardTranslation(dataset, initial_translation, collection_key)
+        for collection_key, collection in dataset['collections'].items():  # iterate all collections
 
-        opt.pushParamVector(group_name='C_' + collection_key + '_t', data_key='dataset',
-                            getter=partial(getters_and_setters.getterPatternTranslation,
-                                           collection_key=collection_key),
-                            setter=partial(getters_and_setters.setterPatternTranslation,
-                                           collection_key=collection_key),
-                            suffix=['x', 'y', 'z'])
-        # ,bound_max=bound_max, bound_min=bound_min)
+            # Set transform using the initial estimate of the transformations.
+            initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
+            if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
+                    not child == initial_estimate['child']:
+                raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
 
-        opt.pushParamVector(group_name='C_' + collection_key + '_r', data_key='dataset',
-                            getter=partial(getters_and_setters.getterPatternRotation, collection_key=collection_key),
-                            setter=partial(getters_and_setters.setterPatternRotation, collection_key=collection_key),
-                            suffix=['1', '2', '3'])
+            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
+                                                       'trans': initial_estimate['trans'],
+                                                       'quat': initial_estimate['quat']}
+
+            # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
+            #   a) The Getter will pick up transform from the collection collection_key
+            #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the
+            #   corresponding collection
+            opt.pushParamVector(group_name='c' + collection_key + '_' + transform_key, data_key='dataset',
+                                getter=partial(getters_and_setters.getterTransform, transform_key=transform_key,
+                                               collection_name=collection_key),
+                                setter=partial(getters_and_setters.setterTransform, transform_key=transform_key,
+                                               collection_name=collection_key),
+                                suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
+
+    else:  # fixed pattern ---------------------------------------------------------------------------------------------
+        # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
+        # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
+        # 'link']
+        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+        child = dataset['calibration_config']['calibration_pattern']['link']
+        transform_key = opt_utilities.generateKey(parent, child)
+
+        # Set transform using the initial estimate of the transformations.
+        initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
+        if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
+                not child == initial_estimate['child']:
+            raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
+
+        # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
+        for collection_key, collection in dataset['collections'].items():
+            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
+                                                       'trans': initial_estimate['trans'],
+                                                       'quat': initial_estimate['quat']}
+
+        # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
+        #   a) The Getter will pick up the collection from one selected collection (it does not really matter which,
+        #       since they are replicas);
+        #   b) The Setter will received a transform value and copy that to all collection replicas, to ensure they
+        #       all have the same value. This is done by setting  "collection_name=None".
+        opt.pushParamVector(group_name=transform_key, data_key='dataset',
+                            getter=partial(getters_and_setters.getterTransform, transform_key=transform_key,
+                                           collection_name=selected_collection_key),
+                            setter=partial(getters_and_setters.setterTransform, transform_key=transform_key,
+                                           collection_name=None),
+                            suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
+
+    opt.printParameters()
 
     # ---------------------------------------
     # --- Define THE OBJECTIVE FUNCTION
@@ -457,7 +502,7 @@ def main():
     # ---------------------------------------
     # --- Define THE RESIDUALS
     # ---------------------------------------
-    # Each error is computed after the sensor and the pattern of a collection. Thus, each error will be affected
+    # Each residual is computed after the sensor and the pattern of a collection. Thus, each error will be affected
     # by the parameters tx,ty,tz,r1,r2,r3 of the sensor and the pattern
 
     print("Creating residuals ... ")
@@ -466,19 +511,34 @@ def main():
             if not collection['labels'][sensor_key]['detected']:  # if pattern not detected by sensor in collection
                 continue
 
-            params = opt.getParamsContainingPattern('S_' + sensor_key)  # sensor related params
-            params.extend(opt.getParamsContainingPattern('C_' + collection_key + '_'))  # pattern related params
+            # Sensor related parameters
+            sensors_transform_key = opt_utilities.generateKey(sensor['calibration_parent'],
+                                                              sensor['calibration_child'])
+            params = opt.getParamsContainingPattern(sensors_transform_key)
+
+            # Intrinsics parameters
+            if sensor['msg_type'] == 'Image' and args['optimize_intrinsics']:
+                params.extend(opt.getParamsContainingPattern(sensor_key + '_intrinsics'))
+
+            # Pattern related parameters
+            if dataset['calibration_config']['calibration_pattern']['fixed']:
+                pattern_transform_key = opt_utilities.generateKey(
+                    dataset['calibration_config']['calibration_pattern']['parent_link'],
+                    dataset['calibration_config']['calibration_pattern']['link'])
+            else:
+                pattern_transform_key = 'c' + collection_key + '_' + opt_utilities.generateKey(
+                    dataset['calibration_config']['calibration_pattern']['parent_link'],
+                    dataset['calibration_config']['calibration_pattern']['link'])
+
+            params.extend(opt.getParamsContainingPattern(pattern_transform_key))  # pattern related params
 
             if sensor['msg_type'] == 'Image':  # if sensor is a camera use four residuals
-                # for idx in range(0, 4):
-                # for idx in range(0, len()):
-                # for idx in range(0, len(dataset['patterns']['corners'])):
-                for idx in collection['labels'][sensor_key]['idxs']:
-                    rname = str(collection_key) + '_' + str(sensor_key) + '_' + str(idx['id'])
+
+                for idx in collection['labels'][sensor_key]['idxs']:  # using all pattern corners
+                    rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(idx['id'])
                     opt.pushResidual(name=rname, params=params)
 
             elif sensor['msg_type'] == 'LaserScan':  # if sensor is a 2D lidar add two residuals
-
                 # Extrema points (longitudinal error)
                 opt.pushResidual(name=collection_key + '_' + sensor_key + '_eleft', params=params)
                 opt.pushResidual(name=collection_key + '_' + sensor_key + '_eright', params=params)
@@ -492,7 +552,6 @@ def main():
                     opt.pushResidual(name=collection_key + '_' + sensor_key + '_beam_' + str(idx), params=params)
 
             elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
-
                 # Laser beam error
                 for idx in range(0, len(collection['labels'][sensor_key]['idxs'])):
                     opt.pushResidual(name=collection_key + '_' + sensor_key + '_oe_' + str(idx), params=params)
@@ -500,14 +559,17 @@ def main():
                 for idx in range(0, len(collection['labels'][sensor_key]['limit_points'])):
                     opt.pushResidual(name=collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
 
-    # opt.printResiduals()
+            print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
+                  ' affected by parameters:\n' + str(params))
+
+    opt.printResiduals()
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
     # ---------------------------------------
     print("Computing sparse matrix ... ")
     opt.computeSparseMatrix()
-    # opt.printSparseMatrix()
+    opt.printSparseMatrix()
 
     # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
@@ -520,11 +582,8 @@ def main():
     if args['ros_visualization']:
         print("Configuring visualization ... ")
         graphics = visualization.setupVisualization(dataset, args)
-        # pp = pprint.PrettyPrinter(indent=4)
-        # pp.pprint(dataset_graphics)
         opt.addDataModel('graphics', graphics)
 
-        # opt.setVisualizationFunction(visualizationFunction, False, niterations=1, figures=[])
         opt.setVisualizationFunction(visualization.visualizationFunction, args['ros_visualization'], niterations=1,
                                      figures=[])
 
@@ -533,8 +592,8 @@ def main():
     # ---------------------------------------
 
     print('Initializing optimization ...')
-    # opt.startOptimization(optimization_options={'ftol': 1e-4, 'xtol': 1e-4, 'gtol': 1e-4, 'diff_step': 1e-3,
-    #                                             'x_scale': 'jac'})
+    # opt.startOptimization(optimization_options={'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': 1e-4, 'x_scale':'jac'})
+    # opt.startOptimization(optimization_options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': 1e-4, 'x_scale':'jac'})
     opt.startOptimization(optimization_options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6})
     # TODO diff step as None
 
