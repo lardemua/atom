@@ -5,7 +5,6 @@ from copy import deepcopy
 
 # 3rd-party
 import numpy as np
-from mercurial.config import config
 
 from statistics import mean
 
