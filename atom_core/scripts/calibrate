@@ -196,7 +196,11 @@ def main():
                               collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
-    print("\nCollections studied:\n " + str(dataset['collections'].keys()))
+    if not dataset['collections'].keys():
+        raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
+                         'dataset and your collection selection function.')
+    else:
+        print("\nCollections studied:\n " + str(dataset['collections'].keys()))
 
     # ---------------------------------------
     # --- CREATE CHESSBOARD DATASET
@@ -584,7 +588,7 @@ def main():
 
     if args['ros_visualization']:
         print("Configuring visualization ... ")
-        graphics = visualization.setupVisualization(dataset, args)
+        graphics = visualization.setupVisualization(dataset, args, selected_collection_key)
         opt.addDataModel('graphics', graphics)
 
         opt.setVisualizationFunction(visualization.visualizationFunction, args['ros_visualization'], niterations=1,

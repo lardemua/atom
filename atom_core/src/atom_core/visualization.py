@@ -44,7 +44,7 @@ def genCollectionPrefix(collection_key, string):
 
 
 def generateName(name, prefix='', suffix='', separator='_'):
-    """ Standardized form of deriving a name with a prefix or a suffix with _ separating them. """
+    """ Standardized form of deriving a name with a prefix or a suffix with <separator> separating them. """
 
     if prefix:
         prefix = prefix + separator
@@ -54,7 +54,84 @@ def generateName(name, prefix='', suffix='', separator='_'):
     return str(prefix) + str(name) + str(suffix)
 
 
-def setupVisualization(dataset, args):
+def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
+    markers = MarkerArray()
+
+    # Draw pattern frame lines_sampled (top, left, right, bottom)
+    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                    ns=ns + '-frame_sampled', id=0, frame_locked=True,
+                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                    pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                    scale=Vector3(x=0.025, y=0.025, z=0.025),
+                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                    g=graphics['collections'][collection_key]['color'][1],
+                                    b=graphics['collections'][collection_key]['color'][2], a=1.0))
+
+    pts = []
+    pts.extend(dataset['patterns']['frame']['lines_sampled']['left'])
+    pts.extend(dataset['patterns']['frame']['lines_sampled']['right'])
+    pts.extend(dataset['patterns']['frame']['lines_sampled']['top'])
+    pts.extend(dataset['patterns']['frame']['lines_sampled']['bottom'])
+    for pt in pts:
+        marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
+
+    markers.markers.append(marker)
+
+    # Draw corners
+    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                    ns=ns + '-corners', id=0, frame_locked=True,
+                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                    pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                    scale=Vector3(x=0.02, y=0.02, z=0.02),
+                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                    g=graphics['collections'][collection_key]['color'][1],
+                                    b=graphics['collections'][collection_key]['color'][2], a=1.0))
+
+    for idx_corner, pt in enumerate(dataset['patterns']['corners']):
+        marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
+        marker.colors.append(ColorRGBA(r=graphics['pattern']['colormap'][idx_corner, 0],
+                                       g=graphics['pattern']['colormap'][idx_corner, 1],
+                                       b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
+
+    markers.markers.append(marker)
+
+    # Draw transitions
+    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                    ns=ns + '-transitions', id=0, frame_locked=True,
+                    type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
+                    pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                    scale=Vector3(x=0.015, y=0.015, z=0),
+                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                    g=graphics['collections'][collection_key]['color'][1],
+                                    b=graphics['collections'][collection_key]['color'][2], a=1.0))
+
+    pts = dataset['patterns']['transitions']['vertical']
+    pts.extend(dataset['patterns']['transitions']['horizontal'])
+    for pt in pts:
+        marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
+
+    markers.markers.append(marker)
+
+    # Draw the mesh, if one is provided
+    if not dataset['calibration_config']['calibration_pattern']['mesh_file'] == "":
+        # rgba = graphics['collections'][collection_key]['color']
+        # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
+        m = Marker(header=Header(frame_id=frame_id, stamp=now),
+                   ns=str(collection_key) + '-mesh', id=0, frame_locked=True,
+                   type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
+                   pose=Pose(position=Point(x=0, y=0, z=0),
+                             orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                   scale=Vector3(x=1.0, y=1.0, z=1.0),
+                   color=ColorRGBA(r=1, g=1, b=1, a=1))
+
+        mesh_file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
+        m.mesh_resource = 'file://' + mesh_file  # mesh_resource needs uri format
+        m.mesh_use_embedded_materials = True
+        markers.markers.append(m)
+
+    return markers # return markers
+
+def setupVisualization(dataset, args, selected_collection_key):
     """
     Creates the necessary variables in a dictionary "dataset_graphics", which will be passed onto the visualization
     function
@@ -95,20 +172,6 @@ def setupVisualization(dataset, args):
     # for idx, sensor_key in enumerate(sorted(dataset['sensors'].keys())):
     #     dataset['sensors'][str(sensor_key)]['color'] = color_map_sensors[idx, :]
 
-    # Create robot meshes ------------------------------------------------------------------
-    # for visualizing the robot meshes on all collections
-    markers = MarkerArray()
-    for collection_key, collection in dataset['collections'].items():
-        # rgba = graphics['collections'][collection_key]['color']
-        # rgba[3] = 0.4  # change the alpha
-        rgba = [.5, .5, .5, 0.7]  # best color we could find
-        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                              namespace=collection_key,
-                              rgba=rgba)
-        markers.markers.extend(m.markers)
-
-    graphics['ros']['robot_mesh_markers'] = markers
-
     # Create image publishers ----------------------------------------------------------
     # We need to republish a new image at every visualization
     for collection_key, collection in dataset['collections'].items():
@@ -130,16 +193,15 @@ def setupVisualization(dataset, args):
 
     # Create Labeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
-    id = 0
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
                 continue
 
-            if sensor['msg_type'] == 'LaserScan':
+            if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=id, frame_locked=True,
+                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
                                 type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
                                 scale=Vector3(x=0.03, y=0.03, z=0),
@@ -147,7 +209,6 @@ def setupVisualization(dataset, args):
                                                 g=graphics['collections'][collection_key]['color'][1],
                                                 b=graphics['collections'][collection_key]['color'][2], a=1.0)
                                 )
-                id += 1
 
                 # Get laser points that belong to the chessboard (labelled)
                 idxs = collection['labels'][sensor_key]['idxs']
@@ -190,10 +251,8 @@ def setupVisualization(dataset, args):
                     marker.points.append(p)
                 markers.markers.append(copy.deepcopy(marker))
 
-            if sensor['msg_type'] == 'PointCloud2':
-                # -----------------------------------------------------------------------------------------------------
-                # -------- Publish the velodyne data
-                # -----------------------------------------------------------------------------------------------------
+            if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
+
                 # Convert velodyne data on .json dictionary to ROS message type
                 cloud_msg = message_converter.convert_dictionary_to_ros_message("sensor_msgs/PointCloud2",
                                                                                 collection['data'][sensor_key])
@@ -208,7 +267,7 @@ def setupVisualization(dataset, args):
 
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=id, frame_locked=True,
+                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
                                 scale=Vector3(x=0.02, y=0.02, z=0.02),
@@ -216,7 +275,6 @@ def setupVisualization(dataset, args):
                                                 g=graphics['collections'][collection_key]['color'][1],
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.4)
                                 )
-                id += 1
 
                 for idx in idxs:
                     marker.points.append(Point(x=points[idx, 0], y=points[idx, 1], z=points[idx, 2]))
@@ -225,7 +283,7 @@ def setupVisualization(dataset, args):
 
                 # Visualize LiDAR corner points
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=id, frame_locked=True,
+                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0),
                                           orientation=Quaternion(x=0, y=0, z=0, w=1)),
@@ -239,98 +297,59 @@ def setupVisualization(dataset, args):
                 for pt in collection['labels'][sensor_key]['limit_points']:
                     marker.points.append(Point(x=pt[0], y=pt[1], z=pt[2]))
 
-                id += 1
                 markers.markers.append(copy.deepcopy(marker))
 
     graphics['ros']['MarkersLabeled'] = markers
     graphics['ros']['PubLabeled'] = rospy.Publisher('~labeled_data', MarkerArray, queue_size=0, latch=True)
+
+    # -----------------------------------------------------------------------------------------------------
+    # -------- Robot meshes
+    # -----------------------------------------------------------------------------------------------------
+    # Check whether the robot is static, in the sense that all of its joints are fixed. If so, for efficiency purposes,
+    # only one robot mesh (from the selected collection) is published.
+    all_joints_fixed = True
+    for joint in xml_robot.joints:
+        if not joint.type == 'fixed':
+            print('Robot has at least joint ' + joint.name + ' non fixed. Will render all collections')
+            all_joints_fixed = False
+            break
+
+    markers = MarkerArray()
+    if all_joints_fixed:  # render a single robot mesh
+        print('Robot has all joints fixed. Will render only collection ' + selected_collection_key)
+        rgba = [.5, .5, .5, 1]  # best color we could find
+        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
+                              namespace=selected_collection_key,
+                              rgba=rgba)
+        markers.markers.extend(m.markers)
+    else:  # render robot meshes for all collections
+        for collection_key, collection in dataset['collections'].items():
+            # rgba = graphics['collections'][collection_key]['color']
+            # rgba[3] = 0.4  # change the alpha
+            rgba = [.5, .5, .5, 0.7]  # best color we could find
+            m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
+                                  namespace=collection_key,
+                                  rgba=rgba)
+            markers.markers.extend(m.markers)
+
+    graphics['ros']['robot_mesh_markers'] = markers
+
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
-    markers = MarkerArray()
-
-    for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
-        # Draw pattern frame lines_sampled (top, left, right, bottom)
-
-        if not dataset['calibration_config']['calibration_pattern']['fixed']:  # Draw a pattern per collection
+    if dataset['calibration_config']['calibration_pattern']['fixed']:  # Draw single pattern for selected collection key
+        frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
+                                prefix='c' + selected_collection_key)
+        ns = str(selected_collection_key)
+        markers = createPatternMarkers(frame_id, ns, selected_collection_key, now, dataset, graphics)
+    else:  # Draw a pattern per collection
+        markers = MarkerArray()
+        for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
             frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
                                     prefix='c' + collection_key)
-        else:  # fixed pattern, draw a single pattern
-            frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'])
-
-        marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                        ns=str(collection_key) + '-frame_sampled', id=id, frame_locked=True,
-                        type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                        pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                        scale=Vector3(x=0.025, y=0.025, z=0.025),
-                        color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                        g=graphics['collections'][collection_key]['color'][1],
-                                        b=graphics['collections'][collection_key]['color'][2], a=1.0))
-
-        pts = []
-        pts.extend(dataset['patterns']['frame']['lines_sampled']['left'])
-        pts.extend(dataset['patterns']['frame']['lines_sampled']['right'])
-        pts.extend(dataset['patterns']['frame']['lines_sampled']['top'])
-        pts.extend(dataset['patterns']['frame']['lines_sampled']['bottom'])
-        for pt in pts:
-            marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
-
-        markers.markers.append(marker)
-
-        # Draw corners
-        marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                        ns=str(collection_key) + '-corners', id=id, frame_locked=True,
-                        type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                        pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                        scale=Vector3(x=0.02, y=0.02, z=0.02),
-                        color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                        g=graphics['collections'][collection_key]['color'][1],
-                                        b=graphics['collections'][collection_key]['color'][2], a=1.0))
-
-        for idx_corner, pt in enumerate(dataset['patterns']['corners']):
-            marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
-            marker.colors.append(ColorRGBA(r=graphics['pattern']['colormap'][idx_corner, 0],
-                                           g=graphics['pattern']['colormap'][idx_corner, 1],
-                                           b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
-
-        markers.markers.append(marker)
-
-        # Draw transitions
-        marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                        ns=str(collection_key) + '-transitions', id=id, frame_locked=True,
-                        type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
-                        pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                        scale=Vector3(x=0.015, y=0.015, z=0),
-                        color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                        g=graphics['collections'][collection_key]['color'][1],
-                                        b=graphics['collections'][collection_key]['color'][2], a=1.0))
-
-        pts = dataset['patterns']['transitions']['vertical']
-        pts.extend(dataset['patterns']['transitions']['horizontal'])
-        for pt in pts:
-            marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
-
-        markers.markers.append(marker)
-
-        # Draw the mesh, if one is provided
-        if not dataset['calibration_config']['calibration_pattern']['mesh_file'] == "":
-            rgba = graphics['collections'][collection_key]['color']
-            # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
-            m = Marker(header=Header(frame_id=frame_id, stamp=now),
-                       ns=str(collection_key) + '-mesh', id=idx + 5000, frame_locked=True,
-                       type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
-                       pose=Pose(position=Point(x=0, y=0, z=0),
-                                 orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                       scale=Vector3(x=1.0, y=1.0, z=1.0),
-                       color=ColorRGBA(r=1, g=1, b=1, a=1))
-
-            mesh_file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
-            m.mesh_resource = 'file://' + mesh_file  # mesh_resource needs uri format
-            m.mesh_use_embedded_materials = True
-            markers.markers.append(m)
-
-        if dataset['calibration_config']['calibration_pattern']['fixed']:  # Only draw one pattern if args say so.
-            break
+            ns = str(collection_key)
+            collection_markers = createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics)
+            markers.markers.extend(collection_markers.markers)
 
     graphics['ros']['MarkersPattern'] = markers
     graphics['ros']['PubPattern'] = rospy.Publisher('~patterns', MarkerArray, queue_size=0, latch=True)
@@ -399,7 +418,7 @@ def visualizationFunction(models):
         # tree. We do this by publishing an identity transform between the configured world link and hte world link
         # of each collection.
         parent = config['world_link']
-        child = 'c' + collection_key + '_' + parent
+        child = generateName(config['world_link'], prefix='c' + collection_key)
         graphics['ros']['tf_broadcaster'].sendTransform((0, 0, 0), (0, 0, 0, 1), now, child, parent)
 
         # Publish all current transforms
