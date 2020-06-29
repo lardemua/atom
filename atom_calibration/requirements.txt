@@ -5,6 +5,7 @@ jinja2
 alphashape
 descartes
 colorama
+graphviz
 
 
 
