@@ -268,95 +268,41 @@ def main():
                 points[:, 3] = 1
                 collection['labels'][sensor_key]['labelled_points'] = points
 
-                # ------------------------------------------------------------------------------------------------
-                # -------- Convert cloud labelled points to 2D pattern frame
-                # ------------------------------------------------------------------------------------------------
-                c, normal = fitPlaneLTSQ(points[:, 0:3])  # Fit plane to points
-                plane_a, plane_b, plane_c = normal[0], normal[1], normal[2]
-                point = np.array([0.0, 0.0, c])
-                plane_d = -point.dot(normal)
+                # - Cartesian to polar LiDAR points conversion
+                import math
+                points_sph = []
+                for idx in range(points.shape[0]):
+                    m_pt = points[idx, 0:3]
+                    r = math.sqrt(m_pt[0] ** 2 + m_pt[1] ** 2 + m_pt[2] ** 2)
+                    theta = math.acos(m_pt[2] / r)
+                    phi = math.atan2(m_pt[1], m_pt[0])
 
-                # Define a point in the plane which is the first of the list, projected to the plane
-                # use average y and z values (since velodyne uses x forward) to put origin on the center of the pattern
-                pt_avg = np.average(points[:, 0:3], axis=0)
+                    m_pt_shp = [r, theta, phi]
+                    points_sph.append(m_pt_shp)
 
-                y, z = pt_avg[1], pt_avg[2]
-                x = (- plane_b * y - plane_c * z - plane_d) / plane_a
-                p0 = np.array([x, y, z])
+                # - LiDAR beam clustering using the theta component
+                points_sph = np.array(points_sph).transpose()
+                thetas = points_sph[1, :].round(decimals=4)  # we round so that we can use the np.unique
+                np.set_printoptions(threshold=sys.maxsize)
+                unique, indexes, inverse_indexes = np.unique(thetas, return_index=True, return_inverse=True)
 
-                # Define a second point. We use the first point from the list of points, and project it to the plane
-                idx = 0
-                y, z = points[idx, 1], points[idx, 2]
-                x = (- plane_b * y - plane_c * z - plane_d) / plane_a
-                p1 = np.array([x, y, z])
-
-                # Define a rotation matrix, and the n (direction vector along the x axis), s and a vectors:
-                #        n    s    a
-                # R = [ r11  r12  r13 ]
-                #     [ r21  r22  r23 ]
-                #     [ r31  r32  r33 ]
-                n = p1 - p0  # semi-arbitrary x-axis: only constraint is that it is coplanar with the plane. This is
-                # ensured since both p0 and p1 lie on the plane
-                a = normal  # z axis must have the direction normal to the plane
-                s = np.cross(a, n)  # y axis is the cross product of z axis per the x axis
-
-                def getUnitVector(v):
-                    return v / np.linalg.norm(v)
-
-                n, s, a = getUnitVector(n), getUnitVector(s), getUnitVector(a)
-                # - Compute homogeneous transformation from velodyne to local reference system
-                T = np.zeros((4, 4), np.float32)
-                R = np.zeros((3, 3), np.float32)
-                R[:, 0] = n
-                R[:, 1] = s
-                R[:, 2] = a
-                trans = p0  # we use on of the points in the plane to define the translation
-                T[0:3, 0:3] = R
-                T[0:3, 3] = trans
-                T[3, 3] = 1
-                # - Convert to ros tf and save in transforms dictionary
-                euler = tf.transformations.euler_from_matrix(R)
-                quat = tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2])
-                parent = sensor['parent']
-                child = 'pattern_link_from_' + parent
-                key = opt_utilities.generateKey(parent, child)
-                collection['transforms'][key] = {'child': child, 'parent': parent, 'quat': list(quat),
-                                                 'trans': list(trans)}
-
-                # - Convert velodyne points into the 2D pattern reference frame
-                pts_in_pattern = np.dot(np.linalg.inv(T), points.transpose())
-                pts_in_pattern = pts_in_pattern.transpose()[:, 0:2]
-
-                # ------------------------------------------------------------------------------------------------
-                # -------- Find extrema points using circle radius fitting
-                # ------------------------------------------------------------------------------------------------
-                # CONFIGURATIONS
-                start_angle = 0.  # start angle increment in 0 radians
-                end_angle = 2. * np.pi  # end the angle increment when we complete the whole circle
-                angle_step = 0.05 * np.pi / 180.  # angle step in radians
-                # Compute circle radius using the higher distance between two points in the array
-                pts_copy_a = list(pts_in_pattern)
-                pts_copy_b = list(pts_in_pattern)
-                radius = np.max(distance.cdist(pts_copy_a, pts_copy_b, 'euclidean')) / 2. + 0.1
-                # Compute a circle of points outside the pattern and find the pattern point closer to each source point
+                # - Find the extrema points using the maximum and minimum of the phi component for each cluster
                 extrema_points = []
-                seed_point = np.average(pts_in_pattern, axis=0)
-                th = start_angle
-                print('Computing 3D cloud pattern limit points for collection ' + str(collection_key))
-                while th < end_angle:
-                    # Compute the source points out of the pattern bounds
-                    source_pt = [[seed_point[0] + radius * np.cos(th),
-                                  seed_point[1] + radius * np.sin(th)]]
-                    # Compute point that is more distant from the seed point
-                    c_idx = np.argmin(distance.cdist(source_pt, pts_in_pattern[:, :], 'euclidean'))
-                    extrema_points.append(points[c_idx, :])
+                for i in range(0, len(indexes)):
+                    m_beam = np.where(inverse_indexes == i)
 
-                    th += angle_step
-                    # ----------------
+                    phis = points_sph[2, m_beam][0]
+                    min_idx = np.argmin(phis)
+                    max_idx = np.argmax(phis)
 
-                # Delete duplicates from extrema points array
-                unique_extrema_points = list(set(map(tuple, extrema_points)))
-                collection['labels'][sensor_key]['limit_points'] = unique_extrema_points
+                    global_min_idx = np.where(points_sph[2, :] == phis[min_idx])[0][0]
+                    global_max_idx = np.where(points_sph[2, :] == phis[max_idx])[0][0]
+
+                    extrema_points.append(points[global_min_idx, :])
+                    extrema_points.append(points[global_max_idx, :])
+
+                # - Save extrema points for optimization and visualization
+                collection['labels'][sensor_key]['limit_points'] = list(extrema_points)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -389,7 +335,7 @@ def main():
         anchored_child = dataset['sensors'][anchored_sensor]['calibration_child']
         anchored_transform_key = opt_utilities.generateKey(anchored_parent, anchored_child)
     else:
-        anchored_transform_key = '' # not transform is anchored
+        anchored_transform_key = ''  # not transform is anchored
     # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are being optimized
 
     print('Creating parameters ...')

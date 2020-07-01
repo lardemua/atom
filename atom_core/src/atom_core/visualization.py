@@ -290,7 +290,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                 scale=Vector3(x=0.07, y=0.07, z=0.07),
                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                                 g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.4)
+                                                b=graphics['collections'][collection_key]['color'][2], a=0.8)
                                 )
 
                 # TODO Andre, changed this as well

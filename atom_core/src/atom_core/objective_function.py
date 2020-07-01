@@ -414,8 +414,6 @@ def objectiveFunction(data):
                 quat = collection['transforms'][transform_key]['quat']
                 chessboard_to_root = np.linalg.inv(opt_utilities.translationQuaternionToTransform(trans, quat))
                 detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
-                # print('DETECTED')
-                # print(detected_limit_points_in_pattern)
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
@@ -424,8 +422,6 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                 np.float)
-                # print('GROUNDTRUTH')
-                # print(ground_truth_limit_points_in_pattern)
 
                 # Compute and save residuals
                 rs = []
@@ -435,9 +431,6 @@ def objectiveFunction(data):
                     r[rname] = np.min(
                         distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
                     rs.append(r[rname])
-                # print('RESIDUALS')
-                # print(rs)
-                # exit(0)
                 # ------------------------------------------------------------------------------------------------
 
             else:
