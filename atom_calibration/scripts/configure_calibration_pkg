@@ -434,7 +434,6 @@ if __name__ == "__main__":
             # TODO Add markers to display data clusters
 
         elif msg_type == 'sensor_msgs/PointCloud2':
-
             # Raw data
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
                                                                             'Topic': topic,
@@ -532,10 +531,18 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/LaserScan':
-            pass
+            # Labelled data
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
+                                                                         'Marker_Topic': 'calibrate/labeled_data'}
+            )
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/PointCloud2':
-            pass
+            # Labelled data
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
+                                                                         'Marker_Topic': 'calibrate/labeled_data'}
+            )
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_calibrate, 'w'))
