@@ -1,6 +1,7 @@
 # stdlib
 import pprint
 import math
+import time
 from copy import deepcopy
 
 # 3rd-party
@@ -135,6 +136,7 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'Image':
+                t = time.time()
 
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
@@ -188,6 +190,9 @@ def objectiveFunction(data):
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
                     collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
+
+                elapsed = time.time() - t
+                print('Image elapsed ' + str(elapsed))
 
             elif sensor['msg_type'] == 'LaserScan':
                 # Get laser points that belong to the chessboard
@@ -325,6 +330,8 @@ def objectiveFunction(data):
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
             elif sensor['msg_type'] == 'PointCloud2':
+
+                t = time.time()
                 # Get the 3D LiDAR labelled points for the given collection
                 points = collection['labels'][sensor_key]['labelled_points']
 
@@ -337,22 +344,10 @@ def objectiveFunction(data):
                 # p_co Is a point on the plane (plane coordinate).
                 # p_no Is a normal vector defining the plane direction (does not need to be normalized).
 
-                # Compute the homogeneous transformation from the root base_link to the sensor's reference frame
-                root_to_sensor = opt_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
-
-                # Compute p_co. It can be any point in the chessboard plane. Lets transform the origin of the
-                # chessboard to the 3D cloud reference frame
-                transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
-                trans = collection['transforms'][transform_key]['trans']
-                quat = collection['transforms'][transform_key]['quat']
-                root_to_pattern = opt_utilities.translationQuaternionToTransform(trans, quat)
-                lidar_to_pattern = np.dot(np.linalg.inv(root_to_sensor), root_to_pattern)
-
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
-                # TODO easier one step formulation that replaces above. Andre, please check and remove TODO
-                # from_frame = sensor['parent']
-                # to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                # lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                from_frame = sensor['parent']
+                to_frame = dataset['calibration_config']['calibration_pattern']['link']
+                lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
 
                 # Origin of the chessboard (0, 0, 0, 1) homogenized to the 3D range sensor reference frame
                 p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
@@ -376,6 +371,8 @@ def objectiveFunction(data):
                 # Define p0 - the origin of 3D range sensor reference frame - to compute the line that intercepts the
                 # chessboard plane in the loop
                 p0_in_lidar = np.array([[0], [0], [0], [1], np.float])
+                # print('There are ' + str(len(points)))
+                t = time.time()
                 for idx in range(0, len(points)):
                     # Compute the interception between the chessboard plane into the 3D sensor reference frame, and the
                     # line that goes through the sensor origin to the measured point in the chessboard plane
@@ -383,7 +380,7 @@ def objectiveFunction(data):
                     pt_intersection = isect_line_plane_v3(p0_in_lidar, p1_in_lidar, p_co_in_lidar, p_no_in_lidar)
 
                     if pt_intersection is None:
-                        raise ValueError('Error: chessboard is almost parallel to the lidar beam! Please delete the '
+                        raise ValueError('Error: pattern is almost parallel to the lidar beam! Please delete the '
                                          'collections in question.')
 
                     # Compute the residual: distance from sensor origin from the interception minus the actual range
@@ -396,9 +393,14 @@ def objectiveFunction(data):
                         marker.points.append(deepcopy(rviz_p0_in_lidar))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
+
+                # elapsed = time.time() - t
+                # print('PointCloud2 orthogonal elapsed ' + str(elapsed))
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
+
+                # t = time.time()
 
                 pts = collection['labels'][sensor_key]['limit_points']
                 detected_limit_points_in_sensor = np.array(
@@ -406,14 +408,19 @@ def objectiveFunction(data):
                     np.float)
 
                 # Compute the coordinate of the points in the pattern reference frame
-                root_to_sensor = opt_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
-                detected_limit_points_in_root = np.dot(root_to_sensor, detected_limit_points_in_sensor)
+                # root_to_sensor = opt_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
+                # detected_limit_points_in_root = np.dot(root_to_sensor, detected_limit_points_in_sensor)
+                #
+                # transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
+                # trans = collection['transforms'][transform_key]['trans']
+                # quat = collection['transforms'][transform_key]['quat']
+                # chessboard_to_root = np.linalg.inv(opt_utilities.translationQuaternionToTransform(trans, quat))
+                # detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
 
-                transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
-                trans = collection['transforms'][transform_key]['trans']
-                quat = collection['transforms'][transform_key]['quat']
-                chessboard_to_root = np.linalg.inv(opt_utilities.translationQuaternionToTransform(trans, quat))
-                detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
+                from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                to_frame = sensor['parent']
+                pattern_to_sensor = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor )
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
@@ -424,14 +431,15 @@ def objectiveFunction(data):
                                                                 np.float)
 
                 # Compute and save residuals
-                rs = []
                 for idx in range(detected_limit_points_in_pattern.shape[1]):
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
                     rname = collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(
                         distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
-                    rs.append(r[rname])
                 # ------------------------------------------------------------------------------------------------
+
+                # elapsed = time.time() - t
+                # print('PointCloud2 extrema elapsed ' + str(elapsed))
 
             else:
                 raise ValueError("Unknown sensor msg_type")
