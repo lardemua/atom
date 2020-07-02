@@ -129,7 +129,8 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
         m.mesh_use_embedded_materials = True
         markers.markers.append(m)
 
-    return markers # return markers
+    return markers  # return markers
+
 
 def setupVisualization(dataset, args, selected_collection_key):
     """
@@ -283,7 +284,8 @@ def setupVisualization(dataset, args, selected_collection_key):
 
                 # Visualize LiDAR corner points
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
+                                ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
+                                frame_locked=True,
                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0),
                                           orientation=Quaternion(x=0, y=0, z=0, w=1)),
@@ -293,7 +295,6 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.8)
                                 )
 
-                # TODO Andre, changed this as well
                 for pt in collection['labels'][sensor_key]['limit_points']:
                     marker.points.append(Point(x=pt[0], y=pt[1], z=pt[2]))
 

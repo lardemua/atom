@@ -136,7 +136,6 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'Image':
-                t = time.time()
 
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
@@ -191,9 +190,6 @@ def objectiveFunction(data):
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
                     collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
 
-                elapsed = time.time() - t
-                print('Image elapsed ' + str(elapsed))
-
             elif sensor['msg_type'] == 'LaserScan':
                 # Get laser points that belong to the chessboard
                 idxs = collection['labels'][sensor_key]['idxs']
@@ -210,8 +206,7 @@ def objectiveFunction(data):
                     pts_in_laser[2, idx] = 0
                     pts_in_laser[3, idx] = 1
 
-
-                from_frame =  dataset['calibration_config']['calibration_pattern']['link']
+                from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
                 pattern_to_sensor = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_chessboard = np.dot(pattern_to_sensor, pts_in_laser)
@@ -331,9 +326,30 @@ def objectiveFunction(data):
 
             elif sensor['msg_type'] == 'PointCloud2':
 
-                t = time.time()
                 # Get the 3D LiDAR labelled points for the given collection
-                points = collection['labels'][sensor_key]['labelled_points']
+                # pts = collection['labels'][sensor_key]['middle_points']
+                # detected_middle_points_in_sensor = np.array(
+                #     [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
+                #     np.float)
+
+                points_in_sensor = collection['labels'][sensor_key]['labelled_points']
+
+                # ------------------------------------------------------------------------------------------------
+                # --- Orthogonal Distance Residuals: Distance from 3D range sensor point to chessboard plan
+                # ------------------------------------------------------------------------------------------------
+                # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
+                from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                to_frame = sensor['parent']
+                lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+
+                # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
+                points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor.transpose())
+
+                step = 1
+                for idx in range(0, points_in_pattern.shape[1], step):
+                    # Compute the residual: absolute of z component
+                    rname = collection_key + '_' + sensor_key + '_oe_' + str(idx)
+                    r[rname] = abs(points_in_pattern[2, idx])
 
                 # ------------------------------------------------------------------------------------------------
                 # --- Beam Distance Residuals: Distance from 3D range sensor point to chessboard plan
@@ -345,82 +361,66 @@ def objectiveFunction(data):
                 # p_no Is a normal vector defining the plane direction (does not need to be normalized).
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
-                from_frame = sensor['parent']
-                to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                # from_frame = sensor['parent']
+                # to_frame = dataset['calibration_config']['calibration_pattern']['link']
+                # lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                #
+                # # Origin of the chessboard (0, 0, 0, 1) homogenized to the 3D range sensor reference frame
+                # p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
+                # p_co_in_lidar = np.dot(lidar_to_pattern, p_co_in_chessboard)
+                #
+                # # Compute p_no. First compute an aux point (p_caux) and then use the normal vector from p_co to p_caux.
+                # p_caux_in_chessboard = np.array([[0], [0], [1], [1]], np.float)  # along the zz axis (plane normal)
+                # p_caux_in_lidar = np.dot(lidar_to_pattern, p_caux_in_chessboard)
+                #
+                # p_no_in_lidar = np.array([[p_caux_in_lidar[0] - p_co_in_lidar[0]],
+                #                           [p_caux_in_lidar[1] - p_co_in_lidar[1]],
+                #                           [p_caux_in_lidar[2] - p_co_in_lidar[2]],
+                #                           [1]], np.float)  # plane normal
+                #
+                # if args['ros_visualization']:
+                #     marker = [x for x in dataset_graphics['ros']['MarkersLaserBeams'].markers if
+                #               x.ns == str(collection_key) + '-' + str(sensor_key)][0]
+                #     marker.points = []
+                #     rviz_p0_in_lidar = Point(0, 0, 0)
+                #
+                # # Define p0 - the origin of 3D range sensor reference frame - to compute the line that intercepts the
+                # # chessboard plane in the loop
+                # p0_in_lidar = np.array([[0], [0], [0], [1], np.float])
+                # # print('There are ' + str(len(points)))
+                # for idx in range(0, len(points_in_sensor)):
+                #     # Compute the interception between the chessboard plane into the 3D sensor reference frame, and the
+                #     # line that goes through the sensor origin to the measured point in the chessboard plane
+                #     p1_in_lidar = points_in_sensor[idx, :]
+                #     pt_intersection = isect_line_plane_v3(p0_in_lidar, p1_in_lidar, p_co_in_lidar, p_no_in_lidar)
+                #
+                #     if pt_intersection is None:
+                #         raise ValueError('Error: pattern is almost parallel to the lidar beam! Please delete the '
+                #                          'collections in question.')
+                #
+                #     # Compute the residual: distance from sensor origin from the interception minus the actual range
+                #     # measure
+                #     rname = collection_key + '_' + sensor_key + '_oe_' + str(idx)
+                #     rho = np.sqrt(p1_in_lidar[0] ** 2 + p1_in_lidar[1] ** 2 + p1_in_lidar[2] ** 2)
+                #     r[rname] = abs(distance_two_3D_points(p0_in_lidar, pt_intersection) - rho)
+                #
+                #     if args['ros_visualization']:
+                #         marker.points.append(deepcopy(rviz_p0_in_lidar))
+                #         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
-                # Origin of the chessboard (0, 0, 0, 1) homogenized to the 3D range sensor reference frame
-                p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
-                p_co_in_lidar = np.dot(lidar_to_pattern, p_co_in_chessboard)
-
-                # Compute p_no. First compute an aux point (p_caux) and then use the normal vector from p_co to p_caux.
-                p_caux_in_chessboard = np.array([[0], [0], [1], [1]], np.float)  # along the zz axis (plane normal)
-                p_caux_in_lidar = np.dot(lidar_to_pattern, p_caux_in_chessboard)
-
-                p_no_in_lidar = np.array([[p_caux_in_lidar[0] - p_co_in_lidar[0]],
-                                          [p_caux_in_lidar[1] - p_co_in_lidar[1]],
-                                          [p_caux_in_lidar[2] - p_co_in_lidar[2]],
-                                          [1]], np.float)  # plane normal
-
-                if args['ros_visualization']:
-                    marker = [x for x in dataset_graphics['ros']['MarkersLaserBeams'].markers if
-                              x.ns == str(collection_key) + '-' + str(sensor_key)][0]
-                    marker.points = []
-                    rviz_p0_in_lidar = Point(0, 0, 0)
-
-                # Define p0 - the origin of 3D range sensor reference frame - to compute the line that intercepts the
-                # chessboard plane in the loop
-                p0_in_lidar = np.array([[0], [0], [0], [1], np.float])
-                # print('There are ' + str(len(points)))
-                t = time.time()
-                for idx in range(0, len(points)):
-                    # Compute the interception between the chessboard plane into the 3D sensor reference frame, and the
-                    # line that goes through the sensor origin to the measured point in the chessboard plane
-                    p1_in_lidar = points[idx, :]
-                    pt_intersection = isect_line_plane_v3(p0_in_lidar, p1_in_lidar, p_co_in_lidar, p_no_in_lidar)
-
-                    if pt_intersection is None:
-                        raise ValueError('Error: pattern is almost parallel to the lidar beam! Please delete the '
-                                         'collections in question.')
-
-                    # Compute the residual: distance from sensor origin from the interception minus the actual range
-                    # measure
-                    rname = collection_key + '_' + sensor_key + '_oe_' + str(idx)
-                    rho = np.sqrt(p1_in_lidar[0] ** 2 + p1_in_lidar[1] ** 2 + p1_in_lidar[2] ** 2)
-                    r[rname] = abs(distance_two_3D_points(p0_in_lidar, pt_intersection) - rho)
-
-                    if args['ros_visualization']:
-                        marker.points.append(deepcopy(rviz_p0_in_lidar))
-                        marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
-
-
-                # elapsed = time.time() - t
-                # print('PointCloud2 orthogonal elapsed ' + str(elapsed))
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
-
-                # t = time.time()
 
                 pts = collection['labels'][sensor_key]['limit_points']
                 detected_limit_points_in_sensor = np.array(
                     [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
                     np.float)
 
-                # Compute the coordinate of the points in the pattern reference frame
-                # root_to_sensor = opt_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
-                # detected_limit_points_in_root = np.dot(root_to_sensor, detected_limit_points_in_sensor)
-                #
-                # transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
-                # trans = collection['transforms'][transform_key]['trans']
-                # quat = collection['transforms'][transform_key]['quat']
-                # chessboard_to_root = np.linalg.inv(opt_utilities.translationQuaternionToTransform(trans, quat))
-                # detected_limit_points_in_pattern = np.dot(chessboard_to_root, detected_limit_points_in_root)
-
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
                 pattern_to_sensor = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
-                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor )
+                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
@@ -437,9 +437,6 @@ def objectiveFunction(data):
                     r[rname] = np.min(
                         distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
                 # ------------------------------------------------------------------------------------------------
-
-                # elapsed = time.time() - t
-                # print('PointCloud2 extrema elapsed ' + str(elapsed))
 
             else:
                 raise ValueError("Unknown sensor msg_type")
@@ -485,8 +482,12 @@ def objectiveFunction(data):
                 rn.update({k: 0.5 / len(beam_keys) * rn[k] for k in beam_keys})
 
             elif sensor['msg_type'] == 'PointCloud2':  # Intra normalization: p
-                pass
-                # TODO
+                orthogonal_keys = [k for k in pair_keys if '_oe' in k]
+                rn.update({k: 0.5 / len(orthogonal_keys) * rn[k] for k in orthogonal_keys})
+
+                limit_distance_keys = [k for k in pair_keys if '_ld' in k]
+                rn.update({k: 0.5 / len(limit_distance_keys) * rn[k] for k in limit_distance_keys})
+
 
     # for collection_key, collection in dataset['collections'].items():
     #     for sensor_key, sensor in dataset['sensors'].items():
@@ -538,5 +539,5 @@ def objectiveFunction(data):
     pp.pprint(report)
 
     # print(r)
-    # return rn  # Return the residuals
-    return r  # Return the residuals
+    return rn  # Return the residuals
+    # return r  # Return the residuals
