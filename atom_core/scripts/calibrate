@@ -332,7 +332,7 @@ def main():
     # TODO temporary placement of top_left_camera
     # for collection_key, collection in dataset['collections'].items():
     #     collection['transforms']['base_link-top_left_camera']['trans'] = [-1.48, 0.22, 1.35]
-    # dataset['calibration_config']['anchored_sensor'] = 'right_laser'
+    # dataset['calibration_config']['anchored_sensor'] = 'left_camera'
     print('Anchored sensor is ' + Fore.GREEN + dataset['calibration_config'][
         'anchored_sensor'] + Style.RESET_ALL)
 
@@ -378,9 +378,11 @@ def main():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
                 opt.pushParamVector(group_name=str(sensor_key) + '_intrinsics', data_key='dataset',
-                                    getter=partial(getters_and_setters.getterCameraPMatrix, sensor_key=sensor_key),
-                                    setter=partial(getters_and_setters.setterCameraPMatrix, sensor_key=sensor_key),
-                                    suffix=['_fx_p', '_fy_p', '_cx_p', '_cy_p'])
+                                    getter=partial(getters_and_setters.getterCameraIntrinsics, sensor_key=sensor_key),
+                                    setter=partial(getters_and_setters.setterCameraIntrinsics, sensor_key=sensor_key),
+                                    suffix=['_fx', '_fy', '_cx', '_cy', '_k1', '_k2', '_t1', '_t2', '_k3'])
+
+
     # TODO handle optimize_distortion
 
     # ---------------------------------------
@@ -513,7 +515,7 @@ def main():
 
             elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
                 # Laser beam error
-                step = 1
+                step = 10
                 # for idx in range(0, len(collection['labels'][sensor_key]['middle_points']), step):
                 for idx in range(0, len(collection['labels'][sensor_key]['idxs']), step):
                     opt.pushResidual(name=collection_key + '_' + sensor_key + '_oe_' + str(idx), params=params)

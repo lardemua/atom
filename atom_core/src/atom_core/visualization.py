@@ -474,12 +474,12 @@ def visualizationFunction(models):
                     diagonal = math.sqrt(width ** 2 + height ** 2)
                     cm = graphics['pattern']['colormap']
 
-                    # Draw projected points (as crosses)
+                    # Draw projected points (as dots)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        utilities.drawCross2D(image, x, y, int(8E-3 * diagonal) + 2, color=color, thickness=2)
+                        cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
 
                     # Draw ground truth points (as squares)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
@@ -488,13 +488,12 @@ def visualizationFunction(models):
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
                         utilities.drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
-                    # Draw initial projected points (as dots)
+                    # Draw initial projected points (as crosses)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        # utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
-                        cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
+                        utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
                     msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 

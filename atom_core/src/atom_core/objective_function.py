@@ -345,7 +345,7 @@ def objectiveFunction(data):
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
                 points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor.transpose())
 
-                step = 1
+                step = 10
                 for idx in range(0, points_in_pattern.shape[1], step):
                     # Compute the residual: absolute of z component
                     rname = collection_key + '_' + sensor_key + '_oe_' + str(idx)
@@ -457,17 +457,22 @@ def objectiveFunction(data):
                 # compute the residual keys that belong to this collection-sensor pair.
                 rn.update({k: rn[k] * meter_to_pixel_factor for k in pair_keys})  # update the normalized dictionary.
 
-    # Intra and Inter collection-sensor pair normalization.
+    # Intra collection-sensor pair normalization.
+    # print(rn.keys())
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
-            pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]
+
+            pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            # print('For collection ' + str(collection_key) + ' sensor ' + sensor_key)
+            # print('pair keys: ' + str(pair_keys))
 
             if sensor['msg_type'] == 'Image':  # Intra normalization: for cameras there is nothing to do, since all
                 # measurements have the same importance. Inter normalization, divide by the number of pixels considered.
-                rn.update({k: rn[k] / len(pair_keys) for k in pair_keys})
+                # rn.update({k: rn[k] / len(pair_keys) for k in pair_keys})
+                pass # nothing to do
 
             elif sensor['msg_type'] == 'LaserScan':  # Intra normalization: longitudinal measurements (extrema (.25)
                 # and inner (.25)] and orthogonal measurements (beam (0.5)). Inter normalization, consider the number of
@@ -483,11 +488,22 @@ def objectiveFunction(data):
 
             elif sensor['msg_type'] == 'PointCloud2':  # Intra normalization: p
                 orthogonal_keys = [k for k in pair_keys if '_oe' in k]
-                rn.update({k: 0.5 / len(orthogonal_keys) * rn[k] for k in orthogonal_keys})
-
                 limit_distance_keys = [k for k in pair_keys if '_ld' in k]
-                rn.update({k: 0.5 / len(limit_distance_keys) * rn[k] for k in limit_distance_keys})
+                total = len(orthogonal_keys) + len(limit_distance_keys)
 
+                # rn.update({k: 0.5 / len(orthogonal_keys) * rn[k] for k in orthogonal_keys})
+                rn.update({k: (1.0 - len(orthogonal_keys)/total) * rn[k] for k in orthogonal_keys})
+
+                # rn.update({k: 0.5 / len(limit_distance_keys) * rn[k] for k in limit_distance_keys})
+                rn.update({k: (1.0 - len(limit_distance_keys)/total) * rn[k] for k in limit_distance_keys})
+
+
+    # print('r=\n')
+    # print(r)
+    #
+    # print('\nrn=\n')
+    # print(rn)
+    # exit(0)
 
     # for collection_key, collection in dataset['collections'].items():
     #     for sensor_key, sensor in dataset['sensors'].items():
