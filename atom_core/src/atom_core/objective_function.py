@@ -140,7 +140,8 @@ def objectiveFunction(data):
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
                 pts_in_pattern_list = []  # Collect the points
-                for pt_detected in collection['labels'][sensor_key]['idxs']:
+                step = int(1 / float(args['sample_residuals']))
+                for pt_detected in collection['labels'][sensor_key]['idxs'][::step]:
                     id_detected = pt_detected['id']
                     point = [item for item in patterns['corners'] if item['id'] == id_detected][0]
                     pts_in_pattern_list.append(point)
@@ -170,13 +171,13 @@ def objectiveFunction(data):
                 # pts_in_image, _, _ = opt_utilities.projectWithoutDistortion(P, w, h, pts_in_sensor[0:3, :])
 
                 # Get the detected points to use as ground truth--------------------------------------------------------
-                pts_detected_in_image = np.array([[item['x'] for item in collection['labels'][sensor_key]['idxs']],
-                                                  [item['y'] for item in collection['labels'][sensor_key]['idxs']]],
+                pts_detected_in_image = np.array([[item['x'] for item in collection['labels'][sensor_key]['idxs'][::step]],
+                                                  [item['y'] for item in collection['labels'][sensor_key]['idxs'][::step]]],
                                                  dtype=np.float)
 
                 # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
                 # print(collection['labels'][sensor_key]['idxs'])
-                for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
+                for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs'][::step]):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = math.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
                                          (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
@@ -345,7 +346,7 @@ def objectiveFunction(data):
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
                 points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor.transpose())
 
-                step = 10
+                step = int(1 / float(args['sample_residuals']))
                 for idx in range(0, points_in_pattern.shape[1], step):
                     # Compute the residual: absolute of z component
                     rname = collection_key + '_' + sensor_key + '_oe_' + str(idx)
