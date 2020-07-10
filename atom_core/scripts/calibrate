@@ -104,7 +104,7 @@ def main():
     ap.add_argument("-si", "--show_images", help="shows images for each camera", action='store_true', default=False)
     ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera instrinsics to the optimization",
                     action='store_true', default=False)
-    ap.add_argument("-sr", "--sample_residuals", help="Samples residuals",type=float, default=1)
+    ap.add_argument("-sr", "--sample_residuals", help="Samples residuals", type=float, default=1)
     ap.add_argument("-od", "--optimize_distortion", help="Adds camera distortion parameters to the optimization",
                     action='store_true', default=False)
     ap.add_argument("-fec", "--four_extrema_corners", help="Uses only the four extrema corners for camera "
@@ -267,7 +267,11 @@ def main():
                 points[:, 1] = pc['y']
                 points[:, 2] = pc['z']
                 points[:, 3] = 1
-                collection['labels'][sensor_key]['labelled_points'] = points
+                collection['labels'][sensor_key]['labelled_points'] = []
+                for idx in range(0, points.shape[0]):
+                    collection['labels'][sensor_key]['labelled_points'].append(
+                        {'x': points[idx, 0], 'y': points[idx, 1], 'z': points[idx, 2],
+                         'w': points[idx, 3]})
 
                 # - Cartesian to polar LiDAR points conversion
                 import math
@@ -307,10 +311,23 @@ def main():
                     extrema_points.append(points[global_min_idx, :])
                     extrema_points.append(points[global_max_idx, :])
 
-                # - Save extrema points for optimization and visualization
-                collection['labels'][sensor_key]['limit_points'] = list(extrema_points)
-                # - Save middle points for optimization and visualization
-                collection['labels'][sensor_key]['middle_points'] = list(middle_points)
+                # Save extrema points in a dictionary
+                collection['labels'][sensor_key]['limit_points'] = []
+                extrema_points = np.array(extrema_points)
+                for idx in range(0, len(extrema_points)):
+                    collection['labels'][sensor_key]['limit_points'].append(
+                        {'x': extrema_points[idx, 0], 'y': extrema_points[idx, 1], 'z': extrema_points[idx, 2],
+                         'w': extrema_points[idx, 3]})
+                collection['labels'][sensor_key]['middle_points'] = []
+                middle_points = np.array(middle_points)
+                for idx in range(0, len(middle_points)):
+                    collection['labels'][sensor_key]['middle_points'].append(
+                        {'x': middle_points[idx, 0], 'y': middle_points[idx, 1], 'z': middle_points[idx, 2],
+                         'w': middle_points[idx, 3]})
+                # # - Save extrema points for optimization and visualization
+                # collection['labels'][sensor_key]['limit_points'] = list(extrema_points)
+                # # - Save middle points for optimization and visualization
+                # collection['labels'][sensor_key]['middle_points'] = list(middle_points)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -382,7 +399,6 @@ def main():
                                     getter=partial(getters_and_setters.getterCameraIntrinsics, sensor_key=sensor_key),
                                     setter=partial(getters_and_setters.setterCameraIntrinsics, sensor_key=sensor_key),
                                     suffix=['_fx', '_fy', '_cx', '_cy', '_k1', '_k2', '_t1', '_t2', '_k3'])
-
 
     # TODO handle optimize_distortion
 
@@ -573,10 +589,6 @@ def main():
     # print('\n')
     # opt.printParameters(opt.xf, text='Final parameters')
 
-    while True:
-        opt.callObjectiveFunction()
-        print(Fore.RED + 'Optimization finished, press ctrl-c to stop' + Style.RESET_ALL)
-
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
@@ -585,7 +597,9 @@ def main():
     createJSONFile(os.path.dirname(json_file) + '/results.json', dataset)
     print('File saved.')
 
-
+    while True:
+        opt.callObjectiveFunction()
+        print(Fore.RED + 'Optimization finished, press ctrl-c to stop' + Style.RESET_ALL)
 
     # # ---------------------------------------
     # # --- Save updated xacro

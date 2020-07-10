@@ -171,9 +171,10 @@ def objectiveFunction(data):
                 # pts_in_image, _, _ = opt_utilities.projectWithoutDistortion(P, w, h, pts_in_sensor[0:3, :])
 
                 # Get the detected points to use as ground truth--------------------------------------------------------
-                pts_detected_in_image = np.array([[item['x'] for item in collection['labels'][sensor_key]['idxs'][::step]],
-                                                  [item['y'] for item in collection['labels'][sensor_key]['idxs'][::step]]],
-                                                 dtype=np.float)
+                pts_detected_in_image = np.array(
+                    [[item['x'] for item in collection['labels'][sensor_key]['idxs'][::step]],
+                     [item['y'] for item in collection['labels'][sensor_key]['idxs'][::step]]],
+                    dtype=np.float)
 
                 # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
                 # print(collection['labels'][sensor_key]['idxs'])
@@ -333,7 +334,10 @@ def objectiveFunction(data):
                 #     [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
                 #     np.float)
 
-                points_in_sensor = collection['labels'][sensor_key]['labelled_points']
+                pts = collection['labels'][sensor_key]['labelled_points']
+                points_in_sensor = np.array(
+                    [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
+                     [item['w'] for item in pts]], np.float)
 
                 # ------------------------------------------------------------------------------------------------
                 # --- Orthogonal Distance Residuals: Distance from 3D range sensor point to chessboard plan
@@ -344,7 +348,7 @@ def objectiveFunction(data):
                 lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
 
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
-                points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor.transpose())
+                points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor)
 
                 step = int(1 / float(args['sample_residuals']))
                 for idx in range(0, points_in_pattern.shape[1], step):
@@ -415,8 +419,12 @@ def objectiveFunction(data):
 
                 pts = collection['labels'][sensor_key]['limit_points']
                 detected_limit_points_in_sensor = np.array(
-                    [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
-                    np.float)
+                    [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
+                     [item['w'] for item in pts]], np.float)
+                # pts = collection['labels'][sensor_key]['limit_points']
+                # detected_limit_points_in_sensor = np.array(
+                #     [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
+                #     np.float)
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
@@ -465,7 +473,6 @@ def objectiveFunction(data):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
-
             pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
             # print('For collection ' + str(collection_key) + ' sensor ' + sensor_key)
             # print('pair keys: ' + str(pair_keys))
@@ -473,7 +480,7 @@ def objectiveFunction(data):
             if sensor['msg_type'] == 'Image':  # Intra normalization: for cameras there is nothing to do, since all
                 # measurements have the same importance. Inter normalization, divide by the number of pixels considered.
                 # rn.update({k: rn[k] / len(pair_keys) for k in pair_keys})
-                pass # nothing to do
+                pass  # nothing to do
 
             elif sensor['msg_type'] == 'LaserScan':  # Intra normalization: longitudinal measurements (extrema (.25)
                 # and inner (.25)] and orthogonal measurements (beam (0.5)). Inter normalization, consider the number of
@@ -493,11 +500,10 @@ def objectiveFunction(data):
                 total = len(orthogonal_keys) + len(limit_distance_keys)
 
                 # rn.update({k: 0.5 / len(orthogonal_keys) * rn[k] for k in orthogonal_keys})
-                rn.update({k: (1.0 - len(orthogonal_keys)/total) * rn[k] for k in orthogonal_keys})
+                rn.update({k: (1.0 - len(orthogonal_keys) / total) * rn[k] for k in orthogonal_keys})
 
                 # rn.update({k: 0.5 / len(limit_distance_keys) * rn[k] for k in limit_distance_keys})
-                rn.update({k: (1.0 - len(limit_distance_keys)/total) * rn[k] for k in limit_distance_keys})
-
+                rn.update({k: (1.0 - len(limit_distance_keys) / total) * rn[k] for k in limit_distance_keys})
 
     # print('r=\n')
     # print(r)
