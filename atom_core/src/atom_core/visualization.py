@@ -32,26 +32,10 @@ from OptimizationUtils import utilities
 # own packages
 from atom_calibration.utilities import uriReader, execute
 
-
+from atom_core.utils import genCollectionPrefix, generateName, readXacroFile
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-
-
-def genCollectionPrefix(collection_key, string):
-    """ SStandardized form of deriving a name with a collection related prefix. """
-    return 'c' + str(collection_key) + '_' + str(string)
-
-
-def generateName(name, prefix='', suffix='', separator='_'):
-    """ Standardized form of deriving a name with a prefix or a suffix with <separator> separating them. """
-
-    if prefix:
-        prefix = prefix + separator
-
-    if suffix:
-        suffix = separator + suffix
-    return str(prefix) + str(name) + str(suffix)
 
 
 def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
@@ -150,14 +134,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
     rospy.loginfo('Reading description file ' + description_file + '...')
-    # xml_robot = URDF.from_parameter_server()
-    urdf_file = '/tmp/description.urdf'
-    print('Parsing description file ' + description_file)
-    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create a temp urdf file
-    try:
-        xml_robot = URDF.from_xml_file(urdf_file)  # read teh urdf file
-    except:
-        raise ValueError('Could not parse description file ' + description_file)
+    xml_robot = readXacroFile(description_file)
 
     pattern = dataset['calibration_config']['calibration_pattern']
 
