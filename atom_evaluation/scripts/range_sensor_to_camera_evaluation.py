@@ -91,6 +91,37 @@ def getPatternCorners(dataset, collection, ts):
     return corners_on_image
 
 
+mouseX, mouseY = 0, 0
+def click(event, x, y, flags, param):
+    global mouseX, mouseY
+    if event == cv2.EVENT_LBUTTONDOWN:
+        mouseX, mouseY = x, y
+
+
+def annotateLimits(image):
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', click)
+
+    extremas = {}
+    [extremas.setdefault(x, []) for x in range(4)]
+    colors = [(125, 125, 125), (0, 255, 0), (0, 0, 255), (125, 0, 125)]
+    annotating = True
+    i = 0
+    while i < 4:
+        cv2.imshow('image', image)
+        k = cv2.waitKey(20) & 0xFF
+        if k == ord('c'):
+            break
+        elif k == ord('s'):
+            image = cv2.circle(image, (mouseX, mouseY), 5, colors[i], -1)
+            extremas[i].append([mouseX, mouseY])
+        elif k == ord('p'):
+            i += 1
+
+    cv2.destroyWindow('image')
+    return extremas
+
+
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
@@ -100,13 +131,15 @@ if __name__ == "__main__":
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
-    ap.add_argument("-si", "--show_images", help="shows images for each camera", action='store_true', default=False)
+    ap.add_argument("-si", "--show_images", help="Shows images.", action='store_true', default=False)
+    ap.add_argument("-at", "--corners_auto", help="Automatic corner detection.", action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
     source_sensor = args['source_sensor']
     target_sensor = args['target_sensor']
     show_images = args['show_images']
+    auto = args['corners_auto']
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
@@ -126,22 +159,43 @@ if __name__ == "__main__":
         pts_in_image = rangeToImage(collection, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
-        # --- Get pattern corners
+        # --- Get pattern corners (auto)
         # ---------------------------------------
-        corners_on_image = getPatternCorners(dataset, collection, target_sensor)
+        filename = os.path.dirname(args['json_file']) + '/' + collection['data'][target_sensor]['data_file']
+        image = cv2.imread(filename)
+        if auto == True:
+            corners_on_image = getPatternCorners(dataset, collection, target_sensor)
+            # ---------------------------------------
+            # --- Drawing ...
+            # ---------------------------------------
+            if show_images == True:
+                for idx in range(0, corners_on_image.shape[1]):
+                    image = cv2.circle(image, (int(corners_on_image[0, idx]), int(corners_on_image[1, idx])), 5,
+                                       (0, 255, 0), -1)
+        else:
+            corners_on_image = annotateLimits(image)
+            for i, pts in corners_on_image.items():
+                pts = np.array(pts)
+                if (pts.size == 0):
+                    continue
+
+                x = pts[:, 0]
+                y = pts[:, 1]
+                coefficients = np.polyfit(x, y, 3)
+                poly = np.poly1d(coefficients)
+                new_x = np.linspace(x[0], x[-1])
+                new_y = poly(new_x)
+                if show_images == True:
+                    for idx in range(0, len(new_x)):
+                        image = cv2.circle(image, (int(new_x[idx]), int(new_y[idx])), 5, (0, 0, 0), -1)
+
 
         # ---------------------------------------
         # --- Drawing ...
         # ---------------------------------------
         if show_images == True:
-            filename = os.path.dirname(args['json_file']) + '/' + collection['data'][target_sensor]['data_file']
-            image = cv2.imread(filename)
-
             for idx in range(0, pts_in_image.shape[1]):
                 image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
-            for idx in range(0, corners_on_image.shape[1]):
-                image = cv2.circle(image, (int(corners_on_image[0, idx]), int(corners_on_image[1, idx])), 5,
-                                   (0, 255, 0), -1)
 
             cv2.imshow("LiDAR Reprojection", image)
             cv2.waitKey()
