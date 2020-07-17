@@ -582,13 +582,14 @@ def main():
     # ---------------------------------------
 
     print('Initializing optimization ...')
-    # opt.startOptimization(optimization_options={'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': 1e-4, 'x_scale':'jac'})
-    opt.startOptimization(
-        optimization_options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': 1e-4, 'x_scale': 'jac', 'max_nfev': 1})
-    # opt.startOptimization(
-    #     optimization_options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': 1e-3, 'x_scale': 'jac'})
-    # opt.startOptimization(optimization_options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6})
+
     # TODO diff step as None
+    options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': 1e-4, 'x_scale': 'jac'}
+    # options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': 1e-3, 'x_scale': 'jac'}
+    # options={'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6}
+    # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': 1e-4, 'x_scale': 'jac', 'max_nfev': 1}
+
+    opt.startOptimization(optimization_options=options)
 
     # print('\n-----------------')
     # opt.printParameters(opt.x0, text='Initial parameters')
@@ -616,7 +617,7 @@ def main():
     for sensor_key in dataset['calibration_config']['sensors']:
         child = dataset['calibration_config']['sensors'][sensor_key]['child_link']
         parent = dataset['calibration_config']['sensors'][sensor_key]['parent_link']
-        transform_key = parent + '-' + child
+        transform_key = opt_utilities.generateKey(parent, child)
 
         trans = list(dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans'])
         quat = list(dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat'])
@@ -636,18 +637,15 @@ def main():
                 break
 
         if not found:
-            raise ValueError('Could not find transform ' + str(transform_key) + ' in /robot_description')
+            raise ValueError('Could not find transform ' + str(transform_key) + ' in ' + description_file)
 
-    # TODO remove hardcoded xacro name
-
-    exit(0)
-    outfile = rospkg.RosPack().get_path('atom_calibration') + '/calibrations/atlascar2/optimized.urdf.xacro'
+    # TODO find a way to find the <your_robot>_calibration path. For now write a xacro to /tmp
+    # outfile = os.path.dirname(description_file) + '/optimized.urdf.xacro'
+    outfile = '/tmp/optimized.urdf.xacro'
     with open(outfile, 'w') as out:
-        print("Writing optimized urdf to " + str(outfile))
         out.write(URDF.to_xml_string(xml_robot))
 
-    print('Xacro file saved.')
-
+    print('Optimized xacro file saved to '+ str(outfile) + ' . You can use it as a ROS robot_description.')
 
 if __name__ == "__main__":
     main()
