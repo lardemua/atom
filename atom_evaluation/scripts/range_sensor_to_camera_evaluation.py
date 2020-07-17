@@ -197,5 +197,5 @@ if __name__ == "__main__":
             for idx in range(0, pts_in_image.shape[1]):
                 image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
 
-            cv2.imshow("LiDAR Reprojection", image)
+            cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
