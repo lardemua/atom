@@ -14,6 +14,7 @@ import numpy as np
 import cv2
 import argparse
 import OptimizationUtils.utilities as opt_utilities
+from scipy.spatial import distance
 from copy import deepcopy
 from colorama import Style, Fore
 
@@ -68,6 +69,8 @@ def rangeToImage(collection, ss, ts, tf):
 
 
 mouseX, mouseY = 0, 0
+
+
 def click(event, x, y, flags, param):
     global mouseX, mouseY
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -179,6 +182,7 @@ if __name__ == "__main__":
             poly = np.poly1d(coefficients)
             new_x = np.linspace(x[0], x[-1])
             new_y = poly(new_x)
+
             if show_images == True:
                 for idx in range(0, len(new_x)):
                     image = cv2.circle(image, (int(new_x[idx]), int(new_y[idx])), 3, (0, 0, 255), -1)
@@ -186,6 +190,26 @@ if __name__ == "__main__":
             output_dict['ground_truth_pts'][collection_key][i] = []
             for idx in range(0, len(new_x)):
                 output_dict['ground_truth_pts'][collection_key][i].append([new_x[idx], new_y[idx]])
+
+        # ---------------------------------------
+        # --- Evaluation metrics - reprojection error
+        # ---------------------------------------
+        # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+        for idx in range(0, pts_in_image.shape[1]):
+            target_pt = pts_in_image[:, idx]
+            target_pt = np.reshape(target_pt[0:2], (2, 1))
+            min_dist = 1e6
+            for i, pts in output_dict['ground_truth_pts'][collection_key].items():
+                dist = np.min(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
+
+                if dist < min_dist:
+                    min_dist = dist
+                    arg = np.argmin(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
+                    closest_pt = pts[arg]
+
+            if show_images is True:
+                image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
+                                 (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
 
         # ---------------------------------------
         # --- Drawing ...
