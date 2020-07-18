@@ -1,4 +1,3 @@
-
 # stdlib
 import copy
 import json
@@ -55,7 +54,6 @@ class DataCollectorAndLabeler:
             execute('mv ' + self.output_folder + ' ' + backup_folder, verbose=True)
 
         os.mkdir(self.output_folder)  # Recreate the folder
-
 
         self.listener = TransformListener()
         self.sensors = {}

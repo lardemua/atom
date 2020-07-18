@@ -167,11 +167,9 @@ def main():
     # a field "data_file" is saved with the path to the file. We must load the images from the disk.
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
-            if not sensor['msg_type'] == 'Image':  # nothing to do here.
-                continue
-
-            filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
-            collection['data'][sensor_key]['data'] = cv2.imread(filename)
+            if sensor['msg_type'] == 'Image':  # Load image.
+                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                collection['data'][sensor_key]['data'] = cv2.imread(filename)
 
     if not args['collection_selection_function'] is None:
         deleted = []
