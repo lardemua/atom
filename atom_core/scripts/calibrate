@@ -31,8 +31,7 @@ import atom_core.objective_function as objective_function
 import atom_core.patterns as patterns
 import atom_core.visualization as visualization
 
-from atom_core.utils import readXacroFile
-from atom_calibration.utilities import uriReader, execute
+from atom_core.utilities import uriReader, execute, readXacroFile
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS

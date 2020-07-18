@@ -15,7 +15,7 @@ from visualization_msgs.msg import InteractiveMarkerControl, Marker, Interactive
 from colorama import Style, Fore
 
 # local packages
-import atom_calibration.utilities as utilities
+import atom_core.utilities as utilities
 from atom_calibration.data_collector_and_labeler import DataCollectorAndLabeler
 
 

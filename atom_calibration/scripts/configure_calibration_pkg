@@ -28,7 +28,7 @@ from matplotlib import cm
 from jinja2 import Environment, FileSystemLoader
 
 # local packages
-import atom_calibration.utilities as utilities
+import atom_core.utilities as utilities
 
 if __name__ == "__main__":
     # Parse command line arguments

@@ -32,7 +32,7 @@ from image_geometry import PinholeCameraModel
 
 # local packages
 from atom_calibration import patterns
-import atom_calibration.utilities
+import atom_core.utilities
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -137,7 +137,7 @@ class InteractiveDataLabeler:
 
         # Get the type of message from the message topic of the sensor data, which is given as input. The message
         # type is used to define which labelling technique is used.
-        self.msg_type_str, self.msg_type = atom_calibration.utilities.getMessageTypeFromTopic(self.topic)
+        self.msg_type_str, self.msg_type = atom_core.utilities.getMessageTypeFromTopic(self.topic)
         print('msg_type_str is = ' + str(self.msg_type_str))
 
         # Handle the interactive labelling of data differently according to the sensor message types.
@@ -205,6 +205,7 @@ class InteractiveDataLabeler:
             # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
 
         # Subscribe to the message topic containing sensor data
+        print(self.msg_type)
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=None)
 
     def sensorDataReceivedCallback(self, msg):
@@ -232,7 +233,7 @@ class InteractiveDataLabeler:
             points = []  # init points
 
             # Compute cartesian coordinates
-            xs, ys = atom_calibration.utilities.laser_scan_msg_to_xy(self.msg)
+            xs, ys = atom_core.utilities.laser_scan_msg_to_xy(self.msg)
 
             # Clustering:
             first_iteration = True

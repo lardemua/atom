@@ -13,7 +13,7 @@ from colorama import Style, Fore
 from datetime import datetime
 
 # local packages
-from atom_calibration.utilities import resolvePath, execute
+from atom_core.utilities import resolvePath, execute
 
 if __name__ == "__main__":
     # Parse command line arguments

@@ -30,9 +30,8 @@ from open3d import *
 from OptimizationUtils import utilities
 
 # own packages
-from atom_calibration.utilities import uriReader, execute
+from atom_core.utilities import uriReader, execute, genCollectionPrefix, generateName, readXacroFile
 
-from atom_core.utils import genCollectionPrefix, generateName, readXacroFile
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------

@@ -22,10 +22,10 @@ from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
 # local packages
-from utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
-from atom_calibration.utilities import loadConfig, execute
+from atom_core.utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
+from atom_core.utilities import loadConfig, execute
 from atom_calibration.interactive_data_labeler import InteractiveDataLabeler
-import atom_calibration.utilities as utilities
+import atom_core.utilities as utilities
 
 
 class DataCollectorAndLabeler:
