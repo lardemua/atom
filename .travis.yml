@@ -4,8 +4,9 @@ services:
 
 env:
   global:
+    - BUILDER="catkin_make"
     - VERBOSE_TESTS="true"
-    - UPSTREAM_WORKSPACE='github:rarrais/rospy_urdf_to_rviz_converter#ros_package'
+    # - UPSTREAM_WORKSPACE='github:rarrais/rospy_urdf_to_rviz_converter#ros_package'
   matrix:
     - ROS_DISTRO="melodic"
 
