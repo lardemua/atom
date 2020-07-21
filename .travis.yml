@@ -3,6 +3,8 @@ services:
   - docker
 
 env:
+  global:
+    - VERBOSE_TESTS="true"
   matrix:
     - ROS_DISTRO="melodic"
 
