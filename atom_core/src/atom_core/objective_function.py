@@ -460,7 +460,13 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
-                pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]  #
+
+                if data['cache'].has_key(collection_key):
+                    pair_keys = data['cache'][collection_key]
+                else:
+                    pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]  #
+                    data['cache'][collection_key] = pair_keys
+
                 # compute the residual keys that belong to this collection-sensor pair.
                 rn.update({k: rn[k] * meter_to_pixel_factor for k in pair_keys})  # update the normalized dictionary.
 
@@ -471,7 +477,11 @@ def objectiveFunction(data):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
-            pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            if data['cache'].has_key('c' + collection_key):
+                pair_keys = data['cache']['c' + collection_key]
+            else:
+                pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+                data['cache']['c' + collection_key] = pair_keys
             # print('For collection ' + str(collection_key) + ' sensor ' + sensor_key)
             # print('pair keys: ' + str(pair_keys))
 
