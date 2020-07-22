@@ -7,8 +7,6 @@ from copy import deepcopy
 # 3rd-party
 import numpy as np
 
-from statistics import mean
-
 import rospy
 import ros_numpy
 
@@ -529,8 +527,8 @@ def objectiveFunction(data):
 
     per_sensor = {}
     for sensor_key, sensor in dataset['sensors'].items():
-        per_sensor[str(sensor_key)] = {'avg': mean([r[k] for k in r.keys() if sensor_key in k]),
-                                       'navg': mean([rn[k] for k in rn.keys() if sensor_key in k])}
+        per_sensor[str(sensor_key)] = {'avg': np.mean([r[k] for k in r.keys() if sensor_key in k]),
+                                       'navg': np.mean([rn[k] for k in rn.keys() if sensor_key in k])}
 
     # Get a list of all msg_types
     msg_types = []
