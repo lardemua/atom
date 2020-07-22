@@ -450,7 +450,7 @@ def objectiveFunction(data):
 
     # --- Normalization of residuals.
     # TODO put normalized residuals to the square
-    rn = deepcopy(r)  # make a copy of the non normalized dictionary.
+    rn = r.copy() # copy is faster than deepcopy and is enough for this case.
 
     # Message type normalization. Pixels and meters should be weighted based on an adhoc defined meter_to_pixel factor.
     meter_to_pixel_factor = 200  # trial and error, the best technique around :-)
