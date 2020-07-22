@@ -4,6 +4,7 @@
 import os
 import argparse
 import subprocess
+import sys
 
 # 3rd-party
 import rospy
@@ -13,13 +14,13 @@ from colorama import Style, Fore
 from datetime import datetime
 
 # local packages
-from atom_core.utilities import resolvePath, execute
+from atom_core.utilities import resolvePath, execute, filterLaunchArguments
 
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package_name', type=str, required=True)
-    args = vars(ap.parse_args())
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
 
     # Initial setup
     package_path = resolvePath(args['name'])  # full path to the package, including its name.
