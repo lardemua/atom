@@ -7,7 +7,7 @@
     <param name="/hztest/topic" value="rosout" />
     <param name="/hztest/hz" value="0" />
     <param name="/hztest/hzerror" value="0" />
-    <param name="/hztest/test_duration" value="2.0" />
+    <param name="/hztest/test_duration" value="0.1" />
     <test test-name="hztest_test" pkg="rostest" type="hztest" name="hztest" />
 
 </launch>
