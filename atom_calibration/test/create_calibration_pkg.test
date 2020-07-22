@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <node name="create_calibration_pkg" pkg="atom_calibration" type="create_calibration_pkg" args="--name testing_robot" output="screen" />
+    <node name="create_calibration_pkg" pkg="atom_calibration" type="create_calibration_pkg" args="--name testing_robot" output="screen" required="true"/>
 
     <!-- Dumb test only to check if node executes -->
     <param name="/hztest/topic" value="rosout" />
