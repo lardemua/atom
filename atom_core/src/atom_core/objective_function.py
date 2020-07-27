@@ -7,8 +7,6 @@ from copy import deepcopy
 # 3rd-party
 import numpy as np
 
-from statistics import mean
-
 import rospy
 import ros_numpy
 
@@ -452,7 +450,7 @@ def objectiveFunction(data):
 
     # --- Normalization of residuals.
     # TODO put normalized residuals to the square
-    rn = deepcopy(r)  # make a copy of the non normalized dictionary.
+    rn = r.copy() # copy is faster than deepcopy and is enough for this case.
 
     # Message type normalization. Pixels and meters should be weighted based on an adhoc defined meter_to_pixel factor.
     meter_to_pixel_factor = 200  # trial and error, the best technique around :-)
@@ -462,7 +460,13 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
-                pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]  #
+
+                if data['cache'].has_key(collection_key):
+                    pair_keys = data['cache'][collection_key]
+                else:
+                    pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]  #
+                    data['cache'][collection_key] = pair_keys
+
                 # compute the residual keys that belong to this collection-sensor pair.
                 rn.update({k: rn[k] * meter_to_pixel_factor for k in pair_keys})  # update the normalized dictionary.
 
@@ -473,7 +477,11 @@ def objectiveFunction(data):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
-            pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            if data['cache'].has_key('c' + collection_key):
+                pair_keys = data['cache']['c' + collection_key]
+            else:
+                pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+                data['cache']['c' + collection_key] = pair_keys
             # print('For collection ' + str(collection_key) + ' sensor ' + sensor_key)
             # print('pair keys: ' + str(pair_keys))
 
@@ -529,8 +537,8 @@ def objectiveFunction(data):
 
     per_sensor = {}
     for sensor_key, sensor in dataset['sensors'].items():
-        per_sensor[str(sensor_key)] = {'avg': mean([r[k] for k in r.keys() if sensor_key in k]),
-                                       'navg': mean([rn[k] for k in rn.keys() if sensor_key in k])}
+        per_sensor[str(sensor_key)] = {'avg': np.mean([r[k] for k in r.keys() if sensor_key in k]),
+                                       'navg': np.mean([rn[k] for k in rn.keys() if sensor_key in k])}
 
     # Get a list of all msg_types
     msg_types = []

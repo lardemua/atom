@@ -339,6 +339,9 @@ def main():
     opt.addDataModel('args', args)
     opt.addDataModel('dataset', dataset)
 
+    cache = {}
+    opt.addDataModel('cache', cache)
+
     # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
     # transformation.
     selected_collection_key = dataset['collections'].keys()[0]
