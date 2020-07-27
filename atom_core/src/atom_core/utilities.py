@@ -173,7 +173,7 @@ def uriReader(resource):
     else:
         raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')
 
-    assert (os.path.exists(fullpath)), Fore.RED + fullpath + ' does not exist. Check your config.yml description file'
+    assert (os.path.exists(fullpath)), Fore.RED + fullpath + ' does not exist.'
     return fullpath, os.path.basename(fullpath), relpath
 
 

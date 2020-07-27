@@ -14,6 +14,7 @@ import argparse
 
 from copy import deepcopy
 from functools import partial
+from urdf_parser_py.urdf import URDF
 
 # 3rd-party
 import rospy
@@ -36,7 +37,6 @@ from atom_core.utilities import uriReader, execute, readXacroFile
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-from urdf_parser_py.urdf import URDF
 
 
 def signal_handler(sig, frame):
