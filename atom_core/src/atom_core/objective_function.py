@@ -167,7 +167,7 @@ def objectiveFunction(data):
     number_sensors = len(dataset['sensors'].keys())
     number_collections = len(dataset['collections'].keys())
 
-    @lru_cache(maxsize= number_collections * number_sensors)
+    # @lru_cache(maxsize= number_collections * number_sensors)
     def getPointsInPatternAsNPArray(_collection_key, _sensor_key):
 
         pts_in_pattern_list = []  # Collect the points
@@ -181,7 +181,7 @@ def objectiveFunction(data):
                                    [0 for _ in pts_in_pattern_list],
                                    [1 for _ in pts_in_pattern_list]], np.float)
 
-    @lru_cache(maxsize= number_collections * number_sensors)
+    # @lru_cache(maxsize= number_collections * number_sensors)
     def getPointsInSensorAsNPArray(_collection_key, _sensor_key):
 
         pts = dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']

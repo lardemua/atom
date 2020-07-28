@@ -585,17 +585,20 @@ def main():
     # ---------------------------------------
     if args['profile_objective_function']:
         from line_profiler import LineProfiler
-        lp = LineProfiler()
-        lp_wrapper = lp(objective_function.objectiveFunction)
-        lp_wrapper(opt.data_models)
+        lp1 = LineProfiler()
+        lp_wrapper1 = lp1(objective_function.objectiveFunction)
+        lp_wrapper1(opt.data_models)
+
         print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'First call of Objective Function (no cache)'
               + '\n\n' + Back.RESET +Fore.RESET + Style.RESET_ALL )
-        lp.print_stats()
+        lp1.print_stats()
 
-        lp_wrapper(opt.data_models)
+        lp2 = LineProfiler()
+        lp_wrapper2 = lp2(objective_function.objectiveFunction)
+        lp_wrapper2(opt.data_models)
         print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'Second call of Objective Function (with cache)'
               + '\n\n' + Back.RESET +Fore.RESET + Style.RESET_ALL )
-        lp.print_stats()
+        lp2.print_stats()
         exit(0)
 
     # ---------------------------------------
