@@ -17,7 +17,6 @@ import OptimizationUtils.utilities as utilities
 
 # ------------  Sensors -----------------
 # Each sensor will have a position (tx,ty,tz) and a rotation (r1,r2,r3)
-
 def getterTransform(dataset, transform_key, collection_name):
     # The pose must be returned as a list of translation vector and rotation, i.e. [tx, ty, tz, r1, r2, r3] where r1,
     # r2,r3 are angles of the Rodrigues rotation vector.

@@ -25,6 +25,39 @@ import OptimizationUtils.utilities as opt_utilities
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
+def getCollectionSensorPairKeys(collection_key, sensor_key, source, cache):
+    """ Gets all collection on sensor pair keys that exist in the dictionary. Uses cache to speedup."""
+
+    key = collection_key + '_' + sensor_key
+    if cache.has_key(key):
+        pair_keys = cache[key]
+    else:
+        pair_keys = [k for k in source.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]  #
+        cache[key] = pair_keys
+
+    return pair_keys
+
+
+def tic():
+    # matlab like tic and toc functions
+    global startTime_for_tictoc
+    startTime_for_tictoc = time.time()
+
+def toc():
+    # matlab like tic and toc functions
+    if 'startTime_for_tictoc' in globals():
+        print("Elapsed time is " + str(time.time() - startTime_for_tictoc) + " seconds.")
+    else:
+        print("Toc: start time not set")
+
+def tocs():
+    # matlab like tic and toc functions
+    if 'startTime_for_tictoc' in globals():
+        return str((time.time() - startTime_for_tictoc))
+    else:
+        print("Toc: start time not set")
+        return None
+
 def distance_two_3D_points(p0, p1):
     return math.sqrt(((p0[0] - p1[0]) ** 2) + ((p0[1] - p1[1]) ** 2) + ((p0[2] - p1[2]) ** 2))
 
@@ -134,20 +167,25 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'Image':
-
+                tic()
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
-                pts_in_pattern_list = []  # Collect the points
                 step = int(1 / float(args['sample_residuals']))
-                for pt_detected in collection['labels'][sensor_key]['idxs'][::step]:
-                    id_detected = pt_detected['id']
-                    point = [item for item in patterns['corners'] if item['id'] == id_detected][0]
-                    pts_in_pattern_list.append(point)
+                key = collection_key + '_' + sensor_key + '_' + 'pts_in_pattern'
+                if data['cache'].has_key(key):
+                    pts_in_pattern = data['cache'][key]
+                else:
+                    pts_in_pattern_list = []  # Collect the points
+                    for pt_detected in collection['labels'][sensor_key]['idxs'][::step]:
+                        id_detected = pt_detected['id']
+                        point = [item for item in patterns['corners'] if item['id'] == id_detected][0]
+                        pts_in_pattern_list.append(point)
 
-                pts_in_pattern = np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
-                                           [item['y'] for item in pts_in_pattern_list],
-                                           [0 for _ in pts_in_pattern_list],
-                                           [1 for _ in pts_in_pattern_list]], np.float)
+                    pts_in_pattern = np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
+                                               [item['y'] for item in pts_in_pattern_list],
+                                               [0 for _ in pts_in_pattern_list],
+                                               [1 for _ in pts_in_pattern_list]], np.float)
+                    data['cache'][key] = pts_in_pattern
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
@@ -163,6 +201,7 @@ def objectiveFunction(data):
                 D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
 
                 pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+
                 # pts_in_image, _, _ = opt_utilities.projectToCamera(P, D, w, h, pts_in_sensor[0:3, :])
                 # pts_in_image, _, _ = opt_utilities.projectWithoutDistortion(K, w, h, pts_in_sensor[0:3, :])
                 # See issue #106
@@ -190,7 +229,11 @@ def objectiveFunction(data):
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
                     collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
 
+
+                # print('Image branch took ' + tocs())
+
             elif sensor['msg_type'] == 'LaserScan':
+                tic()
                 # Get laser points that belong to the chessboard
                 idxs = collection['labels'][sensor_key]['idxs']
                 rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
@@ -324,8 +367,11 @@ def objectiveFunction(data):
                         marker.points.append(deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
+                # print('LaserScan branch took ' + tocs())
+
             elif sensor['msg_type'] == 'PointCloud2':
 
+                tic()
                 # Get the 3D LiDAR labelled points for the given collection
                 # pts = collection['labels'][sensor_key]['middle_points']
                 # detected_middle_points_in_sensor = np.array(
@@ -351,7 +397,7 @@ def objectiveFunction(data):
                 step = int(1 / float(args['sample_residuals']))
                 for idx in range(0, points_in_pattern.shape[1], step):
                     # Compute the residual: absolute of z component
-                    rname = collection_key + '_' + sensor_key + '_oe_' + str(idx)
+                    rname = 'c' + collection_key + '_' + sensor_key + '_oe_' + str(idx)
                     r[rname] = abs(points_in_pattern[2, idx])
 
                 # ------------------------------------------------------------------------------------------------
@@ -440,19 +486,24 @@ def objectiveFunction(data):
                 # Compute and save residuals
                 for idx in range(detected_limit_points_in_pattern.shape[1]):
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
-                    rname = collection_key + '_' + sensor_key + '_ld_' + str(idx)
+                    rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(
                         distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
                 # ------------------------------------------------------------------------------------------------
+                # print('PointCloud2 branch took ' + tocs())
 
             else:
                 raise ValueError("Unknown sensor msg_type")
 
+
     # --- Normalization of residuals.
+
+    tic()
     # TODO put normalized residuals to the square
-    rn = r.copy() # copy is faster than deepcopy and is enough for this case.
+    rn = r.copy()  # copy is faster than deepcopy and is enough for this case.
 
     # Message type normalization. Pixels and meters should be weighted based on an adhoc defined meter_to_pixel factor.
+    # TODO use standard score
     meter_to_pixel_factor = 200  # trial and error, the best technique around :-)
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
@@ -460,12 +511,8 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
-
-                if data['cache'].has_key(collection_key):
-                    pair_keys = data['cache'][collection_key]
-                else:
-                    pair_keys = [k for k in rn.keys() if collection_key == k.split('_')[0] and sensor_key in k]  #
-                    data['cache'][collection_key] = pair_keys
+                pair_keys = getCollectionSensorPairKeys(collection_key, sensor_key, rn, data['cache'])
+                # pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]  #
 
                 # compute the residual keys that belong to this collection-sensor pair.
                 rn.update({k: rn[k] * meter_to_pixel_factor for k in pair_keys})  # update the normalized dictionary.
@@ -477,11 +524,8 @@ def objectiveFunction(data):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
-            if data['cache'].has_key('c' + collection_key):
-                pair_keys = data['cache']['c' + collection_key]
-            else:
-                pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
-                data['cache']['c' + collection_key] = pair_keys
+            pair_keys = getCollectionSensorPairKeys(collection_key, sensor_key, rn, data['cache'])
+            # pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
             # print('For collection ' + str(collection_key) + ' sensor ' + sensor_key)
             # print('pair keys: ' + str(pair_keys))
 
@@ -513,6 +557,37 @@ def objectiveFunction(data):
                 # rn.update({k: 0.5 / len(limit_distance_keys) * rn[k] for k in limit_distance_keys})
                 rn.update({k: (1.0 - len(limit_distance_keys) / total) * rn[k] for k in limit_distance_keys})
 
+    # print(rn)
+    # exit(0)
+
+    # Inter sensor normalization
+    for collection_key, collection in dataset['collections'].items():
+        keys_per_sensor = {}
+        total = 0
+        for sensor_key, sensor in dataset['sensors'].items():
+            if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
+                continue
+            pair_keys = getCollectionSensorPairKeys(collection_key, sensor_key, rn, data['cache'])
+            # print(pair_keys)
+
+            # pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            # print(pair_keys)
+
+            keys_per_sensor[sensor_key] = len(pair_keys)
+            total += len(pair_keys)
+        # print('For collection ' + collection_key + ' keys_per_sensor is ' + str(keys_per_sensor))
+
+        # normalize using total residuals in collection
+        for sensor_key, sensor in dataset['sensors'].items():
+            if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
+                continue
+
+            pair_keys = getCollectionSensorPairKeys(collection_key, sensor_key, rn, data['cache'])
+            # pair_keys = [k for k in rn.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+
+            rn.update({k: (1.0 - len(pair_keys) / total) * rn[k] for k in pair_keys})
+
+    # exit(0)
     # print('r=\n')
     # print(r)
     #
@@ -569,6 +644,8 @@ def objectiveFunction(data):
     pp = pprint.PrettyPrinter(indent=2)
     pp.pprint(report)
 
+    # print("Normalization took " + tocs())
     # print(r)
+    # exit(0)
     return rn  # Return the residuals
     # return r  # Return the residuals
