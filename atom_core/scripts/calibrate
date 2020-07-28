@@ -32,7 +32,7 @@ import atom_core.objective_function as objective_function
 import atom_core.patterns as patterns
 import atom_core.visualization as visualization
 
-from atom_core.utilities import uriReader, execute, readXacroFile
+from atom_core.utilities import uriReader, execute, readXacroFile, write_pcd, read_pcd
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -257,11 +257,13 @@ def main():
             for collection_key, collection in dataset['collections'].items():
                 import ros_numpy
                 from scipy.spatial import distance
-                from rospy_message_converter import message_converter
 
-                # Convert 3D cloud data on .json dictionary to ROS message type
-                cloud_msg = message_converter.convert_dictionary_to_ros_message("sensor_msgs/PointCloud2",
-                                                                                collection['data'][sensor_key])
+                # Read pointcloud from pcd file
+                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                frame_id = collection['data'][sensor_key]['header']['frame_id']
+                cloud_msg = read_pcd(filename, frame_id, get_tf=False)
+                collection['data'][sensor_key]['data'] = cloud_msg
+                print(collection_key)
 
                 # ------------------------------------------------------------------------------------------------
                 # -------- Extract the labelled LiDAR points on the pattern
