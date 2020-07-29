@@ -23,6 +23,9 @@ import OptimizationUtils.utilities as opt_utilities
 from functools import partial
 
 
+from atom_core.cache import Cache
+
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -145,6 +148,28 @@ def computeResidualsAverage(residuals):
             r['average'] = np.nan
 
 
+@Cache(kwargs_to_ignore=['_dataset', '_step'])
+def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset, _step):
+
+    pts_in_pattern_list = []  # Collect the points
+    for pt_detected in _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs'][::_step]:
+        id_detected = pt_detected['id']
+        point = [item for item in _dataset['patterns']['corners'] if item['id'] == id_detected][0]
+        pts_in_pattern_list.append(point)
+
+    return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
+                               [item['y'] for item in pts_in_pattern_list],
+                               [0 for _ in pts_in_pattern_list],
+                               [1 for _ in pts_in_pattern_list]], np.float)
+
+@Cache(kwargs_to_ignore=['_dataset'])
+def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _dataset):
+
+    pts = _dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']
+    return np.array([[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
+                     [item['w'] for item in pts]], np.float)
+
+
 def objectiveFunction(data):
     """
     Computes the vector of residuals. There should be an error for each stamp, sensor and chessboard tuple.
@@ -167,26 +192,24 @@ def objectiveFunction(data):
     number_sensors = len(dataset['sensors'].keys())
     number_collections = len(dataset['collections'].keys())
 
-    # @lru_cache(maxsize= number_collections * number_sensors)
-    def getPointsInPatternAsNPArray(_collection_key, _sensor_key):
+    # Test speedup from lru
+    # for i in range(0,15):
+    #     tic()
+    #     for collection_key, collection in dataset['collections'].items():
+    #         for sensor_key, sensor in dataset['sensors'].items():
+    #
+    #             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
+    #                 continue
+    #
+    #             if sensor['msg_type'] == 'Image':
+    #                 step = int(1 / float(args['sample_residuals']))
+    #                 pts_in_pattern = getPointsInPatternAsNPArray(collection_key, sensor_key, dataset, step)
+    #
+    #     print('time took ' + tocs())
+    # exit(0)
 
-        pts_in_pattern_list = []  # Collect the points
-        for pt_detected in dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs'][::step]:
-            id_detected = pt_detected['id']
-            point = [item for item in patterns['corners'] if item['id'] == id_detected][0]
-            pts_in_pattern_list.append(point)
 
-        return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
-                                   [item['y'] for item in pts_in_pattern_list],
-                                   [0 for _ in pts_in_pattern_list],
-                                   [1 for _ in pts_in_pattern_list]], np.float)
 
-    # @lru_cache(maxsize= number_collections * number_sensors)
-    def getPointsInSensorAsNPArray(_collection_key, _sensor_key):
-
-        pts = dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']
-        return np.array([[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
-                         [item['w'] for item in pts]], np.float)
 
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
@@ -201,9 +224,7 @@ def objectiveFunction(data):
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
                 step = int(1 / float(args['sample_residuals']))
-
-                # TODO shoulb be num_sensors x num collections
-                pts_in_pattern = getPointsInPatternAsNPArray(collection_key, sensor_key)
+                pts_in_pattern = getPointsInPatternAsNPArray(collection_key, sensor_key, dataset, step)
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
@@ -395,7 +416,7 @@ def objectiveFunction(data):
                 #     [[pt[0] for pt in pts], [pt[1] for pt in pts], [pt[2] for pt in pts], [pt[3] for pt in pts]],
                 #     np.float)
 
-                points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key)
+                points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, dataset)
 
 
                 # ------------------------------------------------------------------------------------------------
