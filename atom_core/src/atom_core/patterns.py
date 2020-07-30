@@ -195,10 +195,6 @@ def createPatternLabels(args, dataset, step=0.02):
                     ids[idx] = point['id']
 
                 # Find pose of the camera w.r.t the chessboard
-                print(np.shape(objp))
-                print(np.shape(corners))
-                # projected, _, _ = utilities.projectToCamera(K, D, width, height, np.dot(sTc, pattern['grid'].T[ids].T))
-                # ret, rvecs, tvecs = cv2.solvePnP(objp, corners, K, D)
                 ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
 
                 # Compute the pose of he chessboard w.r.t the pattern parent link
@@ -210,7 +206,7 @@ def createPatternLabels(args, dataset, step=0.02):
                 T = deepcopy(root_T_chessboard)
                 T[0:3, 3] = 0  # remove translation component from 4x4 matrix
 
-                print('Creating first guess for collection ' + collection_key + ' using sensor ' + sensor_key)
+                # print('Creating first guess for collection ' + collection_key + ' using sensor ' + sensor_key)
 
                 parent = dataset['calibration_config']['calibration_pattern']['parent_link']
                 child = dataset['calibration_config']['calibration_pattern']['link']
