@@ -11,6 +11,7 @@ import sys
 import json
 import sys
 import argparse
+import time
 
 from copy import deepcopy
 from functools import partial
@@ -38,6 +39,27 @@ from atom_core.utilities import uriReader, execute, readXacroFile
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
+def tic():
+    # matlab like tic and toc functions
+    global startTime_for_tictoc
+    startTime_for_tictoc = time.time()
+
+
+def toc():
+    # matlab like tic and toc functions
+    if 'startTime_for_tictoc' in globals():
+        print("Elapsed time is " + str(time.time() - startTime_for_tictoc) + " seconds.")
+    else:
+        print("Toc: start time not set")
+
+
+def tocs():
+    # matlab like tic and toc functions
+    if 'startTime_for_tictoc' in globals():
+        return str((time.time() - startTime_for_tictoc))
+    else:
+        print("Toc: start time not set")
+        return None
 
 
 def signal_handler(sig, frame):
@@ -584,21 +606,13 @@ def main():
     # --- Profile Objective Function
     # ---------------------------------------
     if args['profile_objective_function']:
-        from line_profiler import LineProfiler
-        lp1 = LineProfiler()
-        lp_wrapper1 = lp1(objective_function.objectiveFunction)
-        lp_wrapper1(opt.data_models)
 
-        print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'First call of Objective Function (no cache)'
-              + '\n\n' + Back.RESET +Fore.RESET + Style.RESET_ALL )
-        lp1.print_stats()
+        for i in range(0, 10):
+            opt.callObjectiveFunction()
 
-        lp2 = LineProfiler()
-        lp_wrapper2 = lp2(objective_function.objectiveFunction)
-        lp_wrapper2(opt.data_models)
-        print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'Second call of Objective Function (with cache)'
-              + '\n\n' + Back.RESET +Fore.RESET + Style.RESET_ALL )
-        lp2.print_stats()
+        print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'Profile of Objective Function (10 calls with cache)'
+                    + '\n\n' + Back.RESET + Fore.RESET + Style.RESET_ALL)
+
         exit(0)
 
     # ---------------------------------------
