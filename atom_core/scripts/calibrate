@@ -272,7 +272,7 @@ def main():
                 from scipy.spatial import distance
 
                 # Read pointcloud from pcd file
-                if 'data_file' in collection['data'][sensor_key].keys():
+                if collection['data'][sensor_key].has_key("data_file"):
                     filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                     frame_id = collection['data'][sensor_key]['header']['frame_id']
                     cloud_msg = read_pcd(filename, frame_id, get_tf=False)
