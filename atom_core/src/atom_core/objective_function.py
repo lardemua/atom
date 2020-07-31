@@ -132,6 +132,10 @@ def getNormalizerForMsgType(msg_type, residuals, dataset):
     return np.mean(values)
 
 
+@Cache(args_to_ignore=['keys'])
+def getResKeysForSensor(sensor_key, keys):
+    return [k for k in keys if sensor_key in k]
+
 def objectiveFunction(data):
     """
     Computes the vector of residuals. There should be an error for each stamp, sensor and chessboard tuple.
@@ -389,6 +393,7 @@ def objectiveFunction(data):
     normalizer = {t: getNormalizerForMsgType(t, r, dataset) for t in msg_types}
 
     for sensor_key, sensor in dataset['sensors'].items():
-        r.update({k: r[k] / normalizer[sensor['msg_type']] for k in r.keys() if sensor_key in k})
+        keys = getResKeysForSensor(sensor_key, r.keys())
+        r.update({k: r[k] / normalizer[sensor['msg_type']] for k in keys})
 
     return r # Return the residuals
