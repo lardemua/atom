@@ -117,10 +117,19 @@ def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
 
 
 @Cache(args_to_ignore=['_dataset'])
+def getPointsDetectedInImageAsNPArray(_collection_key, _sensor_key, _dataset):
+    return np.array(
+        [[item['x'] for item in _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']],
+         [item['y'] for item in _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']]],
+        dtype=np.float)
+
+
+@Cache(args_to_ignore=['_dataset'])
 def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _dataset):
     pts = _dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']
     return np.array([[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
                      [item['w'] for item in pts]], np.float)
+
 
 @Cache(args_to_ignore=['residuals', 'dataset'])
 def getNormalizerForMsgType(msg_type, residuals, dataset):
@@ -135,6 +144,7 @@ def getNormalizerForMsgType(msg_type, residuals, dataset):
 @Cache(args_to_ignore=['keys'])
 def getResKeysForSensor(sensor_key, keys):
     return [k for k in keys if sensor_key in k]
+
 
 def objectiveFunction(data):
     """
@@ -180,19 +190,15 @@ def objectiveFunction(data):
 
                 pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 
-
                 # Get the detected points to use as ground truth--------------------------------------------------------
-                pts_detected_in_image = np.array(
-                    [[item['x'] for item in collection['labels'][sensor_key]['idxs']],
-                     [item['y'] for item in collection['labels'][sensor_key]['idxs']]],
-                    dtype=np.float)
+                pts_detected_in_image = getPointsDetectedInImageAsNPArray(collection_key, sensor_key, dataset)
 
                 # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
                 # print(collection['labels'][sensor_key]['idxs'])
                 for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
-                                         (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
+                                       (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
@@ -273,7 +279,8 @@ def objectiveFunction(data):
                 edges2d_in_chessboard = pts_in_chessboard[0:2, collection['labels'][sensor_key]['edge_idxs']]  # this
                 # is a longitudinal residual, so ignore z values.
 
-                for idx in xrange(edges2d_in_chessboard.shape[1]):  # compute minimum distance to inner_pts for each edge
+                for idx in xrange(
+                        edges2d_in_chessboard.shape[1]):  # compute minimum distance to inner_pts for each edge
                     xa = np.reshape(edges2d_in_chessboard[:, idx], (2, 1)).transpose()  # need the reshape because this
                     # becomes a shape (2,) which the function cdist does not support.
 
@@ -290,7 +297,6 @@ def objectiveFunction(data):
                 # Compute p0 and p1: p1 will be all the lidar data points, i.e., pts_in_laser, p0 will be the origin
                 # of the laser sensor. Compute the p0_in_laser (p0)
                 p0_in_laser = np.array([[0], [0], [0], [1]], np.float)
-
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
@@ -396,4 +402,4 @@ def objectiveFunction(data):
         keys = getResKeysForSensor(sensor_key, r.keys())
         r.update({k: r[k] / normalizer[sensor['msg_type']] for k in keys})
 
-    return r # Return the residuals
+    return r  # Return the residuals
