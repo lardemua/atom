@@ -33,7 +33,7 @@ import atom_core.objective_function as objective_function
 import atom_core.patterns as patterns
 import atom_core.visualization as visualization
 
-from atom_core.utilities import uriReader, execute, readXacroFile, write_pcd, read_pcd
+from atom_core.utilities import uriReader, execute, readXacroFile, getPCLData, setPCLData, read_pcd
 
 
 # -------------------------------------------------------------------------------
@@ -165,6 +165,7 @@ def main():
 
     # Load images from files into memory. Images in the json file are stored in separate png files and in their place
     # a field "data_file" is saved with the path to the file. We must load the images from the disk.
+    # Do the same for pointclouds saved in pcd files
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor['msg_type'] == 'Image':  # Load image.
@@ -188,6 +189,8 @@ def main():
                 for id, corner in enumerate(collection['labels'][sensor_key]['idxs']):
                     corner['x'] = float(corners[id][0][0])
                     corner['y'] = float(corners[id][0][1])
+            elif sensor['msg_type'] == 'PointCloud2':  # Load pointcloud.
+                collection['data'][sensor_key]['data'] = getPCLData(collection['data'][sensor_key], json_file)
 
     if not args['collection_selection_function'] is None:
         deleted = []
@@ -271,17 +274,7 @@ def main():
                 import ros_numpy
                 from scipy.spatial import distance
 
-                # Read pointcloud from pcd file
-                if collection['data'][sensor_key].has_key("data_file"):
-                    filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
-                    frame_id = collection['data'][sensor_key]['header']['frame_id']
-                    cloud_msg = read_pcd(filename, frame_id, get_tf=False)
-                    collection['data'][sensor_key]['data'] = cloud_msg
-                else:
-                    from rospy_message_converter import message_converter
-                    cloud_msg = message_converter.convert_dictionary_to_ros_message("sensor_msgs/PointCloud2",
-                                                                                    collection['data'][sensor_key])
-                    collection['data'][sensor_key]['data'] = cloud_msg
+                cloud_msg = collection['data'][sensor_key]['data']
 
                 # ------------------------------------------------------------------------------------------------
                 # -------- Extract the labelled LiDAR points on the pattern
@@ -628,6 +621,13 @@ def main():
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor['msg_type'] == 'PointCloud2':
+                collection['data'][sensor_key] = setPCLData(collection['data'][sensor_key], sensor,
+                                                            collection_key,
+                                                            json_file)
+
     createJSONFile(os.path.dirname(json_file) + '/atom_calibration.json', dataset)
 
     # ---------------------------------------

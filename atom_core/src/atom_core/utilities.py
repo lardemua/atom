@@ -107,12 +107,14 @@ def execute(cmd, blocking=True, verbose=True):
         @return
     """
     if verbose:
-        print "Executing command: " + cmd
+        print
+        "Executing command: " + cmd
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if blocking:  # if blocking is True:
         for line in p.stdout.readlines():
             if verbose:
-                print line,
+                print
+                line,
             p.wait()
 
 
@@ -373,6 +375,44 @@ def colormapToRVizColor(color):
         int(color[2] * 255))
 
 
+def getPCLData(dict, json_file):
+    """ Loads pointcloud data either from a json file or from a pcd file."""
+    if not dict.has_key('data'):
+        # Read pointcloud from pcd file
+        filename = os.path.dirname(json_file) + '/' + dict['data_file']
+        frame_id = dict['header']['frame_id']
+        cloud_msg = read_pcd(filename, frame_id, get_tf=False)
+    else:
+        # Read pointcloud from json file
+        cloud_msg = message_converter.convert_dictionary_to_ros_message("sensor_msgs/PointCloud2", dict)
+
+    return cloud_msg
+
+
+def setPCLData(dict, sensor, collection_key, json_file):
+    output_folder = os.path.dirname(json_file)
+    filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
+
+    if dict.has_key('data_file') or os.path.exists(filename):
+        pass
+    else:
+        filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
+
+        # Add pcd filename to dictionary
+        dict['data_file'] = filename_relative
+
+        # Write pointcloud to pcd file
+        cloud_msg = dict['data']
+
+        write_pcd(filename, cloud_msg)
+
+    # Delete data field from dictionary
+    if dict.has_key('data'):
+        del dict['data']
+
+    return dict
+
+
 def datatype_to_size_type(datatype):
     """
     Takes a UINT8 datatype field from a PointFields and returns the size in
@@ -402,6 +442,7 @@ def datatype_to_size_type(datatype):
 
     return s, t
 
+
 def size_type_to_datatype(size, type):
     """
     Given a .pcd size/type pair, return a sensor_msgs/PointField datatype
@@ -426,6 +467,7 @@ def size_type_to_datatype(size, type):
         if size == 4:
             return 6
     raise Exception("Unknown size/type pair in .pcd")
+
 
 def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None,
               mode='binary'):
@@ -549,23 +591,24 @@ def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None,
     except IOError, e:
         raise Exception("Can't write to %s: %s" % (filename, e.message))
 
+
 def read_pcd(filename, cloud_header=None, get_tf=True):
     if not os.path.isfile(filename):
         raise Exception("[read_pcd] File does not exist.")
-    string_array =  lambda x: x.split()
-    float_array  =  lambda x: [float(j) for j in x.split()]
-    int_array  =  lambda x: [int(j) for j in x.split()]
-    word =  lambda x: x.strip()
-    headers =  [("VERSION", float),
-                ("FIELDS", string_array),
-                ("SIZE", int_array),
-                ("TYPE", string_array),
-                ("COUNT", int_array),
-                ("WIDTH", int),
-                ("HEIGHT", int),
-                ("VIEWPOINT", float_array),
-                ("POINTS", int),
-                ("DATA", word)]
+    string_array = lambda x: x.split()
+    float_array = lambda x: [float(j) for j in x.split()]
+    int_array = lambda x: [int(j) for j in x.split()]
+    word = lambda x: x.strip()
+    headers = [("VERSION", float),
+               ("FIELDS", string_array),
+               ("SIZE", int_array),
+               ("TYPE", string_array),
+               ("COUNT", int_array),
+               ("WIDTH", int),
+               ("HEIGHT", int),
+               ("VIEWPOINT", float_array),
+               ("POINTS", int),
+               ("DATA", word)]
     header = {}
     with open(filename, "r") as pcdfile:
         while len(headers) > 0:
@@ -577,10 +620,10 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
                 continue
             if f not in zip(*headers)[0]:
                 raise Exception("[read_pcd] Field '{}' not known or duplicate.".format(f))
-            func =  headers[zip(*headers)[0].index(f)][1]
+            func = headers[zip(*headers)[0].index(f)][1]
             header[f] = func(v)
             headers.remove((f, func))
-        data =  pcdfile.read()
+        data = pcdfile.read()
     # Check the number of points
     if header["VERSION"] != 0.7:
         raise Exception("[read_pcd] only PCD version 0.7 is understood.")
@@ -605,7 +648,7 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
                                         header["COUNT"]):
 
         if field != "_":
-            pf =  PointField()
+            pf = PointField()
             pf.count = count
             pf.offset = offset
             pf.name = field
@@ -621,8 +664,8 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
 
     if get_tf:
         tf = Transform()
-        tf.translation.x, tf.translation.y, tf.translation.z =  header["VIEWPOINT"][0:3]
-        tf.rotation.w, tf.rotation.x, tf.rotation.y, tf.rotation.z =  header["VIEWPOINT"][3:]
+        tf.translation.x, tf.translation.y, tf.translation.z = header["VIEWPOINT"][0:3]
+        tf.rotation.w, tf.rotation.x, tf.rotation.y, tf.rotation.z = header["VIEWPOINT"][3:]
 
         return cloud, tf
 
