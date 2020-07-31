@@ -530,8 +530,7 @@ def main():
             if sensor['msg_type'] == 'Image':  # if sensor is a camera use four residuals
 
                 # Compute step as a function of residual sampling factor
-                step = int(1 / float(args['sample_residuals']))
-                for idx in collection['labels'][sensor_key]['idxs'][::step]:  # using all pattern corners
+                for idx in collection['labels'][sensor_key]['idxs']:  # using all pattern corners
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(idx['id'])
                     opt.pushResidual(name=rname, params=params)
 
@@ -562,7 +561,7 @@ def main():
             # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
             #       ' affected by parameters:\n' + str(params))
 
-    # opt.printResiduals()
+    opt.printResiduals()
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
