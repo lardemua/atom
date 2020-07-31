@@ -230,9 +230,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
 
-                # Convert velodyne data on .json dictionary to ROS message type
-                cloud_msg = message_converter.convert_dictionary_to_ros_message("sensor_msgs/PointCloud2",
-                                                                                collection['data'][sensor_key])
+                cloud_msg = collection['data'][sensor_key]['data']
 
                 # Get LiDAR points that belong to the pattern
                 idxs = collection['labels'][sensor_key]['idxs']

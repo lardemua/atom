@@ -22,6 +22,7 @@ from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
 # local packages
+from atom_core.utilities import write_pcd
 from atom_core.utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
 from atom_core.utilities import loadConfig, execute
 from atom_calibration.interactive_data_labeler import InteractiveDataLabeler
@@ -222,6 +223,21 @@ class DataCollectorAndLabeler:
 
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = image_dict
+
+            elif sensor['msg_type'] == 'PointCloud2':
+                filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
+                filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
+
+                # write pointcloud to pcd file
+                write_pcd(filename, msg)
+
+                scan_dict = message_converter.convert_ros_message_to_dictionary(
+                    msg)  # Convert sensor data to dictionary
+                del scan_dict['data']
+                scan_dict['data_file'] = filename_relative # Contains full path to where the image was saved
+
+                # Update the data dictionary for this data stamp
+                all_sensor_data_dict[sensor['_name']] = scan_dict
 
             else:
                 # Update the data dictionary for this data stamp

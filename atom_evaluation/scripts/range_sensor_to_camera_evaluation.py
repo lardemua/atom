@@ -158,6 +158,7 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         vel2cam = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+        print(vel2cam)
         pts_in_image = rangeToImage(collection, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
