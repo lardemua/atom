@@ -394,7 +394,10 @@ def objectiveFunction(data):
             else:
                 raise ValueError("Unknown sensor msg_type")
 
-    # Normalization of residuals.
+
+    # ------------------------------------------------------------------------------------------------
+    # --- Normalization of residuals
+    # ------------------------------------------------------------------------------------------------
     msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
     normalizer = {t: getNormalizerForMsgType(t, r, dataset) for t in msg_types}
 

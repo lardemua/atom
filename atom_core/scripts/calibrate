@@ -12,9 +12,11 @@ import json
 import sys
 import argparse
 import time
-
 from copy import deepcopy
 from functools import partial
+
+from cv_bridge import CvBridge
+from rospy_message_converter import message_converter
 from urdf_parser_py.urdf import URDF
 
 # 3rd-party
@@ -32,8 +34,7 @@ import atom_core.getters_and_setters as getters_and_setters
 import atom_core.objective_function as objective_function
 import atom_core.patterns as patterns
 import atom_core.visualization as visualization
-
-from atom_core.utilities import uriReader, execute, readXacroFile, getPCLData, setPCLData, read_pcd
+from atom_core.utilities import uriReader, readXacroFile, loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, getPointCloudMessageFromDictionary
 
 
 # -------------------------------------------------------------------------------
@@ -42,27 +43,6 @@ from atom_core.utilities import uriReader, execute, readXacroFile, getPCLData, s
 def signal_handler(sig, frame):
     print('Stopping optimization (Ctrl+C pressed)')
     sys.exit(0)
-
-
-def is_jsonable(x):
-    try:
-        json.dumps(x)
-        return True
-    except (TypeError, OverflowError):
-        return False
-
-
-def walk(node):
-    for key, item in node.items():
-        if isinstance(item, dict):
-            walk(item)
-        else:
-            if isinstance(item, np.ndarray) and key == 'data':  # to avoid saving images in the json
-                del node[key]
-
-            elif isinstance(item, np.ndarray):
-                node[key] = item.tolist()
-            pass
 
 
 def fitPlaneLTSQ(XYZ):
@@ -77,18 +57,6 @@ def fitPlaneLTSQ(XYZ):
     normal = normal / nn
     return (c, normal)
 
-
-# Save to json file
-def createJSONFile(output_file, input):
-    D = deepcopy(input)
-    walk(D)
-
-    print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
-    f = open(output_file, 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print >> f, json.dumps(D, indent=2, sort_keys=True)
-    f.close()
-    print("Completed.")
 
 
 # -------------------------------------------------------------------------------
@@ -145,38 +113,25 @@ def main():
     args = vars(ap.parse_args(args=arglist))
 
     # ---------------------------------------
-    # --- Reading robot description file from param /robot_description
-    # ---------------------------------------
-    # rospy.loginfo('Reading /robot_description ros param')
-    # xml_robot = URDF.from_parameter_server()  # needed to create the optimized xacro at the end of the optimization
-
-    # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
-    # Loads a json file containing the detections
-    #
-    # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
-    #   and our guide lines is to use environment variables, which the shell already expands.
-    #   Furthermore, the URI resolver required an import from a `top-level` package which does
-    #   not make sense in a `core` package.
-    json_file = args['json_file']
-    f = open(json_file, 'r')
-    dataset = json.load(f)
 
-    # Load images from files into memory. Images in the json file are stored in separate png files and in their place
-    # a field "data_file" is saved with the path to the file. We must load the images from the disk.
-    # Do the same for pointclouds saved in pcd files
+    # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
+    dataset, json_file = loadResultsJSON(args['json_file'])
+
+    # Refine detection labels
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor['msg_type'] == 'Image':  # Load image.
-                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
-                collection['data'][sensor_key]['data'] = cv2.imread(filename)
 
-                # refine labels
-                if collection['labels'][sensor_key]['detected'] == False:
+                if not collection['labels'][sensor_key]['detected']:
                     continue
 
-                gray = cv2.cvtColor(collection['data'][sensor_key]['data'], cv2.COLOR_BGR2GRAY)
+                # we need and opencv image, but the json stores the dictionary converted from a ros message.
+                # Must convert back to opencv image.
+                cv_image = getCvImageFromDictionary(collection['data'][sensor_key])
+                gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+
                 nc = len(collection['labels'][sensor_key]['idxs'])
                 corners = []
                 for idxs in collection['labels'][sensor_key]['idxs']:
@@ -189,8 +144,6 @@ def main():
                 for id, corner in enumerate(collection['labels'][sensor_key]['idxs']):
                     corner['x'] = float(corners[id][0][0])
                     corner['y'] = float(corners[id][0][1])
-            elif sensor['msg_type'] == 'PointCloud2':  # Load pointcloud.
-                collection['data'][sensor_key]['data'] = getPCLData(collection['data'][sensor_key], json_file)
 
     if not args['collection_selection_function'] is None:
         deleted = []
@@ -273,8 +226,7 @@ def main():
             for collection_key, collection in dataset['collections'].items():
                 import ros_numpy
                 from scipy.spatial import distance
-
-                cloud_msg = collection['data'][sensor_key]['data']
+                cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
 
                 # ------------------------------------------------------------------------------------------------
                 # -------- Extract the labelled LiDAR points on the pattern
@@ -350,9 +302,6 @@ def main():
     opt = OptimizationUtils.Optimizer()
     opt.addDataModel('args', args)
     opt.addDataModel('dataset', dataset)
-
-    cache = {}
-    opt.addDataModel('cache', cache)
 
     # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
     # transformation.
@@ -621,14 +570,8 @@ def main():
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['msg_type'] == 'PointCloud2':
-                collection['data'][sensor_key] = setPCLData(collection['data'][sensor_key], sensor,
-                                                            collection_key,
-                                                            json_file)
-
-    createJSONFile(os.path.dirname(json_file) + '/atom_calibration.json', dataset)
+    filename_results_json = os.path.dirname(json_file) + '/atom_calibration.json'
+    saveResultsJSON(filename_results_json, dataset)
 
     # ---------------------------------------
     # --- Save updated xacro

@@ -210,35 +210,36 @@ class DataCollectorAndLabeler:
             print('sensor' + sensor_key)
             # TODO add exception also for point cloud and depth image
             # Update sensor data ---------------------------------------------
-            if sensor['msg_type'] == 'Image':  # Special case of requires saving image data as png separate files
-                cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")  # Convert to opencv image and save image to disk
-                filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
-                filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
-                cv2.imwrite(filename, cv_image)
-
-                image_dict = message_converter.convert_ros_message_to_dictionary(
-                    msg)  # Convert sensor data to dictionary
-                del image_dict['data']  # Remove data field (which contains the image), and replace by "data_file"
-                image_dict['data_file'] = filename_relative  # Contains full path to where the image was saved
-
-                # Update the data dictionary for this data stamp
-                all_sensor_data_dict[sensor['_name']] = image_dict
-
-            elif sensor['msg_type'] == 'PointCloud2':
-                filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
-                filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
-
-                # write pointcloud to pcd file
-                write_pcd(filename, msg)
-
-                scan_dict = message_converter.convert_ros_message_to_dictionary(
-                    msg)  # Convert sensor data to dictionary
-                del scan_dict['data']
-                scan_dict['data_file'] = filename_relative # Contains full path to where the image was saved
-
-                # Update the data dictionary for this data stamp
-                all_sensor_data_dict[sensor['_name']] = scan_dict
-
+            # if sensor['msg_type'] == 'Image':  # Special case of requires saving image data as png separate files
+            #     cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")  # Convert to opencv image and save image to disk
+            #     filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
+            #     filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
+            #     cv2.imwrite(filename, cv_image)
+            #
+            #     image_dict = message_converter.convert_ros_message_to_dictionary(
+            #         msg)  # Convert sensor data to dictionary
+            #     del image_dict['data']  # Remove data field (which contains the image), and replace by "data_file"
+            #     image_dict['data_file'] = filename_relative  # Contains full path to where the image was saved
+            #
+            #     # Update the data dictionary for this data stamp
+            #     all_sensor_data_dict[sensor['_name']] = image_dict
+            #
+            # elif sensor['msg_type'] == 'PointCloud2':
+            #     filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
+            #     filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
+            #
+            #     # write pointcloud to pcd file
+            #     write_pcd(filename, msg)
+            #
+            #     scan_dict = message_converter.convert_ros_message_to_dictionary(
+            #         msg)  # Convert sensor data to dictionary
+            #     del scan_dict['data']
+            #     scan_dict['data_file'] = filename_relative # Contains full path to where the image was saved
+            #
+            #     # Update the data dictionary for this data stamp
+            #     all_sensor_data_dict[sensor['_name']] = scan_dict
+            if False:
+                pass
             else:
                 # Update the data dictionary for this data stamp
                 all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
@@ -255,8 +256,8 @@ class DataCollectorAndLabeler:
 
         # Save to json file
         D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config}
-        print('Saving file ' + self.output_folder + '/data_collected.json')
-        self.createJSONFile(self.output_folder + '/data_collected.json', D)
+        output_file = self.output_folder + '/data_collected.json'
+        utilities.saveResultsJSON(output_file, D)
 
         self.unlockAllLabelers()
 
@@ -285,14 +286,6 @@ class DataCollectorAndLabeler:
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
         uniq_l = list(map(dict, frozenset(frozenset(i.items()) for i in transforms_list)))
         return uniq_l  # get unique values
-
-    def createJSONFile(self, output_file, D):
-        print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
-        f = open(output_file, 'w')
-        json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-        print >> f, json.dumps(D, indent=2, sort_keys=True)
-        f.close()
-        print("Completed.")
 
     @staticmethod
     def generateKey(parent, child, suffix=''):

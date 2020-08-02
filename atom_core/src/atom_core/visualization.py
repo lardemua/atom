@@ -14,6 +14,7 @@ import cv2
 import ros_numpy
 import rospy
 import tf
+from atom_core.cache import Cache
 
 from rospy_message_converter import message_converter
 from rospy_urdf_to_rviz_converter.rospy_urdf_to_rviz_converter import urdfToMarkerArray
@@ -27,15 +28,21 @@ from cv_bridge import CvBridge
 from matplotlib import cm
 from open3d import *
 
-from OptimizationUtils import utilities
+from OptimizationUtils import utilities as opt_utilities
 
 # own packages
-from atom_core.utilities import uriReader, execute, genCollectionPrefix, generateName, readXacroFile
+from atom_core.utilities import uriReader, execute, genCollectionPrefix, generateName, readXacroFile, \
+    getCvImageFromDictionary, getPointCloudMessageFromDictionary
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
+@Cache(args_to_ignore=['dataset'])
+def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
+    dictionary = dataset['collections'][collection_key]['data'][sensor_key]
+    return getCvImageFromDictionary(dictionary)
 
 def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
     markers = MarkerArray()
@@ -230,7 +237,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
 
-                cloud_msg = collection['data'][sensor_key]['data']
+                cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
 
                 # Get LiDAR points that belong to the pattern
                 idxs = collection['labels'][sensor_key]['idxs']
@@ -378,6 +385,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
 def visualizationFunction(models):
     # Get the data from the models
+    dataset = models['dataset']
     args = models['args']
     collections = models['dataset']['collections']
     sensors = models['dataset']['sensors']
@@ -442,7 +450,7 @@ def visualizationFunction(models):
 
             if sensor['msg_type'] == 'Image':
                 if args['show_images']:
-                    image = copy.deepcopy(collection['data'][sensor_key]['data'])
+                    image = getCvImageFromCollectionSensor(collection_key, sensor_key, dataset)
                     width = collection['data'][sensor_key]['width']
                     height = collection['data'][sensor_key]['height']
                     diagonal = math.sqrt(width ** 2 + height ** 2)
@@ -460,14 +468,14 @@ def visualizationFunction(models):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        utilities.drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        opt_utilities.drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
                     # Draw initial projected points (as crosses)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        opt_utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
                     msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 

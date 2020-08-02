@@ -30,6 +30,7 @@ import pprint
 
 # 3rd-party
 import cv2
+from cv_bridge import CvBridge
 import ros_numpy
 import rospy
 import tf
@@ -38,6 +39,7 @@ from rospy_message_converter import message_converter
 from rospy_urdf_to_rviz_converter.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from std_msgs.msg import Header, ColorRGBA
 from urdf_parser_py.urdf import URDF
+from std_msgs.msg import Header, Time
 from sensor_msgs.msg import Image, sensor_msgs, CameraInfo
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
@@ -48,10 +50,217 @@ from matplotlib import cm
 
 # from open3d import * # This cannot be used. It itereferes with the Image for getMessageTypeFromTopic(topic):
 
-
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
+def loadResultsJSON(json_file):
+    # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
+    #   and our guide lines is to use environment variables, which the shell already expands.
+    #   Furthermore, the URI resolver required an import from a `top-level` package which does
+    #   not make sense in a `core` package.
+    # Note(Miguel): but I think the expansion does not work, e.g. you can't do --dataset_folded ~/datasets/...
+    # Also, the utilities are now in core. No dependency on another package anymore. We can discuss this more...
+    json_file, _, _ = uriReader(json_file)
+
+    f = open(json_file, 'r')
+    dataset = json.load(f)
+    dataset_folder = os.path.dirname(json_file)
+    bridge = CvBridge()
+
+    # Load images from files into memory. Images in the json file are stored in separate png files and in their place
+    # a field "data_file" is saved with the path to the file. We must load the images from the disk.
+    # Do the same for point clouds saved in pcd files
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+
+            if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
+                continue  # only process images or point clouds
+
+            # Check if we really need to load the file.
+            if collection['data'][sensor_key].has_key('data'):
+                load_file = False
+            elif collection['data'][sensor_key].has_key('data_file'):
+                filename = dataset_folder + '/' + collection['data'][sensor_key]['data_file']
+                if os.path.isfile(filename):
+                    load_file = True
+                else:
+                    raise ValueError('Datafile points to ' + collection['data'][sensor_key]['data_file'] +
+                                     ' but file ' + filename + ' does not exist.')
+            else:
+                raise ValueError('Dataset does not contain data nor data_file folders.')
+
+            if load_file and sensor['msg_type'] == 'Image':  # Load image.
+                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                cv_image = cv2.imread(filename)
+                collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
+
+            elif load_file and sensor['msg_type'] == 'PointCloud2':  # Load point cloud.
+                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                frame_id = str(collection['data'][sensor_key]['header']['frame_id'])
+
+                # setup header for point cloud from existing dictionary data
+                header = Header()
+                header.frame_id = frame_id
+                time = rospy.Time()
+                time.secs = collection['data'][sensor_key]['header']['stamp']['secs']
+                time.nsecs = collection['data'][sensor_key]['header']['stamp']['nsecs']
+                header.stamp = time
+                header.seq = collection['data'][sensor_key]['header']['seq']
+
+                # read point cloud from dist
+                msg = read_pcd(filename, cloud_header=header, get_tf=False)
+
+                # convert to dictionary
+                collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
+
+    return dataset, json_file
+
+
+def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
+    if freeze_dataset:  # to make sure our changes only affect the dictionary to save
+        dataset = copy.deepcopy(dataset_in)
+    else:
+        dataset = dataset_in
+
+    output_folder = os.path.dirname(output_file)
+    bridge = CvBridge()
+
+    # Process the dataset to remove data from the data fields and, if needed, write the files.
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+
+            if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
+                continue  # only process images or point clouds
+
+            # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
+            if collection['data'][sensor_key].has_key('data_file'):
+                filename = output_folder + '/' + collection['data'][sensor_key]['data_file']
+                if os.path.isfile(filename):
+                    create_data_file = False
+                else:
+                    create_data_file = True
+            else:
+                create_data_file = True
+
+            if create_data_file and sensor['msg_type'] == 'Image':  # save image.
+                # Save image to disk if it does not exist
+                filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
+                if not os.path.isfile(filename):  # Write pointcloud to pcd file
+                    cv_image = getCvImageFromDictionary(collection['data'][sensor_key])
+                    cv2.imwrite(filename, cv_image)
+                    print('Saved file ' + filename + '.')
+
+                # Add data_file field, and remove data field
+                filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
+                collection['data'][sensor_key]['data_file'] = filename_relative  # add data_file field
+                if collection['data'][sensor_key].has_key('data'):  # Delete data field from dictionary
+                    del collection['data'][sensor_key]['data']
+
+            elif create_data_file and sensor['msg_type'] == 'PointCloud2':  # save point cloud
+                # Save file if it does not exist
+                filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
+                if not os.path.isfile(filename):  # Write pointcloud to pcd file
+                    # from: dictionary -> ros_message -> PointCloud2() -> pcd file
+                    msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
+                    write_pcd(filename, msg)
+                    print('Saved file ' + filename + '.')
+
+                # Add data_file field, and remove data field
+                filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
+                collection['data'][sensor_key]['data_file'] = filename_relative  # add data_file field
+                if collection['data'][sensor_key].has_key('data'):  # Delete data field from dictionary
+                    del collection['data'][sensor_key]['data']
+
+    createJSONFile(output_file, dataset)  # write dictionary to json
+
+
+def getDictionaryFromCvImage(cv_image):
+    """
+    Creates a dictionary from the opencv image, going from cvimage -> ros_message -> dictionary.
+    :param cv_image:  the image in opencv format.
+    :return: A dictionary converted from the ros message.
+    """
+    bridge = CvBridge()
+    msg = bridge.cv2_to_imgmsg(cv_image, "bgr8")
+    return message_converter.convert_ros_message_to_dictionary(msg)
+
+
+def getCvImageFromDictionary(dictionary_in, safe=False):
+    """
+    Converts a dictionary (read from a json file) into an opencv image.
+    To do so it goes from dictionary -> ros_message -> cv_image
+    :param dictionary_in: the dictionary read from the json file.
+    :return: an opencv image.
+    """
+    if safe:
+        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
+    else:
+        d = dictionary_in
+
+    if d.has_key('data_file'):  # Delete data field from dictionary
+        del d['data_file']  # will disrupt the dictionary to ros message
+
+    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    bridge = CvBridge()
+    return bridge.imgmsg_to_cv2(msg, "bgr8")
+
+
+def getPointCloudMessageFromDictionary(dictionary_in, safe=False):
+    """
+    Converts dictionary to PointCloud2 message.
+    :param dictionary_in: dictionary.
+    :return: a ros Pointcloud2 message.
+    """
+    if safe:
+        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
+    else:
+        d = dictionary_in
+
+    if d.has_key('data_file'):  # Delete data field from dictionary
+        del d['data_file']  # will disrupt the dictionary to ros message
+
+    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/PointCloud2', d)
+    return msg
+
+
+def createJSONFile(output_file, input):
+    """
+    Creates the json file containing the results data.
+    :param output_file: output file.
+    :param input: input dictionary containing the data.
+    """
+    D = copy.deepcopy(input)
+    walk(D)
+
+    print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
+    f = open(output_file, 'w')
+    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
+    print >> f, json.dumps(D, indent=2, sort_keys=True)
+    f.close()
+    print("Completed.")
+
+
+def is_jsonable(x):
+    try:
+        json.dumps(x)
+        return True
+    except (TypeError, OverflowError):
+        return False
+
+
+def walk(node):
+    for key, item in node.items():
+        if isinstance(item, dict):
+            walk(item)
+        else:
+            if isinstance(item, np.ndarray) and key == 'data':  # to avoid saving images in the json
+                del node[key]
+
+            elif isinstance(item, np.ndarray):
+                node[key] = item.tolist()
+            pass
+
 
 def genCollectionPrefix(collection_key, string):
     """ Standardized form of deriving a name with a collection related prefix. """
@@ -658,7 +867,9 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
 
     cloud.data = data[0:cloud.row_step * cloud.height]
     if cloud_header is not None:
-        cloud.header = header
+        # cloud.header = header
+        cloud.header = cloud_header
+        print('This is it, header is ' + str(cloud_header))
     else:
         cloud.header.frame_id = "/pcd_cloud"
 
