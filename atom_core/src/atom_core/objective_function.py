@@ -164,6 +164,8 @@ def objectiveFunction(data):
     if args['view_optimization'] or args['ros_visualization']:
         dataset_graphics = data['graphics']
 
+    normalizer = data['normalizer']
+
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
@@ -198,7 +200,7 @@ def objectiveFunction(data):
                 for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
-                                       (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2)
+                                       (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer['Image']
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
@@ -257,16 +259,14 @@ def objectiveFunction(data):
                 # compute minimum distance to inner_pts for right most edge (first in pts_in_chessboard list)
                 extrema_right = np.reshape(pts_in_chessboard[0:2, 0], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eright'
-                r[rname] = float(
-                    np.amin(
-                        distance.cdist(extrema_right.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
+                r[rname] = float(np.amin(distance.cdist(extrema_right.transpose(),
+                            pts_canvas_in_chessboard.transpose(), 'euclidean'))) / normalizer['LaserScan']
 
                 # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
                 extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eleft'
-                r[rname] = float(
-                    np.amin(
-                        distance.cdist(extrema_left.transpose(), pts_canvas_in_chessboard.transpose(), 'euclidean')))
+                r[rname] = float(np.amin(distance.cdist(extrema_left.transpose(),
+                            pts_canvas_in_chessboard.transpose(), 'euclidean'))) / normalizer['LaserScan']
 
                 # --- Residuals: Longitudinal distance for inner points
                 pts = []
@@ -285,7 +285,7 @@ def objectiveFunction(data):
                     # becomes a shape (2,) which the function cdist does not support.
 
                     rname = collection_key + '_' + sensor_key + '_inner_' + str(idx)
-                    r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean')))
+                    r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean'))) / normalizer['LaserScan']
 
                 # --- Residuals: Beam direction distance from point to chessboard plan
                 # For computing the intersection we need:
@@ -331,7 +331,7 @@ def objectiveFunction(data):
                                          collection_key)
 
                     rname = collection_key + '_' + sensor_key + '_beam_' + str(idx)
-                    r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho)
+                    r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho) / normalizer['LaserScan']
 
                     if args['ros_visualization']:
                         marker.points.append(deepcopy(rviz_p0_in_laser))
@@ -359,7 +359,7 @@ def objectiveFunction(data):
                 for idx in xrange(0, points_in_pattern.shape[1], step):
                     # Compute the residual: absolute of z component
                     rname = rname_pre + str(idx)
-                    r[rname] = abs(points_in_pattern[2, idx])
+                    r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['PointCloud2']
 
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
@@ -387,22 +387,11 @@ def objectiveFunction(data):
                 for idx in range(detected_limit_points_in_pattern.shape[1]):
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
-                    r[rname] = np.min(
-                        distance.cdist(m_pt, ground_truth_limit_points_in_pattern.transpose(), 'euclidean'))
+                    r[rname] = np.min(distance.cdist(m_pt,
+                                ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / normalizer['PointCloud2']
                 # ------------------------------------------------------------------------------------------------
 
             else:
                 raise ValueError("Unknown sensor msg_type")
-
-
-    # ------------------------------------------------------------------------------------------------
-    # --- Normalization of residuals
-    # ------------------------------------------------------------------------------------------------
-    msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
-    normalizer = {t: getNormalizerForMsgType(t, r, dataset) for t in msg_types}
-
-    for sensor_key, sensor in dataset['sensors'].items():
-        keys = getResKeysForSensor(sensor_key, r.keys())
-        r.update({k: r[k] / normalizer[sensor['msg_type']] for k in keys})
 
     return r  # Return the residuals

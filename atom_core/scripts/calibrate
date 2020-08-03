@@ -513,6 +513,21 @@ def main():
             #       ' affected by parameters:\n' + str(params))
 
     opt.printResiduals()
+    # Get a normalizer for each residual type
+    msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
+    normalizer = {k: 1.0 for k in msg_types}
+    opt.addDataModel('normalizer', normalizer)
+
+    residuals = objective_function.objectiveFunction(opt.data_models)
+    for msg_type in msg_types:
+        values = []
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor['msg_type'] == msg_type:
+                values += [residuals[k] for k in residuals.keys() if sensor_key in k]
+
+        normalizer[msg_type] = np.mean(values)
+    #--
+
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
@@ -566,6 +581,15 @@ def main():
 
     options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
+
+    # Error Report
+    print('\nFinal errors:')
+    r = objective_function.objectiveFunction(opt.data_models)
+    for sensor_key, sensor in dataset['sensors'].items():
+        keys = [ k for k in r.keys() if sensor_key in k]
+        v = [ r[k] * normalizer[sensor['msg_type']]  for k in keys]
+        print("Sensor " + sensor_key + " " + str(np.mean(v)))
+    #--
 
     # ---------------------------------------
     # --- Save updated JSON file
