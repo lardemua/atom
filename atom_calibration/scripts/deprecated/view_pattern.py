@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import time
 import sys
 import argparse
 import cv2
@@ -8,7 +7,7 @@ import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-from atom_calibration import patterns
+from atom_calibration.collect import patterns
 
 
 class SimplePatternDetector:

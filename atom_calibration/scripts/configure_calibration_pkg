@@ -3,6 +3,9 @@
 # stdlib
 import matplotlib
 import os
+
+import atom_core.config_io
+import atom_core.drawing
 import sys
 import argparse
 import subprocess
@@ -73,7 +76,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     config_file = package_path + '/calibration/config.yml'
     print('Loading config file ' + config_file)
-    config = utilities.loadConfig(config_file)
+    config = atom_core.config_io.loadConfig(config_file)
 
     # Sensors colormap. Access with:  color_map_sensors[idx, :]
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
@@ -81,15 +84,15 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Setup the description file
     # --------------------------------------------------------------------------
-    description_file, _, _ = utilities.uriReader(config['description_file'])
+    description_file, _, _ = atom_core.config_io.uriReader(config['description_file'])
     description_file_out_initial_estimate = package_path + '/urdf/initial_estimate.urdf.xacro'
-    utilities.execute('cp ' + description_file + ' ' + description_file_out_initial_estimate,
-                      verbose=False)  # Copy the xacro to the initial_estimate file
+    atom_core.config_io.execute('cp ' + description_file + ' ' + description_file_out_initial_estimate,
+                                verbose=False)  # Copy the xacro to the initial_estimate file
 
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bag_file, _, bag_file_rel = utilities.uriReader(config['bag_file'])
+    bag_file, _, bag_file_rel = atom_core.config_io.uriReader(config['bag_file'])
     print('Loading bagfile ' + bag_file)
     bag = rosbag.Bag(bag_file)
     bag_info = bag.get_type_and_topic_info()
@@ -107,11 +110,11 @@ if __name__ == "__main__":
     # Check the description file
     urdf_file = '/tmp/description.urdf'
     print('Parsing description file ' + description_file)
-    utilities.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create a temp urdf file
+    atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create a temp urdf file
     try:
         description = URDF.from_xml_file(urdf_file)  # read teh urdf file
     except:
-        utilities.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # print out the xacro parsing
+        atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # print out the xacro parsing
         raise ValueError('Could not parse description file ' + description_file)
 
     # --------------------------------------------------------------------------
@@ -327,7 +330,7 @@ if __name__ == "__main__":
 
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
-        color = utilities.colormapToRVizColor(cm_sensors[idx, :])
+        color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
         if topic in bag_topics:
@@ -392,7 +395,7 @@ if __name__ == "__main__":
 
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
-        color = utilities.colormapToRVizColor(cm_sensors[idx, :])
+        color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
         if topic in bag_topics:
@@ -513,7 +516,7 @@ if __name__ == "__main__":
 
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
-        color = utilities.colormapToRVizColor(cm_sensors[idx, :])
+        color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
         if topic in bag_topics:

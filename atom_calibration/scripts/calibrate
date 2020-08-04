@@ -25,9 +25,11 @@ import OptimizationUtils.utilities as opt_utilities
 # own packages
 import atom_calibration.calibration.getters_and_setters as getters_and_setters
 import atom_calibration.calibration.objective_function as objective_function
-import atom_calibration.calibration.patterns as patterns
+import atom_calibration.calibration.patterns_config as patterns
 import atom_calibration.calibration.visualization as visualization
-from atom_core.utilities import uriReader, readXacroFile, loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, getPointCloudMessageFromDictionary, filterCollectionsFromDataset
+from atom_core.config_io import readXacroFile, uriReader
+from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, \
+    getPointCloudMessageFromDictionary, filterCollectionsFromDataset
 
 
 # -------------------------------------------------------------------------------

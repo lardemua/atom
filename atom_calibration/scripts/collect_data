@@ -3,10 +3,12 @@
 # stdlib
 import argparse
 import os
+
+import atom_core.config_io
+import atom_core.ros_utils
 import sys
 
 # 3rd-party
-import rospkg
 import rospy
 
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
@@ -15,8 +17,7 @@ from visualization_msgs.msg import InteractiveMarkerControl, Marker, Interactive
 from colorama import Style, Fore
 
 # local packages
-import atom_core.utilities as utilities
-from atom_calibration.data_collector_and_labeler import DataCollectorAndLabeler
+from atom_calibration.collect.data_collector_and_labeler import DataCollectorAndLabeler
 
 
 
@@ -119,10 +120,10 @@ if __name__ == "__main__":
     ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true',
                     default=False)
 
-    args = vars(ap.parse_args(args=utilities.filterLaunchArguments(sys.argv)))
+    args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
     print("\nArgument list=" + str(args) + '\n')
 
-    output_folder = utilities.resolvePath(args['output_folder'])
+    output_folder = atom_core.config_io.resolvePath(args['output_folder'])
 
     if output_folder == os.getenv("HOME"):
         print('\nError: Dataset ' + Fore.RED + output_folder + Style.RESET_ALL +

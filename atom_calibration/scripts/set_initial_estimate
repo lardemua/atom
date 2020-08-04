@@ -16,7 +16,8 @@ from interactive_markers.menu_handler import MenuHandler
 from urdf_parser_py.urdf import URDF
 
 # local packages
-from atom_core.utilities import loadConfig, filterLaunchArguments
+from atom_core.ros_utils import filterLaunchArguments
+from atom_core.config_io import loadConfig
 from atom_calibration.sensor import Sensor
 
 

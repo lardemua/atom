@@ -2,12 +2,11 @@
 
 # stdlib
 import os
-import sys
+
+import atom_core.ros_utils
 import math
-import struct
 import random
 import threading
-from ctypes import *  # Convert float to uint32
 
 from __builtin__ import enumerate
 from copy import deepcopy
@@ -27,11 +26,11 @@ from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
 from sensor_msgs.msg import *
-from sensor_msgs.msg import PointCloud2, PointField
+from sensor_msgs.msg import PointField
 from image_geometry import PinholeCameraModel
 
 # local packages
-from atom_calibration import patterns
+from atom_calibration.collect import patterns
 import atom_core.utilities
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
@@ -137,7 +136,7 @@ class InteractiveDataLabeler:
 
         # Get the type of message from the message topic of the sensor data, which is given as input. The message
         # type is used to define which labelling technique is used.
-        self.msg_type_str, self.msg_type = atom_core.utilities.getMessageTypeFromTopic(self.topic)
+        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.topic)
         print('msg_type_str is = ' + str(self.msg_type_str))
 
         # Handle the interactive labelling of data differently according to the sensor message types.

@@ -1,18 +1,14 @@
 # stdlib
 import copy
-import json
 import os
-import shutil
-import subprocess
+
+import atom_core.config_io
+import atom_core.dataset_io
 import time
 from datetime import datetime
 
 # 3rd-party
 import tf
-import cv2
-import yaml
-import numpy
-import ros_numpy
 
 from cv_bridge import CvBridge
 from colorama import Style, Fore
@@ -22,18 +18,16 @@ from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
 # local packages
-from atom_core.utilities import write_pcd
-from atom_core.utilities import printRosTime, getMaxTimeDelta, getAverageTime, getMaxTime
-from atom_core.utilities import loadConfig, execute
-from atom_calibration.interactive_data_labeler import InteractiveDataLabeler
-import atom_core.utilities as utilities
+from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime
+from atom_core.config_io import execute, loadConfig
+from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 
 
 class DataCollectorAndLabeler:
 
     def __init__(self, args, server, menu_handler):
 
-        self.output_folder = utilities.resolvePath(args['output_folder'])
+        self.output_folder = atom_core.config_io.resolvePath(args['output_folder'])
 
         if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
             print('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
@@ -176,7 +170,7 @@ class DataCollectorAndLabeler:
     def saveCollection(self):
 
         # --------------------------------------
-        # Collect sensor data and labels (images, laser scans, etc)
+        # collect sensor data and labels (images, laser scans, etc)
         # --------------------------------------
 
         # Lock the semaphore for all labelers
@@ -194,7 +188,7 @@ class DataCollectorAndLabeler:
             else:  # test passed
                 rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
 
-        # Collect all the transforms
+        # collect all the transforms
         transforms = self.getTransforms(self.abstract_transforms, average_time)  # use average time of sensor msgs
         printRosTime(average_time, "Collected transforms for time ")
 
@@ -257,7 +251,7 @@ class DataCollectorAndLabeler:
         # Save to json file
         D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config}
         output_file = self.output_folder + '/data_collected.json'
-        utilities.saveResultsJSON(output_file, D)
+        atom_core.dataset_io.saveResultsJSON(output_file, D)
 
         self.unlockAllLabelers()
 

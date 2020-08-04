@@ -11,10 +11,10 @@ from shutil import copyfile
 import cv2
 from tqdm import tqdm
 import re
-from atom_calibration import patterns
+from atom_calibration.collect import patterns
 
 from OptimizationUtils.utilities import generateKey
-from tf.transformations import quaternion_from_matrix, rotation_matrix, quaternion_from_euler
+from tf.transformations import quaternion_from_matrix, quaternion_from_euler
 
 
 def createJSONFile(output_file, D):
