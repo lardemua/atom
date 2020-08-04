@@ -48,21 +48,21 @@
 <group if="$(arg run_calibration)">
     <group if="$(arg single_pattern)">
         <group if="$(arg use_incomplete_collections)">
-            <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
+            <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
         </group>
 
         <group unless="$(arg use_incomplete_collections)">
-            <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
+            <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
         </group>
     </group>
 
     <group unless="$(arg single_pattern)">
         <group if="$(arg use_incomplete_collections)">
-            <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
+            <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
         </group>
 
         <group unless="$(arg use_incomplete_collections)">
-            <node name="calibrate" pkg="atom_core" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
+            <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
         </group>
     </group>
 </group>

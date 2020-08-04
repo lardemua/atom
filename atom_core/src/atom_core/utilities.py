@@ -17,7 +17,7 @@ import rospkg
 import yaml
 import rospy
 
-from colorama import Fore
+from colorama import Fore, Style
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
 from geometry_msgs.msg import Transform
@@ -881,3 +881,49 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
         return cloud, tf
 
     return cloud
+
+def filterCollectionsFromDataset(dataset, args):
+    """
+    Filters some collections from the dataset, using a couple of arguments in arg
+    :param dataset:
+    :param args: Makes use of 'collection_selection_function', 'use_incomplete_collections' and
+                'remove_partial_detections'
+    """
+
+    if not args['collection_selection_function'] is None:
+        deleted = []
+        for collection_key in dataset['collections'].keys():
+            if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
+                deleted.append(collection_key)
+                del dataset['collections'][collection_key]
+        print("Deleted collections: " + str(deleted))
+
+    if not args['use_incomplete_collections']:
+        # Deleting collections where the pattern is not found by all sensors:
+        for collection_key, collection in dataset['collections'].items():
+            for sensor_key, sensor in dataset['sensors'].items():
+                if not collection['labels'][sensor_key]['detected']:
+                    print(
+                                Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                                sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+                    del dataset['collections'][collection_key]
+                    break
+
+    if args['remove_partial_detections']:
+        number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
+                            int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+        # Deleting labels in which not all corners are found:
+        for collection_key, collection in dataset['collections'].items():
+            for sensor_key, sensor in dataset['sensors'].items():
+                if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
+                    if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
+                        print(
+                                    Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                                    collection_key + ', sensor ' + sensor_key)
+                        collection['labels'][sensor_key]['detected'] = False
+
+    if not dataset['collections'].keys():
+        raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
+                         'dataset and your collection selection function.')
+
+    return dataset

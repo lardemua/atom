@@ -5,18 +5,11 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 
 # stdlib
 import os
-import rospkg
 import signal
 import sys
-import json
-import sys
 import argparse
-import time
-from copy import deepcopy
 from functools import partial
 
-from cv_bridge import CvBridge
-from rospy_message_converter import message_converter
 from urdf_parser_py.urdf import URDF
 
 # 3rd-party
@@ -30,11 +23,11 @@ import OptimizationUtils.OptimizationUtils as OptimizationUtils
 import OptimizationUtils.utilities as opt_utilities
 
 # own packages
-import atom_core.getters_and_setters as getters_and_setters
-import atom_core.objective_function as objective_function
-import atom_core.patterns as patterns
-import atom_core.visualization as visualization
-from atom_core.utilities import uriReader, readXacroFile, loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, getPointCloudMessageFromDictionary
+import atom_calibration.calibration.getters_and_setters as getters_and_setters
+import atom_calibration.calibration.objective_function as objective_function
+import atom_calibration.calibration.patterns as patterns
+import atom_calibration.calibration.visualization as visualization
+from atom_core.utilities import uriReader, readXacroFile, loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, getPointCloudMessageFromDictionary, filterCollectionsFromDataset
 
 
 # -------------------------------------------------------------------------------
@@ -120,6 +113,7 @@ def main():
     dataset, json_file = loadResultsJSON(args['json_file'])
 
     # Refine detection labels
+    # TODO Must this really be here? It should go into data collector, right?
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor['msg_type'] == 'Image':  # Load image.
@@ -145,39 +139,9 @@ def main():
                     corner['x'] = float(corners[id][0][0])
                     corner['y'] = float(corners[id][0][1])
 
-    if not args['collection_selection_function'] is None:
-        deleted = []
-        for collection_key in dataset['collections'].keys():
-            if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
-                deleted.append(collection_key)
-                del dataset['collections'][collection_key]
-        print("Deleted collections: " + str(deleted))
+    # Remove unwanted collections
+    dataset = filterCollectionsFromDataset(dataset, args)
 
-    if not args['use_incomplete_collections']:
-        # Deleting collections where the pattern is not found by all sensors:
-        for collection_key, collection in dataset['collections'].items():
-            for sensor_key, sensor in dataset['sensors'].items():
-                if not collection['labels'][sensor_key]['detected']:
-                    print(Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                          sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
-                    del dataset['collections'][collection_key]
-                    break
-
-    if args['remove_partial_detections']:
-        number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-                            int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
-        # Deleting labels in which not all corners are found:
-        for collection_key, collection in dataset['collections'].items():
-            for sensor_key, sensor in dataset['sensors'].items():
-                if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
-                    if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
-                        print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                              collection_key + ', sensor ' + sensor_key)
-                        collection['labels'][sensor_key]['detected'] = False
-
-    if not dataset['collections'].keys():
-        raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
-                         'dataset and your collection selection function.')
 
     # ---------------------------------------
     # --- CREATE CHESSBOARD DATASET
@@ -225,7 +189,6 @@ def main():
         if sensor['msg_type'] == 'PointCloud2':  # only for 3D Lidars and RGBD cameras
             for collection_key, collection in dataset['collections'].items():
                 import ros_numpy
-                from scipy.spatial import distance
                 cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
 
                 # ------------------------------------------------------------------------------------------------
@@ -513,21 +476,6 @@ def main():
             #       ' affected by parameters:\n' + str(params))
 
     opt.printResiduals()
-    # Get a normalizer for each residual type
-    msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
-    normalizer = {k: 1.0 for k in msg_types}
-    opt.addDataModel('normalizer', normalizer)
-
-    residuals = objective_function.objectiveFunction(opt.data_models)
-    for msg_type in msg_types:
-        values = []
-        for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['msg_type'] == msg_type:
-                values += [residuals[k] for k in residuals.keys() if sensor_key in k]
-
-        normalizer[msg_type] = np.mean(values)
-    #--
-
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
@@ -576,20 +524,10 @@ def main():
     # ---------------------------------------
     # --- Start Optimization
     # ---------------------------------------
-
     print('Initializing optimization ...')
 
     options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
-
-    # Error Report
-    print('\nFinal errors:')
-    r = objective_function.objectiveFunction(opt.data_models)
-    for sensor_key, sensor in dataset['sensors'].items():
-        keys = [ k for k in r.keys() if sensor_key in k]
-        v = [ r[k] * normalizer[sensor['msg_type']]  for k in keys]
-        print("Sensor " + sensor_key + " " + str(np.mean(v)))
-    #--
 
     # ---------------------------------------
     # --- Save updated JSON file
