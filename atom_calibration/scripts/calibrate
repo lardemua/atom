@@ -32,7 +32,7 @@ import atom_calibration.calibration.patterns_config as patterns
 import atom_calibration.calibration.visualization as visualization
 from atom_core.config_io import readXacroFile, uriReader
 from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, \
-    getPointCloudMessageFromDictionary, filterCollectionsFromDataset
+    getPointCloudMessageFromDictionary, filterCollectionsFromDataset, filterSensorsFromDataset
 
 
 # -------------------------------------------------------------------------------
@@ -93,15 +93,13 @@ def main():
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
 
-    # Filter unwanted arguments.
-    # Roslaunch adds two arguments (__name and __log) that break our parser
+    # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
-
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args['json_file'])
 
@@ -132,25 +130,17 @@ def main():
                     corner['x'] = float(corners[id][0][0])
                     corner['y'] = float(corners[id][0][1])
 
-    # Remove unwanted collections
-    dataset = filterCollectionsFromDataset(dataset, args)
+    # ---------------------------------------
+    # --- Filter some collections and / or sensors from the dataset
+    # ---------------------------------------
+    dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
 
+    # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
+    # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
+    # related to the pattern pose (we use solve PNP for a camera).
+    dataset['patterns'] = patterns.createPatternLabels(args, dataset)  # TODO: Solve this strange dependency.
 
-    # ---------------------------------------
-    # --- CREATE CHESSBOARD DATASET
-    # ---------------------------------------
-    dataset['patterns'] = patterns.createPatternLabels(args, dataset)
-
-    # ---------------------------------------
-    # --- FILTER SOME OF THE ELEMENTS LOADED, TO USE ONLY A SUBSET IN THE CALIBRATION
-    # ---------------------------------------
-    if not args['sensor_selection_function'] is None:
-        deleted = []
-        for sensor_key in dataset['sensors'].keys():
-            if not args['sensor_selection_function'](sensor_key):  # use the lambda expression ssf
-                deleted.append(sensor_key)
-                del dataset['sensors'][sensor_key]
-        print("Deleted sensors: " + str(deleted))
+    dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
@@ -279,7 +269,6 @@ def main():
         opt.setVisualizationFunction(visualization.visualizationFunction, args['ros_visualization'], niterations=1,
                                      figures=[])
 
-
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add sensor parameters
     # ---------------------------------------
@@ -301,7 +290,8 @@ def main():
         anchored_transform_key = atom_core.naming.generateKey(anchored_parent, anchored_child)
     else:
         anchored_transform_key = ''  # not transform is anchored
-    # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are being optimized
+    # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are
+    #  being optimized
 
     print('Creating parameters ...')
     # Steaming from the config json, we define a transform to be optimized for each sensor. It could happen that two
@@ -339,8 +329,6 @@ def main():
                                     getter=partial(getters_and_setters.getterCameraIntrinsics, sensor_key=sensor_key),
                                     setter=partial(getters_and_setters.setterCameraIntrinsics, sensor_key=sensor_key),
                                     suffix=['_fx', '_fy', '_cx', '_cy', '_k1', '_k2', '_t1', '_t2', '_k3'])
-
-    # TODO handle optimize_distortion
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add pattern(s) parameters
@@ -507,7 +495,9 @@ def main():
 
     # opt.printResiduals()
 
-    # Get a normalizer for each residual type
+    # ---------------------------------------
+    # --- Get a normalizer for each residual type
+    # ---------------------------------------
     msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
     normalizer = {k: 1.0 for k in msg_types}
     opt.addDataModel('normalizer', normalizer)
@@ -520,7 +510,6 @@ def main():
                 values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
         normalizer[msg_type] = np.mean(values)
-    #--
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
@@ -554,7 +543,6 @@ def main():
     # --- Start Optimization
     # ---------------------------------------
     print('Initializing optimization ...')
-
     options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
@@ -562,11 +550,9 @@ def main():
     print('\nFinal errors:')
     r = objective_function.objectiveFunction(opt.data_models)
     for sensor_key, sensor in dataset['sensors'].items():
-        keys = [ k for k in r.keys() if sensor_key in k]
-        v = [ r[k] * normalizer[sensor['msg_type']]  for k in keys]
+        keys = [k for k in r.keys() if sensor_key in k]
+        v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
         print("Sensor " + sensor_key + " " + str(np.mean(v)))
-    #--
-
 
     # ---------------------------------------
     # --- Save updated JSON file

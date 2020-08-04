@@ -533,6 +533,26 @@ def genCollectionPrefix(collection_key, string):
     # return 'c' + str(collection_key) + '_' + str(string)
 
 
+def filterSensorsFromDataset(dataset, args):
+    """
+    Filters some sensors from the dataset, using a couple of arguments in arg
+    :param dataset:
+    :param args: Makes use of 'sensor_selection_function'
+    """
+
+    if not args['sensor_selection_function'] is None:
+        deleted = []
+        for sensor_key in dataset['sensors'].keys():
+            if not args['sensor_selection_function'](sensor_key):  # use the lambda expression ssf
+                deleted.append(sensor_key)
+                del dataset['sensors'][sensor_key]
+        print("Deleted sensors: " + str(deleted))
+
+    if not dataset['sensors'].keys():
+        raise ValueError('No sensors were selected. Cannot optimize without sensors. Please revise your '
+                         'dataset and your sensor selection function.')
+
+
 def filterCollectionsFromDataset(dataset, args):
     """
     Filters some collections from the dataset, using a couple of arguments in arg
@@ -555,8 +575,8 @@ def filterCollectionsFromDataset(dataset, args):
             for sensor_key, sensor in dataset['sensors'].items():
                 if not collection['labels'][sensor_key]['detected']:
                     print(
-                                Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                                sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+                            Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                            sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
                     del dataset['collections'][collection_key]
                     break
 
@@ -569,8 +589,8 @@ def filterCollectionsFromDataset(dataset, args):
                 if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                         print(
-                                    Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                                    collection_key + ', sensor ' + sensor_key)
+                                Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                                collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
     if not dataset['collections'].keys():

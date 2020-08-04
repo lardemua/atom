@@ -2,11 +2,9 @@
 
 # stdlib
 import sys
-import os.path
 import argparse
 
 # 3rd-party
-import yaml
 import rospkg
 import rospy
 
@@ -18,7 +16,7 @@ from urdf_parser_py.urdf import URDF
 # local packages
 from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
-from atom_calibration.sensor import Sensor
+from atom_calibration.initial_estimate.sensor import Sensor
 
 
 class InteractiveFirstGuess(object):
