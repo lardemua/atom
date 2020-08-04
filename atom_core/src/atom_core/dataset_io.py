@@ -552,6 +552,7 @@ def filterSensorsFromDataset(dataset, args):
         raise ValueError('No sensors were selected. Cannot optimize without sensors. Please revise your '
                          'dataset and your sensor selection function.')
 
+    return dataset
 
 def filterCollectionsFromDataset(dataset, args):
     """
