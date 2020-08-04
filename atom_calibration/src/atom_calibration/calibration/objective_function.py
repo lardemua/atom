@@ -308,4 +308,11 @@ def objectiveFunction(data):
             else:
                 raise ValueError("Unknown sensor msg_type")
 
+    if args['verbose']:
+        print("Errors per sensor:")
+        for sensor_key, sensor in dataset['sensors'].items():
+            keys = [ k for k in r.keys() if sensor_key in k]
+            v = [ r[k] * normalizer[sensor['msg_type']]  for k in keys]
+            print('  ' + sensor_key + " " + str(np.mean(v)))
+
     return r  # Return the residuals
