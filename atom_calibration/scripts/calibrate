@@ -496,6 +496,13 @@ def main():
     # opt.printResiduals()
 
     # ---------------------------------------
+    # --- Compute the SPARSE MATRIX
+    # ---------------------------------------
+    print("Computing sparse matrix ... ")
+    opt.computeSparseMatrix()
+    # opt.printSparseMatrix()
+
+    # ---------------------------------------
     # --- Get a normalizer for each residual type
     # ---------------------------------------
     msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
@@ -510,13 +517,6 @@ def main():
                 values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
         normalizer[msg_type] = np.mean(values)
-
-    # ---------------------------------------
-    # --- Compute the SPARSE MATRIX
-    # ---------------------------------------
-    print("Computing sparse matrix ... ")
-    opt.computeSparseMatrix()
-    # opt.printSparseMatrix()
 
     # ---------------------------------------
     # --- Profile Objective Function

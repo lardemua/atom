@@ -449,7 +449,7 @@ def visualizationFunction(models):
 
             if sensor['msg_type'] == 'Image':
                 if args['show_images']:
-                    image = getCvImageFromCollectionSensor(collection_key, sensor_key, dataset)
+                    image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
                     width = collection['data'][sensor_key]['width']
                     height = collection['data'][sensor_key]['height']
                     diagonal = math.sqrt(width ** 2 + height ** 2)
