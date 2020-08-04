@@ -1,3 +1,5 @@
+import numpy as np
+
 import math
 
 
@@ -68,3 +70,16 @@ def mul_v3_fl(v0, f):
         v0[1] * f,
         v0[2] * f,
     )
+
+
+def fitPlaneLTSQ(XYZ):
+    (rows, cols) = XYZ.shape
+    G = np.ones((rows, 3))
+    G[:, 0] = XYZ[:, 0]  # X
+    G[:, 1] = XYZ[:, 1]  # Y
+    Z = XYZ[:, 2]
+    (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z)
+    normal = (a, b, -1)
+    nn = np.linalg.norm(normal)
+    normal = normal / nn
+    return (c, normal)

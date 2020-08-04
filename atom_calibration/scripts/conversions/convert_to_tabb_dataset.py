@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import shutil
+
+import atom_core.atom
 import sys
 import os.path
 import argparse
@@ -112,7 +114,7 @@ if __name__ == "__main__":
 
             # TODO Eurico, I think you inverted the transform in the opposite translation, perhaps we need to do it
             #  here too?
-            T = utilities.getTransform('ee_link', dataset_sensors['calibration_config']['world_link'], collection['transforms'])
+            T = atom_core.atom.getTransform('ee_link', dataset_sensors['calibration_config']['world_link'], collection['transforms'])
             # T = utilities.getTransform(dataset_sensors['calibration_config']['world_link'], 'ee_link', collection['transforms'])
 
             T[0,3] = T[0,3] * 1000.0

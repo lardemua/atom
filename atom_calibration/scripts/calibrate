@@ -5,6 +5,9 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 
 # stdlib
 import os
+
+import atom_core.atom
+import atom_core.naming
 import signal
 import sys
 import argparse
@@ -20,7 +23,6 @@ import numpy as np
 from colorama import Fore, Style, Back
 
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
-import OptimizationUtils.utilities as opt_utilities
 
 # own packages
 import atom_calibration.calibration.getters_and_setters as getters_and_setters
@@ -38,20 +40,6 @@ from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, getCvImageFro
 def signal_handler(sig, frame):
     print('Stopping optimization (Ctrl+C pressed)')
     sys.exit(0)
-
-
-def fitPlaneLTSQ(XYZ):
-    (rows, cols) = XYZ.shape
-    G = np.ones((rows, 3))
-    G[:, 0] = XYZ[:, 0]  # X
-    G[:, 1] = XYZ[:, 1]  # Y
-    Z = XYZ[:, 2]
-    (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z)
-    normal = (a, b, -1)
-    nn = np.linalg.norm(normal)
-    normal = normal / nn
-    return (c, normal)
-
 
 
 # -------------------------------------------------------------------------------
@@ -290,7 +278,7 @@ def main():
     if anchored_sensor in dataset['sensors']:
         anchored_parent = dataset['sensors'][anchored_sensor]['calibration_parent']
         anchored_child = dataset['sensors'][anchored_sensor]['calibration_child']
-        anchored_transform_key = opt_utilities.generateKey(anchored_parent, anchored_child)
+        anchored_transform_key = atom_core.naming.generateKey(anchored_parent, anchored_child)
     else:
         anchored_transform_key = ''  # not transform is anchored
     # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are being optimized
@@ -301,7 +289,7 @@ def main():
     # transformations to be optimized and then compute the unique set of that list.
     transforms_set = set()
     for sensor_key, sensor in dataset['sensors'].items():
-        transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
+        transform_key = atom_core.naming.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
         transforms_set.add(transform_key)
 
     for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
@@ -346,7 +334,7 @@ def main():
         # publishing ROS, but we must add this to the parameter name.
         parent = dataset['calibration_config']['calibration_pattern']['parent_link']
         child = dataset['calibration_config']['calibration_pattern']['link']
-        transform_key = opt_utilities.generateKey(parent, child)
+        transform_key = atom_core.naming.generateKey(parent, child)
 
         for collection_key, collection in dataset['collections'].items():  # iterate all collections
 
@@ -377,7 +365,7 @@ def main():
         # 'link']
         parent = dataset['calibration_config']['calibration_pattern']['parent_link']
         child = dataset['calibration_config']['calibration_pattern']['link']
-        transform_key = opt_utilities.generateKey(parent, child)
+        transform_key = atom_core.naming.generateKey(parent, child)
 
         # Set transform using the initial estimate of the transformations.
         initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
@@ -423,8 +411,8 @@ def main():
                 continue
 
             # Sensor related parameters
-            sensors_transform_key = opt_utilities.generateKey(sensor['calibration_parent'],
-                                                              sensor['calibration_child'])
+            sensors_transform_key = atom_core.naming.generateKey(sensor['calibration_parent'],
+                                                                 sensor['calibration_child'])
             params = opt.getParamsContainingPattern(sensors_transform_key)
 
             # Intrinsics parameters
@@ -433,11 +421,11 @@ def main():
 
             # Pattern related parameters
             if dataset['calibration_config']['calibration_pattern']['fixed']:
-                pattern_transform_key = opt_utilities.generateKey(
+                pattern_transform_key = atom_core.naming.generateKey(
                     dataset['calibration_config']['calibration_pattern']['parent_link'],
                     dataset['calibration_config']['calibration_pattern']['link'])
             else:
-                pattern_transform_key = 'c' + collection_key + '_' + opt_utilities.generateKey(
+                pattern_transform_key = 'c' + collection_key + '_' + atom_core.naming.generateKey(
                     dataset['calibration_config']['calibration_pattern']['parent_link'],
                     dataset['calibration_config']['calibration_pattern']['link'])
 
@@ -549,7 +537,7 @@ def main():
     for sensor_key in dataset['calibration_config']['sensors']:
         child = dataset['calibration_config']['sensors'][sensor_key]['child_link']
         parent = dataset['calibration_config']['sensors'][sensor_key]['parent_link']
-        transform_key = opt_utilities.generateKey(parent, child)
+        transform_key = atom_core.naming.generateKey(parent, child)
 
         trans = list(dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans'])
         quat = list(dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat'])

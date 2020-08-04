@@ -1,4 +1,5 @@
 # stdlib
+import atom_core.atom
 import math
 from copy import deepcopy
 import numpy as np
@@ -96,7 +97,7 @@ def objectiveFunction(data):
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                sensor_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
                 # Project points to the image of the sensor ------------------------------------------------------------
@@ -144,7 +145,7 @@ def objectiveFunction(data):
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                pattern_to_sensor = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_chessboard = np.dot(pattern_to_sensor, pts_in_laser)
 
                 # Compute the coordinate of the laser points in the chessboard reference frame
@@ -215,7 +216,7 @@ def objectiveFunction(data):
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                laser_to_chessboard = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                laser_to_chessboard = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
 
                 p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
                 p_co_in_laser = np.dot(laser_to_chessboard, p_co_in_chessboard)
@@ -263,7 +264,7 @@ def objectiveFunction(data):
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                lidar_to_pattern = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                lidar_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
 
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
                 points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor)
@@ -286,7 +287,7 @@ def objectiveFunction(data):
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                pattern_to_sensor = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+                pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
 
                 pts = []

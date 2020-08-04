@@ -31,7 +31,7 @@ from open3d import *
 from OptimizationUtils import utilities as opt_utilities
 
 # own packages
-from atom_core.utilities import generateName
+from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
 from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
 

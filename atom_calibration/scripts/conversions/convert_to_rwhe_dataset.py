@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import atom_core.atom
 import sys
 import os.path
 import argparse
@@ -81,9 +82,9 @@ if __name__ == "__main__":
             collection = dataset_sensors['collections'][collection_key]
             # T = utilities.getTransform('ee_link', 'base_link', collection['transforms']).reshape((1, 16))
             if args['base']:
-                T = utilities.getTransform('ee_link', 'base_link', collection['transforms']).reshape((1, 16))
+                T = atom_core.atom.getTransform('ee_link', 'base_link', collection['transforms']).reshape((1, 16))
             else:
-                T = utilities.getTransform('base_link', 'ee_link', collection['transforms']).reshape((1, 16))
+                T = atom_core.atom.getTransform('base_link', 'ee_link', collection['transforms']).reshape((1, 16))
             print('Collection ' + collection_key + ' =\n' + str(T))
             h, w = T.shape
             for i in range(0, w):

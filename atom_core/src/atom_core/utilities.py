@@ -19,17 +19,6 @@ from rospy_message_converter import message_converter
 # -------------------------------------------------------------------------------
 
 
-def generateName(name, prefix='', suffix='', separator='_'):
-    """ Standardized form of deriving a name with a prefix or a suffix with <separator> separating them. """
-
-    if prefix:
-        prefix = prefix + separator
-
-    if suffix:
-        suffix = separator + suffix
-    return str(prefix) + str(name) + str(suffix)
-
-
 # Check https://stackoverflow.com/questions/52431265/how-to-use-a-lambda-as-parameter-in-python-argparse
 def create_lambda_with_globals(s):
     return eval(s, globals())

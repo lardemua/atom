@@ -12,7 +12,7 @@ import cv2
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 from atom_core.config_io import uriReader
-from atom_core.utilities import generateName
+from atom_core.naming import generateName
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter

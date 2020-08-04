@@ -11,7 +11,7 @@ from shutil import copyfile
 import cv2
 from atom_calibration.collect import patterns
 
-from OptimizationUtils.utilities import generateKey
+from atom_core.naming import generateKey
 from tf.transformations import quaternion_from_matrix, quaternion_from_euler
 
 

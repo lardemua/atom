@@ -11,6 +11,8 @@ Reads the calibration results from a json file and computes the evaluation metri
 import json
 import os
 import numpy as np
+
+import atom_core.atom
 import cv2
 import argparse
 import OptimizationUtils.utilities as opt_utilities
@@ -157,7 +159,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = opt_utilities.getTransform(from_frame, to_frame, collection['transforms'])
+        vel2cam = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
         print(vel2cam)
         pts_in_image = rangeToImage(collection, source_sensor, target_sensor, vel2cam)
 
