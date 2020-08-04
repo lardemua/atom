@@ -11,6 +11,7 @@ import atom_core.naming
 import signal
 import sys
 import argparse
+import random
 from functools import partial
 
 from urdf_parser_py.urdf import URDF
@@ -64,6 +65,7 @@ def main():
                     help="Runs and prints a profile of the objective function, then exits.",
                     action='store_true', default=False)
     ap.add_argument("-sr", "--sample_residuals", help="Samples residuals", type=float, default=1)
+    ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
     ap.add_argument("-od", "--optimize_distortion", help="Adds camera distortion parameters to the optimization",
                     action='store_true', default=False)
     ap.add_argument("-fec", "--four_extrema_corners", help="Uses only the four extrema corners for camera "
@@ -422,6 +424,15 @@ def main():
     # by the parameters tx,ty,tz,r1,r2,r3 of the sensor and the pattern
 
     print("Creating residuals ... ")
+
+    if args['sample_seed'] is None:
+        seed = random.randrange(sys.maxsize)
+    else:
+        seed = args['sample_seed']
+
+    rng = random.Random(seed)
+    print('  RNG Seed: ' + str(seed))
+
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected']:  # if pattern not detected by sensor in collection
@@ -470,19 +481,30 @@ def main():
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_beam_' + str(idx), params=params)
 
             elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
-                # Laser beam error
-                step = int(1 / float(args['sample_residuals']))
-                # for idx in range(0, len(collection['labels'][sensor_key]['middle_points']), step):
-                for idx in range(0, len(collection['labels'][sensor_key]['idxs']), step):
+
+                # == Laser beam error (or orthogonal error) ==
+
+                # The number of residuals for this error can be huge.
+                # Therefore, we do a random sample to reduce the number.
+                # The sample percentage has the interval [0.1, 1.0]
+                population = range(0, len(collection['labels'][sensor_key]['idxs']))
+                nsamples = int(max(0.1, min(args['sample_residuals'], 1.0)) * len(population))
+                samples = rng.sample(population, nsamples)
+
+                # Save it to be used in the objective function.
+                collection['labels'][sensor_key]['samples'] = samples
+
+                for idx in samples:
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_oe_' + str(idx), params=params)
-                # Extrema displacement error
+
+                # == Extrema displacement error ==
                 for idx in range(0, len(collection['labels'][sensor_key]['limit_points'])):
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
 
             # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
             #       ' affected by parameters:\n' + str(params))
 
-    opt.printResiduals()
+    # opt.printResiduals()
 
     # Get a normalizer for each residual type
     msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])

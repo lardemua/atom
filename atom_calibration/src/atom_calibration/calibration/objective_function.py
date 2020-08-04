@@ -269,9 +269,8 @@ def objectiveFunction(data):
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
                 points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor)
 
-                step = int(1 / float(args['sample_residuals']))
                 rname_pre = 'c' + collection_key + '_' + sensor_key + '_oe_'
-                for idx in xrange(0, points_in_pattern.shape[1], step):
+                for idx in collection['labels'][sensor_key]['samples']:
                     # Compute the residual: absolute of z component
                     rname = rname_pre + str(idx)
                     r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['PointCloud2']
