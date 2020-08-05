@@ -148,6 +148,7 @@ def main():
     # ---------------------------------------
     # --- DETECT EDGES IN THE LASER SCANS
     # ---------------------------------------
+    # TODO this should go to the collect and label
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['msg_type'] == 'LaserScan':  # only for lasers
             for collection_key, collection in dataset['collections'].items():
@@ -168,6 +169,7 @@ def main():
     # ---------------------------------------
     # --- Detect corners in velodyne data
     # ---------------------------------------
+    # TODO this should go to the collect and label
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['msg_type'] == 'PointCloud2':  # only for 3D Lidars and RGBD cameras
             for collection_key, collection in dataset['collections'].items():
