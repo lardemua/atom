@@ -17,7 +17,7 @@ import tf
 from atom_core.cache import Cache
 
 from rospy_message_converter import message_converter
-from rospy_urdf_to_rviz_converter.rospy_urdf_to_rviz_converter import urdfToMarkerArray
+from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from std_msgs.msg import Header, ColorRGBA
 from urdf_parser_py.urdf import URDF
 from sensor_msgs.msg import Image, sensor_msgs, CameraInfo
