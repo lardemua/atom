@@ -33,6 +33,9 @@
   <exec_depend>python-numpy</exec_depend>
   <exec_depend>python-opencv</exec_depend>
   <exec_depend>python-matplotlib</exec_depend>
+  <exec_depend>python-networkx</exec_depend>
+  <exec_depend>python-tk</exec_depend>
+  <exec_depend>python-pandas</exec_depend>
 
   <export>
   </export>

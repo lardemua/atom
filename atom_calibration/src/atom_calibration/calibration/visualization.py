@@ -26,7 +26,6 @@ from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
 from cv_bridge import CvBridge
 
 from matplotlib import cm
-from open3d import *
 from OptimizationUtils import utilities as opt_utilities
 
 # own packages
