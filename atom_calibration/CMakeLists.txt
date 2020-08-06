@@ -11,6 +11,7 @@ catkin_install_python(PROGRAMS
     scripts/configure_calibration_pkg
     scripts/collect_data
     scripts/set_initial_estimate
+    scripts/calibrate
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

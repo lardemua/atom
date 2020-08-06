@@ -27,6 +27,7 @@
   <exec_depend>python-jinja2</exec_depend>
   <exec_depend>python-numpy</exec_depend>
   <exec_depend>python-yaml</exec_depend>
+  <exec_depend>python-graphviz-pip</exec_depend>
 
   <export>
   </export>
