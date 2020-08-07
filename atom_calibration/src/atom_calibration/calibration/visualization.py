@@ -13,6 +13,7 @@ import pprint
 import cv2
 import ros_numpy
 import rospy
+import numpy as np
 import tf
 from atom_core.cache import Cache
 
