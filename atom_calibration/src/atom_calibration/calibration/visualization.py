@@ -12,6 +12,7 @@ import pprint
 # 3rd-party
 import cv2
 import ros_numpy
+# import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
 import numpy as np
 import tf
@@ -34,6 +35,7 @@ from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
 from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -42,6 +44,7 @@ from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageF
 def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
     dictionary = dataset['collections'][collection_key]['data'][sensor_key]
     return getCvImageFromDictionary(dictionary)
+
 
 def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
     markers = MarkerArray()
