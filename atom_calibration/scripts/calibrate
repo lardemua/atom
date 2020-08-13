@@ -254,6 +254,7 @@ def main():
     # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
     # transformation.
     selected_collection_key = dataset['collections'].keys()[0]
+    print('Selected collection key is ' + str(selected_collection_key))
 
     # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
@@ -306,7 +307,7 @@ def main():
 
     for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
         initial_transform = getters_and_setters.getterTransform(dataset, transform_key=transform_key,
-                                                                collection_name=collection_key)
+                                                                collection_name=selected_collection_key)
 
         if transform_key == anchored_transform_key:
             bound_max = [x + sys.float_info.epsilon for x in initial_transform]
@@ -378,7 +379,7 @@ def main():
         transform_key = atom_core.naming.generateKey(parent, child)
 
         # Set transform using the initial estimate of the transformations.
-        initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
+        initial_estimate = dataset['patterns']['transforms_initial'][selected_collection_key]
         if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
                 not child == initial_estimate['child']:
             raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)

@@ -13,6 +13,7 @@ from geometry_msgs.msg import Point
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -63,7 +64,7 @@ def getResKeysForSensor(sensor_key, keys):
 
 def objectiveFunction(data):
     """
-    Computes the vector of residuals. There should be an error for each stamp, sensor and chessboard tuple.
+    Computes a list or a dictionary of residuals. There should be an error for each stamp, sensor and chessboard tuple.
     The computation of the error varies according with the modality of the sensor:
         - Reprojection error for camera to chessboard
         - Point to plane distance for 2D laser scanners
@@ -115,7 +116,8 @@ def objectiveFunction(data):
                 for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
-                                       (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer['Image']
+                                       (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer[
+                                   'Image']
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
@@ -175,13 +177,15 @@ def objectiveFunction(data):
                 extrema_right = np.reshape(pts_in_chessboard[0:2, 0], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eright'
                 r[rname] = float(np.amin(distance.cdist(extrema_right.transpose(),
-                            pts_canvas_in_chessboard.transpose(), 'euclidean'))) / normalizer['LaserScan']
+                                                        pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
+                           normalizer['LaserScan']
 
                 # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
                 extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eleft'
                 r[rname] = float(np.amin(distance.cdist(extrema_left.transpose(),
-                            pts_canvas_in_chessboard.transpose(), 'euclidean'))) / normalizer['LaserScan']
+                                                        pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
+                           normalizer['LaserScan']
 
                 # --- Residuals: Longitudinal distance for inner points
                 pts = []
@@ -200,7 +204,8 @@ def objectiveFunction(data):
                     # becomes a shape (2,) which the function cdist does not support.
 
                     rname = collection_key + '_' + sensor_key + '_inner_' + str(idx)
-                    r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean'))) / normalizer['LaserScan']
+                    r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean'))) / \
+                               normalizer['LaserScan']
 
                 # --- Residuals: Beam direction distance from point to chessboard plan
                 # For computing the intersection we need:
@@ -302,7 +307,8 @@ def objectiveFunction(data):
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(distance.cdist(m_pt,
-                                ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / normalizer['PointCloud2']
+                                                     ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
+                               normalizer['PointCloud2']
                 # ------------------------------------------------------------------------------------------------
 
             else:
@@ -311,8 +317,8 @@ def objectiveFunction(data):
     if args['verbose']:
         print("Errors per sensor:")
         for sensor_key, sensor in dataset['sensors'].items():
-            keys = [ k for k in r.keys() if sensor_key in k]
-            v = [ r[k] * normalizer[sensor['msg_type']]  for k in keys]
+            keys = [k for k in r.keys() if sensor_key in k]
+            v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
             print('  ' + sensor_key + " " + str(np.mean(v)))
 
     return r  # Return the residuals
