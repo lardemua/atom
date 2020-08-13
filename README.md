@@ -6,19 +6,21 @@ Atom is a set of calibration tools for multi-sensor, multi-modal, robotic system
 It is based on the optimization of atomic transformations as provided by a ros based robot description. 
 Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
-If this work is helpfull for you please cite:
+If this work is helpfull for you please cite out [paper](https://www.sciencedirect.com/science/article/abs/pii/S0921889020303985?via%3Dihub):
 
-Miguel Oliveira, Afonso Castro, Tiago Madeira, Eurico Pedrosa, Paulo Dias, Vítor Santos,
-A ROS framework for the extrinsic calibration of intelligent vehicles: A multi-sensor, multi-modal approach,
-Robotics and Autonomous Systems,
-Volume 131,
-2020,
-103558,
-ISSN 0921-8890,
-https://doi.org/10.1016/j.robot.2020.103558.
-(http://www.sciencedirect.com/science/article/pii/S0921889020303985)
-Abstract: This paper proposes a general approach to the problem of extrinsic calibration of multiple sensors of varied modalities. This is of particular relevance for intelligent vehicles, which are complex systems that often encompass several sensors of different modalities. Our approach is seamlessly integrated with the Robot Operating System (ROS) framework, and allows for the interactive positioning of sensors and labelling of data, facilitating the calibration procedure. The calibration is formulated as a simultaneous optimization for all sensors, in which the objective function accounts for the various sensor modalities. Results show that the proposed procedure produces accurate calibrations, on par with state of the art approaches which operate only for pairwise setups.
-Keywords: Extrinsic calibration; ROS; Optimization; Bundle adjustment; Intelligent vehicles; OpenCV
+```
+@article{OLIVEIRA2020a,
+title = "A ROS framework for the extrinsic calibration of intelligent vehicles: A multi-sensor, multi-modal approach",
+author = "Miguel Oliveira and Afonso Castro and Tiago Madeira and Eurico Pedrosa and Paulo Dias and Vítor Santos",
+journal = "Robotics and Autonomous Systems",
+volume = "131",
+pages = "103558",
+year = "2020",
+issn = "0921-8890",
+doi = "https://doi.org/10.1016/j.robot.2020.103558",
+url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985",
+}
+```
 
 # Table of Contents
 
