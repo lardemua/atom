@@ -45,29 +45,24 @@ url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985",
 
 Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline:
 
-0. **Prepare you environment** (OPTIONAL) - define environment variables for easy cross machine access to data
-   ```bash
-   export ROS_BAGS="$HOME/bagfiles"
-   export ATOM_DATASETS="$HOME/datasets"
-   ```
+
 1. **Create a calibration package** for you robotic system
-   ```bash
-   rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
-   ```
+```bash
+rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
+```
 2. **Configure your calibration package** - edit the file 
 _<your_robot_calibration>/calibration/config.yml_ with your system information.
-   ```bash
-   rosrun <your_robot_calibration> configure 
-   ```
+```bash
+rosrun <your_robot_calibration> configure 
+```
 3. **Set initial estimate** - deployment of interactive tools based on rviz that allow the user to set the pose of the sensors to be calibrated, while receiving visual feedback;
-   ```bash
-   roslaunch <your_robot_calibration> set_initial_estimate.launch 
-   ```
+```bash
+roslaunch <your_robot_calibration> set_initial_estimate.launch 
+```
 4. **Collect Data** - Extraction of snapshots of data (a.k.a., collections)
-   ```bash
-   roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
-   ```
-   
+```bash
+roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
+```
 5. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
@@ -79,7 +74,24 @@ To calibrate your robot you must define your robotic system, (e.g. <your_robot>)
 
 Finally, **ATOM** requires a bagfile with a recording of the data from the sensors you wish to calibrate. Transformations in the bagfile (i.e. topics /tf and /tf_static) will be ignored, so that they do not collide with the ones being published by the _robot_state_publisher_. Thus, if your robotic system contains moving parts, the bagfile should also record the _sensor_msgs/JointState_ message. 
 
-It is also possible to record compressed images, since **ATOM** can decompress them while playing back the bagfile.
+It is also possible to record compressed images, since **ATOM** can decompress them while playing back the bagfile. Here is a [launch file example](https://github.com/lardemua/atlascar2/blob/master/atlascar2_bringup/launch/record_sensor_data.launch) which records compressed images.
+
+## Setup you environment 
+
+We often use two enviroment variables to allow for easy cross machine access to bagfiles and datasets. If you want to use these (it is optional) you can also add these lines to your _.bashrc_
+
+```bash
+export ROS_BAGS="$HOME/bagfiles"
+export ATOM_DATASETS="$HOME/datasets"
+```
+
+And then you can refer to these environment variables when providing paths to atom scripts, e.g.
+
+```bash
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS/<my_dataset>/data_collected.json
+```
+
+and you can also refer to them inside the [calibration configuration file](https://github.com/lardemua/atlascar2/blob/0c065508f325fb57e0439c1ba2e00f9468cd73e7/atlascar2_calibration/calibration/config.yml#L14)
 
 ## Creating a calibration package
 
@@ -159,35 +171,74 @@ Finally, a system calibration is called through:
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
 ```
 
-You can also define the following additional arguments:
+
+### Advanced usage - debug
+
+For debugging the calibrate script it is better not to have it executed with a bunch of other scripts. You can run everything without the calibrate
 
 ```bash
-single_pattern:=true
-                    show a single pattern instead of one per collection.
-
-use_incomplete_collections:=true
-                    Remove any collection which does not have a detection
-                    for all sensors.
-
--ssf "SENSOR_SELECTION_FUNCTION"
-                    A string to be evaluated as a lambda function that
-                    receives a sensor name as input and returns True or
-                    False to indicate if the sensor should be loaded (and
-                    used in the optimization). The Syntax is lambda name:
-                    f(x), where f(x) is the function in python language.
-                    Example: "lambda name: name in ["left_laser",
-                    "frontal_camera"]" , to load only sensors left_laser
-                    and frontal_camera
-
--csf "COLLECTION_SELECTION_FUNCTION"
-                    A string to be evaluated into a lambda function that
-                    receives a collection name as input and returns True
-                    or False to indicate if the collection should be
-                    loaded (and used in the optimization). The Syntax is
-                    lambda name: f(x), where f(x) is the function in
-                    python language. Example: "lambda name: int(name) > 5" ,
-                    to load only collections 6, 7, etc .
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json run_calibration:=false 
 ```
+
+and then launch the script in standalone mode
+
+```bash
+rosrun atom_calibration calibrate -json dataset_file:=~/datasets/<my_dataset>/data_collected.json 
+```
+
+There are several additional command line arguments to use with the **calibrate** script, here's an extensive list:
+
+```bash
+usage: calibrate [-h] [-sv SKIP_VERTICES] [-z Z_INCONSISTENCY_THRESHOLD]
+                 [-vpv] [-vo] -json JSON_FILE [-v] [-rv] [-si] [-oi] [-pof]
+                 [-sr SAMPLE_RESIDUALS] [-ss SAMPLE_SEED] [-od] [-fec] [-uic]
+                 [-rpd] [-ssf SENSOR_SELECTION_FUNCTION]
+                 [-csf COLLECTION_SELECTION_FUNCTION]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -json JSON_FILE, --json_file JSON_FILE
+                        Json file containing input dataset.
+  -vo, --view_optimization
+                        Displays generic total error and residuals graphs.
+  -v, --verbose         Be verbose
+  -rv, --ros_visualization
+                        Publish ros visualization markers.
+  -si, --show_images    shows images for each camera
+  -oi, --optimize_intrinsics
+                        Adds camera instrinsics and distortion to the optimization
+  -pof, --profile_objective_function
+                        Runs and prints a profile of the objective function,
+                        then exits.
+  -sr SAMPLE_RESIDUALS, --sample_residuals SAMPLE_RESIDUALS
+                        Samples residuals
+  -ss SAMPLE_SEED, --sample_seed SAMPLE_SEED
+                        Sampling seed
+  -uic, --use_incomplete_collections
+                        Remove any collection which does not have a detection
+                        for all sensors.
+  -rpd, --remove_partial_detections
+                        Remove detected labels which are only partial. Used or
+                        the Charuco.
+  -ssf SENSOR_SELECTION_FUNCTION, --sensor_selection_function SENSOR_SELECTION_FUNCTION
+                        A string to be evaluated into a lambda function that
+                        receives a sensor name as input and returns True or
+                        False to indicate if the sensor should be loaded (and
+                        used in the optimization). The Syntax is lambda name:
+                        f(x), where f(x) is the function in python language.
+                        Example: lambda name: name in ["left_laser",
+                        "frontal_camera"] , to load only sensors left_laser
+                        and frontal_camera
+  -csf COLLECTION_SELECTION_FUNCTION, --collection_selection_function COLLECTION_SELECTION_FUNCTION
+                        A string to be evaluated into a lambda function that
+                        receives a collection name as input and returns True
+                        or False to indicate if the collection should be
+                        loaded (and used in the optimization). The Syntax is
+                        lambda name: f(x), where f(x) is the function in
+                        python language. Example: lambda name: int(name) > 5 ,
+                        to load only collections 6, 7, and onward.
+```
+
 
 # Contributors
 
