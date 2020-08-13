@@ -6,7 +6,11 @@ Atom is a set of calibration tools for multi-sensor, multi-modal, robotic system
 It is based on the optimization of atomic transformations as provided by a ros based robot description. 
 Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
-If this work is helpfull for you please cite out [paper](https://www.sciencedirect.com/science/article/abs/pii/S0921889020303985?via%3Dihub):
+If this work is helpfull for you please cite our [paper](https://www.sciencedirect.com/science/article/abs/pii/S0921889020303985?via%3Dihub):
+
+Miguel Oliveira, Afonso Castro, Tiago Madeira, Eurico Pedrosa, Paulo Dias, Vítor Santos, A ROS framework for the extrinsic calibration of intelligent vehicles: A multi-sensor, multi-modal approach, Robotics and Autonomous Systems, Volume 131, 2020, 103558, ISSN 0921-8890, https://doi.org/10.1016/j.robot.2020.103558.
+
+Bibtex:
 
 ```
 @article{OLIVEIRA2020a,
