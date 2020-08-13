@@ -172,9 +172,9 @@ roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my
 ```
 
 
-### Advanced usage - debug
+###### Advanced usage / debug
 
-For debugging the calibrate script it is better not to have it executed with a bunch of other scripts. You can run everything without the calibrate
+Alternatively, for debugging the calibrate script it is better not to have it executed with a bunch of other scripts which is what happens when you call the launch file. You can run everything with the launch excluding without the calibrate script
 
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json run_calibration:=false 
@@ -239,6 +239,26 @@ optional arguments:
                         to load only collections 6, 7, and onward.
 ```
 
+It is also possible to call some of these through the launch file. Check the launch file to see how.
+
+# Examples
+
+So far, we have used **ATOM** to successfully calibrate several robotic platforms:
+
+ ### [Atlascar2](https://github.com/lardemua/atlascar2)
+ 
+Atlascar2 is an intelligent vehicle containing several cameras and 2D Lidars. 
+
+### [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) 
+This includes several variants of the hand-eye calibration problem.
+
+
+### [AgrobV2](https://github.com/aaguiar96/agrob)
+ Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
+   
+ 
+ 
+ 
 
 # Contributors
 
