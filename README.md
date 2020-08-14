@@ -30,11 +30,17 @@ url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985",
 
 - [How to Use - Quick Start](#how-to-use---quick-start)
 - [System calibration - Detailed Description](#system-calibration---detailed-description)
+  * [Setup you environment](#setup-you-environment)
   * [Creating a calibration package](#creating-a-calibration-package)
   * [Configuring a calibration package](#configuring-a-calibration-package)
   * [Set initial estimate](#set-initial-estimate)
   * [Collect data](#collect-data)
   * [Calibrate sensors](#calibrate-sensors)
+          + [Advanced usage / debug](#advanced-usage---debug)
+- [Examples](#examples)
+    + [[Atlascar2](https://github.com/lardemua/atlascar2)](#-atlascar2--https---githubcom-lardemua-atlascar2-)
+    + [[IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)](#-irisua---ur10e--https---githubcom-iris-ua-iris-ur10e-calibration-)
+    + [[AgrobV2](https://github.com/aaguiar96/agrob)](#-agrobv2--https---githubcom-aaguiar96-agrob-)
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
 
