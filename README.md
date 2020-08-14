@@ -3,10 +3,10 @@
 
 
 
-Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description. 
+**ATOM** is a set of calibration tools for multi-sensor, multi-modal, robotic systems, based on the optimization of atomic transformations as provided by a ros based robot description. 
 Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
-If this work is helpfull for you please cite our [paper](https://www.sciencedirect.com/science/article/abs/pii/S0921889020303985?via%3Dihub):
+If this work is helpful for you please cite our [paper](https://www.sciencedirect.com/science/article/abs/pii/S0921889020303985?via%3Dihub):
 
 Miguel Oliveira, Afonso Castro, Tiago Madeira, Eurico Pedrosa, Paulo Dias, Vítor Santos, A ROS framework for the extrinsic calibration of intelligent vehicles: A multi-sensor, multi-modal approach, Robotics and Autonomous Systems, Volume 131, 2020, 103558, ISSN 0921-8890, https://doi.org/10.1016/j.robot.2020.103558.
 
@@ -22,8 +22,7 @@ pages = "103558",
 year = "2020",
 issn = "0921-8890",
 doi = "https://doi.org/10.1016/j.robot.2020.103558",
-url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985",
-}
+url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985"}
 ```
 
 # Table of Contents
@@ -38,9 +37,9 @@ url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985",
   * [Calibrate sensors](#calibrate-sensors)
           + [Advanced usage / debug](#advanced-usage---debug)
 - [Examples](#examples)
-    + [[Atlascar2](https://github.com/lardemua/atlascar2)]
-    + [[IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)]
-    + [[AgrobV2](https://github.com/aaguiar96/agrob)]
+    + [Atlascar2](https://github.com/lardemua/atlascar2)
+    + [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)
+    + [AgrobV2](https://github.com/aaguiar96/agrob)
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
 
