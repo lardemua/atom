@@ -38,9 +38,9 @@ url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985",
   * [Calibrate sensors](#calibrate-sensors)
           + [Advanced usage / debug](#advanced-usage---debug)
 - [Examples](#examples)
-    + [[Atlascar2](https://github.com/lardemua/atlascar2)](#-atlascar2--https---githubcom-lardemua-atlascar2-)
-    + [[IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)](#-irisua---ur10e--https---githubcom-iris-ua-iris-ur10e-calibration-)
-    + [[AgrobV2](https://github.com/aaguiar96/agrob)](#-agrobv2--https---githubcom-aaguiar96-agrob-)
+    + [[Atlascar2](https://github.com/lardemua/atlascar2)]
+    + [[IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)]
+    + [[AgrobV2](https://github.com/aaguiar96/agrob)]
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
 
