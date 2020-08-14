@@ -1,9 +1,9 @@
 # <img align="left" width="375" height="215" src="https://github.com/lardemua/atom/blob/master/docs/atom_logo.png?raw=true/375/215"> ATOM Calibration 
 ###### A Calibration Framework using the **A**tomic **T**ransformation **O**ptimization **M**ethod 
 
-Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. 
 
-It is based on the optimization of atomic transformations as provided by a ros based robot description. 
+
+Atom is a set of calibration tools for multi-sensor, multi-modal, robotic systems. It is based on the optimization of atomic transformations as provided by a ros based robot description. 
 Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure. 
 
 If this work is helpfull for you please cite our [paper](https://www.sciencedirect.com/science/article/abs/pii/S0921889020303985?via%3Dihub):
@@ -159,7 +159,7 @@ Here are some examples of the system collecting data:
 ------------- | -------------
 ... | <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>  
 
-A dataset is a folder which contains a set of collections. There, a _data_collected.json_ file stores all the information required for the calibration.
+A dataset is a folder which contains a set of collections. There, a _data_collected.json_ file stores all the information required for the calibration. There are also in the folder images and point clouds associated with each collection.
 
 <img align="center" src="https://github.com/lardemua/atom/blob/master/docs/viewing_data_collected_json.gif" width="600"/> 
 
@@ -171,6 +171,23 @@ Finally, a system calibration is called through:
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
 ```
 
+
+You can use a couple of launch file arguments to configure the calibration procedure, namely
+
+* **single_pattern** [false] - 
+* **use_incomplete_collections** [false] - Remove any collection which does not have a detection for all sensors.
+* **ssf** [false] - **S**ensor **S**election **F**unction: A string to be evaluated into a lambda function that receives a sensor name as input and returns True or False to indicate if the sensor should be loaded (and used in the optimization). An example:
+    ```
+    roslaunch <your_robot_calibration> calibrate.launch 
+      dataset_file:=$ATOM_DATASETS/<my_dataset>/data_collected.json  
+      ssf:='lambda name: name in ["camera1, "lidar2"]'
+    ```
+* **csf** [false] - **C**ollection **S**election **F**unction: A string to be evaluated into a lambda function that receives a collection name as input and returns True or False to indicate if that collection should be loaded (and used in the optimization). An example:
+   ```
+    roslaunch <your_robot_calibration> calibrate.launch 
+      dataset_file:=$ATOM_DATASETS/<my_dataset>/data_collected.json  
+      csf:='lambda name: int(name) < 7'
+    ```
 
 ###### Advanced usage / debug
 
@@ -256,10 +273,6 @@ This includes several variants of the hand-eye calibration problem.
 ### [AgrobV2](https://github.com/aaguiar96/agrob)
  Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
    
- 
- 
- 
-
 # Contributors
 
  * Miguel Riem Oliveira - University of Aveiro
