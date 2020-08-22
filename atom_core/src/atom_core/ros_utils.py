@@ -1,7 +1,15 @@
 import itertools
-
 import rospy
 
+# This import must be here although it is not explicitly required by the code. It will be required in
+# getMessageTypeFromTopic(topic) when the eval(msg_type_str) is executed. To avoid having automated import optimization
+# mechanisms remove the import, we declare tmp variables just to explicitly use the imports. If you have any better
+# ideas ...
+# TODO find a better way
+from sensor_msgs.msg import PointCloud2, Image, LaserScan
+tmp_image = Image()
+tmp_pointcloud = PointCloud2()
+tmp_laserscan = LaserScan()
 
 def filterLaunchArguments(argvs):
     # Roslaunch files send a "__name:=..." argument (and __log:=) which disrupts the argparser. The solution is to
