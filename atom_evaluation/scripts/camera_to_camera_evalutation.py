@@ -35,18 +35,6 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
     ss_T_chess_h[0:3, 3] = tvecs[:, 0]
     ss_T_chess_h[0:3, 0:3] = opt_utilities.rodriguesToMatrix(rvecs)
 
-    # root_T_st = atom_core.atom.getAggregateTransform(
-    #     train_dataset['sensors'][target_sensor]['chain'],
-    #     collection['transforms'])
-    # root_T_ss = atom_core.atom.getAggregateTransform(
-    #     train_dataset['sensors'][source_sensor]['chain'],
-    #     collection['transforms'])
-    #
-    # st_T_ss_h = np.dot(inv(root_T_st), root_T_ss)
-    # ss_T_st_h = inv(st_T_ss_h)
-    #
-    # st_T_chess_h = np.dot(st_T_ss_h, ss_T_chess_h)
-
     target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
     source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
     st_T_ss = atom_core.atom.getTransform(target_frame, source_frame, collection['transforms'])
@@ -157,6 +145,15 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- Evaluation loop
     # ---------------------------------------
+    print(Fore.GREEN + '\nStarting evalutation...')
+    print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images\n')
+    print(Fore.WHITE)
+    print(
+        '---------------------------------------------------------------------------------------------------------------------------------')
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('Collection', 'X Error', 'Y Error', 'X Standard Deviation',
+                                                       'Y Standard Deviation'))
+    print(
+        '---------------------------------------------------------------------------------------------------------------------------------')
     for collection_key, collection in test_dataset['collections'].items():
         # Get pattern number of corners
         nx = test_dataset['calibration_config']['calibration_pattern']['dimension']['x']
@@ -223,3 +220,15 @@ if __name__ == "__main__":
             cv2.imshow('target_image_proj', image_t)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
+
+        # Compute reprojection error
+        # ---- Enable partial detections
+        delta_pts = corners_t_proj[0:2, :] - undistortCorners(corners_t, K_t, D_t)[0:2, :]
+        total_pts = delta_pts.shape[0]
+        avg_error_x = np.sum(np.abs(delta_pts[0, :])) / total_pts
+        avg_error_y = np.sum(np.abs(delta_pts[1, :])) / total_pts
+        stdev = np.std(delta_pts, axis=1)
+
+        # Print error metrics
+        print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],
+                                                                   stdev[1]))
