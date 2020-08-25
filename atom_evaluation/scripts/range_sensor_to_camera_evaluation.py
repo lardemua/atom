@@ -219,7 +219,7 @@ if __name__ == "__main__":
                     arg = np.argmin(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
                     closest_pt = pts[arg]
 
-            delta_pts.append(closest_pt - target_pt.transpose())
+            delta_pts.append((closest_pt - target_pt.transpose())[0])
 
             if show_images is True:
                 image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
@@ -230,13 +230,9 @@ if __name__ == "__main__":
         # ---------------------------------------
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
-        avg_error_x = np.sum(np.abs(delta_pts[0, :])) / total_pts
-        avg_error_y = np.sum(np.abs(delta_pts[1, :])) / total_pts
+        avg_error_x = np.sum(np.abs(delta_pts[:, 0])) / total_pts
+        avg_error_y = np.sum(np.abs(delta_pts[:, 1])) / total_pts
         stdev = np.std(delta_pts, axis=1)
-        print(delta_pts[:,0])
-        print(avg_error_x)
-        print(avg_error_y)
-        print(stdev[0])
 
         # Print error metrics
         print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],
