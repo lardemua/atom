@@ -162,18 +162,18 @@ if __name__ == "__main__":
 
         # Get corners on both images
         corners_s = np.zeros((len(collection['labels'][source_sensor]['idxs']), 2), dtype=np.float)
-        ids_s = range(0, len(collection['labels'][source_sensor]['idxs']))
+        idxs_s = range(0, len(collection['labels'][source_sensor]['idxs']))
         for idx, point in enumerate(collection['labels'][source_sensor]['idxs']):
             corners_s[idx, 0] = point['x']
             corners_s[idx, 1] = point['y']
-            ids_s[idx] = point['id']
+            idxs_s[idx] = point['id']
         # ----
         corners_t = np.zeros((len(collection['labels'][target_sensor]['idxs']), 2), dtype=np.float)
-        ids_t = range(0, len(collection['labels'][target_sensor]['idxs']))
+        idxs_t = range(0, len(collection['labels'][target_sensor]['idxs']))
         for idx, point in enumerate(collection['labels'][target_sensor]['idxs']):
             corners_t[idx, 0] = point['x']
             corners_t[idx, 1] = point['y']
-            ids_t[idx] = point['id']
+            idxs_t[idx] = point['id']
         # ----
 
         # Read image data
@@ -195,7 +195,7 @@ if __name__ == "__main__":
         # Compute camera pose w.r.t the pattern
         objp = np.zeros((nx * ny, 3), np.float32)
         objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
-        ret, rvecs, tvecs = cv2.solvePnP(objp[ids_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
+        ret, rvecs, tvecs = cv2.solvePnP(objp[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
 
         # Get homography matrix
         if not ret:
@@ -217,14 +217,22 @@ if __name__ == "__main__":
             for idx in range(0, corners_t_proj.shape[1]):
                 cv2.circle(image_t, (int(corners_t_proj[0, idx]), int(corners_t_proj[1, idx])), 3, (255, 0, 0), -1)
 
-            cv2.imshow('target_image_proj', image_t)
+            cv2.imshow('Reprojection error', image_t)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
         # Compute reprojection error
-        # ---- Enable partial detections
-        delta_pts = corners_t_proj[0:2, :] - undistortCorners(corners_t, K_t, D_t)[0:2, :]
-        total_pts = delta_pts.shape[0]
+        delta_pts = []
+        for idx_t in idxs_t:
+            if idx_t in idxs_s:
+                array_idx_t = idxs_t.index(idx_t)
+                array_idx_s = idxs_s.index(idx_t)
+
+                diff = corners_t_proj[0:2, array_idx_s] - undistortCorners(corners_t, K_t, D_t)[0:2, array_idx_t]
+                delta_pts.append(diff)
+
+        total_pts = len(delta_pts)
+        delta_pts = np.array(delta_pts, np.float32)
         avg_error_x = np.sum(np.abs(delta_pts[0, :])) / total_pts
         avg_error_y = np.sum(np.abs(delta_pts[1, :])) / total_pts
         stdev = np.std(delta_pts, axis=1)
