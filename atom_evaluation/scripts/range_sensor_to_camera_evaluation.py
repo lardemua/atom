@@ -149,6 +149,15 @@ if __name__ == "__main__":
         print(Fore.GREEN + "   - It ends when you end annotating the fourth class (four times 'p')")
         print(Fore.WHITE)
 
+    print(Fore.BLUE + '\nStarting evalutation...')
+    print(Fore.WHITE)
+    print(
+        '---------------------------------------------------------------------------------------------------------------------------------')
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('Collection', 'X Error', 'Y Error', 'X Standard Deviation',
+                                                       'Y Standard Deviation'))
+    print(
+        '---------------------------------------------------------------------------------------------------------------------------------')
+
     # Declare output dict to save the evaluation data if desired
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
@@ -160,7 +169,6 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         vel2cam = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
-        print(vel2cam)
         pts_in_image = rangeToImage(collection, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
@@ -183,7 +191,7 @@ if __name__ == "__main__":
             y = pts[:, 1]
             coefficients = np.polyfit(x, y, 3)
             poly = np.poly1d(coefficients)
-            new_x = np.linspace(x[0], x[-1])
+            new_x = np.linspace(x[0], x[-1], 5000)
             new_y = poly(new_x)
 
             if show_images == True:
@@ -198,6 +206,7 @@ if __name__ == "__main__":
         # --- Evaluation metrics - reprojection error
         # ---------------------------------------
         # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+        delta_pts = []
         for idx in range(0, pts_in_image.shape[1]):
             target_pt = pts_in_image[:, idx]
             target_pt = np.reshape(target_pt[0:2], (2, 1))
@@ -210,9 +219,28 @@ if __name__ == "__main__":
                     arg = np.argmin(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
                     closest_pt = pts[arg]
 
+            delta_pts.append(closest_pt - target_pt.transpose())
+
             if show_images is True:
                 image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
                                  (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
+
+        # ---------------------------------------
+        # --- Compute error metrics
+        # ---------------------------------------
+        total_pts = len(delta_pts)
+        delta_pts = np.array(delta_pts, np.float32)
+        avg_error_x = np.sum(np.abs(delta_pts[0, :])) / total_pts
+        avg_error_y = np.sum(np.abs(delta_pts[1, :])) / total_pts
+        stdev = np.std(delta_pts, axis=1)
+        print(delta_pts[:,0])
+        print(avg_error_x)
+        print(avg_error_y)
+        print(stdev[0])
+
+        # Print error metrics
+        print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],
+                                                                   stdev[1]))
 
         # ---------------------------------------
         # --- Drawing ...

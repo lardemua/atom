@@ -249,8 +249,8 @@ if __name__ == "__main__":
 
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
-        avg_error_x = np.sum(np.abs(delta_pts[0, :])) / total_pts
-        avg_error_y = np.sum(np.abs(delta_pts[1, :])) / total_pts
+        avg_error_x = np.sum(np.abs(delta_pts[:, 0])) / total_pts
+        avg_error_y = np.sum(np.abs(delta_pts[:, 1])) / total_pts
         stdev = np.std(delta_pts, axis=1)
 
         # Print error metrics
