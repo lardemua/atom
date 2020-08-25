@@ -9,9 +9,9 @@ Reads the calibration results from a json file and computes the evaluation metri
 # -------------------------------------------------------------------------------
 
 import json
+import math
 import os
 import numpy as np
-
 import atom_core.atom
 import cv2
 import argparse
@@ -20,6 +20,7 @@ from scipy.spatial import distance
 from copy import deepcopy
 from colorama import Style, Fore
 from numpy.linalg import inv
+from matplotlib import cm
 
 
 # -------------------------------------------------------------------------------
@@ -212,10 +213,25 @@ if __name__ == "__main__":
 
         # Show projection
         if show_images == True:
+            width = collection['data'][target_sensor]['width']
+            height = collection['data'][target_sensor]['height']
+            diagonal = math.sqrt(width ** 2 + height ** 2)
+
+            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+            cmap = cm.tab20b(np.linspace(0, 1, len(corners_t)))
             for idx in range(0, len(corners_t)):
-                cv2.circle(image_t, (int(corners_t[idx, 0]), int(corners_t[idx, 1])), 3, (0, 0, 255), -1)
+                x = int(corners_t[idx, 0])
+                y = int(corners_t[idx, 1])
+                color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
+                opt_utilities.drawSquare2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+
+            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+            cmap = cm.tab20b(np.linspace(0, 1, corners_t_proj.shape[1]))
             for idx in range(0, corners_t_proj.shape[1]):
-                cv2.circle(image_t, (int(corners_t_proj[0, idx]), int(corners_t_proj[1, idx])), 3, (255, 0, 0), -1)
+                x = int(corners_t_proj[0, idx])
+                y = int(corners_t_proj[1, idx])
+                color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
+                opt_utilities.drawCross2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
             cv2.imshow('Reprojection error', image_t)
             cv2.waitKey(0)
