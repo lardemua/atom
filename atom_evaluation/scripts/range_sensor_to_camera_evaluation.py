@@ -62,8 +62,8 @@ def rangeToImage(collection, ss, ts, tf):
 
     # -- Project them to the image
     w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
-    D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
+    K = np.ndarray((3, 3), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
+    D = np.ndarray((5, 1), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
     pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
@@ -109,7 +109,10 @@ def annotateLimits(image):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
+    ap.add_argument("-train_json", "--train_json_file", help="Json file containing input training dataset.", type=str,
+                    required=True)
+    ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
+                    required=True)
     ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
@@ -130,9 +133,12 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
     # Loads a json file containing the calibration
-    json_file = args['json_file']
-    f = open(json_file, 'r')
-    dataset = json.load(f)
+    train_json_file = args['train_json_file']
+    f = open(train_json_file, 'r')
+    train_dataset = json.load(f)
+    test_json_file = args['test_json_file']
+    f = open(test_json_file, 'r')
+    test_dataset = json.load(f)
 
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
@@ -162,9 +168,9 @@ if __name__ == "__main__":
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
-    from_frame = dataset['calibration_config']['sensors'][target_sensor]['link']
-    to_frame = dataset['calibration_config']['sensors'][source_sensor]['link']
-    for collection_key, collection in dataset['collections'].items():
+    from_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
+    to_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
+    for collection_key, collection in test_dataset['collections'].items():
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
@@ -174,7 +180,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
-        filename = os.path.dirname(args['json_file']) + '/' + collection['data'][target_sensor]['data_file']
+        filename = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
         image = cv2.imread(filename)
         if use_annotation is False:
             limits_on_image = eval_data['ground_truth_pts'][collection_key]
