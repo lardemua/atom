@@ -38,8 +38,13 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
 
     target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
     source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
-    st_T_ss = atom_core.atom.getTransform(target_frame, source_frame, collection['transforms'])
-    ss_T_st = atom_core.atom.getTransform(source_frame, target_frame, collection['transforms'])
+
+    selected_collection_key = train_dataset['collections'].keys()[0]
+
+    st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
+                                          train_dataset['collections'][selected_collection_key]['transforms'])
+    ss_T_st = atom_core.atom.getTransform(source_frame, target_frame,
+                                          train_dataset['collections'][selected_collection_key]['transforms'])
 
     st_T_chess_h = np.dot(inv(ss_T_st), ss_T_chess_h)
 
@@ -151,7 +156,7 @@ if __name__ == "__main__":
     print(Fore.WHITE)
     print(
         '---------------------------------------------------------------------------------------------------------------------------------')
-    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('Collection', 'X Error', 'Y Error', 'X Standard Deviation',
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation',
                                                        'Y Standard Deviation'))
     print(
         '---------------------------------------------------------------------------------------------------------------------------------')
@@ -251,7 +256,7 @@ if __name__ == "__main__":
         delta_pts = np.array(delta_pts, np.float32)
         avg_error_x = np.sum(np.abs(delta_pts[:, 0])) / total_pts
         avg_error_y = np.sum(np.abs(delta_pts[:, 1])) / total_pts
-        stdev = np.std(delta_pts, axis=1)
+        stdev = np.std(delta_pts, axis=0)
 
         # Print error metrics
         print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],

@@ -61,7 +61,8 @@ def rangeToImage(collection, ss, ts, tf):
     points_in_cam = np.dot(tf, points_in_vel)
 
     # -- Project them to the image
-    w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
+    selected_collection_key = train_dataset['collections'].keys()[0]
+    w, h = collection['data'][ts]['width'], train_dataset['collections'][selected_collection_key]['data'][ts]['height']
     K = np.ndarray((3, 3), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     print(Fore.WHITE)
     print(
         '---------------------------------------------------------------------------------------------------------------------------------')
-    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('Collection', 'X Error', 'Y Error', 'X Standard Deviation',
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation',
                                                        'Y Standard Deviation'))
     print(
         '---------------------------------------------------------------------------------------------------------------------------------')
@@ -174,7 +175,9 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+        selected_collection_key = train_dataset['collections'].keys()[0]
+        vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
+                                              train_dataset['collections'][selected_collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
@@ -238,7 +241,7 @@ if __name__ == "__main__":
         delta_pts = np.array(delta_pts, np.float32)
         avg_error_x = np.sum(np.abs(delta_pts[:, 0])) / total_pts
         avg_error_y = np.sum(np.abs(delta_pts[:, 1])) / total_pts
-        stdev = np.std(delta_pts, axis=1)
+        stdev = np.std(delta_pts, axis=0)
 
         # Print error metrics
         print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],
