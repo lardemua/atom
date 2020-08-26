@@ -71,31 +71,39 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
 
 
 def undistortCorners(corners, K, D):
+    """ Remove distortion from corner points. """
+
+    points = cv2.undistortPoints(corners, K, D);
+
+    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+
+    undistorted_corners = np.ones((3, corners.shape[0]), np.float32)
+    undistorted_corners[0, :] = points[:,0,0] * fx + cx
+    undistorted_corners[1, :] = points[:,0,1] * fy + cy
+
+    return undistorted_corners
+
+def distortCorners(corners, K, D):
     # from https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
     # where it says x'' = ... x'o
 
     fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
     k1, k2, p1, p2, k3 = D
 
-    # compute the homogeneous image coordinates (non pixels)
-    w = corners.shape[0]
-    homogenous_corners = np.ones((3, w), np.float32)
-    homogenous_corners[0, :] = (corners[:, 0] - cx) / fx
-    homogenous_corners[1, :] = (corners[:, 1] - cy) / fy
+    # # compute the homogeneous image coordinates (non pixels)
+    xl = (corners[:, 0] - cx) / fx
+    yl = (corners[:, 1] - cy) / fy
 
-    # apply undistortion
-    xl = homogenous_corners[0, :]
-    yl = homogenous_corners[1, :]
+    # # apply undistortion
     r2 = xl ** 2 + yl ** 2  # r square (used multiple times bellow)
     xll = xl * (1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3) + 2 * p1 * xl * yl + p2 * (r2 + 2 * xl ** 2)
     yll = yl * (1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3) + p1 * (r2 + 2 * yl ** 2) + 2 * p2 * xl * yl
 
-    # recompute pixels (now undistorted)
-    undistorted_corners = np.ones((3, w), np.float32)
-    undistorted_corners[0, :] = xll * fx + cx
-    undistorted_corners[1, :] = yll * fy + cy
-    return undistorted_corners
+    distorted_corners = np.ones((2, corners.shape[0]), np.float32)
+    distorted_corners[0, :] = xll * fx + cx
+    distorted_corners[1, :] = yll * fy + cy
 
+    return distorted_corners
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -222,34 +230,6 @@ if __name__ == "__main__":
             corners_t_proj = np.dot(T, objp.T)
             corners_t_proj, _, _ = opt_utilities.projectToCamera(K_t, D_t, 0, 0, corners_t_proj.T[idxs_s].T)
 
-        # Show projection
-        if show_images == True:
-            width = collection['data'][target_sensor]['width']
-            height = collection['data'][target_sensor]['height']
-            diagonal = math.sqrt(width ** 2 + height ** 2)
-
-            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
-            cmap = cm.tab20b(np.linspace(0, 1, len(corners_t)))
-            for idx in range(0, len(corners_t)):
-                x = int(corners_t[idx, 0])
-                y = int(corners_t[idx, 1])
-                color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
-                opt_utilities.drawSquare2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
-
-            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
-            cmap = cm.tab20b(np.linspace(0, 1, corners_t_proj.shape[1]))
-            for idx in range(0, corners_t_proj.shape[1]):
-                x = int(corners_t_proj[0, idx])
-                y = int(corners_t_proj[1, idx])
-                color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
-                opt_utilities.drawCross2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
-
-            cv2.imshow('Reprojection error', image_t)
-            key = cv2.waitKey(0)
-            if key == ord('c') or key == ord('q'):
-                show_images = False
-                cv2.destroyAllWindows()
-
         # Compute reprojection error
         delta_pts = []
         for idx_t in idxs_t:
@@ -273,6 +253,39 @@ if __name__ == "__main__":
 
         # Print error metrics
         print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0], stdev[1]))
+
+        # Show projection
+        if show_images == True:
+            width = collection['data'][target_sensor]['width']
+            height = collection['data'][target_sensor]['height']
+            diagonal = math.sqrt(width ** 2 + height ** 2)
+
+            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+            cmap = cm.tab20b(np.linspace(0, 1, len(corners_t)))
+            for idx in range(0, len(corners_t)):
+                x = int(corners_t[idx, 0])
+                y = int(corners_t[idx, 1])
+                color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
+                opt_utilities.drawSquare2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+
+            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+            cmap = cm.tab20b(np.linspace(0, 1, corners_t_proj.shape[1]))
+
+            if not use_pattern_object:
+                corners_t_proj = distortCorners(corners_t_proj.T, K_t, D_t)
+
+            for idx in range(0, corners_t_proj.shape[1]):
+                x = int(corners_t_proj[0, idx])
+                y = int(corners_t_proj[1, idx])
+                color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
+                opt_utilities.drawCross2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+
+            cv2.imshow('Reprojection error', image_t)
+            key = cv2.waitKey(0)
+            if key == ord('c') or key == ord('q'):
+                show_images = False
+                cv2.destroyAllWindows()
+
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float)
