@@ -22,6 +22,7 @@ from colorama import Style, Fore
 from numpy.linalg import inv
 from matplotlib import cm
 
+from collections import OrderedDict
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -169,7 +170,9 @@ if __name__ == "__main__":
     print('-------------------------------------------------------------------------------------------------------------')
 
     delta_total = []
-    for collection_key, collection in test_dataset['collections'].items():
+
+    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
         # Get pattern number of corners
         nx = test_dataset['calibration_config']['calibration_pattern']['dimension']['x']
         ny = test_dataset['calibration_config']['calibration_pattern']['dimension']['y']
