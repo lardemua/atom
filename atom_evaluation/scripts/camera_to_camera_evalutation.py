@@ -67,7 +67,7 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
     C = np.dot(B, inv(K_s))
     H = C
 
-    return H
+    return H, np.dot(st_T_ss, ss_T_chess_h)
 
 
 def undistortCorners(corners, K, D):
@@ -110,12 +110,14 @@ if __name__ == "__main__":
     ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-po", "--pattern_object", help="Use pattern object projection instead of Homography.", action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
     source_sensor = args['source_sensor']
     target_sensor = args['target_sensor']
     show_images = args['show_images']
+    use_pattern_object = args['pattern_object']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from files
@@ -154,12 +156,11 @@ if __name__ == "__main__":
     print(Fore.GREEN + '\nStarting evalutation...')
     print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images\n')
     print(Fore.WHITE)
-    print(
-        '---------------------------------------------------------------------------------------------------------------------------------')
-    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation',
-                                                       'Y Standard Deviation'))
-    print(
-        '---------------------------------------------------------------------------------------------------------------------------------')
+    print('-------------------------------------------------------------------------------------------------------------')
+    print('{:^5s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation', 'Y Standard Deviation'))
+    print('-------------------------------------------------------------------------------------------------------------')
+
+    delta_total = []
     for collection_key, collection in test_dataset['collections'].items():
         # Get pattern number of corners
         nx = test_dataset['calibration_config']['calibration_pattern']['dimension']['x']
@@ -199,22 +200,27 @@ if __name__ == "__main__":
         corners_t = cv2.cornerSubPix(gray_t, corners_t, (3, 3), (-1, -1), criteria)
 
         # Compute camera pose w.r.t the pattern
-        objp = np.zeros((nx * ny, 3), np.float32)
-        objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
-        ret, rvecs, tvecs = cv2.solvePnP(objp[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
+        objp = np.zeros((nx * ny, 4), np.float)
+        objp[:,:2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+        objp[:, 3] = 1
+        ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3,:].T[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
 
         # Get homography matrix
         if not ret:
             print("ERROR: Pattern wasn't found on collection " + str(collection_key))
             continue
         else:
-            H = computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t)
+            H, T = computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t)
 
         # Project corners of source image into target image
-        corners_t_proj = np.dot(H, undistortCorners(corners_s, K_s, D_s))
-        for i in range(0, corners_t_proj.shape[1]):
-            corners_t_proj[0, i] = corners_t_proj[0, i] / corners_t_proj[2, i]
-            corners_t_proj[1, i] = corners_t_proj[1, i] / corners_t_proj[2, i]
+        if not use_pattern_object:
+            corners_t_proj = np.dot(H, undistortCorners(corners_s, K_s, D_s))
+            for i in range(0, corners_t_proj.shape[1]):
+                corners_t_proj[0, i] = corners_t_proj[0, i] / corners_t_proj[2, i]
+                corners_t_proj[1, i] = corners_t_proj[1, i] / corners_t_proj[2, i]
+        else:
+            corners_t_proj = np.dot(T, objp.T)
+            corners_t_proj, _, _ = opt_utilities.projectToCamera(K_t, D_t, 0, 0, corners_t_proj.T[idxs_s].T)
 
         # Show projection
         if show_images == True:
@@ -239,8 +245,10 @@ if __name__ == "__main__":
                 opt_utilities.drawCross2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
             cv2.imshow('Reprojection error', image_t)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            key = cv2.waitKey(0)
+            if key == ord('c') or key == ord('q'):
+                show_images = False
+                cv2.destroyAllWindows()
 
         # Compute reprojection error
         delta_pts = []
@@ -249,8 +257,13 @@ if __name__ == "__main__":
                 array_idx_t = idxs_t.index(idx_t)
                 array_idx_s = idxs_s.index(idx_t)
 
-                diff = corners_t_proj[0:2, array_idx_s] - undistortCorners(corners_t, K_t, D_t)[0:2, array_idx_t]
+                if not use_pattern_object:
+                    diff = corners_t_proj[0:2, array_idx_s] - undistortCorners(corners_t, K_t, D_t)[0:2, array_idx_t]
+                else:
+                    diff = corners_t_proj[0:2, array_idx_s] - corners_t.T[0:2, array_idx_t]
+
                 delta_pts.append(diff)
+                delta_total.append(diff)
 
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
@@ -259,5 +272,14 @@ if __name__ == "__main__":
         stdev = np.std(delta_pts, axis=0)
 
         # Print error metrics
-        print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],
-                                                                   stdev[1]))
+        print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0], stdev[1]))
+
+    total_pts = len(delta_total)
+    delta_total = np.array(delta_total, np.float)
+    avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
+    avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
+    stdev = np.std(delta_total, axis=0)
+
+    print('-------------------------------------------------------------------------------------------------------------')
+    print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', avg_error_x, avg_error_y, stdev[0], stdev[1]))
+    print('-------------------------------------------------------------------------------------------------------------')
