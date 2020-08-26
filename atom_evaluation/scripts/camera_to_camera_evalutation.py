@@ -163,7 +163,8 @@ if __name__ == "__main__":
     # --- Evaluation loop
     # ---------------------------------------
     print(Fore.GREEN + '\nStarting evalutation...')
-    print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images\n')
+    print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images')
+    print(Fore.GREEN + '                                      - to stop visualization press [c] or [q]\n')
     print(Fore.WHITE)
     print('-------------------------------------------------------------------------------------------------------------')
     print('{:^5s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation', 'Y Standard Deviation'))
