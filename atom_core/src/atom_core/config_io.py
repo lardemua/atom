@@ -28,8 +28,7 @@ def execute(cmd, blocking=True, verbose=True):
         @return
     """
     if verbose:
-        print
-        "Executing command: " + cmd
+        print("Executing command: " + cmd)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if blocking:  # if blocking is True:
         for line in p.stdout.readlines():

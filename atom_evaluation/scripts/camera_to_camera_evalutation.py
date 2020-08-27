@@ -205,6 +205,7 @@ if __name__ == "__main__":
         gray_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2GRAY)
 
         # Refine corners estimation
+        # TODO Andre, should you really refine? because you should use what the calibration used no? Not sure ...
         corners_s = np.array(corners_s, dtype=np.float32)
         corners_t = np.array(corners_t, dtype=np.float32)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
