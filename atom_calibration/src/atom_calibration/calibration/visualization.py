@@ -291,12 +291,16 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -----------------------------------------------------------------------------------------------------
     # Check whether the robot is static, in the sense that all of its joints are fixed. If so, for efficiency purposes,
     # only one robot mesh (from the selected collection) is published.
-    all_joints_fixed = True
-    for joint in xml_robot.joints:
-        if not joint.type == 'fixed':
-            print('Robot has at least joint ' + joint.name + ' non fixed. Will render all collections')
-            all_joints_fixed = False
-            break
+    if args['all_joints_fixed']:  # assume the robot is static
+        all_joints_fixed = True
+        print('Robot is assumed to have all joints fixed.')
+    else:  # run automatic detection
+        all_joints_fixed = True
+        for joint in xml_robot.joints:
+            if not joint.type == 'fixed':
+                print('Robot has at least joint ' + joint.name + ' non fixed. Will render all collections')
+                all_joints_fixed = False
+                break
 
     markers = MarkerArray()
     if all_joints_fixed:  # render a single robot mesh
@@ -412,6 +416,21 @@ def visualizationFunction(models):
             parent = 'c' + collection_key + '_' + transform_key.split('-')[0]
             child = 'c' + collection_key + '_' + transform_key.split('-')[1]
             graphics['ros']['tf_broadcaster'].sendTransform(transform['trans'], transform['quat'], now, child, parent)
+
+        # TODO Andre, remove this When you are finished. Just a hack for being able to visualize the wheels
+        parent = 'c' + collection_key + '_' + 'base_link'
+        child = 'c' + collection_key + '_' + 'front_left_wheel_link'
+        graphics['ros']['tf_broadcaster'].sendTransform([0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+
+        child = 'c' + collection_key + '_' + 'front_right_wheel_link'
+        graphics['ros']['tf_broadcaster'].sendTransform([0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+
+        child = 'c' + collection_key + '_' + 'rear_left_wheel_link'
+        graphics['ros']['tf_broadcaster'].sendTransform([-0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+
+        child = 'c' + collection_key + '_' + 'rear_right_wheel_link'
+        graphics['ros']['tf_broadcaster'].sendTransform([-0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+        # Remove until this point
 
     # Update markers stamp, so that rviz uses newer transforms to compute their poses.
     for marker in graphics['ros']['robot_mesh_markers'].markers:

@@ -67,6 +67,10 @@ def main():
                     action='store_true', default=False)
     ap.add_argument("-sr", "--sample_residuals", help="Samples residuals", type=float, default=1)
     ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
+    ap.add_argument("-ajf", "--all_joints_fixed",
+                    help="Assume all joints are fixed and because of that draw a single robot mesh. Overrides "
+                         "automatic detection of static robot.",
+                    action='store_true', default=False)
     ap.add_argument("-uic", "--use_incomplete_collections",
                     help="Remove any collection which does not have a detection for all sensors.",
                     action='store_true', default=False)
