@@ -166,11 +166,14 @@ if __name__ == "__main__":
     print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images')
     print(Fore.GREEN + '                                      - to stop visualization press [c] or [q]\n')
     print(Fore.WHITE)
-    print('-------------------------------------------------------------------------------------------------------------')
-    print('{:^5s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation', 'Y Standard Deviation'))
-    print('-------------------------------------------------------------------------------------------------------------')
+    print('----------------------------------------------------------------')
+    print('{:^5s}{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}'.format(
+        '#', 'X err', 'Y err', 'X std', 'Y std', 'T err', 'R err'))
+    print('----------------------------------------------------------------')
 
     delta_total = []
+    terr = []
+    rerr = []
 
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
@@ -216,7 +219,38 @@ if __name__ == "__main__":
         objp = np.zeros((nx * ny, 4), np.float)
         objp[:,:2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
         objp[:, 3] = 1
+
+        #== Compute Translation and Rotation errors
+        selected_collection_key = train_dataset['collections'].keys()[0]
+        common_frame = train_dataset['calibration_config']['world_link']
+        target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
+        source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
+
+        ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3,:].T[idxs_t], np.array(corners_t, dtype=np.float32), K_t, D_t)
+        pattern_pose_target = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+
+        bTp = atom_core.atom.getTransform(common_frame, target_frame,
+                                          train_dataset['collections'][selected_collection_key]['transforms'])
+
+        pattern_pose_target = np.dot(bTp, pattern_pose_target)
+
+        # NOTE(eurico): rvecs and tvecs are used ahead to compute the homography
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3,:].T[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
+        pattern_pose_source = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+
+        bTp = atom_core.atom.getTransform(common_frame, source_frame,
+                                          train_dataset['collections'][selected_collection_key]['transforms'])
+
+        pattern_pose_source = np.dot(bTp, pattern_pose_source)
+
+        delta = np.dot(np.linalg.inv(pattern_pose_source), pattern_pose_target)
+
+        deltaT = delta[0:3,3]
+        deltaR = opt_utilities.matrixToRodrigues(delta[0:3,0:3])
+
+        terr.append(deltaT * deltaT)
+        rerr.append(deltaR * deltaR)
+        #==
 
         # Get homography matrix
         if not ret:
@@ -257,7 +291,9 @@ if __name__ == "__main__":
         stdev = np.std(delta_pts, axis=0)
 
         # Print error metrics
-        print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0], stdev[1]))
+        print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
+            collection_key, avg_error_x, avg_error_y, stdev[0], stdev[1],
+            np.linalg.norm(deltaT), np.linalg.norm(deltaR)))
 
         # Show projection
         if show_images == True:
@@ -298,6 +334,9 @@ if __name__ == "__main__":
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
 
-    print('-------------------------------------------------------------------------------------------------------------')
-    print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', avg_error_x, avg_error_y, stdev[0], stdev[1]))
-    print('-------------------------------------------------------------------------------------------------------------')
+    print('----------------------------------------------------------------')
+    print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
+        'All', avg_error_x, avg_error_y, stdev[0], stdev[1],
+        np.mean(np.sqrt(np.sum(terr,1))) * 1000,
+        np.mean(np.sqrt(np.sum(rerr,1))) * 180.0 / np.pi))
+    print('----------------------------------------------------------------')
