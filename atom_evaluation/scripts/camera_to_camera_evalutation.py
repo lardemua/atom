@@ -293,7 +293,7 @@ if __name__ == "__main__":
         # Print error metrics
         print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
             collection_key, avg_error_x, avg_error_y, stdev[0], stdev[1],
-            np.linalg.norm(deltaT), np.linalg.norm(deltaR)))
+            np.linalg.norm(deltaT) * 1000, np.linalg.norm(deltaR) * 180.0 / np.pi))
 
         # Show projection
         if show_images == True:
