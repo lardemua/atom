@@ -119,40 +119,40 @@ def cvStereoCalibrate(objp, images_right, images_left):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument("-train_json", "--train_json_file", help="Json file containing train input dataset.", type=str,
+    ap.add_argument("-json", "--json_file", help="Json file containing train input dataset.", type=str,
                     required=True)
-    ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-rc", "--right_camera", help="Right camera sensor name.", type=str, required=True)
+    ap.add_argument("-lc", "--left_camera", help="Left camera sensor name.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     # Save args
     args = vars(ap.parse_args())
-    train_json_file = args['train_json_file']
-    source_sensor = args['source_sensor']
-    target_sensor = args['target_sensor']
+    json_file = args['json_file']
+    left_camera = args['left_camera']
+    right_camera = args['right_camera']
     show_images = args['show_images']
 
     # Read json file
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
+    f = open(json_file, 'r')
+    dataset = json.load(f)
 
     # Pattern configs
-    nx = train_dataset['calibration_config']['calibration_pattern']['dimension']['x']
-    ny = train_dataset['calibration_config']['calibration_pattern']['dimension']['y']
-    square = train_dataset['calibration_config']['calibration_pattern']['size']
-    inner_square = train_dataset['calibration_config']['calibration_pattern']['inner_size']
+    nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
+    ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
+    square = dataset['calibration_config']['calibration_pattern']['size']
+    inner_square = dataset['calibration_config']['calibration_pattern']['inner_size']
     objp = np.zeros((nx * ny, 3), np.float32)
     objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
-    paths_s = []
-    paths_t = []
-    od = OrderedDict(sorted(train_dataset['collections'].items(), key=lambda t: int(t[0])))
+    paths_r = []
+    paths_l = []
+    od = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         # Read image data
-        path_s = os.path.dirname(train_json_file) + '/' + collection['data'][source_sensor]['data_file']
-        path_t = os.path.dirname(train_json_file) + '/' + collection['data'][target_sensor]['data_file']
+        path_r = os.path.dirname(json_file) + '/' + collection['data'][right_camera]['data_file']
+        path_l = os.path.dirname(json_file) + '/' + collection['data'][left_camera]['data_file']
 
-        paths_s.append(path_s)
-        paths_t.append(path_t)
+        paths_r.append(path_r)
+        paths_l.append(path_l)
 
-    cvStereoCalibrate(objp, paths_s, paths_t)
+    cvStereoCalibrate(objp, paths_r, paths_l)
