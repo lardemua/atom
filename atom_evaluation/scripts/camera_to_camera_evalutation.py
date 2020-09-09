@@ -148,7 +148,7 @@ if __name__ == "__main__":
     # --- Get intrinsic data for both sensors
     # ---------------------------------------
     # Source sensor
-    K_s = np.zeros((3, 3), np.float32);
+    K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
     K_s[0, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][0:3]
     K_s[1, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][3:6]
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     D_s[:, 0] = train_dataset['sensors'][source_sensor]['camera_info']['D'][0:5]
 
     # Target sensor
-    K_t = np.zeros((3, 3), np.float32);
+    K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
     K_t[0, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][0:3]
     K_t[1, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][3:6]
@@ -352,6 +352,6 @@ if __name__ == "__main__":
     print('---------------------------------------------------------------------------')
     print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
         'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1],
-        np.mean(np.sqrt(np.sum(terr, 1))) * 1000,
-        np.mean(np.sqrt(np.sum(rerr, 1))) * 180.0 / np.pi))
+        np.mean(np.sqrt(np.sum(terr, 1))), #* 1000,
+        np.mean(np.sqrt(np.sum(rerr, 1))))) #* 180.0 / np.pi))
     print('---------------------------------------------------------------------------')

@@ -19,6 +19,7 @@ import OptimizationUtils.utilities as opt_utilities
 from scipy.spatial import distance
 from copy import deepcopy
 from colorama import Style, Fore
+from collections import OrderedDict
 
 
 # -------------------------------------------------------------------------------
@@ -159,19 +160,22 @@ if __name__ == "__main__":
     print(Fore.BLUE + '\nStarting evalutation...')
     print(Fore.WHITE)
     print(
-        '---------------------------------------------------------------------------------------------------------------------------------')
-    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation',
-                                                       'Y Standard Deviation'))
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'X Error', 'Y Error', 'X Standard Deviation',
+                                                              'Y Standard Deviation'))
     print(
-        '---------------------------------------------------------------------------------------------------------------------------------')
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
 
     # Declare output dict to save the evaluation data if desired
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
+    delta_total = []
+
     from_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
     to_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
-    for collection_key, collection in test_dataset['collections'].items():
+    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
@@ -190,20 +194,23 @@ if __name__ == "__main__":
         else:
             limits_on_image = annotateLimits(image)
 
+        # Clear image annotations
+        image = cv2.imread(filename)
+
         output_dict['ground_truth_pts'][collection_key] = {}
         for i, pts in limits_on_image.items():
             pts = np.array(pts)
-            if (pts.size == 0):
+            if pts.size == 0:
                 continue
 
             x = pts[:, 0]
             y = pts[:, 1]
             coefficients = np.polyfit(x, y, 3)
             poly = np.poly1d(coefficients)
-            new_x = np.linspace(x[0], x[-1], 5000)
+            new_x = np.linspace(np.min(x), np.max(x), 5000)
             new_y = poly(new_x)
 
-            if show_images == True:
+            if show_images:
                 for idx in range(0, len(new_x)):
                     image = cv2.circle(image, (int(new_x[idx]), int(new_y[idx])), 3, (0, 0, 255), -1)
 
@@ -220,6 +227,11 @@ if __name__ == "__main__":
             target_pt = pts_in_image[:, idx]
             target_pt = np.reshape(target_pt[0:2], (2, 1))
             min_dist = 1e6
+
+            # Don't consider point that are re-projected outside of the image
+            if target_pt[0] > image.shape[1] or target_pt[0] < 0 or target_pt[1] > image.shape[0] or target_pt[1] < 0:
+                continue
+
             for i, pts in output_dict['ground_truth_pts'][collection_key].items():
                 dist = np.min(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
 
@@ -228,7 +240,9 @@ if __name__ == "__main__":
                     arg = np.argmin(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
                     closest_pt = pts[arg]
 
-            delta_pts.append((closest_pt - target_pt.transpose())[0])
+            diff = (closest_pt - target_pt.transpose())[0]
+            delta_pts.append(diff)
+            delta_total.append(diff)
 
             if show_images is True:
                 image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
@@ -244,8 +258,9 @@ if __name__ == "__main__":
         stdev = np.std(delta_pts, axis=0)
 
         # Print error metrics
-        print('{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0],
-                                                                   stdev[1]))
+        print(
+            '{:^25s}{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, '-', avg_error_x, avg_error_y,
+                                                                        stdev[0], stdev[1]))
 
         # ---------------------------------------
         # --- Drawing ...
@@ -256,6 +271,20 @@ if __name__ == "__main__":
 
             cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
+
+    total_pts = len(delta_total)
+    delta_total = np.array(delta_total, np.float)
+    avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
+    avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
+    stdev = np.std(delta_total, axis=0)
+    rms = np.sqrt((delta_total ** 2).mean())
+
+    print(
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print('{:^25}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(
+        'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1]))
+    print(
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
 
     # Save evaluation data
     if use_annotation is True:
