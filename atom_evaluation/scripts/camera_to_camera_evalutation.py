@@ -24,6 +24,7 @@ from matplotlib import cm
 
 from collections import OrderedDict
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -79,10 +80,11 @@ def undistortCorners(corners, K, D):
     fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
 
     undistorted_corners = np.ones((3, corners.shape[0]), np.float32)
-    undistorted_corners[0, :] = points[:,0,0] * fx + cx
-    undistorted_corners[1, :] = points[:,0,1] * fy + cy
+    undistorted_corners[0, :] = points[:, 0, 0] * fx + cx
+    undistorted_corners[1, :] = points[:, 0, 1] * fy + cy
 
     return undistorted_corners
+
 
 def distortCorners(corners, K, D):
     # from https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
@@ -106,6 +108,7 @@ def distortCorners(corners, K, D):
 
     return distorted_corners
 
+
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
@@ -119,7 +122,8 @@ if __name__ == "__main__":
     ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
-    ap.add_argument("-po", "--pattern_object", help="Use pattern object projection instead of Homography.", action='store_true', default=False)
+    ap.add_argument("-po", "--pattern_object", help="Use pattern object projection instead of Homography.",
+                    action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
@@ -144,7 +148,7 @@ if __name__ == "__main__":
     # --- Get intrinsic data for both sensors
     # ---------------------------------------
     # Source sensor
-    K_s = np.zeros((3, 3), np.float32);
+    K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
     K_s[0, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][0:3]
     K_s[1, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][3:6]
@@ -152,7 +156,7 @@ if __name__ == "__main__":
     D_s[:, 0] = train_dataset['sensors'][source_sensor]['camera_info']['D'][0:5]
 
     # Target sensor
-    K_t = np.zeros((3, 3), np.float32);
+    K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
     K_t[0, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][0:3]
     K_t[1, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][3:6]
@@ -166,11 +170,25 @@ if __name__ == "__main__":
     print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images')
     print(Fore.GREEN + '                                      - to stop visualization press [c] or [q]\n')
     print(Fore.WHITE)
-    print('-------------------------------------------------------------------------------------------------------------')
-    print('{:^5s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'X Error', 'Y Error', 'X Standard Deviation', 'Y Standard Deviation'))
-    print('-------------------------------------------------------------------------------------------------------------')
+    print('---------------------------------------------------------------------------')
+    print('{:^5s}{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}{:^10s}'.format(
+        '#', 'RMS', 'X err', 'Y err', 'X std', 'Y std', 'T err', 'R err'))
+    print('---------------------------------------------------------------------------')
 
     delta_total = []
+    terr = []
+    rerr = []
+
+    # Deleting collections where the pattern is not found by all sensors:
+    for collection_key, collection in test_dataset['collections'].items():
+        for sensor_key, sensor in test_dataset['sensors'].items():
+            if not collection['labels'][sensor_key]['detected'] and (
+                    sensor_key == source_sensor or sensor_key == target_sensor):
+                print(
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+                del test_dataset['collections'][collection_key]
+                break
 
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
@@ -214,9 +232,40 @@ if __name__ == "__main__":
 
         # Compute camera pose w.r.t the pattern
         objp = np.zeros((nx * ny, 4), np.float)
-        objp[:,:2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+        objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
         objp[:, 3] = 1
-        ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3,:].T[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
+
+        # == Compute Translation and Rotation errors
+        selected_collection_key = train_dataset['collections'].keys()[0]
+        common_frame = train_dataset['calibration_config']['world_link']
+        target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
+        source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
+
+        ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_t], np.array(corners_t, dtype=np.float32), K_t, D_t)
+        pattern_pose_target = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+
+        bTp = atom_core.atom.getTransform(common_frame, target_frame,
+                                          train_dataset['collections'][selected_collection_key]['transforms'])
+
+        pattern_pose_target = np.dot(bTp, pattern_pose_target)
+
+        # NOTE(eurico): rvecs and tvecs are used ahead to compute the homography
+        ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
+        pattern_pose_source = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+
+        bTp = atom_core.atom.getTransform(common_frame, source_frame,
+                                          train_dataset['collections'][selected_collection_key]['transforms'])
+
+        pattern_pose_source = np.dot(bTp, pattern_pose_source)
+
+        delta = np.dot(np.linalg.inv(pattern_pose_source), pattern_pose_target)
+
+        deltaT = delta[0:3, 3]
+        deltaR = opt_utilities.matrixToRodrigues(delta[0:3, 0:3])
+
+        terr.append(deltaT * deltaT)
+        rerr.append(deltaR * deltaR)
+        # ==
 
         # Get homography matrix
         if not ret:
@@ -257,7 +306,9 @@ if __name__ == "__main__":
         stdev = np.std(delta_pts, axis=0)
 
         # Print error metrics
-        print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, avg_error_x, avg_error_y, stdev[0], stdev[1]))
+        print('{:^5s}{:^10s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
+            collection_key, '-', avg_error_x, avg_error_y, stdev[0], stdev[1],
+            np.linalg.norm(deltaT) * 1000, np.linalg.norm(deltaR) * 180.0 / np.pi))
 
         # Show projection
         if show_images == True:
@@ -291,13 +342,16 @@ if __name__ == "__main__":
                 show_images = False
                 cv2.destroyAllWindows()
 
-
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float)
     avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
+    rms = np.sqrt((delta_total ** 2).mean())
 
-    print('-------------------------------------------------------------------------------------------------------------')
-    print('{:^5s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', avg_error_x, avg_error_y, stdev[0], stdev[1]))
-    print('-------------------------------------------------------------------------------------------------------------')
+    print('---------------------------------------------------------------------------')
+    print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
+        'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1],
+        np.mean(np.sqrt(np.sum(terr, 1))), #* 1000,
+        np.mean(np.sqrt(np.sum(rerr, 1))))) #* 180.0 / np.pi))
+    print('---------------------------------------------------------------------------')
