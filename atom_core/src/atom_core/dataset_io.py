@@ -554,6 +554,7 @@ def filterSensorsFromDataset(dataset, args):
 
     return dataset
 
+
 def filterCollectionsFromDataset(dataset, args):
     """
     Filters some collections from the dataset, using a couple of arguments in arg
@@ -568,7 +569,7 @@ def filterCollectionsFromDataset(dataset, args):
             if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
                 deleted.append(collection_key)
                 del dataset['collections'][collection_key]
-        print("Deleted collections: " + str(deleted))
+        print('Deleted collections: ' + str(deleted) + ' because of the -csf flag.')
 
     if not args['use_incomplete_collections']:
         # Deleting collections where the pattern is not found by all sensors:
@@ -577,7 +578,7 @@ def filterCollectionsFromDataset(dataset, args):
                 if not collection['labels'][sensor_key]['detected']:
                     print(
                             Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                            sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+                            sensor_key + ' (incomplete collection).' + Style.RESET_ALL)
                     del dataset['collections'][collection_key]
                     break
 
@@ -594,8 +595,33 @@ def filterCollectionsFromDataset(dataset, args):
                                 collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
+    # It may occur that some collections do not have any detection in a camera sensor (because all detection were
+    # partial and have been removed, or just because no detection existed). Since we need at lease one camera sensor
+    # detection of the pattern in a collection in order initialize the parameters (check calibrate line 133),
+    # we will remove collections which do not have at least one detection by a camera.
+    flag_have_cameras = False  # do this only if we have at least one camera in the sensor list.
+    for sensor_key, sensor in dataset['sensors'].items():
+        if sensor['msg_type'] == 'Image':
+            flag_have_cameras = True
+            break
+
+    if flag_have_cameras:
+        for collection_key, collection in dataset['collections'].items():
+            flag_have_at_least_one_camera_detection = False
+            for sensor_key, sensor in dataset['sensors'].items():
+                if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
+                    flag_have_at_least_one_camera_detection = True
+
+            if not flag_have_at_least_one_camera_detection:  # delete collection without detection by cameras.
+                print(Fore.RED + "Removing collection " + collection_key + Style.RESET_ALL +
+                      ': at least one detection by a camera should be present.' )
+                del dataset['collections'][collection_key]
+
     if not dataset['collections'].keys():
         raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
                          'dataset and your collection selection function.')
+
+    print('After filtering, will use ' + str(len(dataset['collections'].keys())) + ' collections: ' + str(
+        dataset['collections'].keys()))
 
     return dataset
