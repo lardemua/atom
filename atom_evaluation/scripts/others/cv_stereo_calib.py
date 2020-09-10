@@ -14,6 +14,7 @@ import argparse
 import json
 import os
 
+from colorama import Style, Fore
 from collections import OrderedDict
 
 
@@ -37,35 +38,33 @@ def cvStereoCalibrate(objp, images_right, images_left):
         gray_r = cv2.cvtColor(img_r, cv2.COLOR_BGR2GRAY)
 
         # Find the chess board corners
-        params = cv2.aruco.DetectorParameters_create()
-        dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
-        board = cv2.aruco.CharucoBoard_create(nx + 1, ny + 1, square, inner_square, dictionary)
+        n_points = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
+                   int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+        image_points_r = np.ones((n_points, 2), np.float32)
+        image_points_l = np.ones((n_points, 2), np.float32)
 
-        corners_l, ids_l, rejected_l = cv2.aruco.detectMarkers(gray_l, dictionary, parameters=params)
-        corners_r, ids_r, rejected_r = cv2.aruco.detectMarkers(gray_r, dictionary, parameters=params)
+        for idx, point in enumerate(dataset['collections'][collection_key]['labels'][right_camera]['idxs']):
+            image_points_r[idx, 0] = point['x']
+            image_points_r[idx, 1] = point['y']
 
-        if len(corners_l) == 0 or len(corners_r) == 0:
-            continue
+        for idx, point in enumerate(dataset['collections'][collection_key]['labels'][left_camera]['idxs']):
+            image_points_l[idx, 0] = point['x']
+            image_points_l[idx, 1] = point['y']
 
-        ret_l, ccorners_l, cids_l = cv2.aruco.interpolateCornersCharuco(corners_l, ids_l, gray_l, board)
-        ret_r, ccorners_r, cids_r = cv2.aruco.interpolateCornersCharuco(corners_r, ids_r, gray_r, board)
-
-        imgpoints_l.append(ccorners_l)
-        imgpoints_r.append(ccorners_r)
-        allids_l.append(cids_l)
-        allids_r.append(cids_r)
+        imgpoints_l.append(image_points_l)
+        imgpoints_r.append(image_points_r)
         objpoints.append(objp)
 
         # Show detections if desired
         if show_images:
-            for point in ccorners_l:
+            for point in image_points_l:
                 cv2.drawMarker(img_l, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
                 cv2.circle(img_l, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
 
             cv2.imshow(images_left[i], img_l)
             cv2.waitKey(500)
 
-            for point in ccorners_r:
+            for point in image_points_r:
                 cv2.drawMarker(img_r, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
                 cv2.circle(img_r, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
 
@@ -80,10 +79,8 @@ def cvStereoCalibrate(objp, images_right, images_left):
     imgpoints_r = np.array(imgpoints_r)
 
     print ('\n---------------------\n> Performing intrinsic calibration for each camera ...')
-    ret_l, K_l, D_l, rvecs_l, tvecs_l = cv2.aruco.calibrateCameraCharuco(imgpoints_l, allids_l, board, img_shape, None,
-                                                                         None)
-    ret_r, K_r, D_r, rvecs_r, tvecs_r = cv2.aruco.calibrateCameraCharuco(imgpoints_r, allids_r, board, img_shape, None,
-                                                                         None)
+    ret_l, K_l, D_l, rvecs_l, tvecs_l = cv2.calibrateCamera(objpoints, imgpoints_l, img_shape, None, None)
+    ret_r, K_r, D_r, rvecs_r, tvecs_r = cv2.calibrateCamera(objpoints, imgpoints_r, img_shape, None, None)
     print ('>\n---------------------\n Done!\n Starting stereo calibration ...')
 
     # Extrinsic stereo calibration
@@ -144,10 +141,25 @@ if __name__ == '__main__':
     objp = np.zeros((nx * ny, 3), np.float32)
     objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
+    # Remove partial detections (OpenCV does not support them)
+    number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
+                        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
+                if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
+                    print(
+                            Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                            collection_key + ', sensor ' + sensor_key)
+                    collection['labels'][sensor_key]['detected'] = False
+
     paths_r = []
     paths_l = []
     od = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
+        if collection['labels'][right_camera]['detected'] == False \
+                or collection['labels'][left_camera]['detected'] == False:
+            continue
         # Read image data
         path_r = os.path.dirname(json_file) + '/' + collection['data'][right_camera]['data_file']
         path_l = os.path.dirname(json_file) + '/' + collection['data'][left_camera]['data_file']
