@@ -131,8 +131,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
         if dataset['collections'][collection_key][data_type][sensor_key].has_key(
-                data_type):  # Delete data field from dictionary
-            del dataset['collections'][collection_key][data_type][sensor_key][data_type]
+                'data'):  # Delete data field from dictionary
+            del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
     elif create_data_file and sensor['msg_type'] == 'PointCloud2':  # save point cloud
         # Save file if it does not exist
@@ -148,8 +148,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
         if dataset['collections'][collection_key][data_type][sensor_key].has_key(
-                data_type):  # Delete data field from dictionary
-            del dataset['collections'][collection_key][data_type][sensor_key][data_type]
+                'data'):  # Delete data field from dictionary
+            del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
 
 def getDictionaryFromCvImage(cv_image):
