@@ -57,6 +57,7 @@ class DataCollectorAndLabeler:
         self.menu_handler = menu_handler
         self.data_stamp = 0
         self.collections = {}
+        self.additional_data = {}
         self.bridge = CvBridge()
 
         self.config = loadConfig(args['calibration_file'])
@@ -120,6 +121,27 @@ class DataCollectorAndLabeler:
 
             print('Setup for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
+
+        # Additional data loop
+        for description, value in self.config['additional_data'].items():
+            data_dict = {'_name': description, 'parent': value['link'],
+                         'calibration_parent': value['parent_link'], 'calibration_child': value['child_link']}
+
+            print("Waiting for message " + value['topic_name'] + ' ...')
+            msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
+            print('... received!')
+            connection_header = msg._connection_header['type'].split('/')
+            msg_type = connection_header[1]
+            print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
+            data_dict['topic'] = value['topic_name']
+            data_dict['msg_type'] = msg_type
+
+            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
+                                                    args['marker_size'], self.config['calibration_pattern'],
+                                                    label_data=False)
+
+            self.sensor_labelers[description] = sensor_labeler
+            self.additional_data[description] = data_dict
 
         # print('sensor_labelers:')
         # print(self.sensor_labelers)
@@ -194,6 +216,7 @@ class DataCollectorAndLabeler:
 
         all_sensor_data_dict = {}
         all_sensor_labels_dict = {}
+        all_additional_data_dict = {}
 
         for sensor_key, sensor in self.sensors.iteritems():
             print('collect sensor: ' + sensor_key)
@@ -244,12 +267,18 @@ class DataCollectorAndLabeler:
             else:
                 raise ValueError('Unknown message type.')
 
-        collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': transforms}
+        for description, sensor in self.additional_data.iteritems():
+            msg = copy.deepcopy(self.sensor_labelers[description].msg)
+            all_additional_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
+
+        collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': transforms,
+                           'additional_data': all_additional_data_dict}
         self.collections[self.data_stamp] = collection_dict
         self.data_stamp += 1
 
         # Save to json file
-        D = {'sensors': self.sensors, 'collections': self.collections, 'calibration_config': self.config}
+        D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,
+             'calibration_config': self.config}
         output_file = self.output_folder + '/data_collected.json'
         atom_core.dataset_io.saveResultsJSON(output_file, D)
 

@@ -95,50 +95,61 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
     # Process the dataset to remove data from the data fields and, if needed, write the files.
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+            createDataFile(dataset_in, collection_key, sensor, sensor_key, output_folder)
 
-            if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
-                continue  # only process images or point clouds
-
-            # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
-            if collection['data'][sensor_key].has_key('data_file'):
-                filename = output_folder + '/' + collection['data'][sensor_key]['data_file']
-                if os.path.isfile(filename):
-                    create_data_file = False
-                else:
-                    create_data_file = True
-            else:
-                create_data_file = True
-
-            if create_data_file and sensor['msg_type'] == 'Image':  # save image.
-                # Save image to disk if it does not exist
-                filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
-                if not os.path.isfile(filename):  # Write pointcloud to pcd file
-                    cv_image = getCvImageFromDictionary(collection['data'][sensor_key])
-                    cv2.imwrite(filename, cv_image)
-                    print('Saved file ' + filename + '.')
-
-                # Add data_file field, and remove data field
-                filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
-                collection['data'][sensor_key]['data_file'] = filename_relative  # add data_file field
-                if collection['data'][sensor_key].has_key('data'):  # Delete data field from dictionary
-                    del collection['data'][sensor_key]['data']
-
-            elif create_data_file and sensor['msg_type'] == 'PointCloud2':  # save point cloud
-                # Save file if it does not exist
-                filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
-                if not os.path.isfile(filename):  # Write pointcloud to pcd file
-                    # from: dictionary -> ros_message -> PointCloud2() -> pcd file
-                    msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
-                    write_pcd(filename, msg)
-                    print('Saved file ' + filename + '.')
-
-                # Add data_file field, and remove data field
-                filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
-                collection['data'][sensor_key]['data_file'] = filename_relative  # add data_file field
-                if collection['data'][sensor_key].has_key('data'):  # Delete data field from dictionary
-                    del collection['data'][sensor_key]['data']
+        # Do the same for additional data topics ...
+        for description, sensor in dataset['additional_sensor_data'].items():
+            createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
 
     createJSONFile(output_file, dataset)  # write dictionary to json
+
+
+def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):
+    if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
+        return
+
+    # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
+    if dataset['collections'][collection_key][data_type][sensor_key].has_key('data_file'):
+        filename = output_folder + '/' + dataset['collections'][collection_key][data_type][sensor_key]['data_file']
+        if os.path.isfile(filename):
+            create_data_file = False
+        else:
+            create_data_file = True
+    else:
+        create_data_file = True
+
+    if create_data_file and sensor['msg_type'] == 'Image':  # save image.
+        # Save image to disk if it does not exist
+        filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
+        if not os.path.isfile(filename):  # Write pointcloud to pcd file
+            cv_image = getCvImageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
+            cv2.imwrite(filename, cv_image)
+            print('Saved file ' + filename + '.')
+
+        # Add data_file field, and remove data field
+        filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
+        dataset['collections'][collection_key][data_type][sensor_key][
+            'data_file'] = filename_relative  # add data_file field
+        if dataset['collections'][collection_key][data_type][sensor_key].has_key(
+                data_type):  # Delete data field from dictionary
+            del dataset['collections'][collection_key][data_type][sensor_key][data_type]
+
+    elif create_data_file and sensor['msg_type'] == 'PointCloud2':  # save point cloud
+        # Save file if it does not exist
+        filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
+        if not os.path.isfile(filename):  # Write pointcloud to pcd file
+            # from: dictionary -> ros_message -> PointCloud2() -> pcd file
+            msg = getPointCloudMessageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
+            write_pcd(filename, msg)
+            print('Saved file ' + filename + '.')
+
+        # Add data_file field, and remove data field
+        filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
+        dataset['collections'][collection_key][data_type][sensor_key][
+            'data_file'] = filename_relative  # add data_file field
+        if dataset['collections'][collection_key][data_type][sensor_key].has_key(
+                data_type):  # Delete data field from dictionary
+            del dataset['collections'][collection_key][data_type][sensor_key][data_type]
 
 
 def getDictionaryFromCvImage(cv_image):
@@ -614,7 +625,7 @@ def filterCollectionsFromDataset(dataset, args):
 
             if not flag_have_at_least_one_camera_detection:  # delete collection without detection by cameras.
                 print(Fore.RED + "Removing collection " + collection_key + Style.RESET_ALL +
-                      ': at least one detection by a camera should be present.' )
+                      ': at least one detection by a camera should be present.')
                 del dataset['collections'][collection_key]
 
     if not dataset['collections'].keys():
