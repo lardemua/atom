@@ -241,6 +241,9 @@ if __name__ == "__main__":
                     closest_pt = pts[arg]
 
             diff = (closest_pt - target_pt.transpose())[0]
+            # Remove limit points outliers
+            if abs(diff[0]) > 20 or abs(diff[1]) > 20:
+                continue
             delta_pts.append(diff)
             delta_total.append(diff)
 
