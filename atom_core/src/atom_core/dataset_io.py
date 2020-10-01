@@ -12,6 +12,7 @@ import cv2
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 import tf
+import random
 from atom_core.atom import getTransform
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName
@@ -649,6 +650,9 @@ def addNoiseToInitialGuess(dataset, args):
     """
 
     noise_const = args['noisy_initial_guess']
+    noise_dict = {}
+    for sensor_key, sensor in dataset['sensors'].items():
+        noise_dict[sensor_key] = random.uniform(-noise_const, noise_const)
 
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
@@ -662,8 +666,8 @@ def addNoiseToInitialGuess(dataset, args):
             euler_angles = tf.transformations.euler_from_quaternion(quat)
 
             # Add noise to the 6 pose parameters
-            new_angles = euler_angles + np.dot(euler_angles, noise_const)
-            new_translation = translation + np.dot(translation, noise_const)
+            new_angles = euler_angles + np.dot(euler_angles, noise_dict[sensor_key])
+            new_translation = translation + np.dot(translation, noise_dict[sensor_key])
 
             # Replace the original atomic transformations by the new noisy ones
             new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
