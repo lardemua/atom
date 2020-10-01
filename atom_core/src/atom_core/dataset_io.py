@@ -11,6 +11,8 @@ from colorama import Fore, Style
 import cv2
 import rospy
 import sensor_msgs.point_cloud2 as pc2
+import tf
+from atom_core.atom import getTransform
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName
 from cv_bridge import CvBridge
@@ -636,3 +638,34 @@ def filterCollectionsFromDataset(dataset, args):
         dataset['collections'].keys()))
 
     return dataset
+
+
+def addNoiseToInitialGuess(dataset, args):
+    """
+    Adds noise
+    :param dataset:
+    :param args: Makes use of nig, i.e., the amount of noise to add to the initial guess atomic transformations to be
+                 calibrated
+    """
+
+    noise_const = args['noisy_initial_guess']
+
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+            calibration_child = sensor['calibration_child']
+            calibration_parent = sensor['calibration_parent']
+            tf_link = calibration_parent + '-' + calibration_child
+
+            # Get original transformation
+            quat = dataset['collections'][collection_key]['transforms'][tf_link]['quat']
+            translation = dataset['collections'][collection_key]['transforms'][tf_link]['trans']
+            euler_angles = tf.transformations.euler_from_quaternion(quat)
+
+            # Add noise to the 6 pose parameters
+            new_angles = euler_angles + np.dot(euler_angles, noise_const)
+            new_translation = translation + np.dot(translation, noise_const)
+
+            # Replace the original atomic transformations by the new noisy ones
+            new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+            dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = new_quat
+            dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = list(new_translation)
