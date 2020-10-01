@@ -656,6 +656,9 @@ def addNoiseToInitialGuess(dataset, args):
 
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+            if sensor_key == dataset['calibration_config']['anchored_sensor']:
+                continue
+
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
             tf_link = calibration_parent + '-' + calibration_child
@@ -666,8 +669,8 @@ def addNoiseToInitialGuess(dataset, args):
             euler_angles = tf.transformations.euler_from_quaternion(quat)
 
             # Add noise to the 6 pose parameters
-            new_angles = euler_angles + np.dot(euler_angles, noise_dict[sensor_key])
-            new_translation = translation + np.dot(translation, noise_dict[sensor_key])
+            new_angles = euler_angles + np.dot([1, 1, 1], noise_dict[sensor_key])
+            new_translation = translation + np.dot([1, 1, 1], noise_dict[sensor_key])
 
             # Replace the original atomic transformations by the new noisy ones
             new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
