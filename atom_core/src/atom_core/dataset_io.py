@@ -13,7 +13,6 @@ import rospy
 import sensor_msgs.point_cloud2 as pc2
 import tf
 import random
-from atom_core.atom import getTransform
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName
 from cv_bridge import CvBridge

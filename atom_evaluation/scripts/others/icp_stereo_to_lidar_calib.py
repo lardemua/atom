@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Stereo calibration from opencv
+ICP pcl-to-pcl alignment
 """
 
 # -------------------------------------------------------------------------------
@@ -70,6 +70,16 @@ def transformPCL(input_pcl, tf):
     return np.array(transformed_pcl)
 
 
+def removeNan(input_np):
+    output_np = []
+    for idx in range(0, input_np.shape[0]):
+        pt = input_np[idx]
+        if not np.any(np.isnan(pt)):
+            output_np.append(pt)
+
+    return np.array(output_np)
+
+
 if __name__ == "__main__":
     rospy.init_node('icp_aligner', anonymous=True)
 
@@ -112,38 +122,39 @@ if __name__ == "__main__":
     tpcl_base = transformPCL(tpcl, np.linalg.inv(target2base))
     tpcl_base = PointCloud(tpcl_base.astype(np.float32))
     spcl_base = transformPCL(spcl, np.linalg.inv(source2base))
+    spcl_base = removeNan(spcl_base)
     spcl_base = PointCloud(spcl_base.astype(np.float32))
 
-    # Apply icp alignment
-    print ('\n-----\nStarting ICP alignemnt ...\n-----\n')
-    icp = tpcl_base.make_IterativeClosestPoint()
-    converged, transf, estimate, fitness = icp.icp(tpcl_base, spcl_base)
-
-    print('Has converged:' + str(converged) + ', score: ' + str(fitness))
-    print('Result:\n' + str(transf))
-
-    print ('\n-----\nPublishing point clouds. You can visualize them on rviz.\n-----\n')
-    # Declare pcl publishers
-    source_pcl_pub = rospy.Publisher("/source_pcl", PointCloud2, queue_size=1)
-    target_pcl_pub = rospy.Publisher("/target_pcl", PointCloud2, queue_size=1)
-    aligned_pcl_pub = rospy.Publisher("/aligned_pcl", PointCloud2, queue_size=1)
-
-    # Convert point clouds to numpy arrays
-    np_tpcl = np.asarray(tpcl_base)
-    np_spcl = np.asarray(spcl_base)
-    np_aligned = np.asarray(estimate)
-    rate = rospy.Rate(10)
-    while not rospy.is_shutdown():
-        h = std_msgs.msg.Header()
-        h.frame_id = 'velodyne'
-        h.stamp = rospy.Time.now()
-
-        tpcl_cloud = pc2.create_cloud_xyz32(h, np_tpcl)
-        spcl_cloud = pc2.create_cloud_xyz32(h, np_spcl)
-        aligned_cloud = pc2.create_cloud_xyz32(h, np_aligned)
-
-        source_pcl_pub.publish(spcl_cloud)
-        target_pcl_pub.publish(tpcl_cloud)
-        aligned_pcl_pub.publish(aligned_cloud)
-
-        rate.sleep()
+    # # Apply icp alignment
+    # print ('\n-----\nStarting ICP alignemnt ...\n-----\n')
+    # icp = spcl_base.make_IterativeClosestPoint()
+    # converged, transf, estimate, fitness = icp.icp(spcl_base, tpcl_base, max_iter=100)
+    #
+    # print('Has converged:' + str(converged) + ', score: ' + str(fitness))
+    # print('Result:\n' + str(transf))
+    #
+    # print ('\n-----\nPublishing point clouds. You can visualize them on rviz.\n-----\n')
+    # # Declare pcl publishers
+    # source_pcl_pub = rospy.Publisher("/source_pcl", PointCloud2, queue_size=1)
+    # target_pcl_pub = rospy.Publisher("/target_pcl", PointCloud2, queue_size=1)
+    # aligned_pcl_pub = rospy.Publisher("/aligned_pcl", PointCloud2, queue_size=1)
+    #
+    # # Convert point clouds to numpy arrays
+    # np_tpcl = np.asarray(tpcl_base)
+    # np_spcl = np.asarray(spcl_base)
+    # np_aligned = np.asarray(estimate)
+    # rate = rospy.Rate(10)
+    # while not rospy.is_shutdown():
+    #     h = std_msgs.msg.Header()
+    #     h.frame_id = 'velodyne'
+    #     h.stamp = rospy.Time.now()
+    #
+    #     tpcl_cloud = pc2.create_cloud_xyz32(h, np_tpcl)
+    #     spcl_cloud = pc2.create_cloud_xyz32(h, np_spcl)
+    #     aligned_cloud = pc2.create_cloud_xyz32(h, np_aligned)
+    #
+    #     source_pcl_pub.publish(spcl_cloud)
+    #     target_pcl_pub.publish(tpcl_cloud)
+    #     aligned_pcl_pub.publish(aligned_cloud)
+    #
+    #     rate.sleep()
