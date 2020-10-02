@@ -22,10 +22,7 @@ from atom_core.atom import getTransform
 from atom_core.dataset_io import saveResultsJSON
 
 
-def cvStereoCalibrate(objp, images_right, images_left):
-    images_left.sort()
-    images_right.sort()
-
+def cvStereoCalibrate(objp):
     # Arrays to store object points and image points from all the images.
     objpoints = []  # 3d point in real world space
     imgpoints_l = []  # 2d points in image plane.
@@ -123,15 +120,6 @@ if __name__ == '__main__':
     f = open(json_file, 'r')
     dataset = json.load(f)
 
-
-    # Pattern configs
-    nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
-    ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
-    square = dataset['calibration_config']['calibration_pattern']['size']
-    inner_square = dataset['calibration_config']['calibration_pattern']['inner_size']
-    objp = np.zeros((nx * ny, 3), np.float32)
-    objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
-
     # Remove partial detections (OpenCV does not support them)
     number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
                         int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
@@ -142,24 +130,21 @@ if __name__ == '__main__':
                     print(
                             Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
                             collection_key + ', sensor ' + sensor_key)
-                    del(dataset['collections'][collection_key])
+                    del (dataset['collections'][collection_key])
                     break
 
     print ('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 
-    paths_r = []
-    paths_l = []
-    od = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        # Read image data
-        path_r = os.path.dirname(json_file) + '/' + collection['data'][right_camera]['data_file']
-        path_l = os.path.dirname(json_file) + '/' + collection['data'][left_camera]['data_file']
-
-        paths_r.append(path_r)
-        paths_l.append(path_l)
+    # Pattern configs
+    nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
+    ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
+    square = dataset['calibration_config']['calibration_pattern']['size']
+    inner_square = dataset['calibration_config']['calibration_pattern']['inner_size']
+    objp = np.zeros((nx * ny, 3), np.float32)
+    objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
     # Compute OpenCV stereo calibration
-    calib_model = cvStereoCalibrate(objp, paths_r, paths_l)
+    calib_model = cvStereoCalibrate(objp)
     R = calib_model['R']
     t = calib_model['T']
     K_r = calib_model['K_r']
@@ -168,7 +153,7 @@ if __name__ == '__main__':
     D_l = calib_model['D_l']
 
     # Extract homogeneous transformation between cameras
-    calib_tf = np.zeros((4,4), np.float32)
+    calib_tf = np.zeros((4, 4), np.float32)
     calib_tf[0:3, 0:3] = R
     calib_tf[0:3, 3] = t.ravel()
     calib_tf[3, 0:3] = 0
@@ -202,6 +187,5 @@ if __name__ == '__main__':
         dataset['collections'][collection_key]['transforms'][frame]['trans'] = res[0:3, 3]
 
     # Save results to a json file
-    print (quat)
     filename_results_json = os.path.dirname(json_file) + '/cv_calibration.json'
     saveResultsJSON(filename_results_json, dataset)
