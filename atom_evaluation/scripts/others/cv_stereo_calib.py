@@ -159,11 +159,6 @@ if __name__ == '__main__':
     calib_tf[3, 0:3] = 0
     calib_tf[3, 3] = 1
 
-    # Get atomic transformation to edit on json with the obtained sensor to sensor calibration
-    selected_collection_key = dataset['collections'].keys()[0]
-    right_camera_link = dataset['calibration_config']['sensors'][right_camera]['link']
-    left_camera_link = dataset['calibration_config']['sensors'][left_camera]['link']
-
     res = atomicTfFromCalibration(dataset, right_camera, left_camera, calib_tf)
 
     # Re-write atomic transformation to the json file ...

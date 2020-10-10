@@ -241,15 +241,17 @@ if __name__ == "__main__":
                     closest_pt = pts[arg]
 
             diff = (closest_pt - target_pt.transpose())[0]
-            # Remove limit points outliers
-            if abs(diff[0]) > 20 or abs(diff[1]) > 20:
-                continue
+
             delta_pts.append(diff)
             delta_total.append(diff)
 
             if show_images is True:
                 image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
                                  (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
+
+        if len(delta_pts) == 0:
+            print ('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            continue
 
         # ---------------------------------------
         # --- Compute error metrics

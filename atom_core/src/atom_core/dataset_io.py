@@ -100,8 +100,8 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
             createDataFile(dataset_in, collection_key, sensor, sensor_key, output_folder)
 
         # Do the same for additional data topics ...
-        for description, sensor in dataset['additional_sensor_data'].items():
-            createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
+        # for description, sensor in dataset['additional_sensor_data'].items():
+        #     createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
 
     createJSONFile(output_file, dataset)  # write dictionary to json
 
