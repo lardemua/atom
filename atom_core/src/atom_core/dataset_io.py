@@ -488,7 +488,7 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
     if cloud_header is not None:
         # cloud.header = header
         cloud.header = cloud_header
-        print('This is it, header is ' + str(cloud_header))
+        # print('This is it, header is ' + str(cloud_header))
     else:
         cloud.header.frame_id = "/pcd_cloud"
 
