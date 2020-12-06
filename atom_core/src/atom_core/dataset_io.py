@@ -608,7 +608,7 @@ def filterCollectionsFromDataset(dataset, args):
                                 collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
-    # It may occur that some collections do not have any detection in a camera sensor (because all detection were
+    # It may occur that some collections do not have any detection in a camera sensor (because all detections were
     # partial and have been removed, or just because no detection existed). Since we need at lease one camera sensor
     # detection of the pattern in a collection in order initialize the parameters (check calibrate line 133),
     # we will remove collections which do not have at least one detection by a camera.
