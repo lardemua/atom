@@ -12,6 +12,7 @@ import json
 import math
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import atom_core.atom
 import cv2
 import argparse
@@ -124,6 +125,8 @@ if __name__ == "__main__":
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     ap.add_argument("-po", "--pattern_object", help="Use pattern object projection instead of Homography.",
                     action='store_true', default=False)
+    ap.add_argument("-sg", "--save_graphics", help="Save reprojection error graphics.",
+                    action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
@@ -131,6 +134,7 @@ if __name__ == "__main__":
     target_sensor = args['target_sensor']
     show_images = args['show_images']
     use_pattern_object = args['pattern_object']
+    save_graphics = args['save_graphics']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from files
@@ -189,6 +193,9 @@ if __name__ == "__main__":
                         sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
                 del test_dataset['collections'][collection_key]
                 break
+
+    # Reprojection error graphics definitions
+    colors = cm.tab20b(np.linspace(0, 1, len(test_dataset['collections'].items())))
 
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
@@ -299,6 +306,10 @@ if __name__ == "__main__":
                 delta_pts.append(diff)
                 delta_total.append(diff)
 
+                # Compute reprojection error graphics
+                plt.plot(diff[0], diff[1], 'o', label=collection_key, alpha=0.7, color=colors[int(collection_key)])
+
+
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
         avg_error_x = np.sum(np.abs(delta_pts[:, 0])) / total_pts
@@ -348,6 +359,12 @@ if __name__ == "__main__":
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
     rms = np.sqrt((delta_total ** 2).mean())
+
+    if save_graphics:
+        axes = plt.gca()
+        axes.grid(True)
+        plt.tight_layout()
+        plt.savefig('rmse-matrix.pdf')
 
     print('---------------------------------------------------------------------------')
     print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
