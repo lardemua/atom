@@ -390,7 +390,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
 
 def visualizationFunction(models):
-    # Get the data from the models
+    # Get the data from the meshes
     dataset = models['dataset']
     args = models['args']
     collections = models['dataset']['collections']
@@ -436,7 +436,7 @@ def visualizationFunction(models):
     for marker in graphics['ros']['robot_mesh_markers'].markers:
         marker.header.stamp = now
 
-    # Publish the models
+    # Publish the meshes
     graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
     # Not needed now that pattern transforms are added to the collection['transforms']

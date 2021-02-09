@@ -251,7 +251,7 @@ def main():
                          'w': middle_points[idx, 3]})
 
     # ---------------------------------------
-    # --- SETUP OPTIMIZER: Create data models
+    # --- SETUP OPTIMIZER: Create data meshes
     # ---------------------------------------
     opt = OptimizationUtils.Optimizer()
     opt.addDataModel('args', args)
