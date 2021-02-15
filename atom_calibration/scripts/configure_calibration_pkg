@@ -192,6 +192,19 @@ if __name__ == "__main__":
     for joint in description.joints:  # atomic transformations are given by the joints
         gx.add_edge(joint.parent, joint.child, weight=1)
 
+    frames_to_verify = {'world_link': config['world_link'],
+                        'calibration_pattern.pattern_link': config['calibration_pattern']['parent_link']}
+    for sensor_key in config['sensors']: # Check if link, child_link and parent_link exist in the bagfile.
+        for frame in ['child_link', 'parent_link', 'link']:
+            frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
+
+    print('Verifying tf frames given in config file...')
+    for key, frame in frames_to_verify.items():
+            if not  frame in gx:
+                raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
+                                 Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
+                                 Fore.BLUE + config_file + Style.RESET_ALL)
+
     if nx.is_connected(gx):
         print('TF tree is connected.')
     else:
