@@ -241,7 +241,7 @@ if __name__ == "__main__":
     print('Setting up ' + playbag_launch_file + ' ...')
 
     template = env.get_template('playbag.launch')
-    with open(playbag_launch_file, 'w') as f:
+    with open(playbag_launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(playbag_launch_file),
                                     'date': dt_string,
                                     'bag_file': bag_file_rel,
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     print('Setting up ' + launch_file + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
-    with open(launch_file, 'w') as f:
+    with open(launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'package_name': package_name,
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     print('Setting up ' + launch_file + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
-    with open(launch_file, 'w') as f:
+    with open(launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'package_name': package_name,
@@ -291,7 +291,7 @@ if __name__ == "__main__":
     print('Setting up ' + launch_file + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
-    with open(launch_file, 'w') as f:
+    with open(launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'package_name': package_name,

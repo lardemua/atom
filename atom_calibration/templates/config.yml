@@ -33,7 +33,7 @@
 description_file: "package://your_package/urdf/description.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$(BAGS)/data.bag"
+bag_file: "$ROS_BAGS/data.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -58,6 +58,12 @@ sensors:
     #           If you are calibrating an camera, you should use the raw image produced by the
     #           sensors. Aditionally, it the topic is an image it will automatically use the
     #           respective `camera_info` topic.
+    #
+    # If you are using an image compressed topic such as:
+    #   /world_camera/rgb/image_raw/compressed
+    # you should not add the "compressed" part, use only:
+    #   /world_camera/rgb/image_raw
+    #
     # Example:
     hand_camera:
         link: "hand_camera_optical_frame"
@@ -65,7 +71,7 @@ sensors:
         child_link: "hand_camera"
         topic_name: "/hand_camera/image_raw"
 
-    # You can have more than on sensor:
+    # You can have more than one sensor:
     another_camera:
         link: "another_camera_optical_frame"
         parent_link: "end_effector"

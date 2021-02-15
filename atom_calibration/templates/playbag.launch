@@ -51,7 +51,7 @@
 {% if c.use_compressed_topics %}
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Image Topic Decompression -->
-{% for key, value in c.compressed_topics.iteritems() -%}
+{% for key, value in c.compressed_topics.items() -%}
 <node pkg="image_transport" type="republish" name="republish_{{ value['sensor_key'] }}" output="screen" args="compressed in:={{ key }} raw out:={{ key }}"/>
 {% endfor %}
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
