@@ -3,7 +3,7 @@ import re
 import rospkg
 import subprocess
 from colorama import Fore
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 import yaml
 from urdf_parser_py.urdf import URDF
