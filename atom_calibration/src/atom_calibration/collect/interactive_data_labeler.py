@@ -8,7 +8,7 @@ import math
 import random
 import threading
 
-from __builtin__ import enumerate
+# from __builtin__ import enumerate
 from copy import deepcopy
 
 # 3rd-party

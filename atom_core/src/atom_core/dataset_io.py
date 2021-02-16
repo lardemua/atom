@@ -1,5 +1,6 @@
 import copy
 # stdlib
+import functools
 import json
 # 3rd-party
 import numpy as np
@@ -46,9 +47,9 @@ def loadResultsJSON(json_file):
                 continue  # only process images or point clouds
 
             # Check if we really need to load the file.
-            if collection['data'][sensor_key].has_key('data'):
+            if 'data' in collection['data'][sensor_key]:
                 load_file = False
-            elif collection['data'][sensor_key].has_key('data_file'):
+            elif 'data_file' in collection['data'][sensor_key]:
                 filename = dataset_folder + '/' + collection['data'][sensor_key]['data_file']
                 if os.path.isfile(filename):
                     load_file = True
@@ -111,7 +112,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         return
 
     # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
-    if dataset['collections'][collection_key][data_type][sensor_key].has_key('data_file'):
+    if 'data_file' in dataset['collections'][collection_key][data_type][sensor_key]:
         filename = output_folder + '/' + dataset['collections'][collection_key][data_type][sensor_key]['data_file']
         if os.path.isfile(filename):
             create_data_file = False
@@ -132,8 +133,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
-        if dataset['collections'][collection_key][data_type][sensor_key].has_key(
-                'data'):  # Delete data field from dictionary
+        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
     elif create_data_file and sensor['msg_type'] == 'PointCloud2':  # save point cloud
@@ -149,8 +149,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
-        if dataset['collections'][collection_key][data_type][sensor_key].has_key(
-                'data'):  # Delete data field from dictionary
+        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
 
@@ -177,7 +176,7 @@ def getCvImageFromDictionary(dictionary_in, safe=False):
     else:
         d = dictionary_in
 
-    if d.has_key('data_file'):  # Delete data field from dictionary
+    if 'data_file' in d:  # Delete data field from dictionary
         del d['data_file']  # will disrupt the dictionary to ros message
 
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
@@ -196,12 +195,24 @@ def getPointCloudMessageFromDictionary(dictionary_in, safe=False):
     else:
         d = dictionary_in
 
-    if d.has_key('data_file'):  # Delete data field from dictionary
+    if 'data_file' in d:  # Delete data field from dictionary
         del d['data_file']  # will disrupt the dictionary to ros message
 
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/PointCloud2', d)
     return msg
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NpEncoder, self).default(obj)
+
+# json.dumps(data, cls=NpEncoder)
 
 def createJSONFile(output_file, input):
     """
@@ -215,7 +226,9 @@ def createJSONFile(output_file, input):
     print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print >> f, json.dumps(D, indent=2, sort_keys=True)
+    # print >> f, json.dumps(D, indent=2, sort_keys=True)
+    f.write(json.dumps(D, indent=2, sort_keys=True, cls=NpEncoder))
+
     f.close()
     print("Completed.")
 
@@ -297,8 +310,8 @@ def size_type_to_datatype(size, type):
     raise Exception("Unknown size/type pair in .pcd")
 
 
-def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None,
-              mode='binary'):
+# def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None, mode='binary'):
+def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None, mode='ascii'):
     """
     Writes a sensor_msgs::PointCloud2 to a .pcd file.
     :param filename - the pcd file to write
@@ -348,12 +361,12 @@ def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None,
                         break
 
             # _fields = _count.keys()
-            _fields_str = reduce(lambda a, b: a + ' ' + b,
+            _fields_str = functools.reduce(lambda a, b: a + ' ' + b,
                                  map(lambda x: "{%s}" % x,
                                      _fields))
 
             f.write("FIELDS ")
-            f.write(reduce(lambda a, b: a + ' ' + b,
+            f.write(functools.reduce(lambda a, b: a + ' ' + b,
                            _fields))
             f.write("\n")
             f.write("SIZE ")
@@ -416,7 +429,7 @@ def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None,
                         f.write("%f " % p[i])
                     f.write("\n")
 
-    except IOError, e:
+    except IOError as e:
         raise Exception("Can't write to %s: %s" % (filename, e.message))
 
 
@@ -504,7 +517,7 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
 
 def getPCLData(dict, json_file):
     """ Loads pointcloud data either from a json file or from a pcd file."""
-    if not dict.has_key('data'):
+    if not 'data' in dict:
         # Read pointcloud from pcd file
         filename = os.path.dirname(json_file) + '/' + dict['data_file']
         frame_id = dict['header']['frame_id']
@@ -520,7 +533,7 @@ def setPCLData(dict, sensor, collection_key, json_file):
     output_folder = os.path.dirname(json_file)
     filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
 
-    if dict.has_key('data_file') or os.path.exists(filename):
+    if 'data_file' in dict or os.path.exists(filename):
         pass
     else:
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
@@ -534,7 +547,7 @@ def setPCLData(dict, sensor, collection_key, json_file):
         write_pcd(filename, cloud_msg)
 
     # Delete data field from dictionary
-    if dict.has_key('data'):
+    if 'data' in dict:
         del dict['data']
 
     return dict

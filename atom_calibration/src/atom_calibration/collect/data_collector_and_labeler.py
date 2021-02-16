@@ -123,25 +123,26 @@ class DataCollectorAndLabeler:
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
         # Additional data loop
-        for description, value in self.config['additional_data'].items():
-            data_dict = {'_name': description, 'parent': value['link'],
-                         'calibration_parent': value['parent_link'], 'calibration_child': value['child_link']}
+        if 'additional_data' in self.config:
+            for description, value in self.config['additional_data'].items():
+                data_dict = {'_name': description, 'parent': value['link'],
+                             'calibration_parent': value['parent_link'], 'calibration_child': value['child_link']}
 
-            print("Waiting for message " + value['topic_name'] + ' ...')
-            msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
-            print('... received!')
-            connection_header = msg._connection_header['type'].split('/')
-            msg_type = connection_header[1]
-            print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
-            data_dict['topic'] = value['topic_name']
-            data_dict['msg_type'] = msg_type
+                print("Waiting for message " + value['topic_name'] + ' ...')
+                msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
+                print('... received!')
+                connection_header = msg._connection_header['type'].split('/')
+                msg_type = connection_header[1]
+                print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
+                data_dict['topic'] = value['topic_name']
+                data_dict['msg_type'] = msg_type
 
-            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
-                                                    args['marker_size'], self.config['calibration_pattern'],
-                                                    label_data=False)
+                sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
+                                                        args['marker_size'], self.config['calibration_pattern'],
+                                                        label_data=False)
 
-            self.sensor_labelers[description] = sensor_labeler
-            self.additional_data[description] = data_dict
+                self.sensor_labelers[description] = sensor_labeler
+                self.additional_data[description] = data_dict
 
         # print('sensor_labelers:')
         # print(self.sensor_labelers)
@@ -164,18 +165,18 @@ class DataCollectorAndLabeler:
         return transforms_dict
 
     def lockAllLabelers(self):
-        for sensor_name, sensor in self.sensors.iteritems():
+        for sensor_name, sensor in self.sensors.items():
             self.sensor_labelers[sensor_name].lock.acquire()
         print("Locked all labelers")
 
     def unlockAllLabelers(self):
-        for sensor_name, sensor in self.sensors.iteritems():
+        for sensor_name, sensor in self.sensors.items():
             self.sensor_labelers[sensor_name].lock.release()
         print("Unlocked all labelers")
 
     def getLabelersTimeStatistics(self):
         stamps = []  # a list of the several time stamps of the stored messages
-        for sensor_name, sensor in self.sensors.iteritems():
+        for sensor_name, sensor in self.sensors.items():
             stamps.append(copy.deepcopy(self.sensor_labelers[sensor_name].msg.header.stamp))
 
         max_delta = getMaxTimeDelta(stamps)
@@ -218,7 +219,7 @@ class DataCollectorAndLabeler:
         all_sensor_labels_dict = {}
         all_additional_data_dict = {}
 
-        for sensor_key, sensor in self.sensors.iteritems():
+        for sensor_key, sensor in self.sensors.items():
             print('collect sensor: ' + sensor_key)
 
             msg = copy.deepcopy(self.sensor_labelers[sensor_key].msg)
@@ -267,7 +268,7 @@ class DataCollectorAndLabeler:
             else:
                 raise ValueError('Unknown message type.')
 
-        for description, sensor in self.additional_data.iteritems():
+        for description, sensor in self.additional_data.items():
             msg = copy.deepcopy(self.sensor_labelers[description].msg)
             all_additional_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
