@@ -459,9 +459,9 @@ def read_pcd(filename, cloud_header=None, get_tf=True):
             f, v = line.split(" ", 1)
             if f.startswith("#"):
                 continue
-            if f not in zip(*headers)[0]:
+            if f not in list(zip(*headers))[0]:
                 raise Exception("[read_pcd] Field '{}' not known or duplicate.".format(f))
-            func = headers[zip(*headers)[0].index(f)][1]
+            func = headers[list(zip(*headers))[0].index(f)][1]
             header[f] = func(v)
             headers.remove((f, func))
         data = pcdfile.read()
