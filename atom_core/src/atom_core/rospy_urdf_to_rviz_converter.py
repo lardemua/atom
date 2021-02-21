@@ -121,6 +121,23 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', namespace=None, rgba=None, 
                            color=ColorRGBA(r=r, g=g, b=b, a=a))
                 markers.markers.append(m)
                 counter += 1
+            elif isinstance(geom, urdf_parser_py.urdf.Cylinder):
+                if verbose:
+                    print("Visual.geom of type urdf_parser_py.urdf.Cylinder")
+
+                sx = geom.radius
+                sy = geom.radius
+                sz = geom.length
+
+                m = Marker(header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
+                           ns=namespace, id=counter, frame_locked=True,
+                           type=Marker.CYLINDER, action=Marker.ADD, lifetime=rospy.Duration(0),
+                           pose=Pose(position=Point(x=x, y=y, z=z),
+                                     orientation=Quaternion(x=qx, y=qy, z=qz, w=qw)),
+                           scale=Vector3(x=sx, y=sy, z=sz),
+                           color=ColorRGBA(r=r, g=g, b=b, a=a))
+                markers.markers.append(m)
+                counter += 1
             else:
                 print("visuals:\n " + str(visual))
                 raise ValueError('Unknown visual.geom type' + str(type(visual.geometry)) + " for link " +

@@ -52,7 +52,7 @@ class Cache:
             if self.verbose:
                 print('key = ' + str(key))
 
-            if self.cache.has_key(key) and not self.disable_cache:  # if key exists then use it
+            if key in self.cache and not self.disable_cache:  # if key exists then use it
                 r = self.cache[key]
                 if self.verbose:
                     print('Using stored value')

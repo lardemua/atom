@@ -7,6 +7,7 @@ import numpy as np
 import os
 
 # 3rd-party
+import pypcd
 from colorama import Fore, Style
 
 import cv2
@@ -201,6 +202,7 @@ def getPointCloudMessageFromDictionary(dictionary_in, safe=False):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/PointCloud2', d)
     return msg
 
+
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -211,6 +213,7 @@ class NpEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return super(NpEncoder, self).default(obj)
+
 
 # json.dumps(data, cls=NpEncoder)
 
@@ -362,12 +365,12 @@ def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None, mode='ascii
 
             # _fields = _count.keys()
             _fields_str = functools.reduce(lambda a, b: a + ' ' + b,
-                                 map(lambda x: "{%s}" % x,
-                                     _fields))
+                                           map(lambda x: "{%s}" % x,
+                                               _fields))
 
             f.write("FIELDS ")
             f.write(functools.reduce(lambda a, b: a + ' ' + b,
-                           _fields))
+                                     _fields))
             f.write("\n")
             f.write("SIZE ")
             f.write(_fields_str.format(**_size))
@@ -433,7 +436,36 @@ def write_pcd(filename, pointcloud, overwrite=False, viewpoint=None, mode='ascii
         raise Exception("Can't write to %s: %s" % (filename, e.message))
 
 
-def read_pcd(filename, cloud_header=None, get_tf=True):
+def read_pcd(filename, cloud_header=None, get_tf=False):
+    """
+    This is meant to replace the old read_pcd from Andre which broke when migrating to python3.
+    :param filename:
+    :param cloud_header:
+    :param get_tf:
+    :return:
+    """
+    if not os.path.isfile(filename):
+        raise Exception("[read_pcd] File does not exist.")
+
+    print('Reading point cloud from ' + Fore.BLUE + filename + Style.RESET_ALL)
+    pc = pypcd.PointCloud.from_path(filename)
+
+    cloud = pc.to_msg()
+    if cloud_header is not None:
+        # cloud.header = header
+        cloud.header = cloud_header
+        # print('This is it, header is ' + str(cloud_header))
+    else:
+        cloud.header.frame_id = "/pcd_cloud"
+
+    if get_tf:
+        raise ValueError(
+            'get_tf argument is only there for backward compatibility purposes. You should not set it to True.')
+
+    return cloud
+
+
+def read_pcd2(filename, cloud_header=None, get_tf=True):
     if not os.path.isfile(filename):
         raise Exception("[read_pcd] File does not exist.")
     string_array = lambda x: x.split()
@@ -594,7 +626,9 @@ def filterCollectionsFromDataset(dataset, args):
         for collection_key in dataset['collections'].keys():
             if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
                 deleted.append(collection_key)
-                del dataset['collections'][collection_key]
+
+        for collection_key in deleted:
+            del dataset['collections'][collection_key]
         print('Deleted collections: ' + str(deleted) + ' because of the -csf flag.')
 
     if not args['use_incomplete_collections']:
@@ -603,8 +637,8 @@ def filterCollectionsFromDataset(dataset, args):
             for sensor_key, sensor in dataset['sensors'].items():
                 if not collection['labels'][sensor_key]['detected']:
                     print(
-                            Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                            sensor_key + ' (incomplete collection).' + Style.RESET_ALL)
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (incomplete collection).' + Style.RESET_ALL)
                     del dataset['collections'][collection_key]
                     break
 
@@ -617,8 +651,8 @@ def filterCollectionsFromDataset(dataset, args):
                 if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                         print(
-                                Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                                collection_key + ', sensor ' + sensor_key)
+                            Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                            collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
     # It may occur that some collections do not have any detection in a camera sensor (because all detections were

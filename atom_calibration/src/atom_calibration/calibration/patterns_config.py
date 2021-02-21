@@ -189,7 +189,7 @@ def createPatternLabels(args, dataset, step=0.02):
                 objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
                 # Build a numpy array with the chessboard corners
                 corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=np.float)
-                ids = range(0, len(collection['labels'][sensor_key]['idxs']))
+                ids = list(range(0, len(collection['labels'][sensor_key]['idxs'])))
                 for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
                     corners[idx, 0, 0] = point['x']
                     corners[idx, 0, 1] = point['y']

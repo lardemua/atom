@@ -121,7 +121,7 @@ def objectiveFunction(data):
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
-                for idx in xrange(0, pts_in_image.shape[1]):
+                for idx in range(0, pts_in_image.shape[1]):
                     idxs_projected.append({'x': pts_in_image[0][idx], 'y': pts_in_image[1][idx]})
                 collection['labels'][sensor_key]['idxs_projected'] = idxs_projected  # store projections
 
