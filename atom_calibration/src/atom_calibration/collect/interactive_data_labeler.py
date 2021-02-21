@@ -343,7 +343,7 @@ class InteractiveDataLabeler:
             if result['detected']:
                 c = []
 
-                if result.has_key('ids'):
+                if 'ids' in result:
                     # The charuco pattern also return an ID for each keypoint.
                     # We can use this information for partial detections.
                     for idx, corner in enumerate(result['keypoints']):
