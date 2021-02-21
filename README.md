@@ -137,6 +137,8 @@ Here are a couple of examples:
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
 ------------- | -------------
 ![Atlascar2](docs/set_initial_estimate_atlascar2.gif?raw=true)
+|
+![AgrobV2](docs/set_initial_estimate_agrob.gif?raw=true)
 
 [UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)  | ...
 ------------- | -------------
