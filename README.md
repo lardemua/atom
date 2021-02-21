@@ -136,7 +136,7 @@ Here are a couple of examples:
 
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
 ------------- | -------------
-![Atlascar2][/docs/set_initial_estimate_atlascar2.gif?raw=true]
+![Atlascar2][docs/set_initial_estimate_atlascar2.gif?raw=true]
 
 [comment]: <> (<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/set_initial_estimate_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/set_initial_estimate_agrob.gif" width="450"/>)
 
