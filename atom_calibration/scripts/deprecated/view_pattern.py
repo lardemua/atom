@@ -13,13 +13,11 @@ from atom_calibration.collect import patterns
 class SimplePatternDetector:
 
     def __init__(self, options):
-        self.sub = rospy.Subscriber(options['topic'], Image, self.onImage, queue_size=1)
-        self.bridge = CvBridge()
-
         size = {"x": options['num_x'], "y": options['num_y']}
         length = options['length']
         inner_length = options['inner_length']
         dictionary = options['dict']
+        self.options = options
 
         if options['type'] == 'charuco':
             self.pattern = patterns.CharucoPattern(size, length, inner_length, dictionary)
@@ -29,13 +27,20 @@ class SimplePatternDetector:
             rospy.logerr("Unknown pattern '{}'".format(options['type']))
             sys.exit(1)
 
+        self.sub = rospy.Subscriber(options['topic'], Image, self.onImage, queue_size=1)
+        self.bridge = CvBridge()
+        self.image_pub = rospy.Publisher(options['topic'] + '/labeled', Image, queue_size=1)
+
     def onImage(self, image_msg):
 
         image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
         result = self.pattern.detect(image, equalize_histogram=True)
         self.pattern.drawKeypoints(image, result)
 
-        cv2.imshow('show', image)
+        image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
+        self.image_pub.publish(image_msg_out)
+
+        cv2.imshow(self.options['topic'], image)
         key = cv2.waitKey(1)
         if key & 0xff == ord('q'):
             rospy.signal_shutdown(1)
