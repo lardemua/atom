@@ -138,11 +138,10 @@ Here are a couple of examples:
 ------------- | -------------
 ![Atlascar2](docs/set_initial_estimate_atlascar2.gif?raw=true)
 
-[comment]: <> (<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/set_initial_estimate_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/set_initial_estimate_agrob.gif" width="450"/>)
-
 [UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)  | ...
 ------------- | -------------
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/>  | ...
+![UR10](docs/ur10e_eye_in_hand_set_initial_estimate.gif?raw=true)
+| ...
 
 ## Collect data 
 
