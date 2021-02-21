@@ -56,7 +56,7 @@ sensors:
     #       topic_name:
     #           Name of the ROS topic that contains the data produced by this sensor.
     #           If you are calibrating an camera, you should use the raw image produced by the
-    #           sensors. Aditionally, it the topic is an image it will automatically use the
+    #           sensors. Additionally, it the topic is an image it will automatically use the
     #           respective `camera_info` topic.
     #
     # If you are using an image compressed topic such as:
@@ -92,7 +92,7 @@ calibration_pattern:
     parent_link: "end_effector"
 
     # Defines if the pattern link is the same in all collections (i.e. fixed=true),
-    # or each collection will have its own estimative of the link transformation.
+    # or each collection will have its own estimate of the link transformation.
     fixed: true
 
     # The type of pattern used for the calibration.
@@ -118,7 +118,7 @@ calibration_pattern:
     # The number of corners the pattern has in the X and Y dimensions.
     # Note: The charuco detector uses the number of squares per dimension in its detector.
     # Internally we add a +1 to Y and X dimensions to account for that.
-    # Therfore, the number of corners should be used even for the charuco pattern.
+    # Therefore, the number of corners should be used even for the charuco pattern.
     dimension: {"x": 9, "y": 6}
 
     # The length of the square edge.
@@ -132,7 +132,7 @@ calibration_pattern:
 
 # If your calibration problem is not fully constrained you should anchored one of the sensors.
 # This makes it immovable during the optimization.
-# This is tyically referred to as gauge freedom.
+# This is typically referred to as gauge freedom.
 anchored_sensor: ""
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
