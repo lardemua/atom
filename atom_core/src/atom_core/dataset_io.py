@@ -600,10 +600,13 @@ def filterSensorsFromDataset(dataset, args):
 
     if not args['sensor_selection_function'] is None:
         deleted = []
-        for sensor_key in dataset['sensors'].keys():
+        for sensor_key in dataset['sensors']:
             if not args['sensor_selection_function'](sensor_key):  # use the lambda expression ssf
                 deleted.append(sensor_key)
-                del dataset['sensors'][sensor_key]
+
+        for sensor_key in deleted:
+            del dataset['sensors'][sensor_key]
+
         print("Deleted sensors: " + str(deleted))
 
     if not dataset['sensors'].keys():

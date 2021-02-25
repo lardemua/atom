@@ -172,7 +172,9 @@ def createPatternLabels(args, dataset, step=0.02):
     for collection_key, collection in dataset['collections'].items():
         flg_detected_pattern = False
         patterns['transforms_initial'][str(collection_key)] = {'detected': False}  # by default no detection
-        for sensor_key, sensor in dataset['sensors'].items():
+
+        for sensor_key, sensor in sorted(list(dataset['sensors'].items()), key=lambda x: x[0].lower(), reverse=True):
+            # for sensor_key, sensor in dataset['sensors'].items():
 
             if not collection['labels'][sensor_key]['detected']:  # if chessboard not detected by sensor in collection
                 print('Collection ' + str(collection_key) + ': Chessboard not detected by sensor ' + str(sensor_key))
@@ -199,8 +201,9 @@ def createPatternLabels(args, dataset, step=0.02):
                 ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
 
                 # Compute the pose of he chessboard w.r.t the pattern parent link
-                root_T_sensor = atom_core.atom.getTransform(dataset['calibration_config']['calibration_pattern']['parent_link'],
-                                                            sensor['camera_info']['header']['frame_id'], collection['transforms'])
+                root_T_sensor = atom_core.atom.getTransform(
+                    dataset['calibration_config']['calibration_pattern']['parent_link'],
+                    sensor['camera_info']['header']['frame_id'], collection['transforms'])
 
                 sensor_T_chessboard = utilities.traslationRodriguesToTransform(tvecs, rvecs)
                 root_T_chessboard = np.dot(root_T_sensor, sensor_T_chessboard)

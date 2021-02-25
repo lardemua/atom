@@ -84,12 +84,24 @@ def objectiveFunction(data):
 
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
+
+        # from tf import transformations
+        # print('collection ' + str(collection_key))
+        # m = atom_core.atom.getTransform('world', 'hand_camera_link', collection['transforms'])
+        # q = transformations.quaternion_from_matrix(m)
+        # print('world to hand_camera_link = ' + str(m) + '\nquat = ' + str(q))
+        #
+        # m = atom_core.atom.getTransform('world', 'world_camera_link', collection['transforms'])
+        # q = transformations.quaternion_from_matrix(m)
+        # print('world to world_camera_link = ' + str(m) + '\nquat = ' + str(q))
+
         for sensor_key, sensor in dataset['sensors'].items():
 
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
             if sensor['msg_type'] == 'Image':
+                print('sensor ' + sensor_key)
 
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
@@ -100,6 +112,9 @@ def objectiveFunction(data):
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
                 sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
+
+                # q = transformations.quaternion_from_matrix(sensor_to_pattern)
+                # print('T =\n' + str(sensor_to_pattern) + '\nquat = ' + str(q))
 
                 # Project points to the image of the sensor ------------------------------------------------------------
                 w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
@@ -321,4 +336,18 @@ def objectiveFunction(data):
             v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
             print('  ' + sensor_key + " " + str(np.mean(v)))
 
+        for collection_key, collection in dataset['collections'].items():
+            v = []
+            for sensor_key, sensor in dataset['sensors'].items():
+                keys = [k for k in r.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+                v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
+                print('Collection ' + collection_key + ' ' + sensor_key + ' has ' + str(np.mean(v)))
+
+        # per_col_sensor = {str(c): {str(s): {'avg': mean([r[k] for k in r.keys() if c == k.split('_')[0] and s in k]),
+        #                                     'navg': mean([rn[k] for k in rn.keys() if c == k.split('_')[0] and s in k])}
+        #                            for s in dataset['sensors']} for c in dataset['collections']}
+
+
+
+    # exit(0)
     return r  # Return the residuals
