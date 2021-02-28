@@ -101,7 +101,7 @@ def main():
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
-    dataset, json_file = loadResultsJSON(args['json_file'])
+    dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
 
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset

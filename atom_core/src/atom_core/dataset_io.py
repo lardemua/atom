@@ -24,7 +24,7 @@ from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
 
 
-def loadResultsJSON(json_file):
+def loadResultsJSON(json_file,collection_selection_function):
     # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
     #   and our guide lines is to use environment variables, which the shell already expands.
     #   Furthermore, the URI resolver required an import from a `top-level` package which does
@@ -41,7 +41,15 @@ def loadResultsJSON(json_file):
     # Load images from files into memory. Images in the json file are stored in separate png files and in their place
     # a field "data_file" is saved with the path to the file. We must load the images from the disk.
     # Do the same for point clouds saved in pcd files
+    skipped_loading = []
     for collection_key, collection in dataset['collections'].items():
+
+        # Check if collection is listed to be ignored by csf and do not load image and point cloud if it is
+        if not collection_selection_function is None:
+            if not collection_selection_function(collection_key):  # use the lambda expression csf
+                skipped_loading.append(collection_key)
+                continue
+
         for sensor_key, sensor in dataset['sensors'].items():
 
             if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
@@ -84,6 +92,7 @@ def loadResultsJSON(json_file):
                 # convert to dictionary
                 collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
 
+    print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
     return dataset, json_file
 
 
