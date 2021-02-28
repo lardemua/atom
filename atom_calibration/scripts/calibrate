@@ -103,33 +103,6 @@ def main():
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args['json_file'])
 
-    # Refine detection labels
-    # TODO Must this really be here? It should go into data collector, right?
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['msg_type'] == 'Image':  # Load image.
-
-                if not collection['labels'][sensor_key]['detected']:
-                    continue
-
-                # we need and opencv image, but the json stores the dictionary converted from a ros message.
-                # Must convert back to opencv image.
-                cv_image = getCvImageFromDictionary(collection['data'][sensor_key])
-                gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-
-                nc = len(collection['labels'][sensor_key]['idxs'])
-                corners = []
-                for idxs in collection['labels'][sensor_key]['idxs']:
-                    corners.append(np.array([[idxs['x'], idxs['y']]]))
-
-                corners = np.array(corners, dtype=np.float32)
-                criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
-                corners = cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), criteria)
-
-                for id, corner in enumerate(collection['labels'][sensor_key]['idxs']):
-                    corner['x'] = float(corners[id][0][0])
-                    corner['y'] = float(corners[id][0][1])
-
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
@@ -250,8 +223,10 @@ def main():
                         {'x': middle_points[idx, 0], 'y': middle_points[idx, 1], 'z': middle_points[idx, 2],
                          'w': middle_points[idx, 3]})
 
+            print(collection['labels'][sensor_key])
+            exit(0)
     # ---------------------------------------
-    # --- SETUP OPTIMIZER: Create data meshes
+    # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
     opt = OptimizationUtils.Optimizer()
     opt.addDataModel('args', args)

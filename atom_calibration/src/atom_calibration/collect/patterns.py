@@ -1,4 +1,3 @@
-
 # 3rd-party
 import cv2
 import numpy as np
@@ -19,7 +18,6 @@ class ChessboardPattern(object):
         if equalize_histogram:
             gray = cv2.equalizeHist(gray)
 
-
         # # Find chessboard corners
         found, corners = cv2.findChessboardCorners(gray, self.size)
         if not found:
@@ -32,7 +30,7 @@ class ChessboardPattern(object):
             corners = np.array(np.flipud(corners))
 
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
-        spcorners = cv2.cornerSubPix(gray, corners, (5,5), (-1, -1), criteria)
+        spcorners = cv2.cornerSubPix(gray, corners, (5, 5), (-1, -1), criteria)
         spcorners = corners
 
         return {"detected": True, 'keypoints': spcorners, 'ids': range(0, len(spcorners))}
@@ -108,17 +106,14 @@ class CharucoPattern(object):
 
         # param.doCornerRefinement = False
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
-        print('Detected detectMarkers' + str(len(corners)) + ' corners')
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
-        print('Detected refine' + str(len(corners)) + ' corners')
-        # cv2.imshow()
-        # exit(0)
         if len(corners) > 4:
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
 
-            # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
-            # ccorners = cv2.cornerSubPix(gray, ccorners, (5,5), (-1, -1), criteria)
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
+            # TODO is it 5x5 or 3x3 ...
+            ccorners = cv2.cornerSubPix(gray, ccorners, (5, 5), (-1, -1), criteria)
 
             # A valid detection must have at least half the total number of corners.
             detected = ccorners is not None and len(ccorners) > self.number_of_corners / 2

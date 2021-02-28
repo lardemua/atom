@@ -220,7 +220,7 @@ class DataCollectorAndLabeler:
         all_additional_data_dict = {}
 
         for sensor_key, sensor in self.sensors.items():
-            print('collect sensor: ' + sensor_key)
+            print('Collecting data from ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ': sensor_key')
 
             msg = copy.deepcopy(self.sensor_labelers[sensor_key].msg)
             labels = copy.deepcopy(self.sensor_labelers[sensor_key].labels)

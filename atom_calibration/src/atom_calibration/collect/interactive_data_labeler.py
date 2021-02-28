@@ -220,7 +220,7 @@ class InteractiveDataLabeler:
 
     @property
     def labelData(self):
-        # Detected and idxs values to False and [], to make sure we are not using information from a previous labelling
+        # Reset detected and idxs values to make sure we are not using information from a previous labelling
         self.labels['detected'] = False
         self.labels['idxs'] = []
 
@@ -355,6 +355,7 @@ class InteractiveDataLabeler:
                 x = int(round(c[0]['x']))
                 y = int(round(c[0]['y']))
                 cv2.line(image, (x, y), (x, y), (0, 255, 255), 20)
+
 
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
