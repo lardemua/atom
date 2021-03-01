@@ -101,7 +101,7 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'Image':
-                print('sensor ' + sensor_key)
+                # print('sensor ' + sensor_key)
 
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------

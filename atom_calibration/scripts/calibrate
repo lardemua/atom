@@ -223,8 +223,8 @@ def main():
                         {'x': middle_points[idx, 0], 'y': middle_points[idx, 1], 'z': middle_points[idx, 2],
                          'w': middle_points[idx, 3]})
 
-            print(collection['labels'][sensor_key])
-            exit(0)
+            # print(collection['labels'][sensor_key])
+            # exit(0)
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
@@ -527,8 +527,8 @@ def main():
     # --- Start Optimization
     # ---------------------------------------
     print('Initializing optimization ...')
-    options = {'ftol': 1e-4, 'xtol': 1e-4, 'gtol': 1e-4, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-14, 'xtol': 1e-14, 'gtol': 1e-14, 'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-4, 'xtol': 1e-4, 'gtol': 1e-4, 'diff_step': None, 'x_scale': 'jac'}
+    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     # Error Report
