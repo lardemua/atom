@@ -35,6 +35,8 @@ from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
 from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
 
+from atom_calibration.calibration.objective_function import *
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -239,15 +241,17 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
 
-                cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
-
-                # Get LiDAR points that belong to the pattern
-                idxs = collection['labels'][sensor_key]['idxs']
-                pc = ros_numpy.numpify(cloud_msg)
-                points = np.zeros((pc.shape[0], 3))
-                points[:, 0] = pc['x']
-                points[:, 1] = pc['y']
-                points[:, 2] = pc['z']
+                # cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
+                #
+                #
+                #
+                # # Get LiDAR points that belong to the pattern
+                # idxs = collection['labels'][sensor_key]['idxs']
+                # pc = ros_numpy.numpify(cloud_msg)
+                # points = np.zeros((pc.shape[0], 3))
+                # points[:, 0] = pc['x']
+                # points[:, 1] = pc['y']
+                # points[:, 2] = pc['z']
 
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -260,12 +264,13 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.4)
                                 )
 
-                for idx in idxs:
-                    marker.points.append(Point(x=points[idx, 0], y=points[idx, 1], z=points[idx, 2]))
+                points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                for idx in range(0, points2.shape[1]):
+                    marker.points.append(Point(x=points2[0, idx], y=points2[1, idx], z=points2[2, idx]))
 
                 markers.markers.append(copy.deepcopy(marker))
 
-                # Visualize LiDAR corner points
+                # Visualize LiDAR limit points
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
                                 frame_locked=True,
@@ -278,10 +283,12 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.8)
                                 )
 
-                for pt in collection['labels'][sensor_key]['limit_points']:
-                    marker.points.append(Point(x=pt['x'], y=pt['y'], z=pt['z']))
+                points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+                for idx in range(0, points2.shape[1]):
+                    marker.points.append(Point(x=points2[0, idx], y=points2[1, idx], z=points2[2, idx]))
 
                 markers.markers.append(copy.deepcopy(marker))
+
 
     graphics['ros']['MarkersLabeled'] = markers
     graphics['ros']['PubLabeled'] = rospy.Publisher('~labeled_data', MarkerArray, queue_size=0, latch=True)

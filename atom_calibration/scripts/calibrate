@@ -6,8 +6,7 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 # stdlib
 import os
 
-import atom_core.atom
-import atom_core.naming
+
 import signal
 import sys
 import argparse
@@ -26,12 +25,15 @@ from colorama import Fore, Style, Back
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
 
 # own packages
-import atom_calibration.calibration.getters_and_setters as getters_and_setters
-import atom_calibration.calibration.objective_function as objective_function
+# import atom_core.atom
+import atom_core.naming
+from atom_calibration.calibration.getters_and_setters import getterTransform,setterTransform, getterCameraIntrinsics, setterCameraIntrinsics
+
+from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
 import atom_calibration.calibration.patterns_config as patterns
-import atom_calibration.calibration.visualization as visualization
+from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
-from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, getCvImageFromDictionary, \
+from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, \
     getPointCloudMessageFromDictionary, filterCollectionsFromDataset, filterSensorsFromDataset, \
     addNoiseToInitialGuess
 
@@ -158,24 +160,30 @@ def main():
                 # ------------------------------------------------------------------------------------------------
                 # -------- Extract the labelled LiDAR points on the pattern
                 # ------------------------------------------------------------------------------------------------
-                idxs = collection['labels'][sensor_key]['idxs']
-                pc = ros_numpy.numpify(cloud_msg)[idxs]
-                points = np.zeros((pc.shape[0], 4))
-                points[:, 0] = pc['x']
-                points[:, 1] = pc['y']
-                points[:, 2] = pc['z']
-                points[:, 3] = 1
-                collection['labels'][sensor_key]['labelled_points'] = []
-                for idx in range(0, points.shape[0]):
-                    collection['labels'][sensor_key]['labelled_points'].append(
-                        {'x': points[idx, 0], 'y': points[idx, 1], 'z': points[idx, 2],
-                         'w': points[idx, 3]})
+                # idxs = collection['labels'][sensor_key]['idxs']
+                # pc = ros_numpy.numpify(cloud_msg)[idxs]
+                # points = np.zeros((pc.shape[0], 4))
+                # points[:, 0] = pc['x']
+                # points[:, 1] = pc['y']
+                # points[:, 2] = pc['z']
+                # points[:, 3] = 1
+                #
+                # collection['labels'][sensor_key]['labelled_points'] = []
+                # for idx in range(0, points.shape[0]):
+                #     collection['labels'][sensor_key]['labelled_points'].append(
+                #         {'x': points[idx, 0], 'y': points[idx, 1], 'z': points[idx, 2],
+                #          'w': points[idx, 3]})
+                #     print('adding labelled_points')
+
+                points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
                 # - Cartesian to polar LiDAR points conversion
                 import math
                 points_sph = []
-                for idx in range(points.shape[0]):
-                    m_pt = points[idx, 0:3]
+                # for idx in range(points.shape[0]):
+                for idx in range(points2.shape[1]):
+                    # m_pt = points[idx, 0:3]
+                    m_pt = points2[0:3, idx]
                     r = math.sqrt(m_pt[0] ** 2 + m_pt[1] ** 2 + m_pt[2] ** 2)
                     theta = math.acos(m_pt[2] / r)
                     phi = math.atan2(m_pt[1], m_pt[0])
@@ -191,6 +199,8 @@ def main():
                 # - Find the extrema points using the maximum and minimum of the phi component for each cluster
                 extrema_points = []
                 middle_points = []
+                collection['labels'][sensor_key]['idxs_limit_points'] = []
+                collection['labels'][sensor_key]['idxs_middle_points'] = []
                 for i in range(0, len(indexes)):
                     m_beam = np.where(inverse_indexes == i)
 
@@ -201,13 +211,20 @@ def main():
                     for phi in phis:
                         if not phi == np.min(phis) and not phi == np.max(phis):
                             idx = np.where(points_sph[2, :] == phi)[0][0]
-                            middle_points.append(points[idx, :])
+                            # middle_points.append(points[idx, :])
+                            middle_points.append(points2[:, idx])
+                            collection['labels'][sensor_key]['idxs_middle_points'].append(idx)
 
                     global_min_idx = np.where(points_sph[2, :] == phis[min_idx])[0][0]
                     global_max_idx = np.where(points_sph[2, :] == phis[max_idx])[0][0]
 
-                    extrema_points.append(points[global_min_idx, :])
-                    extrema_points.append(points[global_max_idx, :])
+                    collection['labels'][sensor_key]['idxs_limit_points'].append(global_min_idx)
+                    collection['labels'][sensor_key]['idxs_limit_points'].append(global_max_idx)
+
+                    # extrema_points.append(points[global_min_idx, :])
+                    # extrema_points.append(points[global_max_idx, :])
+                    extrema_points.append(points2[:, global_min_idx])
+                    extrema_points.append(points2[:, global_max_idx])
 
                 # Save extrema points in a dictionary
                 collection['labels'][sensor_key]['limit_points'] = []
@@ -247,10 +264,10 @@ def main():
 
     if args['ros_visualization']:
         print("Configuring visualization ... ")
-        graphics = visualization.setupVisualization(dataset, args, selected_collection_key)
+        graphics = setupVisualization(dataset, args, selected_collection_key)
         opt.addDataModel('graphics', graphics)
 
-        opt.setVisualizationFunction(visualization.visualizationFunction, args['ros_visualization'], niterations=1,
+        opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=1,
                                      figures=[])
 
     # ---------------------------------------
@@ -287,7 +304,7 @@ def main():
         transforms_set.add(transform_key)
 
     for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
-        initial_transform = getters_and_setters.getterTransform(dataset, transform_key=transform_key,
+        initial_transform = getterTransform(dataset, transform_key=transform_key,
                                                                 collection_name=selected_collection_key)
 
         if transform_key == anchored_transform_key:
@@ -298,9 +315,9 @@ def main():
             bound_min = [-np.inf for x in initial_transform]
 
         opt.pushParamVector(group_name=transform_key, data_key='dataset',
-                            getter=partial(getters_and_setters.getterTransform, transform_key=transform_key,
+                            getter=partial(getterTransform, transform_key=transform_key,
                                            collection_name=selected_collection_key),
-                            setter=partial(getters_and_setters.setterTransform, transform_key=transform_key,
+                            setter=partial(setterTransform, transform_key=transform_key,
                                            collection_name=None),
                             suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'], bound_max=bound_max, bound_min=bound_min)
 
@@ -310,8 +327,8 @@ def main():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
                 opt.pushParamVector(group_name=str(sensor_key) + '_intrinsics', data_key='dataset',
-                                    getter=partial(getters_and_setters.getterCameraIntrinsics, sensor_key=sensor_key),
-                                    setter=partial(getters_and_setters.setterCameraIntrinsics, sensor_key=sensor_key),
+                                    getter=partial(getterCameraIntrinsics, sensor_key=sensor_key),
+                                    setter=partial(setterCameraIntrinsics, sensor_key=sensor_key),
                                     suffix=['_fx', '_fy', '_cx', '_cy', '_k1', '_k2', '_t1', '_t2', '_k3'])
 
     # ---------------------------------------
@@ -345,9 +362,9 @@ def main():
             #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the
             #   corresponding collection
             opt.pushParamVector(group_name='c' + collection_key + '_' + transform_key, data_key='dataset',
-                                getter=partial(getters_and_setters.getterTransform, transform_key=transform_key,
+                                getter=partial(getterTransform, transform_key=transform_key,
                                                collection_name=collection_key),
-                                setter=partial(getters_and_setters.setterTransform, transform_key=transform_key,
+                                setter=partial(setterTransform, transform_key=transform_key,
                                                collection_name=collection_key),
                                 suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
 
@@ -377,9 +394,9 @@ def main():
         #   b) The Setter will received a transform value and copy that to all collection replicas, to ensure they
         #       all have the same value. This is done by setting  "collection_name=None".
         opt.pushParamVector(group_name=transform_key, data_key='dataset',
-                            getter=partial(getters_and_setters.getterTransform, transform_key=transform_key,
+                            getter=partial(getterTransform, transform_key=transform_key,
                                            collection_name=selected_collection_key),
-                            setter=partial(getters_and_setters.setterTransform, transform_key=transform_key,
+                            setter=partial(setterTransform, transform_key=transform_key,
                                            collection_name=None),
                             suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
 
@@ -388,7 +405,7 @@ def main():
     # ---------------------------------------
     # --- Define THE OBJECTIVE FUNCTION
     # ---------------------------------------
-    opt.setObjectiveFunction(objective_function.objectiveFunction)
+    opt.setObjectiveFunction(objectiveFunction)
 
     # ---------------------------------------
     # --- Define THE RESIDUALS
@@ -493,7 +510,7 @@ def main():
     normalizer = {k: 1.0 for k in msg_types}
     opt.addDataModel('normalizer', normalizer)
 
-    residuals = objective_function.objectiveFunction(opt.data_models)
+    residuals = objectiveFunction(opt.data_models)
     for msg_type in msg_types:
         values = []
         for sensor_key, sensor in dataset['sensors'].items():
@@ -508,7 +525,7 @@ def main():
     if args['profile_objective_function']:
         from line_profiler import LineProfiler
         lp1 = LineProfiler()
-        lp_wrapper1 = lp1(objective_function.objectiveFunction)
+        lp_wrapper1 = lp1(objectiveFunction)
         lp_wrapper1(opt.data_models)
 
         print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'First call of Objective Function (no cache)'
@@ -516,7 +533,7 @@ def main():
         lp1.print_stats()
 
         lp2 = LineProfiler()
-        lp_wrapper2 = lp2(objective_function.objectiveFunction)
+        lp_wrapper2 = lp2(objectiveFunction)
         lp_wrapper2(opt.data_models)
         print(Back.LIGHTYELLOW_EX + '\n\n' + Fore.RED + Style.BRIGHT + 'Second call of Objective Function (with cache)'
               + '\n\n' + Back.RESET + Fore.RESET + Style.RESET_ALL)
@@ -527,13 +544,13 @@ def main():
     # --- Start Optimization
     # ---------------------------------------
     print('Initializing optimization ...')
-    # options = {'ftol': 1e-4, 'xtol': 1e-4, 'gtol': 1e-4, 'diff_step': None, 'x_scale': 'jac'}
-    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
+    options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     # Error Report
     print('\nFinal errors:')
-    r = objective_function.objectiveFunction(opt.data_models)
+    r = objectiveFunction(opt.data_models)
     for sensor_key, sensor in dataset['sensors'].items():
         keys = [k for k in r.keys() if sensor_key in k]
         v = [r[k] * normalizer[sensor['msg_type']] for k in keys]

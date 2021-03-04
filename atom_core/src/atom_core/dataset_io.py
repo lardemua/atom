@@ -195,6 +195,7 @@ def getCvImageFromDictionary(dictionary_in, safe=False):
     return bridge.imgmsg_to_cv2(msg, "bgr8")
 
 
+# TODO This should be memoized?
 def getPointCloudMessageFromDictionary(dictionary_in, safe=False):
     """
     Converts dictionary to PointCloud2 message.

@@ -2,7 +2,10 @@
 import atom_core.atom
 import math
 from copy import deepcopy
+
+import chardet
 import numpy as np
+import ros_numpy
 from scipy.spatial import distance
 
 # 3rd-party
@@ -10,6 +13,7 @@ import OptimizationUtils.utilities as opt_utilities
 from geometry_msgs.msg import Point
 
 # Own modules
+from atom_core.dataset_io import getPointCloudMessageFromDictionary
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
 
@@ -41,10 +45,25 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _sensor_key, _dataset):
 
 
 @Cache(args_to_ignore=['_dataset'])
-def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _dataset):
-    pts = _dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']
-    return np.array([[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
-                     [item['w'] for item in pts]], np.float)
+def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
+    # print(_dataset['collections'][_collection_key]['labels'][_sensor_key])
+    # pts = _dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']
+    # r1 = np.array([[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
+    #                [item['w'] for item in pts]], np.float)
+    # print('r1 shape ' + str(r1.shape) + ' =\n' + str(r1))
+
+    cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    points = np.zeros((4, pc.shape[0]))
+    points[0, :] = pc['x']
+    points[1, :] = pc['y']
+    points[2, :] = pc['z']
+    points[3, :] = 1
+
+    # print('points ' + str(points.shape) + ' =\n' + str(points))
+
+    return points
 
 
 @Cache(args_to_ignore=['residuals', 'dataset'])
@@ -272,11 +291,18 @@ def objectiveFunction(data):
                         marker.points.append(deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
-
             elif sensor['msg_type'] == 'PointCloud2':
 
+                pts = collection['labels'][sensor_key]['middle_points']
+                points_in_middle = np.array(
+                    [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
+                     [item['w'] for item in pts]], np.float)
+
+                points_in_middle2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_middle_points', dataset)
+
+
                 # Get the 3D LiDAR labelled points for the given collection
-                points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, dataset)
+                points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
                 # ------------------------------------------------------------------------------------------------
                 # --- Orthogonal Distance Residuals: Distance from 3D range sensor point to chessboard plan
@@ -298,16 +324,21 @@ def objectiveFunction(data):
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
-
                 pts = collection['labels'][sensor_key]['limit_points']
                 detected_limit_points_in_sensor = np.array(
                     [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
                      [item['w'] for item in pts]], np.float)
 
+                # print('detected_limit_points shape ' + str(detected_limit_points_in_sensor.shape) + '\n' + str(detected_limit_points_in_sensor))
+
+                detected_limit_points_in_sensor2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+                # print('detected_limit_points2 shape ' + str(detected_limit_points_in_sensor2.shape) + '\n' + str(detected_limit_points_in_sensor2))
+
+
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
                 pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
-                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
+                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor2)
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
@@ -347,7 +378,4 @@ def objectiveFunction(data):
         #                                     'navg': mean([rn[k] for k in rn.keys() if c == k.split('_')[0] and s in k])}
         #                            for s in dataset['sensors']} for c in dataset['collections']}
 
-
-
-    # exit(0)
     return r  # Return the residuals
