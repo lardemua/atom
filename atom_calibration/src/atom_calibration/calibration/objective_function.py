@@ -46,12 +46,6 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _sensor_key, _dataset):
 
 @Cache(args_to_ignore=['_dataset'])
 def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
-    # print(_dataset['collections'][_collection_key]['labels'][_sensor_key])
-    # pts = _dataset['collections'][_collection_key]['labels'][_sensor_key]['labelled_points']
-    # r1 = np.array([[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
-    #                [item['w'] for item in pts]], np.float)
-    # print('r1 shape ' + str(r1.shape) + ' =\n' + str(r1))
-
     cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
     pc = ros_numpy.numpify(cloud_msg)[idxs]
@@ -60,9 +54,6 @@ def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _datase
     points[1, :] = pc['y']
     points[2, :] = pc['z']
     points[3, :] = 1
-
-    # print('points ' + str(points.shape) + ' =\n' + str(points))
-
     return points
 
 
@@ -120,7 +111,6 @@ def objectiveFunction(data):
                 continue
 
             if sensor['msg_type'] == 'Image':
-                # print('sensor ' + sensor_key)
 
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
@@ -146,7 +136,6 @@ def objectiveFunction(data):
                 pts_detected_in_image = getPointsDetectedInImageAsNPArray(collection_key, sensor_key, dataset)
 
                 # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
-                # print(collection['labels'][sensor_key]['idxs'])
                 for idx, label_idx in enumerate(collection['labels'][sensor_key]['idxs']):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
@@ -161,7 +150,6 @@ def objectiveFunction(data):
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
                     collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
-
 
             elif sensor['msg_type'] == 'LaserScan':
                 # Get laser points that belong to the chessboard
@@ -293,14 +281,6 @@ def objectiveFunction(data):
 
             elif sensor['msg_type'] == 'PointCloud2':
 
-                pts = collection['labels'][sensor_key]['middle_points']
-                points_in_middle = np.array(
-                    [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
-                     [item['w'] for item in pts]], np.float)
-
-                points_in_middle2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_middle_points', dataset)
-
-
                 # Get the 3D LiDAR labelled points for the given collection
                 points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
@@ -312,6 +292,7 @@ def objectiveFunction(data):
                 to_frame = sensor['parent']
                 lidar_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
 
+                # TODO we could also use the middle points ...
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
                 points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor)
 
@@ -324,21 +305,13 @@ def objectiveFunction(data):
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
-                pts = collection['labels'][sensor_key]['limit_points']
-                detected_limit_points_in_sensor = np.array(
-                    [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
-                     [item['w'] for item in pts]], np.float)
-
-                # print('detected_limit_points shape ' + str(detected_limit_points_in_sensor.shape) + '\n' + str(detected_limit_points_in_sensor))
-
-                detected_limit_points_in_sensor2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
-                # print('detected_limit_points2 shape ' + str(detected_limit_points_in_sensor2.shape) + '\n' + str(detected_limit_points_in_sensor2))
-
+                detected_limit_points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key,
+                                                                              'idxs_limit_points', dataset)
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
                 pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
-                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor2)
+                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
 
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
