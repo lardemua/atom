@@ -45,6 +45,8 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', namespace=None, rgba=None, 
 
     markers = MarkerArray()
 
+    # print(xml_robot)
+
     counter = 0
     for link in xml_robot.links:
 
@@ -69,6 +71,13 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', namespace=None, rgba=None, 
                 x, y, z = visual.origin.xyz[0], visual.origin.xyz[1], visual.origin.xyz[2]
                 qx, qy, qz, qw = transformations.quaternion_from_euler(visual.origin.rpy[0], visual.origin.rpy[1],
                                                                        visual.origin.rpy[2], axes='sxyz')
+
+            sx, sy, sz = 1.0, 1.0, 1.0
+            if hasattr(geom, 'scale'):
+                if not geom.scale is None:
+                    sx, sy, sz = geom.scale[0], geom.scale[1], geom.scale[2]
+                    print('Setting scale for link ' + link.name + ' to sx=' + str(sx) + ', sy=' + str(sy) + ', sz=',
+                          str(sz))
 
             if not rgba is None:  # select link color
                 r, g, b, a = rgba[0], rgba[1], rgba[2], rgba[3]
@@ -99,7 +108,7 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', namespace=None, rgba=None, 
                            type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
                            pose=Pose(position=Point(x=x, y=y, z=z),
                                      orientation=Quaternion(x=qx, y=qy, z=qz, w=qw)),
-                           scale=Vector3(x=1.0, y=1.0, z=1.0),
+                           scale=Vector3(x=sx, y=sy, z=sz),
                            color=ColorRGBA(r=r, g=g, b=b, a=a))
                 m.mesh_resource = geom.filename
                 m.mesh_use_embedded_materials = True
