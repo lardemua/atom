@@ -164,7 +164,7 @@ def main():
         graphics = setupVisualization(dataset, args, selected_collection_key)
         opt.addDataModel('graphics', graphics)
 
-        opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=1,
+        opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=10,
                                      figures=[])
 
     # ---------------------------------------
@@ -175,8 +175,6 @@ def main():
     # Add parameters related to the sensors
     translation_delta = 0.2
     # TODO temporary placement of top_left_camera
-    # for collection_key, collection in dataset['collections'].items():
-    #     collection['transforms']['base_link-top_left_camera']['trans'] = [-1.48, 0.22, 1.35]
     # dataset['calibration_config']['anchored_sensor'] = 'left_camera'
     print('Anchored sensor is ' + Fore.GREEN + dataset['calibration_config'][
         'anchored_sensor'] + Style.RESET_ALL)
@@ -444,6 +442,13 @@ def main():
     options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
+
+
+    rate = rospy.Rate(1)
+    while True:
+        print(Fore.RED + 'Optimization finished' + Style.RESET_ALL)
+        opt.callObjectiveFunction()
+        rate.sleep()
 
     # Error Report
     print('\nFinal errors:')
