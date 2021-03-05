@@ -12,6 +12,7 @@ import threading
 from copy import deepcopy
 
 # 3rd-party
+import colorama
 import cv2
 import rospy
 import numpy as np
@@ -32,6 +33,7 @@ from image_geometry import PinholeCameraModel
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
+from atom_calibration.collect.label_msg import labelPointCloud2Msg
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -100,7 +102,7 @@ class InteractiveDataLabeler:
         PointCloud2: #TODO Tiago Madeira can you complete?
     """
 
-    def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, label_data = True):
+    def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, label_data=True):
         """
         Class constructor. Initializes several variables and ros stuff.
         :param server: an interactive marker server
@@ -159,7 +161,8 @@ class InteractiveDataLabeler:
                                                             queue_size=0)  # publish
             # images with the detected chessboard overlaid onto the image.
 
-        elif self.msg_type_str in ['PointCloud2TIAGO'] and self.label_data:  # TODO, this will have to be revised later on Check #44
+        elif self.msg_type_str in [
+            'PointCloud2TIAGO'] and self.label_data:  # TODO, this will have to be revised later on Check #44
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=0)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
@@ -189,7 +192,6 @@ class InteractiveDataLabeler:
             self.B = 0
             self.C = 0
             self.D = 0
-            self.n_inliers = 0  # RANSAC number of inliers initialization
             self.number_iterations = 15  # RANSAC number of iterations
             self.ransac_threshold = 0.01  # RANSAC point-to-plane distance threshold to consider inliers
             # Chessboard point tracker distance threshold
@@ -355,7 +357,6 @@ class InteractiveDataLabeler:
                 x = int(round(c[0]['x']))
                 y = int(round(c[0]['y']))
                 cv2.line(image, (x, y), (x, y), (0, 255, 255), 20)
-
 
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
@@ -642,96 +643,15 @@ class InteractiveDataLabeler:
             # self.publisher_selected_points.publish(msg_out)
             print('all. took ' + str((rospy.Time.now() - tall).to_sec()))
 
-        elif self.msg_type_str == 'PointCloud2':  # 3D scan pointcloud (Andre Aguiar) ---------------------------------
-            # Get the marker position (this comes from the shpere in rviz)
+        elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
+            # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
                                            self.marker.pose.position.z  # interactive marker pose
 
-            # Extract 3D point from the LiDAR
-            pc = ros_numpy.numpify(self.msg)
-            points = np.zeros((pc.shape[0], 3))
-            points[:, 0] = pc['x']
-            points[:, 1] = pc['y']
-            points[:, 2] = pc['z']
-
-            # Extract the points close to the seed point from the entire PCL
-            marker_point = np.array([[x_marker, y_marker, z_marker]])
-            dist = scipy.spatial.distance.cdist(marker_point, points, metric='euclidean')
-            pts = points[np.transpose(dist < self.tracker_threshold)[:, 0], :]
-            idx = np.where(np.transpose(dist < self.tracker_threshold)[:, 0])[0]
-
-            # Tracker - update seed point with the average of cluster to use in the next
-            # iteration
-            seed_point = []
-            if 0 < len(pts):
-                x_sum, y_sum, z_sum = 0, 0, 0
-                for i in range(0, len(pts)):
-                    x_sum += pts[i, 0]
-                    y_sum += pts[i, 1]
-                    z_sum += pts[i, 2]
-                seed_point.append(x_sum / len(pts))
-                seed_point.append(y_sum / len(pts))
-                seed_point.append(z_sum / len(pts))
-
-            # RANSAC - eliminate the tracker outliers
-            number_points = pts.shape[0]
-            if number_points == 0:
-                return []
-            # RANSAC iterations
-            for i in range(0, self.number_iterations):
-                # Randomly select three points that cannot be coincident
-                # nor collinear
-                while True:
-                    idx1 = random.randint(0, number_points - 1)
-                    idx2 = random.randint(0, number_points - 1)
-                    idx3 = random.randint(0, number_points - 1)
-                    pt1, pt2, pt3 = pts[[idx1, idx2, idx3], :]
-                    # Compute the norm of position vectors
-                    ab = np.linalg.norm(pt2 - pt1)
-                    bc = np.linalg.norm(pt3 - pt2)
-                    ac = np.linalg.norm(pt3 - pt1)
-                    # Check if points are colinear
-                    if (ab + bc) == ac:
-                        continue
-                    # Check if are coincident
-                    if idx2 == idx1:
-                        continue
-                    if idx3 == idx1 or idx3 == idx2:
-                        continue
-
-                    # If all the conditions are satisfied, we can end the loop
-                    break
-
-                # ABC Hessian coefficients and given by the external product between two vectors lying on hte plane
-                A, B, C = np.cross(pt2 - pt1, pt3 - pt1)
-                # Hessian parameter D is computed using one point that lies on the plane
-                D = - (A * pt1[0] + B * pt1[1] + C * pt1[2])
-                # Compute the distance from all points to the plane
-                # from https://www.geeksforgeeks.org/distance-between-a-point-and-a-plane-in-3-d/
-                distances = abs((A * pts[:, 0] + B * pts[:, 1] + C * pts[:, 2] + D)) / (
-                    math.sqrt(A * A + B * B + C * C))
-                # Compute number of inliers for this plane hypothesis.
-                # Inliers are points which have distance to the plane less than a tracker_threshold
-                num_inliers = (distances < self.ransac_threshold).sum()
-                # Store this as the best hypothesis if the number of inliers is larger than the previous max
-                if num_inliers > self.n_inliers:
-                    self.n_inliers = num_inliers
-                    self.A = A
-                    self.B = B
-                    self.C = C
-                    self.D = D
-
-            # Extract the inliers
-            distances = abs((self.A * pts[:, 0] + self.B * pts[:, 1] + self.C * pts[:, 2] + self.D)) / \
-                        (math.sqrt(self.A * self.A + self.B * self.B + self.C * self.C))
-            inliers = pts[np.where(distances < self.ransac_threshold)]
-            # Create dictionary [pcl point index, distance to plane] to select the pcl indexes of the inliers
-            idx_map = dict(zip(idx, distances))
-            final_idx = []
-            for key in idx_map:
-                if idx_map[key] < self.ransac_threshold:
-                    final_idx.append(key)
-            # -------------------------------------- End of RANSAC ----------------------------------------- #
+            # Extract 3D point from the ros msg
+            self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
+                                                                   self.tracker_threshold, self.number_iterations,
+                                                                   self.ransac_threshold)
 
             # publish the points that belong to the cluster
             points = []
@@ -752,19 +672,16 @@ class InteractiveDataLabeler:
             pc_msg = point_cloud2.create_cloud(header, fields, points)
             self.publisher_selected_points.publish(pc_msg)
 
-            # Reset the number of inliers to have a fresh start on the next interation
-            self.n_inliers = 0
-
-            # Update the dictionary with the labels (to be saved if the user selects the option)
-            self.labels['detected'] = True
-            self.labels['idxs'] = final_idx
-
             # Update the interactive marker pose
             self.marker.pose.position.x = seed_point[0]
             self.marker.pose.position.y = seed_point[1]
             self.marker.pose.position.z = seed_point[2]
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
+
+            # print(colorama.Fore.RED + 'Labelled point cloud ' + colorama.Style.RESET_ALL)
+            # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
+            # exit(0)
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')
