@@ -90,6 +90,7 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
     markers.markers.append(marker)
 
     # Draw transitions
+    # TODO we don't use this anymore, should we draw it? Prehaps it will be used for 2D Lidar ...
     marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                     ns=ns + '-transitions', id=0, frame_locked=True,
                     type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
@@ -111,6 +112,7 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
         # rgba = graphics['collections'][collection_key]['color']
         # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
 
+        print('Got the mesh it is: ' + dataset['calibration_config']['calibration_pattern']['mesh_file'])
         m = Marker(header=Header(frame_id=frame_id, stamp=now),
                    ns=str(collection_key) + '-mesh', id=0, frame_locked=True,
                    type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
@@ -242,18 +244,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
 
-                # cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
-                #
-                #
-                #
-                # # Get LiDAR points that belong to the pattern
-                # idxs = collection['labels'][sensor_key]['idxs']
-                # pc = ros_numpy.numpify(cloud_msg)
-                # points = np.zeros((pc.shape[0], 3))
-                # points[:, 0] = pc['x']
-                # points[:, 1] = pc['y']
-                # points[:, 2] = pc['z']
-
+                # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -265,13 +256,13 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.4)
                                 )
 
-                points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
-                for idx in range(0, points2.shape[1]):
-                    marker.points.append(Point(x=points2[0, idx], y=points2[1, idx], z=points2[2, idx]))
+                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                for idx in range(0, points.shape[1]):
+                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
                 markers.markers.append(copy.deepcopy(marker))
 
-                # Visualize LiDAR limit points
+                # Add limit points to the marker, this time with larger spheres
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
                                 frame_locked=True,
@@ -284,9 +275,9 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.8)
                                 )
 
-                points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
-                for idx in range(0, points2.shape[1]):
-                    marker.points.append(Point(x=points2[0, idx], y=points2[1, idx], z=points2[2, idx]))
+                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+                for idx in range(0, points.shape[1]):
+                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
                 markers.markers.append(copy.deepcopy(marker))
 

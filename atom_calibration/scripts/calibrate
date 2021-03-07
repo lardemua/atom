@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
+Casts an optimization problem using an ATOM dataset file as input. Then calibrates by running the optimization.
 """
 
-# stdlib
 import json
 import os, math, signal, sys
 import argparse, random
@@ -161,7 +160,6 @@ def main():
                 # -------- Extract the labelled LiDAR points on the pattern
                 # ------------------------------------------------------------------------------------------------
 
-
                 # STEP 1: Get labelled points into a list of dictionaries format which is suitable for later processing.
                 cloud_msg = getPointCloudMessageFromDictionary(
                     dataset['collections'][collection_key]['data'][sensor_key])
@@ -212,70 +210,70 @@ def main():
     t.toc()
 
     # ---------------------------------- Andre ---------------------------------
-    t.tic()
-
-    # TODO this should go to the collect and label
-    for sensor_key, sensor in dataset['sensors'].items():
-        if sensor['msg_type'] == 'PointCloud2':  # only for 3D Lidars and RGBD cameras
-            for collection_key, collection in dataset['collections'].items():
-                import ros_numpy
-                cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
-
-                # ------------------------------------------------------------------------------------------------
-                # -------- Extract the labelled LiDAR points on the pattern
-                # ------------------------------------------------------------------------------------------------
-                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
-                # print(points)
-
-                # - Cartesian to polar LiDAR points conversion
-                points_sph = []
-                # for idx in range(points.shape[0]):
-                for idx in range(points.shape[1]):
-                    # m_pt = points[idx, 0:3]
-                    m_pt = points[0:3, idx]
-                    r = math.sqrt(m_pt[0] ** 2 + m_pt[1] ** 2 + m_pt[2] ** 2)
-                    theta = math.acos(m_pt[2] / r)
-                    phi = math.atan2(m_pt[1], m_pt[0])
-
-                    m_pt_shp = [r, theta, phi]
-                    points_sph.append(m_pt_shp)
-
-                # - LiDAR beam clustering using the theta component
-                points_sph = np.array(points_sph).transpose()
-                thetas = points_sph[1, :].round(decimals=4)  # we round so that we can use the np.unique
-                unique, indexes, inverse_indexes = np.unique(thetas, return_index=True, return_inverse=True)
-
-                # - Find the extrema points using the maximum and minimum of the phi component for each cluster
-                collection['labels'][sensor_key]['idxs_limit_points'] = []
-                collection['labels'][sensor_key]['idxs_middle_points'] = []
-                for i in range(0, len(indexes)):
-                    m_beam = np.where(inverse_indexes == i)
-
-                    phis = points_sph[2, m_beam][0]
-                    min_idx = np.argmin(phis)
-                    max_idx = np.argmax(phis)
-
-                    # TODO why not use the min_idx and max_idx computed above. I think its better to compare against
-                    #  and integer idx that against the value of phi
-                    for phi in phis:
-                        if not phi == np.min(phis) and not phi == np.max(phis):
-                            idx = np.where(points_sph[2, :] == phi)[0][0]
-                            collection['labels'][sensor_key]['idxs_middle_points'].append(idx)
-
-                    global_min_idx = np.where(points_sph[2, :] == phis[min_idx])[0][0]
-                    global_max_idx = np.where(points_sph[2, :] == phis[max_idx])[0][0]
-
-                    collection['labels'][sensor_key]['idxs_limit_points'].append(global_min_idx)
-                    collection['labels'][sensor_key]['idxs_limit_points'].append(global_max_idx)
-
-            # print(collection['labels'][sensor_key]['idxs_limit_points'])
-
-            points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
-            # print(points2)
-
-    t.toc()
-
-    exit(0)
+    # t.tic()
+    #
+    # # TODO this should go to the collect and label
+    # for sensor_key, sensor in dataset['sensors'].items():
+    #     if sensor['msg_type'] == 'PointCloud2':  # only for 3D Lidars and RGBD cameras
+    #         for collection_key, collection in dataset['collections'].items():
+    #             import ros_numpy
+    #             cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
+    #
+    #             # ------------------------------------------------------------------------------------------------
+    #             # -------- Extract the labelled LiDAR points on the pattern
+    #             # ------------------------------------------------------------------------------------------------
+    #             points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+    #             # print(points)
+    #
+    #             # - Cartesian to polar LiDAR points conversion
+    #             points_sph = []
+    #             # for idx in range(points.shape[0]):
+    #             for idx in range(points.shape[1]):
+    #                 # m_pt = points[idx, 0:3]
+    #                 m_pt = points[0:3, idx]
+    #                 r = math.sqrt(m_pt[0] ** 2 + m_pt[1] ** 2 + m_pt[2] ** 2)
+    #                 theta = math.acos(m_pt[2] / r)
+    #                 phi = math.atan2(m_pt[1], m_pt[0])
+    #
+    #                 m_pt_shp = [r, theta, phi]
+    #                 points_sph.append(m_pt_shp)
+    #
+    #             # - LiDAR beam clustering using the theta component
+    #             points_sph = np.array(points_sph).transpose()
+    #             thetas = points_sph[1, :].round(decimals=4)  # we round so that we can use the np.unique
+    #             unique, indexes, inverse_indexes = np.unique(thetas, return_index=True, return_inverse=True)
+    #
+    #             # - Find the extrema points using the maximum and minimum of the phi component for each cluster
+    #             collection['labels'][sensor_key]['idxs_limit_points'] = []
+    #             collection['labels'][sensor_key]['idxs_middle_points'] = []
+    #             for i in range(0, len(indexes)):
+    #                 m_beam = np.where(inverse_indexes == i)
+    #
+    #                 phis = points_sph[2, m_beam][0]
+    #                 min_idx = np.argmin(phis)
+    #                 max_idx = np.argmax(phis)
+    #
+    #                 # TODO why not use the min_idx and max_idx computed above. I think its better to compare against
+    #                 #  and integer idx that against the value of phi
+    #                 for phi in phis:
+    #                     if not phi == np.min(phis) and not phi == np.max(phis):
+    #                         idx = np.where(points_sph[2, :] == phi)[0][0]
+    #                         collection['labels'][sensor_key]['idxs_middle_points'].append(idx)
+    #
+    #                 global_min_idx = np.where(points_sph[2, :] == phis[min_idx])[0][0]
+    #                 global_max_idx = np.where(points_sph[2, :] == phis[max_idx])[0][0]
+    #
+    #                 collection['labels'][sensor_key]['idxs_limit_points'].append(global_min_idx)
+    #                 collection['labels'][sensor_key]['idxs_limit_points'].append(global_max_idx)
+    #
+    #         # print(collection['labels'][sensor_key]['idxs_limit_points'])
+    #
+    #         points2 = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+    #         # print(points2)
+    #
+    # t.toc()
+    #
+    # exit(0)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -579,15 +577,15 @@ def main():
     if args['dry_run']:
         while not rospy.is_shutdown():
             opt.callObjectiveFunction()
-            rospy.Rate(3).sleep()
+            rospy.Rate(5).sleep()
 
     print('Initializing optimization ...')
     options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
+    options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     rate = rospy.Rate(1)
-    while True:
+    while rospy.is_shutdown():
         print(Fore.RED + 'Optimization finished' + Style.RESET_ALL)
         opt.callObjectiveFunction()
         rate.sleep()
