@@ -20,6 +20,7 @@ import atom_core.naming
 from atom_calibration.calibration.getters_and_setters import getterTransform, setterTransform, getterCameraIntrinsics, \
     setterCameraIntrinsics
 
+from atom_core.utilities import waitForKeyPress
 from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
 import atom_calibration.calibration.patterns_config as patterns
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
@@ -85,7 +86,8 @@ def main():
                          'returns True or False to indicate if the collection should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
-    ap.add_argument("-dry", "--dry_run", help="Run without launching the optimization. Good for debugging.",
+    ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
+                                                          "after calling the optimization. Good for debugging.",
                     action='store_true', default=False)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
@@ -574,21 +576,17 @@ def main():
     # ---------------------------------------
     # --- Start Optimization
     # ---------------------------------------
-    if args['dry_run']:
-        while not rospy.is_shutdown():
-            opt.callObjectiveFunction()
-            rospy.Rate(5).sleep()
+    if args['phased_execution']:
+        waitForKeyPress(function=opt.callObjectiveFunction, timeout=0.5)
 
     print('Initializing optimization ...')
     options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
-    options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
-    rate = rospy.Rate(1)
-    while rospy.is_shutdown():
-        print(Fore.RED + 'Optimization finished' + Style.RESET_ALL)
-        opt.callObjectiveFunction()
-        rate.sleep()
+    if args['phased_execution']:
+        waitForKeyPress(opt.callObjectiveFunction, timeout=0.5, message=Fore.RED + 'Optimization finished' +
+                                                                        Style.RESET_ALL)
 
     # Error Report
     print('\nFinal errors:')

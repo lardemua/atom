@@ -7,9 +7,11 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 
 # 3rd-party
 import math
+from colorama import Fore, Style
 
 # 3rd-party
 from rospy_message_converter import message_converter
+from pynput import keyboard
 
 
 # from open3d import * # This cannot be used. It itereferes with the Image for getMessageTypeFromTopic(topic):
@@ -18,6 +20,26 @@ from rospy_message_converter import message_converter
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
+def waitForKeyPress(function=None, timeout=5, message='Waiting ... ' ):
+
+    message = message + '\npress ' + Fore.BLUE + Style.BRIGHT + '"c"' + Style.RESET_ALL + ' to continue or ' + Fore.BLUE + Style.BRIGHT + '"q"' + Style.RESET_ALL + ' to abort.'
+
+    while True:
+        with keyboard.Events() as events:
+            if not function is None:
+                print('Calling function')
+                function()
+
+            print(message)
+            event = events.get(timeout)
+            if not event is None:
+                if hasattr(event.key, 'char'):
+                    if event.key.char == 'c':
+                        print('\nyou pressed c ... continuing.')
+                        break
+                    elif event.key.char == 'q':
+                        print('\nyou pressed q ... aborting.')
+                        exit(0)
 
 # Check https://stackoverflow.com/questions/52431265/how-to-use-a-lambda-as-parameter-in-python-argparse
 def create_lambda_with_globals(s):
