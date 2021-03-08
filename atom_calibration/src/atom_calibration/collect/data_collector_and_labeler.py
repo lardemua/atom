@@ -109,7 +109,7 @@ class DataCollectorAndLabeler:
 
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
-                key = self.generateKey(parent, child)
+                key = generateKey(parent, child)
                 chain_list.append({'key': key, 'parent': parent, 'child': child})
 
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
@@ -160,7 +160,7 @@ class DataCollectorAndLabeler:
         for ab in abstract_transforms:  # Update all transformations
             self.listener.waitForTransform(ab['parent'], ab['child'], time, rospy.Duration(1.0))
             (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], time)
-            key = self.generateKey(ab['parent'], ab['child'])
+            key = generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
 
         return transforms_dict
