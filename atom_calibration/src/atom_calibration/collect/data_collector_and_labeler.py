@@ -18,6 +18,7 @@ from tf.listener import TransformListener
 from sensor_msgs.msg import *
 
 # local packages
+from atom_core.naming import generateKey
 from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime
 from atom_core.config_io import execute, loadConfig
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
@@ -305,12 +306,10 @@ class DataCollectorAndLabeler:
             for idx in range(0, len(chain) - 1):
                 parent = chain[idx]
                 child = chain[idx + 1]
-                transforms_list.append({'parent': parent, 'child': child, 'key': self.generateKey(parent, child)})
+                transforms_list.append({'parent': parent, 'child': child, 'key': generateKey(parent, child)})
 
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
         uniq_l = list(map(dict, frozenset(frozenset(i.items()) for i in transforms_list)))
         return uniq_l  # get unique values
 
-    @staticmethod
-    def generateKey(parent, child, suffix=''):
-        return parent + '-' + child + suffix
+

@@ -25,7 +25,7 @@ def xmlDescriptionFromXacroFile(filename):
     return URDF.from_xml_file(tmp_file)
 
 
-def urdfToMarkerArray(xml_robot, frame_id_prefix='', namespace=None, rgba=None, verbose=False):
+def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespace=None, rgba=None, verbose=False):
     """
     :param _robot_description:
     :param frame_id_prefix:
@@ -87,7 +87,7 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', namespace=None, rgba=None, 
                 r, g, b, a = 1, 1, 1, 1  # white by default
 
             # define the frame_id setting the prefix if needed
-            frame_id = frame_id_prefix + link.name
+            frame_id = frame_id_prefix + link.name + frame_id_suffix
 
             if verbose:
                 print('frame id is ' + str(frame_id))

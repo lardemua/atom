@@ -2,7 +2,7 @@
 """
 Casts an optimization problem using an ATOM dataset file as input. Then calibrates by running the optimization.
 """
-
+import copy
 import json
 import os, math, signal, sys
 import argparse, random
@@ -20,6 +20,7 @@ import atom_core.naming
 from atom_calibration.calibration.getters_and_setters import getterTransform, setterTransform, getterCameraIntrinsics, \
     setterCameraIntrinsics
 
+from atom_core.naming import generateKey, generateName
 from atom_core.utilities import waitForKeyPress
 from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
 import atom_calibration.calibration.patterns_config as patterns
@@ -89,6 +90,8 @@ def main():
     ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
                                                           "after calling the optimization. Good for debugging.",
                     action='store_true', default=False)
+    ap.add_argument("-ipg", "--initial_pose_ghost", help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
+                    action='store_true', default=False)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -114,6 +117,16 @@ def main():
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
+
+    # ---------------------------------------
+    # --- Store initial values for transformations to be optimized
+    # ---------------------------------------
+    for collection_key, collection in dataset['collections'].items():
+        initial_transform_key = generateName('transforms', suffix='ini')
+        collection[initial_transform_key] = copy.deepcopy(collection['transforms'])
+        for transform_key, transform in collection[initial_transform_key].items():
+            transform['parent'] = generateName(transform['parent'], suffix='ini')
+            transform['child'] = generateName(transform['child'], suffix='ini')
 
     # ---------------------------------------
     # --- Add noise to the initial guess atomic transformations to be calibrated, if desired
@@ -304,6 +317,9 @@ def main():
 
         opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=10,
                                      figures=[])
+
+
+
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add sensor parameters
@@ -587,7 +603,6 @@ def main():
     if args['phased_execution']:
         waitForKeyPress(opt.callObjectiveFunction, timeout=0.5, message=Fore.RED + 'Optimization finished' +
                                                                         Style.RESET_ALL)
-
     # Error Report
     print('\nFinal errors:')
     r = objectiveFunction(opt.data_models)
