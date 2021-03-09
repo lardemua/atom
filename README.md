@@ -255,6 +255,10 @@ optional arguments:
 
 It is also possible to call some of these through the launch file. Check the launch file to see how.
 
+Here is an example of how the calibration procedure should look like.
+
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_calibration.gif" width="600"/> 
+
 # Examples
 
 So far, we have used **ATOM** to successfully calibrate several robotic platforms:
