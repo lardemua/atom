@@ -136,13 +136,12 @@ Here are a couple of examples:
 
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
 ------------- | -------------
-![Atlascar2](docs/set_initial_estimate_atlascar2.gif?raw=true)
-|
-![AgrobV2](docs/set_initial_estimate_agrob.gif?raw=true)
+
+<img align="center" src="docs/set_initial_estimate_atlascar2.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/set_initial_estimate_atlascar2.gif" width="450"/> 
 
 [UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)  | ...
 ------------- | -------------
-![UR10](docs/ur10e_eye_in_hand_set_initial_estimate.gif?raw=true)
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/> 
 | ...
 
 ## Collect data 
@@ -161,7 +160,7 @@ Here are some examples of the system collecting data:
 
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
 ------------- | -------------
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_agrob.gif" width="450"/>
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_data_collection.gif" width="450"/>
 
 ... | [UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration)
 ------------- | -------------
