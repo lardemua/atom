@@ -134,14 +134,9 @@ roslaunch <your_robot_calibration> set_initial_estimate.launch
 
 Here are a couple of examples:
 
-[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
-------------- | -------------
-
-<img align="center" src="docs/set_initial_estimate_atlascar2.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_initial_estimate.gif" width="450"/> 
-
-[UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)  | ...
-------------- | -------------
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/>
+[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)
+------------- | ------------- | -------------
+<img align="center" src="docs/set_initial_estimate_atlascar2.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_initial_estimate.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/>
 
 ## Collect data 
 
@@ -157,14 +152,9 @@ roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dat
 
 Here are some examples of the system collecting data:
 
-[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob)
-------------- | -------------
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_data_collection.gif" width="450"/>
-
-[UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration) | ...
-------------- | -------------
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
-
+[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration) 
+------------- | ------------- | -------------
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_data_collection.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
 
 A dataset is a folder which contains a set of collections. There, a _data_collected.json_ file stores all the information required for the calibration. There are also in the folder images and point clouds associated with each collection.
 
