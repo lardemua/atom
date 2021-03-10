@@ -33,7 +33,7 @@ from image_geometry import PinholeCameraModel
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
-from atom_calibration.collect.label_msg import labelPointCloud2Msg
+from atom_calibration.collect.label_messages import labelPointCloud2Msg
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [

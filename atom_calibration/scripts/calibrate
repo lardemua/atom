@@ -157,63 +157,6 @@ def main():
                 collection['labels'][sensor_key]['edge_idxs'] = edges
 
     # ---------------------------------------
-    # --- Detect limit points in velodyne data
-    # ---------------------------------------
-    # TODO this should go to the collect and label
-    for sensor_key, sensor in dataset['sensors'].items():
-        if sensor['msg_type'] == 'PointCloud2':  # only for 3D Lidars and RGBD cameras
-            for collection_key, collection in dataset['collections'].items():
-
-                # ------------------------------------------------------------------------------------------------
-                # -------- Extract the labelled LiDAR points on the pattern
-                # ------------------------------------------------------------------------------------------------
-                # STEP 1: Get labelled points into a list of dictionaries format which is suitable for later processing.
-                cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
-                pc = ros_numpy.numpify(cloud_msg)
-
-                ps = []  # list of points, each containing a dictionary with all the required information.
-                for count, idx in enumerate(collection['labels'][sensor_key]['idxs']):  # iterate all points
-                    x, y, z = pc['x'][idx], pc['y'][idx], pc['z'][idx]
-                    ps.append({'idx': idx, 'idx_in_labelled': count, 'x': x, 'y': y, 'z': z, 'limit': False})
-
-                # STEP 2: Cluster points in pattern into groups using the theta component of the spherical coordinates.
-                # We use the convention commonly used in physics, i.e:
-                # https://en.wikipedia.org/wiki/Spherical_coordinate_system
-
-                # STEP 2.1: Convert to spherical coordinates
-                for p in ps:  # iterate all points
-                    x, y, z = p['x'], p['y'], p['z']
-                    p['r'] = math.sqrt(x ** 2 + y ** 2 + z ** 2)
-                    p['phi'] = math.atan2(y, x)
-                    p['theta'] = round(math.atan2(math.sqrt(x ** 2 + y ** 2), z), 4)  # Round to be able to cluster by
-                    # finding equal theta values. Other possibilities of computing theta, check link above.
-
-                # STEP 2.2: Cluster points based on theta values
-                unique_thetas = list(set([item['theta'] for item in ps]))  # Going from list of thetas to set and back
-                # to list gives us the list of unique theta values.
-
-                for p in ps:  # iterate all points and give an "idx_cluster" to each
-                    p['idx_cluster'] = unique_thetas.index(p['theta'])
-
-                # STEP 3: For each cluster, get limit points, i.e. those which have min and max phi values
-
-                # Get list of points with
-                for unique_theta in unique_thetas:
-                    ps_in_cluster = [item for item in ps if item['theta'] == unique_theta]
-                    phis_in_cluster = [item['phi'] for item in ps_in_cluster]
-
-                    min_phi_idx_in_cluster = phis_in_cluster.index(min(phis_in_cluster))
-                    ps[ps_in_cluster[min_phi_idx_in_cluster]['idx_in_labelled']]['limit'] = True
-
-                    max_phi_idx_in_cluster = phis_in_cluster.index(max(phis_in_cluster))
-                    ps[ps_in_cluster[max_phi_idx_in_cluster]['idx_in_labelled']]['limit'] = True
-
-                collection['labels'][sensor_key]['idxs_limit_points'] = [item['idx'] for item in ps if item['limit']]
-
-                # Count the number of limit points (just for debug)
-                number_of_limit_points = len(collection['labels'][sensor_key]['idxs_limit_points'])
-
-    # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
     opt = OptimizationUtils.Optimizer()

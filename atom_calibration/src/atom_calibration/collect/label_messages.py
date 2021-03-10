@@ -10,6 +10,7 @@ import ros_numpy
 
 def labelImageMsg():
     pass
+    # TODO the stuff from patterns.py should be here
 
 
 def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
@@ -110,50 +111,55 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     labels['detected'] = True
     labels['idxs'] = final_idx
 
-    # Compute the limit and the middle points for the pattern cluster
-    points = np.zeros((4, len(inliers)))
-    points[0, :] = inliers[:, 0]
-    points[1, :] = inliers[:, 1]
-    points[2, :] = inliers[:, 2]
-    points[3, :] = 1
+    # ------------------------------------------------------------------------------------------------
+    # -------- Extract the labelled LiDAR points on the pattern
+    # ------------------------------------------------------------------------------------------------
+    # STEP 1: Get labelled points into a list of dictionaries format which is suitable for later processing.
+    # cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
+    # pc = ros_numpy.numpify(cloud_msg)
+    # pc is computed above from the imput ros msg.
 
-    # - Cartesian to polar LiDAR points conversion
-    points_sph = []
-    # for idx in range(points.shape[0]):
-    for idx in range(points.shape[1]):
-        # m_pt = points[idx, 0:3]
-        m_pt = points[0:3, idx]
-        r = math.sqrt(m_pt[0] ** 2 + m_pt[1] ** 2 + m_pt[2] ** 2)
-        theta = math.acos(m_pt[2] / r)
-        phi = math.atan2(m_pt[1], m_pt[0])
+    ps = []  # list of points, each containing a dictionary with all the required information.
+    for count, idx in enumerate(labels['idxs']):  # iterate all points
+        x, y, z = pc['x'][idx], pc['y'][idx], pc['z'][idx]
+        ps.append({'idx': idx, 'idx_in_labelled': count, 'x': x, 'y': y, 'z': z, 'limit': False})
 
-        m_pt_shp = [r, theta, phi]
-        points_sph.append(m_pt_shp)
+    # STEP 2: Cluster points in pattern into groups using the theta component of the spherical coordinates.
+    # We use the convention commonly used in physics, i.e:
+    # https://en.wikipedia.org/wiki/Spherical_coordinate_system
 
-    # - LiDAR beam clustering using the theta component
-    points_sph = np.array(points_sph).transpose()
-    thetas = points_sph[1, :].round(decimals=4)  # we round so that we can use the np.unique
-    unique, indexes, inverse_indexes = np.unique(thetas, return_index=True, return_inverse=True)
+    # STEP 2.1: Convert to spherical coordinates
+    for p in ps:  # iterate all points
+        x, y, z = p['x'], p['y'], p['z']
+        p['r'] = math.sqrt(x ** 2 + y ** 2 + z ** 2)
+        p['phi'] = math.atan2(y, x)
+        p['theta'] = round(math.atan2(math.sqrt(x ** 2 + y ** 2), z), 4)  # Round to be able to cluster by
+        # finding equal theta values. Other possibilities of computing theta, check link above.
 
-    # - Find the extrema points using the maximum and minimum of the phi component for each cluster
-    labels['idxs_limit_points'] = []
-    labels['idxs_middle_points'] = []
-    for i in range(0, len(indexes)):
-        m_beam = np.where(inverse_indexes == i)
+    # STEP 2.2: Cluster points based on theta values
+    unique_thetas = list(set([item['theta'] for item in ps]))  # Going from list of thetas to set and back
+    # to list gives us the list of unique theta values.
 
-        phis = points_sph[2, m_beam][0]
-        min_idx = np.argmin(phis)
-        max_idx = np.argmax(phis)
+    for p in ps:  # iterate all points and give an "idx_cluster" to each
+        p['idx_cluster'] = unique_thetas.index(p['theta'])
 
-        for phi in phis:
-            if not phi == np.min(phis) and not phi == np.max(phis):
-                idx = np.where(points_sph[2, :] == phi)[0][0]
-                labels['idxs_middle_points'].append(idx)
+    # STEP 3: For each cluster, get limit points, i.e. those which have min and max phi values
 
-        global_min_idx = np.where(points_sph[2, :] == phis[min_idx])[0][0]
-        global_max_idx = np.where(points_sph[2, :] == phis[max_idx])[0][0]
+    # Get list of points with
+    for unique_theta in unique_thetas:
+        ps_in_cluster = [item for item in ps if item['theta'] == unique_theta]
+        phis_in_cluster = [item['phi'] for item in ps_in_cluster]
 
-        labels['idxs_limit_points'].append(global_min_idx)
-        labels['idxs_limit_points'].append(global_max_idx)
+        min_phi_idx_in_cluster = phis_in_cluster.index(min(phis_in_cluster))
+        ps[ps_in_cluster[min_phi_idx_in_cluster]['idx_in_labelled']]['limit'] = True
+
+        max_phi_idx_in_cluster = phis_in_cluster.index(max(phis_in_cluster))
+        ps[ps_in_cluster[max_phi_idx_in_cluster]['idx_in_labelled']]['limit'] = True
+
+    labels['idxs_limit_points'] = [item['idx'] for item in ps if item['limit']]
+
+    # Count the number of limit points (just for debug)
+    number_of_limit_points = len(labels['idxs_limit_points'])
+
 
     return labels, seed_point, inliers
