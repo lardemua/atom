@@ -10,22 +10,25 @@ import os
 import pprint
 
 # 3rd-party
+import colorama
 import cv2
 import ros_numpy
 # import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
 import numpy as np
 import tf
+import tf2_ros
 from atom_core.cache import Cache
 
 from rospy_message_converter import message_converter
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from std_msgs.msg import Header, ColorRGBA
 from urdf_parser_py.urdf import URDF
-from sensor_msgs.msg import Image, sensor_msgs, CameraInfo
+from sensor_msgs.msg import Image, sensor_msgs, CameraInfo, geometry_msgs
 from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
+from geometry_msgs.msg import Point, Pose, Vector3, Quaternion, Transform, TransformStamped
 from cv_bridge import CvBridge
+from colorama import Style, Fore
 
 from matplotlib import cm
 from OptimizationUtils import utilities as opt_utilities
@@ -138,20 +141,30 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Create a python dictionary that will contain all the visualization related information
     graphics = {'collections': {}, 'sensors': {}, 'pattern': {}, 'ros': {}, 'args': args}
 
-    # Initialize ROS stuff
-    rospy.init_node("calibrate")
-    graphics['ros']['tf_broadcaster'] = tf.TransformBroadcaster()
-    graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
-    now = rospy.Time.now()
-
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
     rospy.loginfo('Reading description file ' + description_file + '...')
     xml_robot = readXacroFile(description_file)
 
-    pattern = dataset['calibration_config']['calibration_pattern']
+    # Initialize ROS stuff
+    rospy.init_node("calibrate")
+    # graphics['ros']['tf_broadcaster'] = tf.TransformBroadcaster()
+    graphics['ros']['tf_broadcaster'] = tf2_ros.TransformBroadcaster()
+
+
+    rospy.sleep(0.2) # Sleep a litle to make sure the time.now() returns a correct time.
+    now = rospy.Time.now()
+
+    # Analyse xacro and figure out which transforms are static (always the same over the optimization), and which are
+    # not. For fixed we will use a static transform publisher.
+    graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
+
+
+
+
 
     # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
+    pattern = dataset['calibration_config']['calibration_pattern']
     graphics['pattern']['colormap'] = cm.gist_rainbow(
         np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
@@ -300,6 +313,8 @@ def setupVisualization(dataset, args, selected_collection_key):
                 all_joints_fixed = False
                 break
 
+
+
     markers = MarkerArray()
     if all_joints_fixed:  # render a single robot mesh
         print('Robot has all joints fixed. Will render only collection ' + selected_collection_key)
@@ -330,7 +345,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
                 rgba = [.5, .5, .5, 0.2]  # best color we could find
                 m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                      frame_id_suffix = generateName('', suffix='ini'),
+                                      frame_id_suffix=generateName('', suffix='ini'),
                                       namespace=generateName(collection_key, suffix='ini'),
                                       rgba=rgba)
                 markers.markers.extend(m.markers)
@@ -400,11 +415,16 @@ def setupVisualization(dataset, args, selected_collection_key):
     graphics['ros']['PubMiscellaneous'] = rospy.Publisher('~Miscellaneous', MarkerArray, queue_size=0, latch=True)
     # Publish only once in latched mode
     graphics['ros']['PubMiscellaneous'].publish(graphics['ros']['MarkersMiscellaneous'])
+    graphics['ros']['Rate'] = rospy.Rate(10)
+    graphics['ros']['Rate'] = rospy.Rate(10)
+    graphics['ros']['Counter'] = 0  # tfs need to be published at high frequencies. On the other hand, robot markers
+    # should be published at low frequencies. This counter will serve to control this mechanism.
 
     return graphics
 
 
 def visualizationFunction(models):
+    print(Fore.RED + 'Visualization function called.' + Style.RESET_ALL)
     # Get the data from the meshes
     dataset = models['dataset']
     args = models['args']
@@ -414,8 +434,11 @@ def visualizationFunction(models):
     config = models['dataset']['calibration_config']
     graphics = models['graphics']
 
+    print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
+
     now = rospy.Time.now()  # time used to publish all visualization messages
 
+    transfoms = []
     for collection_key, collection in collections.items():
 
         # To have a fully connected tree, must connect the instances of the tf tree of every collection into a single
@@ -423,46 +446,69 @@ def visualizationFunction(models):
         # of each collection.
         parent = config['world_link']
         child = generateName(config['world_link'], prefix='c' + collection_key)
-        graphics['ros']['tf_broadcaster'].sendTransform((0, 0, 0), (0, 0, 0, 1), now, child, parent)
+
+        transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
+                                     child_frame_id=child,
+                                     transform=Transform(translation=Vector3(x=0, y=0, z=0),
+                                                         rotation=Quaternion(x=0, y=0, z=0, w=1)))
+        transfoms.append(transform)
+
+        if args['initial_pose_ghost']:
+            parent = config['world_link']
+            child = generateName(config['world_link'], prefix='c' + collection_key, suffix='ini')
+            transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
+                                         child_frame_id=child,
+                                         transform=Transform(translation=Vector3(x=0, y=0, z=0),
+                                                             rotation=Quaternion(x=0, y=0, z=0, w=1)))
+            transfoms.append(transform)
 
         # Publish all current transforms
         for transform_key, transform in collection['transforms'].items():
             parent = generateName(transform['parent'], prefix='c' + collection_key)
             child = generateName(transform['child'], prefix='c' + collection_key)
-            graphics['ros']['tf_broadcaster'].sendTransform(transform['trans'], transform['quat'], now, child, parent)
+            x, y, z = transform['trans']
+            qx, qy, qz, qw = transform['quat']
+            transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
+                                         child_frame_id=child,
+                                         transform=Transform(translation=Vector3(x=x, y=y, z=z),
+                                                             rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
+            transfoms.append(transform)
 
-    if args['initial_pose_ghost']:
-        # Initial transforms (for drawing initial pose as ghost mesh)
-        for collection_key, collection in collections.items():
-
-            # To have a fully connected tree, must connect the instances of the tf tree of every collection into a single
-            # tree. We do this by publishing an identity transform between the configured world link and hte world link
-            # of each collection.
-            parent = config['world_link']
-            child = generateName(config['world_link'], prefix='c' + collection_key, suffix='ini')
-            graphics['ros']['tf_broadcaster'].sendTransform((0, 0, 0), (0, 0, 0, 1), now, child, parent)
-
-            # Publish all current transforms
+        if args['initial_pose_ghost']:  # Publish robot meshes at initial pose.
             for transform_key, transform in collection[generateName('transforms', suffix='ini')].items():
                 parent = generateName(transform['parent'], prefix='c' + collection_key)
                 child = generateName(transform['child'], prefix='c' + collection_key)
-                graphics['ros']['tf_broadcaster'].sendTransform(transform['trans'], transform['quat'], now, child,
-                                                                parent)
+                x, y, z = transform['trans']
+                qx, qy, qz, qw = transform['quat']
+                transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
+                                             child_frame_id=child,
+                                             transform=Transform(translation=Vector3(x=x, y=y, z=z),
+                                                                 rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
+                transfoms.append(transform)
 
         # TODO Andre, remove this When you are finished. Just a hack for being able to visualize the wheels
-        parent = 'c' + collection_key + '_' + 'base_link'
-        child = 'c' + collection_key + '_' + 'front_left_wheel_link'
-        graphics['ros']['tf_broadcaster'].sendTransform([0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-
-        child = 'c' + collection_key + '_' + 'front_right_wheel_link'
-        graphics['ros']['tf_broadcaster'].sendTransform([0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-
-        child = 'c' + collection_key + '_' + 'rear_left_wheel_link'
-        graphics['ros']['tf_broadcaster'].sendTransform([-0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-
-        child = 'c' + collection_key + '_' + 'rear_right_wheel_link'
-        graphics['ros']['tf_broadcaster'].sendTransform([-0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+        # parent = 'c' + collection_key + '_' + 'base_link'
+        # child = 'c' + collection_key + '_' + 'front_left_wheel_link'
+        # graphics['ros']['tf_broadcaster'].sendTransform([0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+        #
+        # child = 'c' + collection_key + '_' + 'front_right_wheel_link'
+        # graphics['ros']['tf_broadcaster'].sendTransform([0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+        #
+        # child = 'c' + collection_key + '_' + 'rear_left_wheel_link'
+        # graphics['ros']['tf_broadcaster'].sendTransform([-0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
+        #
+        # child = 'c' + collection_key + '_' + 'rear_right_wheel_link'
+        # graphics['ros']['tf_broadcaster'].sendTransform([-0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
         # Remove until this point
+
+    graphics['ros']['tf_broadcaster'].sendTransform(transfoms)
+
+    print("graphics['ros']['Counter'] = " + str(graphics['ros']['Counter']))
+    if graphics['ros']['Counter'] < 5:
+        graphics['ros']['Counter'] += 1
+        return None
+    else:
+        graphics['ros']['Counter'] = 0
 
     # Update markers stamp, so that rviz uses newer transforms to compute their poses.
     for marker in graphics['ros']['robot_mesh_markers'].markers:
@@ -548,3 +594,5 @@ def visualizationFunction(models):
                 pass
             else:
                 raise ValueError("Unknown sensor msg_type")
+
+    graphics['ros']['Rate'].sleep()
