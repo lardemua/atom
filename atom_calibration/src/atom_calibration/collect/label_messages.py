@@ -20,9 +20,10 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     pc = ros_numpy.numpify(msg)
     points = np.zeros((pc.shape[0], 3))
-    points[:, 0] = pc['x']
-    points[:, 1] = pc['y']
-    points[:, 2] = pc['z']
+
+    points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
+    points[:, 1] = pc['y'].flatten()
+    points[:, 2] = pc['z'].flatten()
 
     # Extract the points close to the seed point from the entire PCL
     marker_point = np.array([[seed_x, seed_y, seed_z]])

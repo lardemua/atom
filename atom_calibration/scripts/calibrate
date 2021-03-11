@@ -181,11 +181,7 @@ def main():
         graphics = setupVisualization(dataset, args, selected_collection_key)
         opt.addDataModel('graphics', graphics)
 
-        opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=10,
-                                     figures=[])
-
-
-
+        opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=1, figures=[])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add sensor parameters
@@ -459,7 +455,7 @@ def main():
     # --- Start Optimization
     # ---------------------------------------
     if args['phased_execution']:
-        waitForKeyPress(function=opt.callObjectiveFunction, timeout=0.5)
+        waitForKeyPress(function=opt.callObjectiveFunction, timeout=0.1)
 
     print('Initializing optimization ...')
     options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
@@ -467,7 +463,7 @@ def main():
     opt.startOptimization(optimization_options=options)
 
     if args['phased_execution']:
-        waitForKeyPress(opt.callObjectiveFunction, timeout=0.5, message=Fore.RED + 'Optimization finished' +
+        waitForKeyPress(opt.callObjectiveFunction, timeout=0.1, message=Fore.RED + 'Optimization finished' +
                                                                         Style.RESET_ALL)
     # Error Report
     print('\nFinal errors:')
