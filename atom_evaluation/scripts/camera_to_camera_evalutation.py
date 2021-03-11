@@ -42,7 +42,7 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
     target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
     source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
 
-    selected_collection_key = train_dataset['collections'].keys()[0]
+    selected_collection_key = list(train_dataset['collections'].keys())[0]
 
     st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
                                           train_dataset['collections'][selected_collection_key]['transforms'])
@@ -206,14 +206,14 @@ if __name__ == "__main__":
 
         # Get corners on both images
         corners_s = np.zeros((len(collection['labels'][source_sensor]['idxs']), 2), dtype=np.float)
-        idxs_s = range(0, len(collection['labels'][source_sensor]['idxs']))
+        idxs_s = list(range(0, len(collection['labels'][source_sensor]['idxs'])))
         for idx, point in enumerate(collection['labels'][source_sensor]['idxs']):
             corners_s[idx, 0] = point['x']
             corners_s[idx, 1] = point['y']
             idxs_s[idx] = point['id']
         # ----
         corners_t = np.zeros((len(collection['labels'][target_sensor]['idxs']), 2), dtype=np.float)
-        idxs_t = range(0, len(collection['labels'][target_sensor]['idxs']))
+        idxs_t = list(range(0, len(collection['labels'][target_sensor]['idxs'])))
         for idx, point in enumerate(collection['labels'][target_sensor]['idxs']):
             corners_t[idx, 0] = point['x']
             corners_t[idx, 1] = point['y']
@@ -243,7 +243,7 @@ if __name__ == "__main__":
         objp[:, 3] = 1
 
         # == Compute Translation and Rotation errors
-        selected_collection_key = train_dataset['collections'].keys()[0]
+        selected_collection_key = list(train_dataset['collections'].keys())[0]
         common_frame = train_dataset['calibration_config']['world_link']
         target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
         source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']

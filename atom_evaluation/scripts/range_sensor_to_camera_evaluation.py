@@ -11,8 +11,12 @@ Reads the calibration results from a json file and computes the evaluation metri
 import json
 import os
 import numpy as np
+import ros_numpy
 
 import atom_core.atom
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+
+from rospy_message_converter import message_converter
 import cv2
 import argparse
 import OptimizationUtils.utilities as opt_utilities
@@ -47,22 +51,30 @@ def createJSONFile(output_file, input):
     print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print >> f, json.dumps(D, indent=2, sort_keys=True)
+    print (json.dumps(D, indent=2, sort_keys=True), file=f)
     f.close()
     print("Completed.")
 
 
-def rangeToImage(collection, ss, ts, tf):
-    # -- Convert limit points from velodyne to camera frame
-    pts = collection['labels'][ss]['limit_points']
-    points_in_vel = np.array(
-        [[item['x'] for item in pts], [item['y'] for item in pts], [item['z'] for item in pts],
-         [1 for item in pts]], np.float)
+def rangeToImage(collection, json_file, ss, ts, tf):
+    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
+    msg = read_pcd(filename)
+    collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
+
+    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
+    idxs = collection['labels'][ss]['idxs_limit_points']
+
+    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    points_in_vel = np.zeros((4, pc.shape[0]))
+    points_in_vel[0, :] = pc['x']
+    points_in_vel[1, :] = pc['y']
+    points_in_vel[2, :] = pc['z']
+    points_in_vel[3, :] = 1
 
     points_in_cam = np.dot(tf, points_in_vel)
 
     # -- Project them to the image
-    selected_collection_key = train_dataset['collections'].keys()[0]
+    selected_collection_key = list(train_dataset['collections'].keys())[0]
     w, h = collection['data'][ts]['width'], train_dataset['collections'][selected_collection_key]['data'][ts]['height']
     K = np.ndarray((3, 3), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
@@ -179,10 +191,10 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        selected_collection_key = train_dataset['collections'].keys()[0]
+        selected_collection_key = list(train_dataset['collections'].keys())[0]
         vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
                                               train_dataset['collections'][selected_collection_key]['transforms'])
-        pts_in_image = rangeToImage(collection, source_sensor, target_sensor, vel2cam)
+        pts_in_image = rangeToImage(collection, test_json_file, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
@@ -276,6 +288,8 @@ if __name__ == "__main__":
 
             cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
+
+        break
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float)

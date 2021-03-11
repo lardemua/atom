@@ -62,7 +62,7 @@ def rangeToImage(collection, ss, ts, tf, pts):
          [1 for item in points_in_cam_]], np.float)
 
     # -- Project them to the image
-    selected_collection_key = dataset['collections'].keys()[0]
+    selected_collection_key = list(dataset['collections'].keys())[0]
     w, h = collection['data'][ts]['width'], dataset['collections'][selected_collection_key]['data'][ts]['height']
     K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         frame_id = str(collection['data'][lidar_sensor]['header']['frame_id'])
 
         # Read point cloud
-        msg = read_pcd(pcd_filename, cloud_header=None, get_tf=False)
+        msg = read_pcd(pcd_filename, cloud_header=None)
         pc = ros_numpy.numpify(msg)
         points = np.zeros((pc.shape[0], 3))
         points[:, 0] = pc['x']
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        selected_collection_key = dataset['collections'].keys()[0]
+        selected_collection_key = list(dataset['collections'].keys())[0]
         lidar2cam = atom_core.atom.getTransform(from_frame, to_frame,
                                                 dataset['collections'][selected_collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
