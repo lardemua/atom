@@ -355,7 +355,7 @@ How to annotate:
 
 The result should be someting like this (for each image):
 
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/" width="450"/>
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/lidar2cam_evaluation.png" width="450"/>
 
 # Contributors
 
