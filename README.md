@@ -40,6 +40,10 @@ url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985"}
     + [Atlascar2](https://github.com/lardemua/atlascar2)
     + [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)
     + [AgrobV2](https://github.com/aaguiar96/agrob)
+- [Evaluating your calibration](#evaluation)
+    + [Camera-to-Camera evaluation](#cam2cam)
+    + [LiDAR-to-Camera evaluation](#lidar2cam)
+    + [Point cloud image projection](#pclprojection)
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
 
@@ -273,7 +277,110 @@ This includes several variants of the hand-eye calibration problem.
 
 ### [AgrobV2](https://github.com/aaguiar96/agrob)
  Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
+
+#  Evaluating your calibration
+
+### Camera-to-Camera evaluation
+
+Evaluates de camera-to-camera reprojection error with the following metrics:
+- X and Y errors
+- Translation and rotation errors
+- Root mean squared error
+
+```
+usage: camera_to_camera_evalutation.py [-h] -train_json TRAIN_JSON_FILE -test_json TEST_JSON_FILE -ss SOURCE_SENSOR -ts TARGET_SENSOR [-si] [-po] [-sg]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -train_json TRAIN_JSON_FILE, --train_json_file TRAIN_JSON_FILE
+                        Json file containing train input dataset.
+  -test_json TEST_JSON_FILE, --test_json_file TEST_JSON_FILE
+                        Json file containing test input dataset.
+  -ss SOURCE_SENSOR, --source_sensor SOURCE_SENSOR
+                        Source transformation sensor.
+  -ts TARGET_SENSOR, --target_sensor TARGET_SENSOR
+                        Target transformation sensor.
+  -si, --show_images    If true the script shows images.
+  -po, --pattern_object
+                        Use pattern object projection instead of Homography.
+  -sg, --save_graphics  Save reprojection error graphics.
+```
    
+How to run:
+``` bash
+rosrun atom_evaluation camera_to_camera_evalutation.py -train_json <path_to_train_file> -test_json <path_to_test_file> -ss <source_sensor_name> -ts <target_sensor_name>
+```
+
+### LiDAR-to-Camera evaluation
+
+Evaluates the LiDAR-to-Camera calibration through the reprojection of the pattern limit 3D points into the image using the following metrics:
+- X and Y errors
+- Root mean squared error
+
+This process requires the annotation of the pattern limit points in the image.
+
+After annotating once, if the user wish to repeat the process, the saved json file with the annotations can be loaded. For that the `-ua` flag has to be disabled.
+
+```
+usage: range_sensor_to_camera_evaluation.py [-h] -train_json TRAIN_JSON_FILE -test_json TEST_JSON_FILE -ss SOURCE_SENSOR -ts TARGET_SENSOR [-si] -ef EVAL_FILE [-ua]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -train_json TRAIN_JSON_FILE, --train_json_file TRAIN_JSON_FILE
+                        Json file containing input training dataset.
+  -test_json TEST_JSON_FILE, --test_json_file TEST_JSON_FILE
+                        Json file containing input testing dataset.
+  -ss SOURCE_SENSOR, --source_sensor SOURCE_SENSOR
+                        Source transformation sensor.
+  -ts TARGET_SENSOR, --target_sensor TARGET_SENSOR
+                        Target transformation sensor.
+  -si, --show_images    If true the script shows images.
+  -ef EVAL_FILE, --eval_file EVAL_FILE
+                        Path to file to read and/or write the evalutation data.
+  -ua, --use_annotation
+                        If true, the limit points will be manually annotated.
+```
+
+How to run:
+``` bash
+rosrun atom_evaluation range_sensor_to_camera_evaluation.py -train_json <path_to_train_json> -test_json <path_to_test_json> -ss <source_sensor_name> -ts <target_sensor_name> -si -ef <path_to_output_annotation_json_file>
+```
+
+For each image in the test dataset the user have to annotate four classes corresponding to each one of the pattern sides.
+
+How to annotate:
+- **click + s** to add a point
+- **click + p** to change class
+- **space** to go to the next image
+
+The result should be someting like this (for each image):
+
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/lidar2cam_evaluation.png" width="450"/>
+
+At the end of the process, a json file with the annotations will be saved at the specified path and the metrics will be displayed.
+
+### Point cloud image projection
+
+`atom_evaluation` also allows the user to visualize the point cloud projected into an image to check the calibration.
+
+``` bash
+usage: point_cloud_to_image.py [-h] -json JSON_FILE -ls LIDAR_SENSOR -cs CAMERA_SENSOR
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -json JSON_FILE, --json_file JSON_FILE
+                        Json file containing input dataset.
+  -ls LIDAR_SENSOR, --lidar_sensor LIDAR_SENSOR
+                        LiDAR sensor name.
+  -cs CAMERA_SENSOR, --camera_sensor CAMERA_SENSOR
+                        Camera sensor name.
+```
+
+How to run:
+``` bash
+rosrun atom_evaluation point_cloud_to_image.py -json <path_to_test_json> -ls <lidar_sensor_name> -cs <camera_sensor_name>
+```
+
 # Contributors
 
  * Miguel Riem Oliveira - University of Aveiro

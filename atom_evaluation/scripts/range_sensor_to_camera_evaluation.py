@@ -289,8 +289,6 @@ if __name__ == "__main__":
             cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
 
-        break
-
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float)
     avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
