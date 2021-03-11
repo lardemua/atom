@@ -40,10 +40,10 @@ url = "http://www.sciencedirect.com/science/article/pii/S0921889020303985"}
     + [Atlascar2](https://github.com/lardemua/atlascar2)
     + [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)
     + [AgrobV2](https://github.com/aaguiar96/agrob)
-- [Evaluating your calibration](#evaluation)
-    + [Camera-to-Camera evaluation](#cam2cam)
-    + [LiDAR-to-Camera evaluation](#lidar2cam)
-    + [Point cloud image projection](#pclprojection)
+- [Evaluating your calibration](#evaluating-your-calibration)
+  + [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
+  + [LiDAR-to-Camera evaluation](#lidar-to-camera-evaluation)
+  + [Point cloud image projection](#point-cloud-image-projection)
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
 
@@ -317,9 +317,7 @@ Evaluates the LiDAR-to-Camera calibration through the reprojection of the patter
 - X and Y errors
 - Root mean squared error
 
-This process requires the annotation of the pattern limit points in the image.
-
-After annotating once, if the user wish to repeat the process, the saved json file with the annotations can be loaded. For that the `-ua` flag has to be disabled.
+This process requires two steps: **(a)** annotation of the pattern limit points in the image, **(b)** load the limit points and compute the evaluation.
 
 ```
 usage: range_sensor_to_camera_evaluation.py [-h] -train_json TRAIN_JSON_FILE -test_json TEST_JSON_FILE -ss SOURCE_SENSOR -ts TARGET_SENSOR [-si] -ef EVAL_FILE [-ua]
@@ -341,45 +339,21 @@ optional arguments:
                         If true, the limit points will be manually annotated.
 ```
 
-How to run:
+**(a)**: For this step the user should use the following command:
 ``` bash
 rosrun atom_evaluation range_sensor_to_camera_evaluation.py -train_json <path_to_train_json> -test_json <path_to_test_json> -ss <source_sensor_name> -ts <target_sensor_name> -si -ef <path_to_output_annotation_json_file>
 ```
 
 For each image in the test dataset the user have to annotate four classes corresponding to each one of the pattern sides.
 
-How to annotate:
+How to:
 - **click + s** to add a point
 - **click + p** to change class
 - **space** to go to the next image
 
 The result should be someting like this (for each image):
 
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/lidar2cam_evaluation.png" width="450"/>
-
-At the end of the process, a json file with the annotations will be saved at the specified path and the metrics will be displayed.
-
-### Point cloud image projection
-
-`atom_evaluation` also allows the user to visualize the point cloud projected into an image to check the calibration.
-
-``` bash
-usage: point_cloud_to_image.py [-h] -json JSON_FILE -ls LIDAR_SENSOR -cs CAMERA_SENSOR
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -json JSON_FILE, --json_file JSON_FILE
-                        Json file containing input dataset.
-  -ls LIDAR_SENSOR, --lidar_sensor LIDAR_SENSOR
-                        LiDAR sensor name.
-  -cs CAMERA_SENSOR, --camera_sensor CAMERA_SENSOR
-                        Camera sensor name.
-```
-
-How to run:
-``` bash
-rosrun atom_evaluation point_cloud_to_image.py -json <path_to_test_json> -ls <lidar_sensor_name> -cs <camera_sensor_name>
-```
+<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/" width="450"/>
 
 # Contributors
 
