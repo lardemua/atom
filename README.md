@@ -317,7 +317,9 @@ Evaluates the LiDAR-to-Camera calibration through the reprojection of the patter
 - X and Y errors
 - Root mean squared error
 
-This process requires two steps: **(a)** annotation of the pattern limit points in the image, **(b)** load the limit points and compute the evaluation.
+This process requires the annotation of the pattern limit points in the image.
+
+After annotating once, if the user wish to repeat the process, the saved json file with the annotations can be loaded. For that the `-ua` flag has to be disabled.
 
 ```
 usage: range_sensor_to_camera_evaluation.py [-h] -train_json TRAIN_JSON_FILE -test_json TEST_JSON_FILE -ss SOURCE_SENSOR -ts TARGET_SENSOR [-si] -ef EVAL_FILE [-ua]
@@ -339,14 +341,14 @@ optional arguments:
                         If true, the limit points will be manually annotated.
 ```
 
-**(a)**: For this step the user should use the following command:
+How to run:
 ``` bash
 rosrun atom_evaluation range_sensor_to_camera_evaluation.py -train_json <path_to_train_json> -test_json <path_to_test_json> -ss <source_sensor_name> -ts <target_sensor_name> -si -ef <path_to_output_annotation_json_file>
 ```
 
 For each image in the test dataset the user have to annotate four classes corresponding to each one of the pattern sides.
 
-How to:
+How to annotate:
 - **click + s** to add a point
 - **click + p** to change class
 - **space** to go to the next image
