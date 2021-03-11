@@ -357,6 +357,24 @@ The result should be someting like this (for each image):
 
 <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/lidar2cam_evaluation.png" width="450"/>
 
+### Point cloud image projection
+`atom_evaluation` also allows the user to visualize the point cloud projected into an image to check the calibration.
+``` bash
+usage: point_cloud_to_image.py [-h] -json JSON_FILE -ls LIDAR_SENSOR -cs CAMERA_SENSOR
+optional arguments:
+  -h, --help            show this help message and exit
+  -json JSON_FILE, --json_file JSON_FILE
+                        Json file containing input dataset.
+  -ls LIDAR_SENSOR, --lidar_sensor LIDAR_SENSOR
+                        LiDAR sensor name.
+  -cs CAMERA_SENSOR, --camera_sensor CAMERA_SENSOR
+                        Camera sensor name.
+```
+How to run:
+``` bash
+rosrun atom_evaluation point_cloud_to_image.py -json <path_to_test_json> -ls <lidar_sensor_name> -cs <camera_sensor_name>
+```
+
 # Contributors
 
  * Miguel Riem Oliveira - University of Aveiro
