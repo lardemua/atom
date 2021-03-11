@@ -109,6 +109,8 @@ def main():
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
 
+
+
     # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
     # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
     # related to the pattern pose (we use solve PNP for a camera).
@@ -118,6 +120,7 @@ def main():
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
+
 
     # ---------------------------------------
     # --- Store initial values for transformations to be optimized
@@ -155,6 +158,7 @@ def main():
                 if len(edges) > 0:
                     edges.pop()  # if the index is not given, then the last element is popped out and removed.
                 collection['labels'][sensor_key]['edge_idxs'] = edges
+
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -324,6 +328,7 @@ def main():
     # Each residual is computed after the sensor and the pattern of a collection. Thus, each error will be affected
     # by the parameters tx,ty,tz,r1,r2,r3 of the sensor and the pattern
 
+
     print("Creating residuals ... ")
 
     if args['sample_seed'] is None:
@@ -422,6 +427,7 @@ def main():
     opt.addDataModel('normalizer', normalizer)
 
     residuals = objectiveFunction(opt.data_models)
+    opt.callObjectiveFunction()
     for msg_type in msg_types:
         values = []
         for sensor_key, sensor in dataset['sensors'].items():
@@ -476,6 +482,7 @@ def main():
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
+
     filename_results_json = os.path.dirname(json_file) + '/atom_calibration.json'
     saveResultsJSON(filename_results_json, dataset)
 

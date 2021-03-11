@@ -92,6 +92,8 @@ def objectiveFunction(data):
 
     normalizer = data['normalizer']
 
+
+
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
 
@@ -115,6 +117,8 @@ def objectiveFunction(data):
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
                 pts_in_pattern = getPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
+
+
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
@@ -150,6 +154,8 @@ def objectiveFunction(data):
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
                     collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
+
+
 
             elif sensor['msg_type'] == 'LaserScan':
                 # Get laser points that belong to the chessboard
@@ -280,7 +286,6 @@ def objectiveFunction(data):
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
             elif sensor['msg_type'] == 'PointCloud2':
-
                 # Get the 3D LiDAR labelled points for the given collection
                 points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
