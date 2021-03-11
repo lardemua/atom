@@ -155,12 +155,32 @@ def setupVisualization(dataset, args, selected_collection_key):
     rospy.sleep(0.2) # Sleep a litle to make sure the time.now() returns a correct time.
     now = rospy.Time.now()
 
+
+    graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
     # Analyse xacro and figure out which transforms are static (always the same over the optimization), and which are
     # not. For fixed we will use a static transform publisher.
-    graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
-
-
-
+    # for collection_key, collection in dataset['collections'].items():
+    #     for transform_key, transform in collection['transforms'].items():
+    #         parent = transform['parent']
+    #         child = transform['child']
+    #
+    #
+    #         for sensor_key, sensor in dataset['sensors'].items(): # is the transformation being optimized?
+    #             if joint.parent == sensor['calibration_parent'] and joint.child == sensor['calibration_child']:
+    #
+    #
+    #
+    #         for joint in xml_robot.joints:
+    #             if joint.parent == parent and joint.child == child:
+    #                 print(transform)
+    #                 print(joint)
+    #
+    #
+    #
+    #                 if joint.type == 'fixed':
+    #                     transform['fixed'] = True
+    #                 else:
+    #                     transform['fixed'] = False
 
 
     # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
