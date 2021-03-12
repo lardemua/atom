@@ -46,10 +46,10 @@ def loadResultsJSON(json_file, collection_selection_function):
     for collection_key, collection in dataset['collections'].items():
 
         # Check if collection is listed to be ignored by csf and do not load image and point cloud if it is
-        # if not collection_selection_function is None:
-        #     if not collection_selection_function(collection_key):  # use the lambda expression csf
-        #         skipped_loading.append(collection_key)
-        #         continue
+        if not collection_selection_function is None:
+            if not collection_selection_function(collection_key):  # use the lambda expression csf
+                skipped_loading.append(collection_key)
+                continue
 
         for sensor_key, sensor in dataset['sensors'].items():
 
@@ -119,7 +119,6 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
 
 
 def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):
-
     if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
         return
 
@@ -128,15 +127,12 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         filename = output_folder + '/' + dataset['collections'][collection_key][data_type][sensor_key]['data_file']
         if os.path.isfile(filename):
             create_data_file = False
-            print('File ' + filename + ' exists.')
-            if 'data' in dataset['collections'][collection_key][data_type][sensor_key]: # remove the data field
+            if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # remove the data field
                 del dataset['collections'][collection_key][data_type][sensor_key]['data']
         else:
             create_data_file = True
-            print('File ' + filename + ' does not exist.')
     else:
         create_data_file = True
-        print('data_file field does not exist')
 
     if create_data_file:
         print('Collection ' + collection_key + '. Creating data file for sensor ' + sensor_key + ' msg type ' + sensor[
@@ -205,7 +201,6 @@ def getCvImageFromDictionary(dictionary_in, safe=False):
     return bridge.imgmsg_to_cv2(msg, "bgr8")
 
 
-# TODO This should be memoized?
 def getPointCloudMessageFromDictionary(dictionary_in):
     """
     Converts dictionary to PointCloud2 message.
