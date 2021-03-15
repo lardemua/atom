@@ -135,7 +135,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         create_data_file = True
 
     if create_data_file:
-        print('Collection ' + collection_key + '. Creating data file for sensor ' + sensor_key + ' msg type ' + sensor[
+        print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key) + ' msg type ' + sensor[
             'msg_type'])
 
     if create_data_file and sensor['msg_type'] == 'Image':  # save image.
