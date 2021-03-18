@@ -44,7 +44,6 @@ def computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t
     target_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
     source_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
 
-    selected_collection_key = list(test_dataset['collections'].keys())[0]
 
     st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
                                           test_dataset['collections'][collection_key]['transforms'])
@@ -177,10 +176,10 @@ if __name__ == "__main__":
     # Copy intrinsic parameters for cameras from train to test dataset.
     for train_sensor_key, train_sensor in train_dataset['sensors'].items():
         if train_sensor['msg_type'] == 'Image':
-            train_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
-            train_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
-            train_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
-            train_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
 
     f = open('test.json', 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
@@ -289,7 +288,6 @@ if __name__ == "__main__":
         objp[:, 3] = 1
 
         # == Compute Translation and Rotation errors
-        selected_collection_key = list(test_dataset['collections'].keys())[0]
         common_frame = test_dataset['calibration_config']['world_link']
         target_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
         source_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
