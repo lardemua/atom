@@ -39,15 +39,15 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
     ss_T_chess_h[0:3, 3] = tvecs[:, 0]
     ss_T_chess_h[0:3, 0:3] = opt_utilities.rodriguesToMatrix(rvecs)
 
-    target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
-    source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
+    target_frame = final_dataset['calibration_config']['sensors'][target_sensor]['link']
+    source_frame = final_dataset['calibration_config']['sensors'][source_sensor]['link']
 
-    selected_collection_key = list(train_dataset['collections'].keys())[0]
+    selected_collection_key = list(final_dataset['collections'].keys())[0]
 
     st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
-                                          train_dataset['collections'][selected_collection_key]['transforms'])
+                                          final_dataset['collections'][selected_collection_key]['transforms'])
     ss_T_st = atom_core.atom.getTransform(source_frame, target_frame,
-                                          train_dataset['collections'][selected_collection_key]['transforms'])
+                                          final_dataset['collections'][selected_collection_key]['transforms'])
 
     st_T_chess_h = np.dot(inv(ss_T_st), ss_T_chess_h)
 
@@ -149,23 +149,52 @@ if __name__ == "__main__":
     test_dataset = json.load(f)
 
     # ---------------------------------------
+    # --- Get mixed json (calibrated transforms from train and the rest from test)
+    # ---------------------------------------
+    final_dataset = test_dataset
+    # Source sensor
+    parent_link = final_dataset['calibration_config']['sensors'][source_sensor]['parent_link']
+    child_link = final_dataset['calibration_config']['sensors'][source_sensor]['child_link']
+    frame = parent_link + '-' + child_link
+
+    for collection_key, collection in final_dataset['collections'].items():
+        quat = train_dataset['collections'][collection_key]['transforms'][frame]['quat']
+        trans = train_dataset['collections'][collection_key]['transforms'][frame]['trans']
+
+        collection['transforms'][frame]['quat'] = quat
+        collection['transforms'][frame]['trans'] = trans
+
+    # Target sensor
+    parent_link = final_dataset['calibration_config']['sensors'][target_sensor]['parent_link']
+    child_link = final_dataset['calibration_config']['sensors'][target_sensor]['child_link']
+    frame = parent_link + '-' + child_link
+
+    for collection_key, collection in final_dataset['collections'].items():
+        quat = train_dataset['collections'][collection_key]['transforms'][frame]['quat']
+        trans = train_dataset['collections'][collection_key]['transforms'][frame]['trans']
+
+        collection['transforms'][frame]['quat'] = quat
+        collection['transforms'][frame]['trans'] = trans
+
+
+    # ---------------------------------------
     # --- Get intrinsic data for both sensors
     # ---------------------------------------
     # Source sensor
     K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
-    K_s[0, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][0:3]
-    K_s[1, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][3:6]
-    K_s[2, :] = train_dataset['sensors'][source_sensor]['camera_info']['K'][6:9]
-    D_s[:, 0] = train_dataset['sensors'][source_sensor]['camera_info']['D'][0:5]
+    K_s[0, :] = final_dataset['sensors'][source_sensor]['camera_info']['K'][0:3]
+    K_s[1, :] = final_dataset['sensors'][source_sensor]['camera_info']['K'][3:6]
+    K_s[2, :] = final_dataset['sensors'][source_sensor]['camera_info']['K'][6:9]
+    D_s[:, 0] = final_dataset['sensors'][source_sensor]['camera_info']['D'][0:5]
 
     # Target sensor
     K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
-    K_t[0, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][0:3]
-    K_t[1, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][3:6]
-    K_t[2, :] = train_dataset['sensors'][target_sensor]['camera_info']['K'][6:9]
-    D_t[:, 0] = train_dataset['sensors'][target_sensor]['camera_info']['D'][0:5]
+    K_t[0, :] = final_dataset['sensors'][target_sensor]['camera_info']['K'][0:3]
+    K_t[1, :] = final_dataset['sensors'][target_sensor]['camera_info']['K'][3:6]
+    K_t[2, :] = final_dataset['sensors'][target_sensor]['camera_info']['K'][6:9]
+    D_t[:, 0] = final_dataset['sensors'][target_sensor]['camera_info']['D'][0:5]
 
     # ---------------------------------------
     # --- Evaluation loop
@@ -243,16 +272,16 @@ if __name__ == "__main__":
         objp[:, 3] = 1
 
         # == Compute Translation and Rotation errors
-        selected_collection_key = list(train_dataset['collections'].keys())[0]
-        common_frame = train_dataset['calibration_config']['world_link']
-        target_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
-        source_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
+        selected_collection_key = list(final_dataset['collections'].keys())[0]
+        common_frame = final_dataset['calibration_config']['world_link']
+        target_frame = final_dataset['calibration_config']['sensors'][target_sensor]['link']
+        source_frame = final_dataset['calibration_config']['sensors'][source_sensor]['link']
 
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_t], np.array(corners_t, dtype=np.float32), K_t, D_t)
         pattern_pose_target = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = atom_core.atom.getTransform(common_frame, target_frame,
-                                          train_dataset['collections'][selected_collection_key]['transforms'])
+                                          final_dataset['collections'][selected_collection_key]['transforms'])
 
         pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
@@ -261,7 +290,7 @@ if __name__ == "__main__":
         pattern_pose_source = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = atom_core.atom.getTransform(common_frame, source_frame,
-                                          train_dataset['collections'][selected_collection_key]['transforms'])
+                                          final_dataset['collections'][selected_collection_key]['transforms'])
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
@@ -322,7 +351,7 @@ if __name__ == "__main__":
             np.linalg.norm(deltaT) * 1000, np.linalg.norm(deltaR) * 180.0 / np.pi))
 
         # Show projection
-        if show_images == True:
+        if show_images:
             width = collection['data'][target_sensor]['width']
             height = collection['data'][target_sensor]['height']
             diagonal = math.sqrt(width ** 2 + height ** 2)
