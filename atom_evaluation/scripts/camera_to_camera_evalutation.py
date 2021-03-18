@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Reads the calibration results from a json file and computes the evaluation metrics
@@ -25,12 +25,14 @@ from matplotlib import cm
 
 from collections import OrderedDict
 
+from atom_core.naming import generateKey
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
+def computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t, D_t):
     # ----------------------------------------------------------------------
     # ----- Find pose of the source and target cameras w.r.t the pattern
     # ----------------------------------------------------------------------
@@ -39,15 +41,15 @@ def computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t):
     ss_T_chess_h[0:3, 3] = tvecs[:, 0]
     ss_T_chess_h[0:3, 0:3] = opt_utilities.rodriguesToMatrix(rvecs)
 
-    target_frame = final_dataset['calibration_config']['sensors'][target_sensor]['link']
-    source_frame = final_dataset['calibration_config']['sensors'][source_sensor]['link']
+    target_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
+    source_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
 
-    selected_collection_key = list(final_dataset['collections'].keys())[0]
+    selected_collection_key = list(test_dataset['collections'].keys())[0]
 
     st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
-                                          final_dataset['collections'][selected_collection_key]['transforms'])
+                                          test_dataset['collections'][collection_key]['transforms'])
     ss_T_st = atom_core.atom.getTransform(source_frame, target_frame,
-                                          final_dataset['collections'][selected_collection_key]['transforms'])
+                                          test_dataset['collections'][collection_key]['transforms'])
 
     st_T_chess_h = np.dot(inv(ss_T_st), ss_T_chess_h)
 
@@ -143,6 +145,7 @@ if __name__ == "__main__":
     train_json_file = args['train_json_file']
     f = open(train_json_file, 'r')
     train_dataset = json.load(f)
+
     # Loads the test json file containing a set of collections to evaluate the calibration
     test_json_file = args['test_json_file']
     f = open(test_json_file, 'r')
@@ -151,31 +154,39 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    final_dataset = test_dataset
-    # Source sensor
-    parent_link = final_dataset['calibration_config']['sensors'][source_sensor]['parent_link']
-    child_link = final_dataset['calibration_config']['sensors'][source_sensor]['child_link']
-    frame = parent_link + '-' + child_link
+    # test_dataset = test_dataset
+    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
 
-    for collection_key, collection in final_dataset['collections'].items():
-        quat = train_dataset['collections'][collection_key]['transforms'][frame]['quat']
-        trans = train_dataset['collections'][collection_key]['transforms'][frame]['trans']
+    # Replace optimized transformations in the test dataset copying from the train dataset
+    for sensor_key, sensor in train_dataset['sensors'].items():
+        calibration_parent = sensor['calibration_parent']
+        calibration_child = sensor['calibration_child']
+        transform_name = generateKey(calibration_parent, calibration_child)
 
-        collection['transforms'][frame]['quat'] = quat
-        collection['transforms'][frame]['trans'] = trans
+        # We can only optimized fixed transformations, so the optimized transform should be the same for all
+        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
+        # transformation for that.
+        selected_collection_key = list(train_dataset['collections'].keys())[0]
+        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
 
-    # Target sensor
-    parent_link = final_dataset['calibration_config']['sensors'][target_sensor]['parent_link']
-    child_link = final_dataset['calibration_config']['sensors'][target_sensor]['child_link']
-    frame = parent_link + '-' + child_link
+        # iterate all collections of the test dataset and replace the optimized transformation
+        for collection_key, collection in test_dataset['collections'].items():
+            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
+            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
 
-    for collection_key, collection in final_dataset['collections'].items():
-        quat = train_dataset['collections'][collection_key]['transforms'][frame]['quat']
-        trans = train_dataset['collections'][collection_key]['transforms'][frame]['trans']
+    # Copy intrinsic parameters for cameras from train to test dataset.
+    for train_sensor_key, train_sensor in train_dataset['sensors'].items():
+        if train_sensor['msg_type'] == 'Image':
+            train_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
+            train_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
+            train_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
+            train_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
 
-        collection['transforms'][frame]['quat'] = quat
-        collection['transforms'][frame]['trans'] = trans
-
+    f = open('test.json', 'w')
+    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
+    print (json.dumps(test_dataset, indent=2, sort_keys=True), file=f)
+    f.close()
+    # exit(0)
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors
@@ -183,23 +194,23 @@ if __name__ == "__main__":
     # Source sensor
     K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
-    K_s[0, :] = final_dataset['sensors'][source_sensor]['camera_info']['K'][0:3]
-    K_s[1, :] = final_dataset['sensors'][source_sensor]['camera_info']['K'][3:6]
-    K_s[2, :] = final_dataset['sensors'][source_sensor]['camera_info']['K'][6:9]
-    D_s[:, 0] = final_dataset['sensors'][source_sensor]['camera_info']['D'][0:5]
+    K_s[0, :] = test_dataset['sensors'][source_sensor]['camera_info']['K'][0:3]
+    K_s[1, :] = test_dataset['sensors'][source_sensor]['camera_info']['K'][3:6]
+    K_s[2, :] = test_dataset['sensors'][source_sensor]['camera_info']['K'][6:9]
+    D_s[:, 0] = test_dataset['sensors'][source_sensor]['camera_info']['D'][0:5]
 
     # Target sensor
     K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
-    K_t[0, :] = final_dataset['sensors'][target_sensor]['camera_info']['K'][0:3]
-    K_t[1, :] = final_dataset['sensors'][target_sensor]['camera_info']['K'][3:6]
-    K_t[2, :] = final_dataset['sensors'][target_sensor]['camera_info']['K'][6:9]
-    D_t[:, 0] = final_dataset['sensors'][target_sensor]['camera_info']['D'][0:5]
+    K_t[0, :] = test_dataset['sensors'][target_sensor]['camera_info']['K'][0:3]
+    K_t[1, :] = test_dataset['sensors'][target_sensor]['camera_info']['K'][3:6]
+    K_t[2, :] = test_dataset['sensors'][target_sensor]['camera_info']['K'][6:9]
+    D_t[:, 0] = test_dataset['sensors'][target_sensor]['camera_info']['D'][0:5]
 
     # ---------------------------------------
     # --- Evaluation loop
     # ---------------------------------------
-    print(Fore.GREEN + '\nStarting evalutation...')
+    print(Fore.GREEN + '\nStarting evaluation...')
     print(Fore.GREEN + 'If you enabled the visualization mode - press [SPACE] to advance between images')
     print(Fore.GREEN + '                                      - to stop visualization press [c] or [q]\n')
     print(Fore.WHITE)
@@ -213,6 +224,7 @@ if __name__ == "__main__":
     rerr = []
 
     # Deleting collections where the pattern is not found by all sensors:
+    collections_to_delete = []
     for collection_key, collection in test_dataset['collections'].items():
         for sensor_key, sensor in test_dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected'] and (
@@ -220,8 +232,12 @@ if __name__ == "__main__":
                 print(
                         Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
                         sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
-                del test_dataset['collections'][collection_key]
+
+                collections_to_delete.append(collection_key)
                 break
+
+    for collection_key in collections_to_delete:
+        del test_dataset['collections'][collection_key]
 
     # Reprojection error graphics definitions
     colors = cm.tab20b(np.linspace(0, 1, len(test_dataset['collections'].items())))
@@ -250,6 +266,7 @@ if __name__ == "__main__":
         # ----
 
         # Read image data
+        # TODO This is only needed if we have flag show images right?
         path_s = os.path.dirname(test_json_file) + '/' + collection['data'][source_sensor]['data_file']
         path_t = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
 
@@ -272,16 +289,16 @@ if __name__ == "__main__":
         objp[:, 3] = 1
 
         # == Compute Translation and Rotation errors
-        selected_collection_key = list(final_dataset['collections'].keys())[0]
-        common_frame = final_dataset['calibration_config']['world_link']
-        target_frame = final_dataset['calibration_config']['sensors'][target_sensor]['link']
-        source_frame = final_dataset['calibration_config']['sensors'][source_sensor]['link']
+        selected_collection_key = list(test_dataset['collections'].keys())[0]
+        common_frame = test_dataset['calibration_config']['world_link']
+        target_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
+        source_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
 
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_t], np.array(corners_t, dtype=np.float32), K_t, D_t)
         pattern_pose_target = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = atom_core.atom.getTransform(common_frame, target_frame,
-                                          final_dataset['collections'][selected_collection_key]['transforms'])
+                                          test_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
@@ -290,7 +307,8 @@ if __name__ == "__main__":
         pattern_pose_source = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = atom_core.atom.getTransform(common_frame, source_frame,
-                                          final_dataset['collections'][selected_collection_key]['transforms'])
+                                          test_dataset['collections'][collection_key]['transforms'])
+
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
@@ -308,7 +326,7 @@ if __name__ == "__main__":
             print("ERROR: Pattern wasn't found on collection " + str(collection_key))
             continue
         else:
-            H, T = computeHomographyMat(collection, rvecs, tvecs, K_s, D_s, K_t, D_t)
+            H, T = computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t, D_t)
 
         # Project corners of source image into target image
         if not use_pattern_object:
