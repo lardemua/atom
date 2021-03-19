@@ -25,6 +25,8 @@ from copy import deepcopy
 from colorama import Style, Fore
 from collections import OrderedDict
 
+from atom_core.naming import generateKey
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -74,10 +76,10 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     points_in_cam = np.dot(tf, points_in_vel)
 
     # -- Project them to the image
-    selected_collection_key = list(train_dataset['collections'].keys())[0]
-    w, h = collection['data'][ts]['width'], train_dataset['collections'][selected_collection_key]['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
-    D = np.ndarray((5, 1), buffer=np.array(train_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
+    selected_collection_key = list(test_dataset['collections'].keys())[0]
+    w, h = collection['data'][ts]['width'], test_dataset['collections'][selected_collection_key]['data'][ts]['height']
+    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
+    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
     pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
@@ -155,6 +157,37 @@ if __name__ == "__main__":
     test_dataset = json.load(f)
 
     # ---------------------------------------
+    # --- Get mixed json (calibrated transforms from train and the rest from test)
+    # ---------------------------------------
+    # test_dataset = test_dataset
+    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
+
+    # Replace optimized transformations in the test dataset copying from the train dataset
+    for sensor_key, sensor in train_dataset['sensors'].items():
+        calibration_parent = sensor['calibration_parent']
+        calibration_child = sensor['calibration_child']
+        transform_name = generateKey(calibration_parent, calibration_child)
+
+        # We can only optimized fixed transformations, so the optimized transform should be the same for all
+        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
+        # transformation for that.
+        selected_collection_key = list(train_dataset['collections'].keys())[0]
+        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
+
+        # iterate all collections of the test dataset and replace the optimized transformation
+        for collection_key, collection in test_dataset['collections'].items():
+            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
+            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
+
+    # Copy intrinsic parameters for cameras from train to test dataset.
+    for train_sensor_key, train_sensor in train_dataset['sensors'].items():
+        if train_sensor['msg_type'] == 'Image':
+            test_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
+            test_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
+
+    # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
     if use_annotation is False:
@@ -184,16 +217,16 @@ if __name__ == "__main__":
 
     delta_total = []
 
-    from_frame = train_dataset['calibration_config']['sensors'][target_sensor]['link']
-    to_frame = train_dataset['calibration_config']['sensors'][source_sensor]['link']
+    from_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
+    to_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        selected_collection_key = list(train_dataset['collections'].keys())[0]
+        selected_collection_key = list(test_dataset['collections'].keys())[0]
         vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                              train_dataset['collections'][selected_collection_key]['transforms'])
+                                              test_dataset['collections'][selected_collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, test_json_file, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
