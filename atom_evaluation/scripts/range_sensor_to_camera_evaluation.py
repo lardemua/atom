@@ -93,6 +93,8 @@ def click(event, x, y, flags, param):
     global mouseX, mouseY
     if event == cv2.EVENT_LBUTTONDOWN:
         mouseX, mouseY = x, y
+    else:
+        mouseX, mouseY = 0, 0
 
 
 def annotateLimits(image):
@@ -104,19 +106,25 @@ def annotateLimits(image):
     colors = [(125, 125, 125), (0, 255, 0), (0, 0, 255), (125, 0, 125)]
     annotating = True
     i = 0
+    p_mouseX, p_mouseY = 0, 0
     while i < 4:
         cv2.imshow('image', image)
         k = cv2.waitKey(20) & 0xFF
-        if k == ord('c'):
-            break
-        elif k == ord('s'):
-            image = cv2.circle(image, (mouseX, mouseY), 5, colors[i], -1)
-            extremas[i].append([mouseX, mouseY])
-        elif k == ord('p'):
+        if k == ord('d'):
+            cv2.destroyWindow('image')
+            return [], False
+        elif k == ord('c'):
             i += 1
+        else:
+            if (mouseX != 0 and mouseY != 0) and (p_mouseX != mouseX and p_mouseY != mouseY):
+                image = cv2.circle(image, (mouseX, mouseY), 5, colors[i], -1)
+                extremas[i].append([mouseX, mouseY])
+
+        p_mouseX = mouseX
+        p_mouseY = mouseY
 
     cv2.destroyWindow('image')
-    return extremas
+    return extremas, True
 
 
 # -------------------------------------------------------------------------------
@@ -233,11 +241,17 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
+        print (filename)
         image = cv2.imread(filename)
         if use_annotation is False:
             limits_on_image = eval_data['ground_truth_pts'][collection_key]
         else:
-            limits_on_image = annotateLimits(image)
+            success = False
+            while not success:
+                limits_on_image, success = annotateLimits(image)
+                if not success:
+                    limits_on_image = []
+                    image = cv2.imread(filename)
 
         # Clear image annotations
         image = cv2.imread(filename)
