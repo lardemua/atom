@@ -342,15 +342,22 @@ optional arguments:
 ```
 
 How to run:
+If the annotation was already once:
 ``` bash
 rosrun atom_evaluation range_sensor_to_camera_evaluation.py -train_json <path_to_train_json> -test_json <path_to_test_json> -ss <source_sensor_name> -ts <target_sensor_name> -si -ef <path_to_output_annotation_json_file>
+```
+If there is no annotation:
+``` bash
+rosrun atom_evaluation range_sensor_to_camera_evaluation.py -train_json <path_to_train_json> -test_json <path_to_test_json> -ss <source_sensor_name> -ts <target_sensor_name> -si -ua -ef <path_to_output_annotation_json_file>
 ```
 
 For each image in the test dataset the user have to annotate four classes corresponding to each one of the pattern sides.
 
 How to annotate:
 - **click + s** to add a point
-- **click + p** to change class
+- add points in one of the four edges
+- **p** to change class (that is, move to the next edge)
+- repeat this for the four classes/edges
 - **space** to go to the next image
 
 The result should be someting like this (for each image):
