@@ -419,11 +419,11 @@ def addNoiseToInitialGuess(dataset, args):
     :param args: Makes use of nig, i.e., the amount of noise to add to the initial guess atomic transformations to be
                  calibrated
     """
+    if args['sample_seed'] is not None:
+        np.random.seed(args['sample_seed'])
 
-    noise_const = args['noisy_initial_guess']
-    noise_dict = {}
-    for sensor_key, sensor in dataset['sensors'].items():
-        noise_dict[sensor_key] = random.uniform(-noise_const, noise_const)
+    nig_trans = args['noisy_initial_guess'][0]
+    nig_rot = args['noisy_initial_guess'][1]
 
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
@@ -440,8 +440,12 @@ def addNoiseToInitialGuess(dataset, args):
             euler_angles = tf.transformations.euler_from_quaternion(quat)
 
             # Add noise to the 6 pose parameters
-            new_angles = euler_angles + np.dot([1, 1, 1], noise_dict[sensor_key])
-            new_translation = translation + np.dot([1, 1, 1], noise_dict[sensor_key])
+            v = np.random.uniform(-1.0, 1.0, 3)
+            v = v / np.linalg.norm(v)
+            new_translation = translation + v * nig_trans
+
+            v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+            new_angles = euler_angles + v
 
             # Replace the original atomic transformations by the new noisy ones
             new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])

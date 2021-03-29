@@ -74,7 +74,7 @@ def main():
     ap.add_argument("-rpd", "--remove_partial_detections",
                     help="Remove detected labels which are only partial. Used or the Charuco.",
                     action='store_true', default=False)
-    ap.add_argument("-nig", "--noisy_initial_guess",
+    ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=('translation', 'rotation'),
                     help="Percentage of noise to add to the initial guess atomic transformations set before.",
                     type=float, default=0),
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
@@ -135,7 +135,7 @@ def main():
     # ---------------------------------------
     # --- Add noise to the initial guess atomic transformations to be calibrated, if desired
     # ---------------------------------------
-    if (args['noisy_initial_guess']) > 0.0:
+    if args['noisy_initial_guess'] is not None:
         addNoiseToInitialGuess(dataset, args)
 
     # ---------------------------------------
@@ -434,7 +434,8 @@ def main():
             if sensor['msg_type'] == msg_type:
                 values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
-        normalizer[msg_type] = np.mean(values)
+        # If the normalizer is to big, the residuals may loose their influence when close to zero.
+        normalizer[msg_type] = np.abs(np.log(np.mean(values)))
 
     # ---------------------------------------
     # --- Profile Objective Function
