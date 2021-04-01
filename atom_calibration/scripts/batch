@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""
+Runs several calibration executions in batch
+"""
+import subprocess
+from colorama import Fore, Back, Style
+
+
+
+def execute(cmd, blocking=True, verbose=True):
+    """ @brief Executes the command in the shell in a blocking or non-blocking manner
+        @param cmd a string with teh command to execute
+        @return
+    """
+    if verbose:
+        print("Executing command: " + cmd)
+
+
+batches = [
+            {'command': "rosrun atom_calibration calibrate" , 'arguments': "-json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.05 0.025 -ss 1"},
+            {'command': "rosrun" , 'arguments': "atom_calibration calibrate -json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.02 0.02 -ss 1"},
+            {'command': "rosrun" , 'arguments': "atom_calibration calibrate -json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.03 0.02 -ss 1"},
+            {'command': "rosrun" , 'arguments': "atom_calibration calibrate -json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.04 0.02 -ss 1"},
+        ]
+
+
+def main():
+    for idx, batch in enumerate(batches):
+        print('\n\n' + Fore.BLUE + Back.YELLOW + 'Running batch ' + str(idx) + Style.RESET_ALL)
+
+        # result = subprocess.run([batch['command'], batch['arguments']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = subprocess.run([batch['command'], batch['arguments']], shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(result.stdout)
+
+        # print(result.stdout.decode('utf8'))
+
+
+if __name__ == "__main__":
+    main()
