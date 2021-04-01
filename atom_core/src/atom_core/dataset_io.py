@@ -367,7 +367,7 @@ def filterCollectionsFromDataset(dataset, args):
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
-        print('Deleted collections: ' + str(deleted) + ' because these are incomplete. If you want to use them set '
+        print('Deleted collections: ' + str(deleted) + ' because these are incomplete. If you want to use them set the '
                                                        'use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
