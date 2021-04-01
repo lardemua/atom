@@ -367,7 +367,8 @@ def filterCollectionsFromDataset(dataset, args):
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
-        print('Deleted collections: ' + str(deleted) + ' because these are incomplete. Check use_incomplete_collections flag.')
+        print('Deleted collections: ' + str(deleted) + 'because these are incomplete. Check '
+                                                       'use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
         number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
