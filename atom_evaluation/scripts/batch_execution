@@ -6,11 +6,13 @@ import argparse
 import os
 import subprocess
 from colorama import Fore, Back, Style
+from pytictoc import TicToc
 
 from atom_core.config_io import resolvePath
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Define here the list of commands you want to execute in batch_execution
+# TODO we could have a yaml or a json defining the commands to be batched...
 dataset_path = resolvePath('~/datasets/mmtbot/train_dataset/')
 output_folder = resolvePath(dataset_path + '/results')
 
@@ -34,6 +36,7 @@ def main():
                     default=False)
 
     args = vars(ap.parse_args())
+    tictoc = TicToc()
 
     if not os.path.exists(output_folder):  # create output folder if it does not exist.
         print(Fore.BLUE + Back.YELLOW + 'Creating output folder at: ' + output_folder + Style.RESET_ALL)
@@ -45,9 +48,11 @@ def main():
                   'command'] + Style.RESET_ALL)
 
         # Start executing command.
+        tictoc.tic()
         proc = subprocess.Popen(batch['command'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         proc.wait()  # wait for command to finish
+        toc = str(round(tictoc.tocvalue(), 5))
 
         if not proc.returncode == 0:  # Check output of command.
             print(Fore.RED + Back.YELLOW + 'Error running command. stderr is:' + Style.RESET_ALL)
@@ -61,7 +66,6 @@ def main():
 
         prefix = str(idx).zfill(2) + '_'
         filename = output_folder + '/' + prefix + batch['name'] + '_stdout.txt'
-        print(filename)
         with open(filename, 'w') as f:
             f.write(output)
 
@@ -74,6 +78,8 @@ def main():
             print(Fore.BLUE + Back.YELLOW + 'Moving file ' + file + ' to ' + filename_out + Style.RESET_ALL)
             p = subprocess.Popen('cp ' + file + ' ' + filename_out, shell=True, universal_newlines=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
+
+        print(Fore.BLUE + Back.YELLOW + 'Command executed in ' + toc + ' secs.' + Style.RESET_ALL)
 
 
 if __name__ == "__main__":
