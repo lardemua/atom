@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Runs several calibration executions in batch
+Runs several calibration executions in batch_execution
 """
 import argparse
 import os
@@ -10,7 +10,7 @@ from colorama import Fore, Back, Style
 from atom_core.config_io import resolvePath
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Define here the list of commands you want to execute in batch
+# Define here the list of commands you want to execute in batch_execution
 dataset_path = resolvePath('~/datasets/mmtbot/train_dataset/')
 output_folder = resolvePath(dataset_path + '/results')
 
@@ -39,7 +39,7 @@ def main():
         print(Fore.BLUE + Back.YELLOW + 'Creating output folder at: ' + output_folder + Style.RESET_ALL)
         os.mkdir(output_folder)  # Create the new folder
 
-    for idx, batch in enumerate(batches):  # cyce through commands in batch.
+    for idx, batch in enumerate(batches):  # cyce through commands in batch_execution.
         print('\n\n' + Style.BRIGHT + Fore.BLUE + Back.YELLOW + 'Batch' + str(
             idx) + ', executing command:' + Style.RESET_ALL + '\n' + Fore.BLUE + Back.YELLOW + batch[
                   'command'] + Style.RESET_ALL)
