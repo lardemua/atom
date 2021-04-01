@@ -2,37 +2,78 @@
 """
 Runs several calibration executions in batch
 """
+import argparse
+import os
 import subprocess
 from colorama import Fore, Back, Style
 
+from atom_core.config_io import resolvePath
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Define here the list of commands you want to execute in batch
+dataset_path = resolvePath('~/datasets/mmtbot/train_dataset/')
+output_folder = resolvePath(dataset_path + '/results')
 
-def execute(cmd, blocking=True, verbose=True):
-    """ @brief Executes the command in the shell in a blocking or non-blocking manner
-        @param cmd a string with teh command to execute
-        @return
-    """
-    if verbose:
-        print("Executing command: " + cmd)
-
+cmd_prefix = 'rosrun atom_calibration calibrate -json ' + dataset_path + '/data_collected.json'
 
 batches = [
-            {'command': "rosrun atom_calibration calibrate" , 'arguments': "-json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.05 0.025 -ss 1"},
-            {'command': "rosrun" , 'arguments': "atom_calibration calibrate -json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.02 0.02 -ss 1"},
-            {'command': "rosrun" , 'arguments': "atom_calibration calibrate -json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.03 0.02 -ss 1"},
-            {'command': "rosrun" , 'arguments': "atom_calibration calibrate -json ~/datasets/mmtbot/train_dataset/data_collected.json  -csf 'lambda name: int(name)<30'  -nig 0.04 0.02 -ss 1"},
-        ]
+    {'name': 'nig0.01_0.020',
+     'command': cmd_prefix + " -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1",
+     'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']},
+    {'name': 'nig0.03_0.020',
+     'command': cmd_prefix + " -csf 'lambda name: int(name)<1'  -nig 0.03 0.020 -ss 1",
+     'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']}
+]
 
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    for idx, batch in enumerate(batches):
-        print('\n\n' + Fore.BLUE + Back.YELLOW + 'Running batch ' + str(idx) + Style.RESET_ALL)
+    ap = argparse.ArgumentParser()  # Parse command line arguments
+    ap.add_argument("-v", "--verbose", help="Prints the output of each command to the terminal.", action='store_true',
+                    default=False)
 
-        # result = subprocess.run([batch['command'], batch['arguments']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        result = subprocess.run([batch['command'], batch['arguments']], shell=True, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(result.stdout)
+    args = vars(ap.parse_args())
 
-        # print(result.stdout.decode('utf8'))
+    if not os.path.exists(output_folder):  # create output folder if it does not exist.
+        print(Fore.BLUE + Back.YELLOW + 'Creating output folder at: ' + output_folder + Style.RESET_ALL)
+        os.mkdir(output_folder)  # Create the new folder
+
+    for idx, batch in enumerate(batches):  # cyce through commands in batch.
+        print('\n\n' + Style.BRIGHT + Fore.BLUE + Back.YELLOW + 'Batch' + str(
+            idx) + ', executing command:' + Style.RESET_ALL + '\n' + Fore.BLUE + Back.YELLOW + batch[
+                  'command'] + Style.RESET_ALL)
+
+        # Start executing command.
+        proc = subprocess.Popen(batch['command'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        proc.wait()  # wait for command to finish
+
+        if not proc.returncode == 0:  # Check output of command.
+            print(Fore.RED + Back.YELLOW + 'Error running command. stderr is:' + Style.RESET_ALL)
+            print(proc.stderr.read())
+            exit(0)
+
+        output = proc.stdout.read()  # save sdtout to file
+        if args['verbose']:
+            print(Fore.BLUE + Back.YELLOW + 'Batch' + str(idx) + ' terminated, stdout is:' + Style.RESET_ALL)
+            print(output)
+
+        prefix = str(idx).zfill(2) + '_'
+        filename = output_folder + '/' + prefix + batch['name'] + '_stdout.txt'
+        print(filename)
+        with open(filename, 'w') as f:
+            f.write(output)
+
+        # Collect output files
+        for file in batch['files_to_collect']:
+            if not os.path.exists(file):
+                raise ValueError('File ' + file + ' should be collected but does not exist.')
+
+            filename_out = output_folder + '/' + prefix + batch['name'] + '_' + os.path.basename(file)
+            print(Fore.BLUE + Back.YELLOW + 'Moving file ' + file + ' to ' + filename_out + Style.RESET_ALL)
+            p = subprocess.Popen('cp ' + file + ' ' + filename_out, shell=True, universal_newlines=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
 
 
 if __name__ == "__main__":
