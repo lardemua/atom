@@ -93,6 +93,8 @@ def main():
                     action='store_true', default=False)
     ap.add_argument("-ipg", "--initial_pose_ghost", help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
                     action='store_true', default=False)
+    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False, default=None)
+    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False, default=None)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -484,7 +486,11 @@ def main():
     # --- Save updated JSON file
     # ---------------------------------------
 
-    filename_results_json = os.path.dirname(json_file) + '/atom_calibration.json'
+    if args['output_json'] is None:
+        filename_results_json = os.path.dirname(json_file) + '/atom_calibration.json'
+    else:
+        filename_results_json = args['output_json']
+
     saveResultsJSON(filename_results_json, dataset)
 
     # ---------------------------------------
@@ -521,13 +527,15 @@ def main():
         if not found:
             raise ValueError('Could not find transform ' + str(transform_key) + ' in ' + description_file)
 
-    # TODO find a way to find the <your_robot>_calibration path. For now write a xacro to /tmp
-    # outfile = os.path.dirname(description_file) + '/optimized.urdf.xacro'
-    outfile = '/tmp/optimized.urdf.xacro'
-    with open(outfile, 'w') as out:
+    if args['output_xacro'] is None:
+        filename_results_xacro = '/tmp/optimized.urdf.xacro'
+    else:
+        filename_results_xacro = args['output_xacro']
+
+    with open(filename_results_xacro, 'w') as out:
         out.write(URDF.to_xml_string(xml_robot))
 
-    print('Optimized xacro file saved to ' + str(outfile) + ' . You can use it as a ROS robot_description.')
+    print('Optimized xacro file saved to ' + str(filename_results_xacro) + ' . You can use it as a ROS robot_description.')
 
 
 if __name__ == "__main__":
