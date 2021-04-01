@@ -367,7 +367,7 @@ def filterCollectionsFromDataset(dataset, args):
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
-        print('Deleted collections: ' + str(deleted) + 'because these are incomplete. Check '
+        print('Deleted collections: ' + str(deleted) + ' because these are incomplete. If you want to use them set '
                                                        'use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
@@ -394,6 +394,7 @@ def filterCollectionsFromDataset(dataset, args):
             break
 
     if flag_have_cameras:
+        deleted = []
         for collection_key, collection in dataset['collections'].items():
             flag_have_at_least_one_camera_detection = False
             for sensor_key, sensor in dataset['sensors'].items():
@@ -401,9 +402,12 @@ def filterCollectionsFromDataset(dataset, args):
                     flag_have_at_least_one_camera_detection = True
 
             if not flag_have_at_least_one_camera_detection:  # delete collection without detection by cameras.
-                print(Fore.RED + "Removing collection " + collection_key + Style.RESET_ALL +
-                      ': at least one detection by a camera should be present.')
-                del dataset['collections'][collection_key]
+
+                deleted.append(collection_key)
+
+        for collection_key in deleted:
+            del dataset['collections'][collection_key]
+        print('Deleted collections: ' + str(deleted) + ': at least one detection by a camera should be present.')
 
     if not dataset['collections'].keys():
         raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
