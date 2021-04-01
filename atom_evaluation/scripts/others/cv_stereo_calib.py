@@ -121,6 +121,7 @@ if __name__ == '__main__':
     dataset = json.load(f)
 
     # Remove partial detections (OpenCV does not support them)
+    collections_to_delete = []
     number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
                         int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
     for collection_key, collection in dataset['collections'].items():
@@ -130,8 +131,13 @@ if __name__ == '__main__':
                     print(
                             Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
                             collection_key + ', sensor ' + sensor_key)
-                    del (dataset['collections'][collection_key])
+
+                    collections_to_delete.append(collection_key)
                     break
+
+
+    for collection_key in collections_to_delete:
+        del dataset['collections'][collection_key]
 
     print ('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 

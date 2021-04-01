@@ -32,7 +32,7 @@ def atomicTfFromCalibration(dataset, anchored_sensor_key, other_sensor_key, cali
     other_sensor_child_link = dataset['calibration_config'][other_type][other_sensor_key]['child_link']
     other_sensor_parent_link = dataset['calibration_config'][other_type][other_sensor_key]['parent_link']
 
-    selected_collection_key = dataset['collections'].keys()[0]
+    selected_collection_key = list(dataset['collections'].keys())[0]
     base2anchored = getTransform(world_link, anchored_sensor_link,
                                  dataset['collections'][selected_collection_key]['transforms'])
     base2other_parent = getTransform(world_link, other_sensor_parent_link,
