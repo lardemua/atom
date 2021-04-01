@@ -357,15 +357,17 @@ def filterCollectionsFromDataset(dataset, args):
         print('Deleted collections: ' + str(deleted) + ' because of the -csf flag.')
 
     if not args['use_incomplete_collections']:
+        deleted = []
         # Deleting collections where the pattern is not found by all sensors:
         for collection_key, collection in dataset['collections'].items():
             for sensor_key, sensor in dataset['sensors'].items():
                 if not collection['labels'][sensor_key]['detected']:
-                    print(
-                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                        sensor_key + ' (incomplete collection).' + Style.RESET_ALL)
-                    del dataset['collections'][collection_key]
+                    deleted.append(collection_key)
                     break
+
+        for collection_key in deleted:
+            del dataset['collections'][collection_key]
+        print('Deleted collections: ' + str(deleted) + ' because these are incomplete. Check use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
         number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
