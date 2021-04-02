@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Runs several calibration executions in batch_execution
+Runs several calibration executions in batch_execution. A yml file is used to config the batch executions.
 """
 import argparse
 import os
@@ -10,29 +10,6 @@ import jinja2
 
 from colorama import Fore, Back, Style
 from pytictoc import TicToc
-
-from atom_core.config_io import resolvePath
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Define here the list of commands you want to execute in batch_execution
-# TODO we could have a yaml or a json defining the commands to be batched...
-# dataset_path = resolvePath('~/datasets/mmtbot/train_dataset/')
-# output_folder = resolvePath(dataset_path + '/results')
-#
-# cmd_prefix = 'rosrun atom_calibration calibrate -json ' + dataset_path + '/data_collected.json'
-#
-# batches = [
-#     {'name': 'nig0.01_0.020',
-#      'command': cmd_prefix + " -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1",
-#      'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']},
-#     {'name': 'nig0.03_0.020',
-#      'command': cmd_prefix + " -csf 'lambda name: int(name)<1'  -nig 0.03 0.020 -ss 1",
-#      'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']}
-# ]
-
-
-# ----------------------------------------------------------------------------------------------------------------------
 
 def main():
     ap = argparse.ArgumentParser()  # Parse command line arguments
