@@ -5,6 +5,9 @@ Runs several calibration executions in batch_execution
 import argparse
 import os
 import subprocess
+import yaml
+import jinja2
+
 from colorama import Fore, Back, Style
 from pytictoc import TicToc
 
@@ -13,19 +16,19 @@ from atom_core.config_io import resolvePath
 # ----------------------------------------------------------------------------------------------------------------------
 # Define here the list of commands you want to execute in batch_execution
 # TODO we could have a yaml or a json defining the commands to be batched...
-dataset_path = resolvePath('~/datasets/mmtbot/train_dataset/')
-output_folder = resolvePath(dataset_path + '/results')
-
-cmd_prefix = 'rosrun atom_calibration calibrate -json ' + dataset_path + '/data_collected.json'
-
-batches = [
-    {'name': 'nig0.01_0.020',
-     'command': cmd_prefix + " -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1",
-     'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']},
-    {'name': 'nig0.03_0.020',
-     'command': cmd_prefix + " -csf 'lambda name: int(name)<1'  -nig 0.03 0.020 -ss 1",
-     'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']}
-]
+# dataset_path = resolvePath('~/datasets/mmtbot/train_dataset/')
+# output_folder = resolvePath(dataset_path + '/results')
+#
+# cmd_prefix = 'rosrun atom_calibration calibrate -json ' + dataset_path + '/data_collected.json'
+#
+# batches = [
+#     {'name': 'nig0.01_0.020',
+#      'command': cmd_prefix + " -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1",
+#      'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']},
+#     {'name': 'nig0.03_0.020',
+#      'command': cmd_prefix + " -csf 'lambda name: int(name)<1'  -nig 0.03 0.020 -ss 1",
+#      'files_to_collect': [dataset_path + '/atom_calibration.json', '/tmp/optimized.urdf.xacro']}
+# ]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -34,22 +37,35 @@ def main():
     ap = argparse.ArgumentParser()  # Parse command line arguments
     ap.add_argument("-v", "--verbose", help="Prints the output of each command to the terminal.", action='store_true',
                     default=False)
+    ap.add_argument("-f", "--filename", help="Yml file containing a description of all the commands to run in batch.",
+                    required=True, type=str)
 
     args = vars(ap.parse_args())
+
+    # Load and render config file
+    with open(args['filename']) as f:
+        dataMap = yaml.safe_load(f)
+
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath='.'))
+    template = env.get_template(args['filename'])
+    config = yaml.safe_load(template.render(**dataMap))
+    print(Fore.BLUE + Back.YELLOW + 'Loaded config file ' + args['filename'] + Style.RESET_ALL)
+    if args['verbose']:
+        print(config)
+
     tictoc = TicToc()
 
-    if not os.path.exists(output_folder):  # create output folder if it does not exist.
-        print(Fore.BLUE + Back.YELLOW + 'Creating output folder at: ' + output_folder + Style.RESET_ALL)
-        os.mkdir(output_folder)  # Create the new folder
+    if not os.path.exists(config['output_folder']):  # create output folder if it does not exist.
+        print(Fore.BLUE + Back.YELLOW + 'Creating output folder at: ' + config['output_folder'] + Style.RESET_ALL)
+        os.mkdir(config['output_folder'])  # Create the new folder
 
-    for idx, batch in enumerate(batches):  # cyce through commands in batch_execution.
-        print('\n\n' + Style.BRIGHT + Fore.BLUE + Back.YELLOW + 'Batch' + str(
-            idx) + ', executing command:' + Style.RESET_ALL + '\n' + Fore.BLUE + Back.YELLOW + batch[
-                  'command'] + Style.RESET_ALL)
+    for idx, batch in enumerate(config['batches']):  # cyce through commands in batch_execution.
+        print('\n\n' + Style.BRIGHT + Fore.BLUE + Back.YELLOW + 'Batch' + str(idx) + ', executing command:' +
+              Style.RESET_ALL + '\n' + Fore.BLUE + Back.YELLOW + batch['cmd'] + Style.RESET_ALL)
 
         # Start executing command.
         tictoc.tic()
-        proc = subprocess.Popen(batch['command'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
+        proc = subprocess.Popen(batch['cmd'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         proc.wait()  # wait for command to finish
         toc = str(round(tictoc.tocvalue(), 5))
@@ -65,7 +81,7 @@ def main():
             print(output)
 
         prefix = str(idx).zfill(2) + '_'
-        filename = output_folder + '/' + prefix + batch['name'] + '_stdout.txt'
+        filename = config['output_folder'] + '/' + prefix + batch['name'] + '_stdout.txt'
         with open(filename, 'w') as f:
             f.write(output)
 
@@ -74,7 +90,7 @@ def main():
             if not os.path.exists(file):
                 raise ValueError('File ' + file + ' should be collected but does not exist.')
 
-            filename_out = output_folder + '/' + prefix + batch['name'] + '_' + os.path.basename(file)
+            filename_out = config['output_folder'] + '/' + prefix + batch['name'] + '_' + os.path.basename(file)
             print(Fore.BLUE + Back.YELLOW + 'Moving file ' + file + ' to ' + filename_out + Style.RESET_ALL)
             p = subprocess.Popen('cp ' + file + ' ' + filename_out, shell=True, universal_newlines=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
