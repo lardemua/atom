@@ -13,6 +13,7 @@ from pytictoc import TicToc
 
 from atom_core.config_io import resolvePath
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Define here the list of commands you want to execute in batch_execution
 # TODO we could have a yaml or a json defining the commands to be batched...
@@ -43,13 +44,26 @@ def main():
     args = vars(ap.parse_args())
 
     # Load and render config file
+    print('reading file ' + args['filename'])
+
+    # Getting data map
     with open(args['filename']) as f:
         dataMap = yaml.safe_load(f)
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath='.'))
-    template = env.get_template(args['filename'])
-    config = yaml.safe_load(template.render(**dataMap))
-    print(Fore.BLUE + Back.YELLOW + 'Loaded config file ' + args['filename'] + Style.RESET_ALL)
+    # Getting initial template
+    with open(args['filename']) as f:
+        template = f.read()
+
+    # Recursive substitution of variables to allow nested
+    while True:
+        previous_template = template
+        template = jinja2.Template(template).render(**dataMap)
+        if previous_template == template:
+            break
+
+    config = yaml.safe_load(template)
+
+    print(Fore.BLUE + Back.YELLOW + 'Loaded config file ' + args['filename'] + ' (rendered with nested variable substitution)' + Style.RESET_ALL)
     if args['verbose']:
         print(config)
 

@@ -16,21 +16,22 @@
 
 
 # Auxiliary variables. Used to render other variables.
-dataset_path: '/home/mike/datasets/mmtbot/train_dataset'
-cmd_prefix: 'rosrun atom_calibration calibrate'
+home: '/home/mike'
+dataset_path: '{{ home }}/datasets/mmtbot/train_dataset'
+cmd_prefix: 'rosrun atom_calibration calibrate -json {{ dataset_path }}/data_collected.json '
 
 # Batch variables. These are read and used for batch execution.
 output_folder: '{{ dataset_path }}/results'
 
 batches:
     - name: "nig0.01_0.020"
-      cmd: "{{ cmd_prefix }} -json {{ dataset_path }}/data_collected.json -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1"
+      cmd: "{{ cmd_prefix }} -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1"
       files_to_collect:
         - '{{ dataset_path }}/atom_calibration.json'
         -  '/tmp/optimized.urdf.xacro'
 
     - name: "nig0.03_0.020"
-      cmd: "{{ cmd_prefix }} -json {{ dataset_path }}/data_collected.json -csf 'lambda name: int(name)<1' -nig 0.03 0.020 -ss 1"
+      cmd: "{{ cmd_prefix }} -csf 'lambda name: int(name)<1' -nig 0.03 0.020 -ss 1"
       files_to_collect:
         - '{{ dataset_path }}/atom_calibration.json'
         -  '/tmp/optimized.urdf.xacro'
