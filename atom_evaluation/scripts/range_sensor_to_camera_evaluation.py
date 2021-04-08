@@ -76,8 +76,7 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     points_in_cam = np.dot(tf, points_in_vel)
 
     # -- Project them to the image
-    selected_collection_key = list(test_dataset['collections'].keys())[0]
-    w, h = collection['data'][ts]['width'], test_dataset['collections'][selected_collection_key]['data'][ts]['height']
+    w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
@@ -232,9 +231,8 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        selected_collection_key = list(test_dataset['collections'].keys())[0]
         vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                              test_dataset['collections'][selected_collection_key]['transforms'])
+                                              test_dataset['collections'][collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, test_json_file, source_sensor, target_sensor, vel2cam)
 
         # ---------------------------------------
