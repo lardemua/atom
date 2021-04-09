@@ -6,6 +6,7 @@ import copy
 # 3rd-party
 import numpy as np
 import cv2
+import std_srvs.srv
 import tf
 
 from interactive_markers.menu_handler import *
@@ -61,8 +62,53 @@ class Sensor:
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
 
+        # Add service to make visible / invisible
+        # std_srvs / SetBool Service
+
+        self.service_set_visible = rospy.Service('~' + self.name + '/set_visible', std_srvs.srv.SetBool,
+                                                 self.setVisible)
+        # marker = server.get("marker_name")
+        # marker.controls[0].markers[0].color.r = 150
+        # marker.controls[0].markers[0].color.g = 0
+        # marker.controls[0].markers[0].color.b = 0
+        # server.applyChanges()
+
         # Start publishing now
         self.timer_callback = rospy.Timer(rospy.Duration(.1), self.publishTFCallback)  # to periodically broadcast
+
+    def setVisible(self, request):
+        print('setVisible service requested')
+
+        # if request.data == 1:
+        #     for control in self.marker.controls:
+        #         for marker in control.markers:
+        #             marker.color.a = 1
+        # else:
+        #     for control in self.marker.controls:
+        #         for marker in control.markers:
+        #             marker.color.a = 0
+
+        for control in self.marker.controls:
+            print(control)
+            control.always_visible = False
+            for marker in control.markers:
+                print(marker)
+                marker.color.a = 0
+                marker.color.r = 255
+                marker.color.g = 255
+
+        marker = self.server.get(self.name)
+        marker.controls[0].markers[0].color.r = 150
+        marker.controls[0].markers[0].color.g = 0
+        marker.controls[0].markers[0].color.b = 0
+        self.server.applyChanges()
+
+        self.server.applyChanges()
+
+        response = std_srvs.srv.SetBoolResponse()
+        response.success = 1
+        response.message = 'All good.'
+        return response
 
     def resetToInitalPose(self):
         self.optT.matrix = self.optTInitial.matrix
