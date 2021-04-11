@@ -4,6 +4,7 @@
 import copy
 
 # 3rd-party
+import atom_msgs.srv
 import colorama
 import numpy as np
 import cv2
@@ -66,25 +67,22 @@ class Sensor:
         # Add service to make visible / invisible
         # std_srvs / SetBool Service
 
-        self.service_set_visible = rospy.Service('~' + self.name + '/set_visible', std_srvs.srv.SetBool,
-                                                 self.setVisible)
-        # marker = server.get("marker_name")
-        # marker.controls[0].markers[0].color.r = 150
-        # marker.controls[0].markers[0].color.g = 0
-        # marker.controls[0].markers[0].color.b = 0
-        # server.applyChanges()
+        self.service_set_visible = rospy.Service('~' + self.name + '/set_sensor_interactive_marker',
+                                                 atom_msgs.srv.SetSensorInteractiveMarker,
+                                                 self.callbackSetSensorInteractiveMarker)
 
         # Start publishing now
         self.timer_callback = rospy.Timer(rospy.Duration(.1), self.publishTFCallback)  # to periodically broadcast
 
-    def setVisible(self, request):
+    def callbackSetSensorInteractiveMarker(self, request):
 
-        print('setVisible=' + str(request.data) + ' service requested for sensor ' + colorama.Fore.BLUE +
+        print('callbackSetSensorInteractiveMarker service requested for sensor ' + colorama.Fore.BLUE +
               self.name + colorama.Style.RESET_ALL)
 
         interactive_marker = self.server.get(self.name)
+        interactive_marker.scale = request.scale
         for control in interactive_marker.controls:
-            if request.data == 1:
+            if request.visible == 1:
                 if 'move' in control.name:
                     control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
                 elif 'rotate' in control.name:
