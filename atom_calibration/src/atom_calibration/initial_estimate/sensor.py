@@ -94,7 +94,7 @@ class Sensor:
 
         self.server.applyChanges()
 
-        response = std_srvs.srv.SetBoolResponse()
+        response = atom_msgs.srv.SetSensorInteractiveMarkerResponse()
         response.success = 1
         response.message = 'All good.'
         return response
