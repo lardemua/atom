@@ -4,8 +4,11 @@
 import copy
 
 # 3rd-party
+import atom_msgs.srv
+import colorama
 import numpy as np
 import cv2
+import std_srvs.srv
 import tf
 
 from interactive_markers.menu_handler import *
@@ -38,6 +41,7 @@ class Sensor:
                  marker_scale):
         print('Creating a new sensor named ' + name)
         self.name = name
+        self.visible = True
         self.server = server
         self.menu_handler = menu_handler
         self.listener = TransformListener()
@@ -61,8 +65,53 @@ class Sensor:
         self.createInteractiveMarker()  # create interactive marker
         print('Created interactive marker.')
 
+        # Add service to make visible / invisible and set the scale
+        self.service_set_visible = rospy.Service('~' + self.name + '/set_sensor_interactive_marker',
+                                                 atom_msgs.srv.SetSensorInteractiveMarker,
+                                                 self.callbackSetSensorInteractiveMarker)
+
+        # Add service to get the visible and scale
+        self.service_get_visible = rospy.Service('~' + self.name + '/get_sensor_interactive_marker',
+                                                 atom_msgs.srv.GetSensorInteractiveMarker,
+                                                 self.callbackGetSensorInteractiveMarker)
+
         # Start publishing now
         self.timer_callback = rospy.Timer(rospy.Duration(.1), self.publishTFCallback)  # to periodically broadcast
+
+    def callbackGetSensorInteractiveMarker(self, request):
+
+        interactive_marker = self.server.get(self.name)
+        response = atom_msgs.srv.GetSensorInteractiveMarkerResponse()
+        response.visible = self.visible
+        response.scale = interactive_marker.scale
+        return response
+
+    def callbackSetSensorInteractiveMarker(self, request):
+
+        print('callbackSetSensorInteractiveMarker service requested for sensor ' + colorama.Fore.BLUE +
+              self.name + colorama.Style.RESET_ALL)
+
+        interactive_marker = self.server.get(self.name)
+        interactive_marker.scale = request.scale
+        self.visible = request.visible  # store visible state
+
+        for control in interactive_marker.controls:
+            if self.visible == 1:
+                if 'move' in control.name:
+                    control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+                elif 'rotate' in control.name:
+                    control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+            else:
+                control.interaction_mode = InteractiveMarkerControl.NONE
+
+        self.server.insert(interactive_marker)
+
+        self.server.applyChanges()
+
+        response = atom_msgs.srv.SetSensorInteractiveMarkerResponse()
+        response.success = 1
+        response.message = 'Control changed.'
+        return response
 
     def resetToInitalPose(self):
         self.optT.matrix = self.optTInitial.matrix

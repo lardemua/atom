@@ -373,6 +373,15 @@ How to run:
 rosrun atom_evaluation point_cloud_to_image.py -json <path_to_test_json> -ls <lidar_sensor_name> -cs <camera_sensor_name>
 ```
 
+# Installation 
+
+Install pip3
+
+sudo apt-get install python3-pip
+
+sudo pip3 install -r requirements.txt
+
+
 # Contributors
 
  * Miguel Riem Oliveira - University of Aveiro

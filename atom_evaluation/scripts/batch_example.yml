@@ -159,3 +159,8 @@ batches:
 #        - '{{ dataset_path }}/atom_calibration.json'
 #        -  '/tmp/optimized.urdf.xacro'
 
+    - name: "7_collections"
+      cmd: "{{ cmd_prefix }} -csf 'lambda name: int(name)<7' -nig 0.03 0.020 -ss 1"
+      files_to_collect:
+        - '{{ dataset_path }}/atom_calibration.json'
+        -  '/tmp/optimized.urdf.xacro'
