@@ -13,7 +13,7 @@ from pytictoc import TicToc
 
 def main():
     ap = argparse.ArgumentParser()  # Parse command line arguments
-    ap.add_argument("-v", "--verbose", help="Prints the output of each command to the terminal.", action='store_true',
+    ap.add_argument("-v", "--verbose", help="Prints the stdout_data of each command to the terminal.", action='store_true',
                     default=False)
     ap.add_argument("-f", "--filename", help="Yml file containing a description of all the commands to run in batch.",
                     required=True, type=str)
@@ -46,8 +46,8 @@ def main():
 
     tictoc = TicToc()
 
-    if not os.path.exists(config['output_folder']):  # create output folder if it does not exist.
-        print(Fore.BLUE + Back.YELLOW + 'Creating output folder at: ' + config['output_folder'] + Style.RESET_ALL)
+    if not os.path.exists(config['output_folder']):  # create stdout_data folder if it does not exist.
+        print(Fore.BLUE + Back.YELLOW + 'Creating stdout_data folder at: ' + config['output_folder'] + Style.RESET_ALL)
         os.mkdir(config['output_folder'])  # Create the new folder
 
     for idx, batch in enumerate(config['batches']):  # cyce through commands in batch_execution.
@@ -58,25 +58,27 @@ def main():
         tictoc.tic()
         proc = subprocess.Popen(batch['cmd'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-        proc.wait()  # wait for command to finish
+
+        # proc.wait()  # wait for command to finish. Wait blocks with large pipes.
+        # Check https://docs.python.org/2/library/subprocess.html#subprocess.Popen.wait
+        stdout_data, stderr_data = proc.communicate()  # wait for command to finish
         toc = str(round(tictoc.tocvalue(), 5))
 
-        if not proc.returncode == 0:  # Check output of command.
+        if not proc.returncode == 0:  # Check stdout_data of command.
             print(Fore.RED + Back.YELLOW + 'Error running command. stderr is:' + Style.RESET_ALL)
-            print(proc.stderr.read())
+            print(stderr_data)
             exit(0)
 
-        output = proc.stdout.read()  # save sdtout to file
         if args['verbose']:
             print(Fore.BLUE + Back.YELLOW + 'Batch' + str(idx) + ' terminated, stdout is:' + Style.RESET_ALL)
-            print(output)
+            print(stdout_data)
 
         prefix = str(idx).zfill(2) + '_'
         filename = config['output_folder'] + '/' + prefix + batch['name'] + '_stdout.txt'
         with open(filename, 'w') as f:
-            f.write(output)
+            f.write(stdout_data)
 
-        # Collect output files
+        # Collect stdout_data files
         for file in batch['files_to_collect']:
             if not os.path.exists(file):
                 raise ValueError('File ' + file + ' should be collected but does not exist.')

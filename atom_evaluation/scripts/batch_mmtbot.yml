@@ -16,8 +16,10 @@
 
 
 # auxiliary variables. used to render other variables.
-home: '/home/daniela'
-dataset_path: '{{ home }}/datasets/train_dataset_1'
+#home: '/home/daniela'
+home: '/home/mike'
+#dataset_path: '{{ home }}/datasets/train_dataset_1'
+dataset_path: '{{ home }}/datasets/mmtbot/train_dataset'
 cmd_prefix: 'rosrun atom_calibration calibrate -json {{ dataset_path }}/data_collected.json '
 
 # batch variables. these are read and used for batch execution.
