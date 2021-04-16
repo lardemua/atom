@@ -16,148 +16,156 @@
 
 
 # auxiliary variables. used to render other variables.
-home: '/home/mike'
-dataset_path: '{{ home }}/datasets/mmtbot/train_dataset'
+home: '/home/daniela'
+dataset_path: '{{ home }}/datasets/mmtbot/train_dataset_1'
 cmd_prefix: 'rosrun atom_calibration calibrate -json {{ dataset_path }}/data_collected.json '
 
 # batch variables. these are read and used for batch execution.
 output_folder: '{{ dataset_path }}/results'
 
 batches:
-    - name: "{{ item.name }}"
-      cmd: "{{ cmd_prefix }} {{item.cmd}}"
-      with_items:
-        - { name: 'nig0.00_0.00', cmd: '-csf -nig 0.00 0.00 -ss 1' }
-        - { name: 'nig0.00_4.00', cmd: '-csf -nig 0.00 4.00 -ss 1' }
-        - { name: 'nig0.00_8.00', cmd: '-csf -nig 0.00 8.00 -ss 1' }
-        - { name: 'nig0.00_12.00', cmd: '-csf -nig 0.00 12.00 -ss 1' }
-        - { name: 'nig0.00_16.00', cmd: '-csf -nig 0.00 16.00 -ss 1' }
-        - { name: 'nig0.00_20.00', cmd: '-csf -nig 0.00 20.00 -ss 1' }
-        - { name: 'nig0.00_24.00', cmd: '-csf -nig 0.00 24.00 -ss 1' }
-        - { name: 'nig0.00_28.00', cmd: '-csf -nig 0.00 28.00 -ss 1' }
-        - { name: 'nig0.00_32.00', cmd: '-csf -nig 0.00 32.00 -ss 1' }
-        - { name: 'nig0.00_36.00', cmd: '-csf -nig 0.00 36.00 -ss 1' }
-        - { name: 'nig0.00_40.00', cmd: '-csf -nig 0.00 40.00 -ss 1' }
-        - { name: 'nig0.20_0.00', cmd: '-csf -nig 0.20 0.00 -ss 1' }
-        - { name: 'nig0.20_4.00', cmd: '-csf -nig 0.20 4.00 -ss 1' }
-        - { name: 'nig0.20_8.00', cmd: '-csf -nig 0.20 8.00 -ss 1' }
-        - { name: 'nig0.20_12.00', cmd: '-csf -nig 0.20 12.00 -ss 1' }
-        - { name: 'nig0.20_16.00', cmd: '-csf -nig 0.20 16.00 -ss 1' }
-        - { name: 'nig0.20_20.00', cmd: '-csf -nig 0.20 20.00 -ss 1' }
-        - { name: 'nig0.20_24.00', cmd: '-csf -nig 0.20 24.00 -ss 1' }
-        - { name: 'nig0.20_28.00', cmd: '-csf -nig 0.20 28.00 -ss 1' }
-        - { name: 'nig0.20_32.00', cmd: '-csf -nig 0.20 32.00 -ss 1' }
-        - { name: 'nig0.20_36.00', cmd: '-csf -nig 0.20 36.00 -ss 1' }
-        - { name: 'nig0.20_40.00', cmd: '-csf -nig 0.20 40.00 -ss 1' }
-        - { name: 'nig0.40_0.00', cmd: '-csf -nig 0.40 0.00 -ss 1' }
-        - { name: 'nig0.40_4.00', cmd: '-csf -nig 0.40 4.00 -ss 1' }
-        - { name: 'nig0.40_8.00', cmd: '-csf -nig 0.40 8.00 -ss 1' }
-        - { name: 'nig0.40_12.00', cmd: '-csf -nig 0.40 12.00 -ss 1' }
-        - { name: 'nig0.40_16.00', cmd: '-csf -nig 0.40 16.00 -ss 1' }
-        - { name: 'nig0.40_20.00', cmd: '-csf -nig 0.40 20.00 -ss 1' }
-        - { name: 'nig0.40_24.00', cmd: '-csf -nig 0.40 24.00 -ss 1' }
-        - { name: 'nig0.40_28.00', cmd: '-csf -nig 0.40 28.00 -ss 1' }
-        - { name: 'nig0.40_32.00', cmd: '-csf -nig 0.40 32.00 -ss 1' }
-        - { name: 'nig0.40_36.00', cmd: '-csf -nig 0.40 36.00 -ss 1' }
-        - { name: 'nig0.40_40.00', cmd: '-csf -nig 0.40 40.00 -ss 1' }
-        - { name: 'nig0.60_0.00', cmd: '-csf -nig 0.60 0.00 -ss 1' }
-        - { name: 'nig0.60_4.00', cmd: '-csf -nig 0.60 4.00 -ss 1' }
-        - { name: 'nig0.60_8.00', cmd: '-csf -nig 0.60 8.00 -ss 1' }
-        - { name: 'nig0.60_12.00', cmd: '-csf -nig 0.60 12.00 -ss 1' }
-        - { name: 'nig0.60_16.00', cmd: '-csf -nig 0.60 16.00 -ss 1' }
-        - { name: 'nig0.60_20.00', cmd: '-csf -nig 0.60 20.00 -ss 1' }
-        - { name: 'nig0.60_24.00', cmd: '-csf -nig 0.60 24.00 -ss 1' }
-        - { name: 'nig0.60_28.00', cmd: '-csf -nig 0.60 28.00 -ss 1' }
-        - { name: 'nig0.60_32.00', cmd: '-csf -nig 0.60 32.00 -ss 1' }
-        - { name: 'nig0.60_36.00', cmd: '-csf -nig 0.60 36.00 -ss 1' }
-        - { name: 'nig0.60_40.00', cmd: '-csf -nig 0.60 40.00 -ss 1' }
-        - { name: 'nig0.80_0.00', cmd: '-csf -nig 0.80 0.00 -ss 1' }
-        - { name: 'nig0.80_4.00', cmd: '-csf -nig 0.80 4.00 -ss 1' }
-        - { name: 'nig0.80_8.00', cmd: '-csf -nig 0.80 8.00 -ss 1' }
-        - { name: 'nig0.80_12.00', cmd: '-csf -nig 0.80 12.00 -ss 1' }
-        - { name: 'nig0.80_16.00', cmd: '-csf -nig 0.80 16.00 -ss 1' }
-        - { name: 'nig0.80_20.00', cmd: '-csf -nig 0.80 20.00 -ss 1' }
-        - { name: 'nig0.80_24.00', cmd: '-csf -nig 0.80 24.00 -ss 1' }
-        - { name: 'nig0.80_28.00', cmd: '-csf -nig 0.80 28.00 -ss 1' }
-        - { name: 'nig0.80_32.00', cmd: '-csf -nig 0.80 32.00 -ss 1' }
-        - { name: 'nig0.80_36.00', cmd: '-csf -nig 0.80 36.00 -ss 1' }
-        - { name: 'nig0.80_40.00', cmd: '-csf -nig 0.80 40.00 -ss 1' }
-        - { name: 'nig1.00_0.00', cmd: '-csf -nig 1.00 0.00 -ss 1' }
-        - { name: 'nig1.00_4.00', cmd: '-csf -nig 1.00 4.00 -ss 1' }
-        - { name: 'nig1.00_8.00', cmd: '-csf -nig 1.00 8.00 -ss 1' }
-        - { name: 'nig1.00_12.00', cmd: '-csf -nig 1.00 12.00 -ss 1' }
-        - { name: 'nig1.00_16.00', cmd: '-csf -nig 1.00 16.00 -ss 1' }
-        - { name: 'nig1.00_20.00', cmd: '-csf -nig 1.00 20.00 -ss 1' }
-        - { name: 'nig1.00_24.00', cmd: '-csf -nig 1.00 24.00 -ss 1' }
-        - { name: 'nig1.00_28.00', cmd: '-csf -nig 1.00 28.00 -ss 1' }
-        - { name: 'nig1.00_32.00', cmd: '-csf -nig 1.00 32.00 -ss 1' }
-        - { name: 'nig1.00_36.00', cmd: '-csf -nig 1.00 36.00 -ss 1' }
-        - { name: 'nig1.00_40.00', cmd: '-csf -nig 1.00 40.00 -ss 1' }
-        - { name: 'nig1.20_0.00', cmd: '-csf -nig 1.20 0.00 -ss 1' }
-        - { name: 'nig1.20_4.00', cmd: '-csf -nig 1.20 4.00 -ss 1' }
-        - { name: 'nig1.20_8.00', cmd: '-csf -nig 1.20 8.00 -ss 1' }
-        - { name: 'nig1.20_12.00', cmd: '-csf -nig 1.20 12.00 -ss 1' }
-        - { name: 'nig1.20_16.00', cmd: '-csf -nig 1.20 16.00 -ss 1' }
-        - { name: 'nig1.20_20.00', cmd: '-csf -nig 1.20 20.00 -ss 1' }
-        - { name: 'nig1.20_24.00', cmd: '-csf -nig 1.20 24.00 -ss 1' }
-        - { name: 'nig1.20_28.00', cmd: '-csf -nig 1.20 28.00 -ss 1' }
-        - { name: 'nig1.20_32.00', cmd: '-csf -nig 1.20 32.00 -ss 1' }
-        - { name: 'nig1.20_36.00', cmd: '-csf -nig 1.20 36.00 -ss 1' }
-        - { name: 'nig1.20_40.00', cmd: '-csf -nig 1.20 40.00 -ss 1' }
-        - { name: 'nig1.40_0.00', cmd: '-csf -nig 1.40 0.00 -ss 1' }
-        - { name: 'nig1.40_4.00', cmd: '-csf -nig 1.40 4.00 -ss 1' }
-        - { name: 'nig1.40_8.00', cmd: '-csf -nig 1.40 8.00 -ss 1' }
-        - { name: 'nig1.40_12.00', cmd: '-csf -nig 1.40 12.00 -ss 1' }
-        - { name: 'nig1.40_16.00', cmd: '-csf -nig 1.40 16.00 -ss 1' }
-        - { name: 'nig1.40_20.00', cmd: '-csf -nig 1.40 20.00 -ss 1' }
-        - { name: 'nig1.40_24.00', cmd: '-csf -nig 1.40 24.00 -ss 1' }
-        - { name: 'nig1.40_28.00', cmd: '-csf -nig 1.40 28.00 -ss 1' }
-        - { name: 'nig1.40_32.00', cmd: '-csf -nig 1.40 32.00 -ss 1' }
-        - { name: 'nig1.40_36.00', cmd: '-csf -nig 1.40 36.00 -ss 1' }
-        - { name: 'nig1.40_40.00', cmd: '-csf -nig 1.40 40.00 -ss 1' }
-        - { name: 'nig1.60_0.00', cmd: '-csf -nig 1.60 0.00 -ss 1' }
-        - { name: 'nig1.60_4.00', cmd: '-csf -nig 1.60 4.00 -ss 1' }
-        - { name: 'nig1.60_8.00', cmd: '-csf -nig 1.60 8.00 -ss 1' }
-        - { name: 'nig1.60_12.00', cmd: '-csf -nig 1.60 12.00 -ss 1' }
-        - { name: 'nig1.60_16.00', cmd: '-csf -nig 1.60 16.00 -ss 1' }
-        - { name: 'nig1.60_20.00', cmd: '-csf -nig 1.60 20.00 -ss 1' }
-        - { name: 'nig1.60_24.00', cmd: '-csf -nig 1.60 24.00 -ss 1' }
-        - { name: 'nig1.60_28.00', cmd: '-csf -nig 1.60 28.00 -ss 1' }
-        - { name: 'nig1.60_32.00', cmd: '-csf -nig 1.60 32.00 -ss 1' }
-        - { name: 'nig1.60_36.00', cmd: '-csf -nig 1.60 36.00 -ss 1' }
-        - { name: 'nig1.60_40.00', cmd: '-csf -nig 1.60 40.00 -ss 1' }
-        - { name: 'nig1.80_0.00', cmd: '-csf -nig 1.80 0.00 -ss 1' }
-        - { name: 'nig1.80_4.00', cmd: '-csf -nig 1.80 4.00 -ss 1' }
-        - { name: 'nig1.80_8.00', cmd: '-csf -nig 1.80 8.00 -ss 1' }
-        - { name: 'nig1.80_12.00', cmd: '-csf -nig 1.80 12.00 -ss 1' }
-        - { name: 'nig1.80_16.00', cmd: '-csf -nig 1.80 16.00 -ss 1' }
-        - { name: 'nig1.80_20.00', cmd: '-csf -nig 1.80 20.00 -ss 1' }
-        - { name: 'nig1.80_24.00', cmd: '-csf -nig 1.80 24.00 -ss 1' }
-        - { name: 'nig1.80_28.00', cmd: '-csf -nig 1.80 28.00 -ss 1' }
-        - { name: 'nig1.80_32.00', cmd: '-csf -nig 1.80 32.00 -ss 1' }
-        - { name: 'nig1.80_36.00', cmd: '-csf -nig 1.80 36.00 -ss 1' }
-        - { name: 'nig1.80_40.00', cmd: '-csf -nig 1.80 40.00 -ss 1' }
-        - { name: 'nig2.00_0.00', cmd: '-csf -nig 2.00 0.00 -ss 1' }
-        - { name: 'nig2.00_4.00', cmd: '-csf -nig 2.00 4.00 -ss 1' }
-        - { name: 'nig2.00_8.00', cmd: '-csf -nig 2.00 8.00 -ss 1' }
-        - { name: 'nig2.00_12.00', cmd: '-csf -nig 2.00 12.00 -ss 1' }
-        - { name: 'nig2.00_16.00', cmd: '-csf -nig 2.00 16.00 -ss 1' }
-        - { name: 'nig2.00_20.00', cmd: '-csf -nig 2.00 20.00 -ss 1' }
-        - { name: 'nig2.00_24.00', cmd: '-csf -nig 2.00 24.00 -ss 1' }
-        - { name: 'nig2.00_28.00', cmd: '-csf -nig 2.00 28.00 -ss 1' }
-        - { name: 'nig2.00_32.00', cmd: '-csf -nig 2.00 32.00 -ss 1' }
-        - { name: 'nig2.00_36.00', cmd: '-csf -nig 2.00 36.00 -ss 1' }
-        - { name: 'nig2.00_40.00', cmd: '-csf -nig 2.00 40.00 -ss 1' }
+    - name: "nig0.01_0.020"
+      cmd: "{{ cmd_prefix }} -json {{ dataset_path }}/data_collected.json -csf 'lambda name: int(name)<1' -nig 0.01 0.020 -ss 1"
       files_to_collect:
         - '{{ dataset_path }}/atom_calibration.json'
-        - '/tmp/optimized.urdf.xacro'
+        -  '/tmp/optimized.urdf.xacro'
+
+    - name: "nig0.03_0.020"
+      cmd: "{{ cmd_prefix }} -json {{ dataset_path }}/data_collected.json -csf 'lambda name: int(name)<1' -nig 0.03 0.020 -ss 1"
+      files_to_collect:
+        - '{{ dataset_path }}/atom_calibration.json'
+        -  '/tmp/optimized.urdf.xacro'
+
+  #  - name: iterating
+  #      name: "{{ item.name }}"
+  #      cmd: "{{ cmd_prefix }} {{ item.cmd}}"
+  #      files_to_collect:
+  #        - '{{ dataset_path }}/atom_calibration.json'
+  #        - '/tmp/optimized.urdf.xacro'
+  #    with_items:
+  #      - { name: 'nig0.00_0.00', cmd: '-csf -nig 0.00 0.00 -ss 1' }
+  #      - { name: 'nig0.00_4.00', cmd: '-csf -nig 0.00 4.00 -ss 1' }
+  #      - { name: 'nig0.00_8.00', cmd: '-csf -nig 0.00 8.00 -ss 1' }
+  #      - { name: 'nig0.00_12.00', cmd: '-csf -nig 0.00 12.00 -ss 1' }
+  #      - { name: 'nig0.00_16.00', cmd: '-csf -nig 0.00 16.00 -ss 1' }
+  #      - { name: 'nig0.00_20.00', cmd: '-csf -nig 0.00 20.00 -ss 1' }
+  #      - { name: 'nig0.00_24.00', cmd: '-csf -nig 0.00 24.00 -ss 1' }
+  #      - { name: 'nig0.00_28.00', cmd: '-csf -nig 0.00 28.00 -ss 1' }
+  #      - { name: 'nig0.00_32.00', cmd: '-csf -nig 0.00 32.00 -ss 1' }
+  #      - { name: 'nig0.00_36.00', cmd: '-csf -nig 0.00 36.00 -ss 1' }
+  #      - { name: 'nig0.00_40.00', cmd: '-csf -nig 0.00 40.00 -ss 1' }
+  #      - { name: 'nig0.20_0.00', cmd: '-csf -nig 0.20 0.00 -ss 1' }
+  #      - { name: 'nig0.20_4.00', cmd: '-csf -nig 0.20 4.00 -ss 1' }
+  #      - { name: 'nig0.20_8.00', cmd: '-csf -nig 0.20 8.00 -ss 1' }
+  #      - { name: 'nig0.20_12.00', cmd: '-csf -nig 0.20 12.00 -ss 1' }
+  #      - { name: 'nig0.20_16.00', cmd: '-csf -nig 0.20 16.00 -ss 1' }
+  #      - { name: 'nig0.20_20.00', cmd: '-csf -nig 0.20 20.00 -ss 1' }
+  #      - { name: 'nig0.20_24.00', cmd: '-csf -nig 0.20 24.00 -ss 1' }
+  #      - { name: 'nig0.20_28.00', cmd: '-csf -nig 0.20 28.00 -ss 1' }
+  #      - { name: 'nig0.20_32.00', cmd: '-csf -nig 0.20 32.00 -ss 1' }
+  #      - { name: 'nig0.20_36.00', cmd: '-csf -nig 0.20 36.00 -ss 1' }
+  #      - { name: 'nig0.20_40.00', cmd: '-csf -nig 0.20 40.00 -ss 1' }
+  #      - { name: 'nig0.40_0.00', cmd: '-csf -nig 0.40 0.00 -ss 1' }
+  #      - { name: 'nig0.40_4.00', cmd: '-csf -nig 0.40 4.00 -ss 1' }
+  #      - { name: 'nig0.40_8.00', cmd: '-csf -nig 0.40 8.00 -ss 1' }
+  #      - { name: 'nig0.40_12.00', cmd: '-csf -nig 0.40 12.00 -ss 1' }
+  #      - { name: 'nig0.40_16.00', cmd: '-csf -nig 0.40 16.00 -ss 1' }
+  #      - { name: 'nig0.40_20.00', cmd: '-csf -nig 0.40 20.00 -ss 1' }
+  #      - { name: 'nig0.40_24.00', cmd: '-csf -nig 0.40 24.00 -ss 1' }
+  #      - { name: 'nig0.40_28.00', cmd: '-csf -nig 0.40 28.00 -ss 1' }
+  #      - { name: 'nig0.40_32.00', cmd: '-csf -nig 0.40 32.00 -ss 1' }
+  #      - { name: 'nig0.40_36.00', cmd: '-csf -nig 0.40 36.00 -ss 1' }
+  #      - { name: 'nig0.40_40.00', cmd: '-csf -nig 0.40 40.00 -ss 1' }
+  #      - { name: 'nig0.60_0.00', cmd: '-csf -nig 0.60 0.00 -ss 1' }
+  #      - { name: 'nig0.60_4.00', cmd: '-csf -nig 0.60 4.00 -ss 1' }
+  #      - { name: 'nig0.60_8.00', cmd: '-csf -nig 0.60 8.00 -ss 1' }
+  #      - { name: 'nig0.60_12.00', cmd: '-csf -nig 0.60 12.00 -ss 1' }
+  #      - { name: 'nig0.60_16.00', cmd: '-csf -nig 0.60 16.00 -ss 1' }
+  #      - { name: 'nig0.60_20.00', cmd: '-csf -nig 0.60 20.00 -ss 1' }
+  #      - { name: 'nig0.60_24.00', cmd: '-csf -nig 0.60 24.00 -ss 1' }
+  #      - { name: 'nig0.60_28.00', cmd: '-csf -nig 0.60 28.00 -ss 1' }
+  #      - { name: 'nig0.60_32.00', cmd: '-csf -nig 0.60 32.00 -ss 1' }
+  #      - { name: 'nig0.60_36.00', cmd: '-csf -nig 0.60 36.00 -ss 1' }
+  #      - { name: 'nig0.60_40.00', cmd: '-csf -nig 0.60 40.00 -ss 1' }
+  #      - { name: 'nig0.80_0.00', cmd: '-csf -nig 0.80 0.00 -ss 1' }
+  #      - { name: 'nig0.80_4.00', cmd: '-csf -nig 0.80 4.00 -ss 1' }
+  #      - { name: 'nig0.80_8.00', cmd: '-csf -nig 0.80 8.00 -ss 1' }
+  #      - { name: 'nig0.80_12.00', cmd: '-csf -nig 0.80 12.00 -ss 1' }
+  #      - { name: 'nig0.80_16.00', cmd: '-csf -nig 0.80 16.00 -ss 1' }
+  #      - { name: 'nig0.80_20.00', cmd: '-csf -nig 0.80 20.00 -ss 1' }
+  #      - { name: 'nig0.80_24.00', cmd: '-csf -nig 0.80 24.00 -ss 1' }
+  #      - { name: 'nig0.80_28.00', cmd: '-csf -nig 0.80 28.00 -ss 1' }
+  #      - { name: 'nig0.80_32.00', cmd: '-csf -nig 0.80 32.00 -ss 1' }
+  #      - { name: 'nig0.80_36.00', cmd: '-csf -nig 0.80 36.00 -ss 1' }
+  #      - { name: 'nig0.80_40.00', cmd: '-csf -nig 0.80 40.00 -ss 1' }
+  #      - { name: 'nig1.00_0.00', cmd: '-csf -nig 1.00 0.00 -ss 1' }
+  #      - { name: 'nig1.00_4.00', cmd: '-csf -nig 1.00 4.00 -ss 1' }
+  #      - { name: 'nig1.00_8.00', cmd: '-csf -nig 1.00 8.00 -ss 1' }
+  #      - { name: 'nig1.00_12.00', cmd: '-csf -nig 1.00 12.00 -ss 1' }
+  #      - { name: 'nig1.00_16.00', cmd: '-csf -nig 1.00 16.00 -ss 1' }
+  #      - { name: 'nig1.00_20.00', cmd: '-csf -nig 1.00 20.00 -ss 1' }
+  #      - { name: 'nig1.00_24.00', cmd: '-csf -nig 1.00 24.00 -ss 1' }
+  #      - { name: 'nig1.00_28.00', cmd: '-csf -nig 1.00 28.00 -ss 1' }
+  #      - { name: 'nig1.00_32.00', cmd: '-csf -nig 1.00 32.00 -ss 1' }
+  #      - { name: 'nig1.00_36.00', cmd: '-csf -nig 1.00 36.00 -ss 1' }
+  #      - { name: 'nig1.00_40.00', cmd: '-csf -nig 1.00 40.00 -ss 1' }
+  #      - { name: 'nig1.20_0.00', cmd: '-csf -nig 1.20 0.00 -ss 1' }
+  #      - { name: 'nig1.20_4.00', cmd: '-csf -nig 1.20 4.00 -ss 1' }
+  #      - { name: 'nig1.20_8.00', cmd: '-csf -nig 1.20 8.00 -ss 1' }
+  #      - { name: 'nig1.20_12.00', cmd: '-csf -nig 1.20 12.00 -ss 1' }
+  #      - { name: 'nig1.20_16.00', cmd: '-csf -nig 1.20 16.00 -ss 1' }
+  #      - { name: 'nig1.20_20.00', cmd: '-csf -nig 1.20 20.00 -ss 1' }
+  #      - { name: 'nig1.20_24.00', cmd: '-csf -nig 1.20 24.00 -ss 1' }
+  #      - { name: 'nig1.20_28.00', cmd: '-csf -nig 1.20 28.00 -ss 1' }
+  #      - { name: 'nig1.20_32.00', cmd: '-csf -nig 1.20 32.00 -ss 1' }
+  #      - { name: 'nig1.20_36.00', cmd: '-csf -nig 1.20 36.00 -ss 1' }
+  #      - { name: 'nig1.20_40.00', cmd: '-csf -nig 1.20 40.00 -ss 1' }
+  #      - { name: 'nig1.40_0.00', cmd: '-csf -nig 1.40 0.00 -ss 1' }
+  #      - { name: 'nig1.40_4.00', cmd: '-csf -nig 1.40 4.00 -ss 1' }
+  #      - { name: 'nig1.40_8.00', cmd: '-csf -nig 1.40 8.00 -ss 1' }
+  #      - { name: 'nig1.40_12.00', cmd: '-csf -nig 1.40 12.00 -ss 1' }
+  #      - { name: 'nig1.40_16.00', cmd: '-csf -nig 1.40 16.00 -ss 1' }
+  #      - { name: 'nig1.40_20.00', cmd: '-csf -nig 1.40 20.00 -ss 1' }
+  #      - { name: 'nig1.40_24.00', cmd: '-csf -nig 1.40 24.00 -ss 1' }
+  #      - { name: 'nig1.40_28.00', cmd: '-csf -nig 1.40 28.00 -ss 1' }
+  #      - { name: 'nig1.40_32.00', cmd: '-csf -nig 1.40 32.00 -ss 1' }
+  #      - { name: 'nig1.40_36.00', cmd: '-csf -nig 1.40 36.00 -ss 1' }
+  #      - { name: 'nig1.40_40.00', cmd: '-csf -nig 1.40 40.00 -ss 1' }
+  #      - { name: 'nig1.60_0.00', cmd: '-csf -nig 1.60 0.00 -ss 1' }
+  #      - { name: 'nig1.60_4.00', cmd: '-csf -nig 1.60 4.00 -ss 1' }
+  #      - { name: 'nig1.60_8.00', cmd: '-csf -nig 1.60 8.00 -ss 1' }
+  #      - { name: 'nig1.60_12.00', cmd: '-csf -nig 1.60 12.00 -ss 1' }
+  #      - { name: 'nig1.60_16.00', cmd: '-csf -nig 1.60 16.00 -ss 1' }
+  #      - { name: 'nig1.60_20.00', cmd: '-csf -nig 1.60 20.00 -ss 1' }
+  #      - { name: 'nig1.60_24.00', cmd: '-csf -nig 1.60 24.00 -ss 1' }
+  #      - { name: 'nig1.60_28.00', cmd: '-csf -nig 1.60 28.00 -ss 1' }
+  #      - { name: 'nig1.60_32.00', cmd: '-csf -nig 1.60 32.00 -ss 1' }
+  #      - { name: 'nig1.60_36.00', cmd: '-csf -nig 1.60 36.00 -ss 1' }
+  #      - { name: 'nig1.60_40.00', cmd: '-csf -nig 1.60 40.00 -ss 1' }
+  #      - { name: 'nig1.80_0.00', cmd: '-csf -nig 1.80 0.00 -ss 1' }
+  #      - { name: 'nig1.80_4.00', cmd: '-csf -nig 1.80 4.00 -ss 1' }
+  #      - { name: 'nig1.80_8.00', cmd: '-csf -nig 1.80 8.00 -ss 1' }
+  #      - { name: 'nig1.80_12.00', cmd: '-csf -nig 1.80 12.00 -ss 1' }
+  #      - { name: 'nig1.80_16.00', cmd: '-csf -nig 1.80 16.00 -ss 1' }
+  #      - { name: 'nig1.80_20.00', cmd: '-csf -nig 1.80 20.00 -ss 1' }
+  #      - { name: 'nig1.80_24.00', cmd: '-csf -nig 1.80 24.00 -ss 1' }
+  #      - { name: 'nig1.80_28.00', cmd: '-csf -nig 1.80 28.00 -ss 1' }
+  #      - { name: 'nig1.80_32.00', cmd: '-csf -nig 1.80 32.00 -ss 1' }
+  #      - { name: 'nig1.80_36.00', cmd: '-csf -nig 1.80 36.00 -ss 1' }
+  #      - { name: 'nig1.80_40.00', cmd: '-csf -nig 1.80 40.00 -ss 1' }
+  #      - { name: 'nig2.00_0.00', cmd: '-csf -nig 2.00 0.00 -ss 1' }
+  #      - { name: 'nig2.00_4.00', cmd: '-csf -nig 2.00 4.00 -ss 1' }
+  #      - { name: 'nig2.00_8.00', cmd: '-csf -nig 2.00 8.00 -ss 1' }
+  #      - { name: 'nig2.00_12.00', cmd: '-csf -nig 2.00 12.00 -ss 1' }
+  #      - { name: 'nig2.00_16.00', cmd: '-csf -nig 2.00 16.00 -ss 1' }
+  #      - { name: 'nig2.00_20.00', cmd: '-csf -nig 2.00 20.00 -ss 1' }
+  #      - { name: 'nig2.00_24.00', cmd: '-csf -nig 2.00 24.00 -ss 1' }
+  #      - { name: 'nig2.00_28.00', cmd: '-csf -nig 2.00 28.00 -ss 1' }
+  #      - { name: 'nig2.00_32.00', cmd: '-csf -nig 2.00 32.00 -ss 1' }
+  #      - { name: 'nig2.00_36.00', cmd: '-csf -nig 2.00 36.00 -ss 1' }
+  #      - { name: 'nig2.00_40.00', cmd: '-csf -nig 2.00 40.00 -ss 1' }
 
 
-#    - name: "nig0.03_0.020"
-#      cmd: "{{ cmd_prefix }} -csf 'lambda name: int(name)<1' -nig 0.03 0.020 -ss 1"
-#      files_to_collect:
-#        - '{{ dataset_path }}/atom_calibration.json'
-#        -  '/tmp/optimized.urdf.xacro'
 
     - name: "7_collections"
       cmd: "{{ cmd_prefix }} -csf 'lambda name: int(name)<7' -nig 0.03 0.020 -ss 1"
