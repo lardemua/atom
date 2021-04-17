@@ -11,6 +11,7 @@ import rospy
 from colorama import Fore, Style
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
+from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
 from urdf_parser_py.urdf import URDF
 
 # local packages
@@ -53,8 +54,10 @@ class InteractiveFirstGuess(object):
         self.server = InteractiveMarkerServer('set_initial_estimate')
         self.menu = MenuHandler()
 
-        self.menu.insert("Save sensors configuration", callback=self.onSaveFirstGuess)
-        self.menu.insert("Reset to initial configuration", callback=self.onReset)
+        self.createInteractiveMarker('world')
+        self.menu.insert("Save sensors configuration", callback=self.onSaveInitialEstimate)
+        self.menu.insert("Reset all sensors to initial configuration", callback=self.onResetAll)
+        self.menu.reApply(self.server)
 
         # For each node generate an interactive marker.
         for name, sensor in self.config['sensors'].items():
@@ -71,7 +74,8 @@ class InteractiveFirstGuess(object):
 
         self.server.applyChanges()
 
-    def onSaveFirstGuess(self, feedback):
+    def onSaveInitialEstimate(self, feedback):
+        print('onSaveInitialEstimate')
         for sensor in self.sensors:
             # find corresponding joint for this sensor
             for joint in self.urdf.joints:
@@ -90,9 +94,78 @@ class InteractiveFirstGuess(object):
             print("Writing fist guess urdf to '{}'".format(outfile))
             out.write(self.urdf.to_xml_string())
 
-    def onReset(self, feedback):
+    def onResetAll(self, feedback):
         for sensor in self.sensors:
             sensor.resetToInitalPose()
+
+    def createInteractiveMarker(self, world_link):
+        marker = InteractiveMarker()
+        marker.header.frame_id = world_link
+        trans = (1, 0, 1)
+        marker.pose.position.x = trans[0]
+        marker.pose.position.y = trans[1]
+        marker.pose.position.z = trans[2]
+        quat = (0, 0, 0, 1)
+        marker.pose.orientation.x = quat[0]
+        marker.pose.orientation.y = quat[1]
+        marker.pose.orientation.z = quat[2]
+        marker.pose.orientation.w = quat[3]
+        marker.scale = 0.2
+
+        marker.name = 'menu'
+        marker.description = 'menu'
+
+        # insert a box
+        control = InteractiveMarkerControl()
+        control.always_visible = True
+
+        marker_box = Marker()
+        marker_box.type = Marker.SPHERE
+        marker_box.scale.x = marker.scale * 0.7
+        marker_box.scale.y = marker.scale * 0.7
+        marker_box.scale.z = marker.scale * 0.7
+        marker_box.color.r = 0
+        marker_box.color.g = 1
+        marker_box.color.b = 0
+        marker_box.color.a = 0.2
+
+        control.markers.append(marker_box)
+        marker.controls.append(control)
+
+        marker.controls[0].interaction_mode = InteractiveMarkerControl.MOVE_3D
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "move_x"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.name = "move_z"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 0
+        control.orientation.z = 1
+        control.name = "move_y"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        marker.controls.append(control)
+
+        self.server.insert(marker, self.onSaveInitialEstimate)
+        self.menu.apply(self.server, marker.name)
 
 
 if __name__ == "__main__":
@@ -111,6 +184,11 @@ if __name__ == "__main__":
 
     # Initialize ROS stuff
     rospy.init_node("set_initial_estimate")
+
+    # createInteractiveMarker(data_collector.world_link)
+    # initMenu()
+    # menu_handler.reApply(server)
+    # server.applyChanges()
 
     # Launch the application !!
     first_guess = InteractiveFirstGuess(args)
