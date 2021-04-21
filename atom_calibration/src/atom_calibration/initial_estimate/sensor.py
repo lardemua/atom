@@ -37,13 +37,15 @@ class MarkerPoseC:
 
 class Sensor:
 
-    def __init__(self, name, server, menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_sensor,
+    def __init__(self, name, server, global_menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_sensor,
                  marker_scale):
         print('Creating a new sensor named ' + name)
         self.name = name
         self.visible = True
         self.server = server
-        self.menu_handler = menu_handler
+        # self.global_menu_handler = global_menu_handler
+
+        self.menu_handler = MenuHandler()
         self.listener = TransformListener()
         self.br = tf.TransformBroadcaster()
         self.marker_scale = marker_scale
@@ -113,7 +115,8 @@ class Sensor:
         response.message = 'Control changed.'
         return response
 
-    def resetToInitalPose(self):
+    def resetToInitalPose(self, feedback=None):
+        print('resetToInitialPose called for sensor ' + colorama.Fore.BLUE + self.name + colorama.Style.RESET_ALL)
         self.optT.matrix = self.optTInitial.matrix
 
         trans = self.optT.getTranslation()
@@ -128,7 +131,8 @@ class Sensor:
 
         self.optTInitial = copy.deepcopy(self.optT)
 
-        self.menu_handler.reApply(self.server)
+        self.updateMarkers()
+        # self.global_menu_handler.reApply(self.server)
         self.server.applyChanges()
 
     def publishTFCallback(self, _):
@@ -144,7 +148,9 @@ class Sensor:
         self.optT.setTranslationFromPosePosition(feedback.pose.position)
         self.optT.setQuaternionFromPoseQuaternion(feedback.pose.orientation)
 
-        self.menu_handler.reApply(self.server)
+        self.updateMarkers()
+
+        # self.global_menu_handler.reApply(self.server)
         self.server.applyChanges()
 
     def updateAll(self):
@@ -173,6 +179,33 @@ class Sensor:
         T.setQuaternion(quat)
         return T
 
+    def updateMarkers(self):
+
+        trans = self.optT.getTranslation()
+        quat = self.optT.getQuaternion()
+
+        marker = self.server.get(self.name)
+        marker.pose.position.x = trans[0]
+        marker.pose.position.y = trans[1]
+        marker.pose.position.z = trans[2]
+        marker.pose.orientation.x = quat[0]
+        marker.pose.orientation.y = quat[1]
+        marker.pose.orientation.z = quat[2]
+        marker.pose.orientation.w = quat[3]
+        self.server.insert(marker)
+
+        marker = self.server.get(self.name + "_menu")
+        marker.pose.position.x = trans[0]
+        marker.pose.position.y = trans[1]
+        marker.pose.position.z = trans[2]
+        marker.pose.orientation.x = quat[0]
+        marker.pose.orientation.y = quat[1]
+        marker.pose.orientation.z = quat[2]
+        marker.pose.orientation.w = quat[3]
+        self.server.insert(marker)
+
+        self.server.applyChanges()
+
     def createInteractiveMarker(self):
         self.marker = InteractiveMarker()
         self.marker.header.frame_id = self.opt_parent_link
@@ -189,6 +222,7 @@ class Sensor:
 
         self.marker.name = self.name
         self.marker.description = self.name + '_control'
+
 
         # insert a box
         control = InteractiveMarkerControl()
@@ -270,4 +304,47 @@ class Sensor:
         self.marker.controls.append(control)
 
         self.server.insert(self.marker, self.markerFeedback)
-        self.menu_handler.apply(self.server, self.marker.name)
+
+        # Menu interactive marker
+        int_marker = InteractiveMarker()
+        int_marker.header.frame_id = self.opt_parent_link
+
+        int_marker.pose.position.x = trans[0]
+        int_marker.pose.position.y = trans[1]
+        int_marker.pose.position.z = trans[2]
+
+        int_marker.pose.orientation.x = quat[0]
+        int_marker.pose.orientation.y = quat[1]
+        int_marker.pose.orientation.z = quat[2]
+        int_marker.pose.orientation.w = quat[3]
+        int_marker.scale = self.marker_scale
+
+        int_marker.name = self.name + "_menu"
+        int_marker.description = "Right click()"
+
+        # make one control using default visuals
+        control = InteractiveMarkerControl()
+        control.interaction_mode = InteractiveMarkerControl.MENU
+        control.description = "Options"
+        control.name = "menu_only_control"
+        int_marker.controls.append(copy.deepcopy(control))
+
+        # make one control showing a sphere
+        marker = Marker()
+        marker.type = Marker.SPHERE
+        marker.scale.x = self.marker_scale * 0.35
+        marker.scale.y = self.marker_scale * 0.35
+        marker.scale.z = self.marker_scale * 0.35
+        marker_box.color.r = 0
+        marker_box.color.g = 1
+        marker_box.color.b = 0
+        marker_box.color.a = 0.2
+        control.markers.append(marker)
+        control.always_visible = True
+        int_marker.controls.append(control)
+
+        self.server.insert(int_marker, self.resetToInitalPose)
+
+        self.menu_handler.insert("Reset " + self.name + " to initial configuration", callback=self.resetToInitalPose)
+        self.menu_handler.reApply(self.server)
+        self.menu_handler.apply(self.server, int_marker.name)
