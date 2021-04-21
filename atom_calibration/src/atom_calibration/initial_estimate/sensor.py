@@ -118,6 +118,7 @@ class Sensor:
     def resetToInitalPose(self, feedback=None):
         print('resetToInitialPose called for sensor ' + colorama.Fore.BLUE + self.name + colorama.Style.RESET_ALL)
         self.optT.matrix = self.optTInitial.matrix
+        print('matrix=\n' + str(self.optT.matrix))
 
         trans = self.optT.getTranslation()
         self.marker.pose.position.x = trans[0]
