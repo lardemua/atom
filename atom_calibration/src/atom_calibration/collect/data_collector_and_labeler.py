@@ -1,5 +1,6 @@
 # stdlib
 import copy
+import json
 import os
 
 import atom_core.config_io
@@ -8,6 +9,7 @@ import time
 from datetime import datetime
 
 # 3rd-party
+import atom_msgs.srv
 import tf
 
 from cv_bridge import CvBridge
@@ -150,6 +152,28 @@ class DataCollectorAndLabeler:
 
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
+
+        # Add service to make the dataset json available
+        self.service_get_dataset = rospy.Service('~get_dataset',
+                                                 atom_msgs.srv.GetDataset,
+                                                 self.callbackGetDataset)
+
+    def callbackGetDataset(self, request):
+        print('callbackGetDataset service called')
+
+        dataset_file = self.output_folder + '/data_collected.json'
+        try:
+            file = open(dataset_file, 'r')
+            dataset_stream = file.read()
+            success = True
+        except:
+            dataset_stream = ''
+            success = False
+
+        response = atom_msgs.srv.GetDatasetResponse()
+        response.dataset_json = dataset_stream
+        response.success = success
+        return response
 
     def getTransforms(self, abstract_transforms, time=None):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
