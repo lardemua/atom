@@ -62,6 +62,7 @@ add_service_files(
   SetSensorInteractiveMarker.srv
   GetSensorInteractiveMarker.srv
   GetDataset.srv
+  SaveCollection.srv
 )
 
 ## Generate actions in the 'action' folder

@@ -157,6 +157,21 @@ class DataCollectorAndLabeler:
         self.service_get_dataset = rospy.Service('~get_dataset',
                                                  atom_msgs.srv.GetDataset,
                                                  self.callbackGetDataset)
+        # Add service to save a new collection
+        self.service_get_dataset = rospy.Service('~save_collection',
+                                                 atom_msgs.srv.SaveCollection,
+                                                 self.callbackSaveCollection)
+
+    def callbackSaveCollection(self, request):
+        print('callbackSaveCollection service called')
+
+        # Call internal save collection
+        self.saveCollection()
+
+        response = atom_msgs.srv.SaveCollection()
+        response.success = True
+        response.message = "Collection saved"
+        return response
 
     def callbackGetDataset(self, request):
         print('callbackGetDataset service called')
