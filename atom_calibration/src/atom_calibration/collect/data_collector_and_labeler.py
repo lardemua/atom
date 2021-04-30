@@ -158,9 +158,54 @@ class DataCollectorAndLabeler:
                                                  atom_msgs.srv.GetDataset,
                                                  self.callbackGetDataset)
         # Add service to save a new collection
-        self.service_get_dataset = rospy.Service('~save_collection',
+        self.service_save_collection = rospy.Service('~save_collection',
                                                  atom_msgs.srv.SaveCollection,
                                                  self.callbackSaveCollection)
+
+        # Add service to delete a new collection
+        self.service_delete_collection = rospy.Service('~delete_collection',
+                                                 atom_msgs.srv.DeleteCollection,
+                                                 self.callbackDeleteCollection)
+
+    def callbackDeleteCollection(self, request):
+        print('callbackDeleteCollection service called')
+
+        try: # make sure we can convert the collection_name to int
+            collection_name_int = int(request.collection_name)
+        except ValueError as verr: # do job to handle: s does not contain anything convertible to int
+            response = atom_msgs.srv.DeleteCollectionResponse()
+            response.success = False
+            response.message = 'Failure. Cannot convert collection ' + request.collection_name + ' to string.'
+            return response
+        except Exception as ex: # do job to handle: Exception occurred while converting to int
+            response = atom_msgs.srv.DeleteCollectionResponse()
+            response.success = False
+            response.message = 'Failure. Cannot convert collection ' + request.collection_name + ' to string.'
+
+        # Lock the semaphore for all labelers
+        self.lockAllLabelers()
+        response = atom_msgs.srv.DeleteCollectionResponse()
+        if collection_name_int in self.collections.keys():
+            del self.collections[collection_name_int]
+            response.success = True
+            response.message = 'Collection ' + request.collection_name + ' deleted'
+
+            # Save new dataset to json file
+            D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data,
+                 'collections': self.collections, 'calibration_config': self.config}
+            output_file = self.output_folder + '/data_collected.json'
+            atom_core.dataset_io.saveResultsJSON(output_file, D)
+
+            print(Fore.YELLOW + 'Deleted collection ' + request.collection_name + Style.RESET_ALL)
+        else:
+            print('Failure. Collection ' + request.collection_name + ' does not exist.')
+            response.success = False
+            response.message = 'Failure. Collection ' + request.collection_name + ' does not exist.'
+
+        print(self.collections.keys())
+        self.unlockAllLabelers()
+
+        return response
 
     def callbackSaveCollection(self, request):
         print('callbackSaveCollection service called')
@@ -168,7 +213,7 @@ class DataCollectorAndLabeler:
         # Call internal save collection
         self.saveCollection()
 
-        response = atom_msgs.srv.SaveCollection()
+        response = atom_msgs.srv.SaveCollectionResponse()
         response.success = True
         response.message = "Collection saved"
         return response
