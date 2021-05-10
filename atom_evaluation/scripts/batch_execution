@@ -80,6 +80,7 @@ def main():
 
         # Collect stdout_data files
         for file in batch['files_to_collect']:
+            print('Collecting file: ' + str(file))
             if not os.path.exists(file):
                 raise ValueError('File ' + file + ' should be collected but does not exist.')
 
