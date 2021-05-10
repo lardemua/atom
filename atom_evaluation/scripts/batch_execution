@@ -80,12 +80,11 @@ def main():
 
         # Collect stdout_data files
         for file in batch['files_to_collect']:
-            print('Collecting file: ' + str(file))
+            print(Fore.BLUE + Back.YELLOW + 'Moving file ' + file + ' to ' + filename_out + Style.RESET_ALL)
             if not os.path.exists(file):
                 raise ValueError('File ' + file + ' should be collected but does not exist.')
 
             filename_out = config['output_folder'] + '/' + prefix + batch['name'] + '_' + os.path.basename(file)
-            print(Fore.BLUE + Back.YELLOW + 'Moving file ' + file + ' to ' + filename_out + Style.RESET_ALL)
             p = subprocess.Popen('cp ' + file + ' ' + filename_out, shell=True, universal_newlines=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
 
