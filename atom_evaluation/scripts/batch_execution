@@ -31,7 +31,7 @@ def main():
     with open(args['filename']) as f:
         template = f.read()
 
-    # Recursive substitution of variables to allow nested
+    # Recursive substitution of variables to allow nested variables.
     while True:
         previous_template = template
         template = jinja2.Template(template).render(**dataMap)
@@ -40,7 +40,8 @@ def main():
 
     config = yaml.safe_load(template)
 
-    print(Fore.BLUE + Back.YELLOW + 'Loaded config file ' + args['filename'] + ' (rendered with nested variable substitution)' + Style.RESET_ALL)
+    print(Fore.BLUE + Back.YELLOW + 'Loaded config file ' + args['filename'] + '(rendered with nested variable '
+                                                                               'substitution)' + Style.RESET_ALL)
     if args['verbose']:
         print(config)
 
