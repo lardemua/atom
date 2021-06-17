@@ -57,9 +57,9 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
     # Draw pattern frame lines_sampled (top, left, right, bottom)
     marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                     ns=ns + '-frame_sampled', id=0, frame_locked=True,
-                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                     pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                    scale=Vector3(x=0.025, y=0.025, z=0.025),
+                    scale=Vector3(x=0.01, y=0.01, z=0.01),
                     color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                     g=graphics['collections'][collection_key]['color'][1],
                                     b=graphics['collections'][collection_key]['color'][2], a=1.0))
@@ -77,7 +77,7 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
     # Draw corners
     marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                     ns=ns + '-corners', id=0, frame_locked=True,
-                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                     pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
                     scale=Vector3(x=0.02, y=0.02, z=0.02),
                     color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
@@ -188,7 +188,8 @@ def setupVisualization(dataset, args, selected_collection_key):
     graphics['pattern']['colormap'] = cm.gist_rainbow(
         np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
-    graphics['collections']['colormap'] = cm.tab20b(np.linspace(0, 1, len(dataset['collections'].keys())))
+    # graphics['collections']['colormap'] = cm.tab20b(np.linspace(0, 1, len(dataset['collections'].keys())))
+    graphics['collections']['colormap'] = cm.Pastel2(np.linspace(0, 1, len(dataset['collections'].keys())))
     for idx, collection_key in enumerate(sorted(dataset['collections'].keys())):
         graphics['collections'][str(collection_key)] = {'color': graphics['collections']['colormap'][idx, :]}
 
@@ -286,7 +287,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                 scale=Vector3(x=0.02, y=0.02, z=0.02),
                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                                 g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.4)
+                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
                 points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
@@ -305,7 +306,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                 scale=Vector3(x=0.07, y=0.07, z=0.07),
                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                                 g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.8)
+                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
                 points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
@@ -354,9 +355,9 @@ def setupVisualization(dataset, args, selected_collection_key):
 
     else:  # render robot meshes for all collections
         for collection_key, collection in dataset['collections'].items():
-            # rgba = graphics['collections'][collection_key]['color']
-            # rgba[3] = 0.4  # change the alpha
-            rgba = [.5, .5, .5, 0.7]  # best color we could find
+            rgba = graphics['collections'][collection_key]['color']
+            rgba[3] = 0.2  # change the alpha
+            # rgba = [.5, .5, .5, 0.2]  # best color we could find
             m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                   namespace=collection_key,
                                   rgba=rgba)
