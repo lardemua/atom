@@ -54,7 +54,7 @@ class InteractiveFirstGuess(object):
         self.server = InteractiveMarkerServer('set_initial_estimate')
         self.menu = MenuHandler()
 
-        self.createInteractiveMarker('world')
+        self.createInteractiveMarker(self.config['world_link'])
         self.menu.insert("Save sensors configuration", callback=self.onSaveInitialEstimate)
         self.menu.insert("Reset all sensors to initial configuration", callback=self.onResetAll)
         self.menu.reApply(self.server)
