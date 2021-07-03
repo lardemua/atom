@@ -326,7 +326,7 @@ class Sensor:
         # make one control using default visuals
         control = InteractiveMarkerControl()
         control.interaction_mode = InteractiveMarkerControl.MENU
-        control.description = "Options"
+        control.description = "-"
         control.name = "menu_only_control"
         int_marker.controls.append(copy.deepcopy(control))
 

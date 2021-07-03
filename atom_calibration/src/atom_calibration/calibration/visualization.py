@@ -31,9 +31,9 @@ from cv_bridge import CvBridge
 from colorama import Style, Fore
 
 from matplotlib import cm
-from OptimizationUtils import utilities as opt_utilities
 
 # own packages
+from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
 from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
@@ -151,10 +151,8 @@ def setupVisualization(dataset, args, selected_collection_key):
     # graphics['ros']['tf_broadcaster'] = tf.TransformBroadcaster()
     graphics['ros']['tf_broadcaster'] = tf2_ros.TransformBroadcaster()
 
-
-    rospy.sleep(0.2) # Sleep a litle to make sure the time.now() returns a correct time.
+    rospy.sleep(0.2)  # Sleep a litle to make sure the time.now() returns a correct time.
     now = rospy.Time.now()
-
 
     graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
     # Analyse xacro and figure out which transforms are static (always the same over the optimization), and which are
@@ -181,7 +179,6 @@ def setupVisualization(dataset, args, selected_collection_key):
     #                     transform['fixed'] = True
     #                 else:
     #                     transform['fixed'] = False
-
 
     # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
     pattern = dataset['calibration_config']['calibration_pattern']
@@ -334,8 +331,6 @@ def setupVisualization(dataset, args, selected_collection_key):
                 all_joints_fixed = False
                 break
 
-
-
     markers = MarkerArray()
     if all_joints_fixed:  # render a single robot mesh
         print('Robot has all joints fixed. Will render only collection ' + selected_collection_key)
@@ -346,7 +341,7 @@ def setupVisualization(dataset, args, selected_collection_key):
         markers.markers.extend(m.markers)
 
         if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
-            rgba = [.5, .5, .5, 0.3]  # best color we could find
+            rgba = [.1, .1, .8, 0.1]  # best color we could find
             m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
                                   frame_id_suffix=generateName('', suffix='ini'),
                                   namespace=generateName(selected_collection_key, suffix='ini'),
@@ -358,13 +353,14 @@ def setupVisualization(dataset, args, selected_collection_key):
             rgba = graphics['collections'][collection_key]['color']
             rgba[3] = 0.2  # change the alpha
             # rgba = [.5, .5, .5, 0.2]  # best color we could find
+            # rgba = [.5, .5, .5, 1]  # best color we could find
             m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                   namespace=collection_key,
                                   rgba=rgba)
             markers.markers.extend(m.markers)
 
             if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
-                rgba = [.5, .5, .5, 0.2]  # best color we could find
+                rgba = [.1, .1, .8, 0.1]  # best color we could find
                 m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                       frame_id_suffix=generateName('', suffix='ini'),
                                       namespace=generateName(collection_key, suffix='ini'),
@@ -538,14 +534,6 @@ def visualizationFunction(models):
     # Publish the meshes
     graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
-    # Not needed now that pattern transforms are added to the collection['transforms']
-    # Publishes the chessboards transforms
-    # for idx, (collection_pattern_key, collection_pattern) in enumerate(patterns['collections'].items()):
-    #     parent = 'base_link'
-    #     child = 'c' + collection_pattern_key + '_pattern_link'
-    #     graphics['ros']['tf_broadcaster'].sendTransform(collection_pattern['trans'], collection_pattern['quat'],
-    #                                                     now, child, parent)
-
     # Publish patterns
     for marker in graphics['ros']['MarkersPattern'].markers:
         marker.header.stamp = now
@@ -588,14 +576,14 @@ def visualizationFunction(models):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        opt_utilities.drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
 
                     # Draw initial projected points (as crosses)
                     for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
                         x = int(round(point['x']))
                         y = int(round(point['y']))
                         color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        opt_utilities.drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
                     msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 

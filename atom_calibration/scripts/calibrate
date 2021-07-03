@@ -270,6 +270,8 @@ def main():
                     not child == initial_estimate['child']:
                 raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
 
+
+
             collection['transforms'][transform_key] = {'parent': parent, 'child': child,
                                                        'trans': initial_estimate['trans'],
                                                        'quat': initial_estimate['quat']}
