@@ -40,9 +40,11 @@ class ChessboardPattern(object):
             return
 
         for point in result['keypoints']:
-            print(point)
-            cv2.drawMarker(image, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
-            cv2.circle(image, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
+            # print("point=" + str(point))
+            # cv2.drawMarker(image, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
+            # cv2.circle(image, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
+            cv2.circle(image, (int(point[0][0]),int(point[0][1])), 7, (0, 255, 0), lineType=cv2.LINE_AA)
+
 
 
 class CharucoPattern(object):
