@@ -138,6 +138,8 @@ if __name__ == '__main__':
     for collection_key in collections_to_delete:
         del dataset['collections'][collection_key]
 
+    del dataset['collections']['3']
+
     # remove collections which do not have a pattern detection for both cameras
     collections_to_delete = []
     for collection_key, collection in dataset['collections'].items():
@@ -151,7 +153,6 @@ if __name__ == '__main__':
 
     print ('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 
-    # exit(0)
     # Pattern configs
     nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
     ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
