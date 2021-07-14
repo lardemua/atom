@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Stereo calibration from opencv
@@ -135,12 +135,23 @@ if __name__ == '__main__':
                     collections_to_delete.append(collection_key)
                     break
 
+    for collection_key in collections_to_delete:
+        del dataset['collections'][collection_key]
+
+    # remove collections which do not have a pattern detection for both cameras
+    collections_to_delete = []
+    for collection_key, collection in dataset['collections'].items():
+        if not collection['labels'][args['left_camera']]['detected'] or \
+                not collection['labels'][args['right_camera']]['detected']:
+            print('Collection ' + collection_key + ' pattern not detected on both cameras. Removing...')
+            collections_to_delete.append(collection_key)
 
     for collection_key in collections_to_delete:
         del dataset['collections'][collection_key]
 
     print ('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 
+    # exit(0)
     # Pattern configs
     nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
     ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']

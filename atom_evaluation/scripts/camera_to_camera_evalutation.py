@@ -352,7 +352,8 @@ if __name__ == "__main__":
                 delta_total.append(diff)
 
                 # Compute reprojection error graphics
-                plt.plot(diff[0], diff[1], 'o', label=collection_key, alpha=0.7, color=colors[int(collection_key)])
+                # TODO Andre why does this not work. Is it needed?
+                # plt.plot(diff[0], diff[1], 'o', label=collection_key, alpha=0.7, color=colors[int(collection_key)])
 
 
         total_pts = len(delta_pts)
