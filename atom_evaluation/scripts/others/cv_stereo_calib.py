@@ -138,8 +138,6 @@ if __name__ == '__main__':
     for collection_key in collections_to_delete:
         del dataset['collections'][collection_key]
 
-    del dataset['collections']['3']
-
     # remove collections which do not have a pattern detection for both cameras
     collections_to_delete = []
     for collection_key, collection in dataset['collections'].items():

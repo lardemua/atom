@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+"""
+Reads the calibration results from a json file and computes the evaluation metrics
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
+import json
+import math
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import atom_core.atom
+import cv2
+import argparse
+import OptimizationUtils.utilities as opt_utilities
+from scipy.spatial import distance
+from copy import deepcopy
+from colorama import Style, Fore
+from numpy.linalg import inv
+from matplotlib import cm
+
+from collections import OrderedDict, namedtuple
+
+from atom_core.naming import generateKey
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str,
+                    required=True)
+
+    # - Save args
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read calibration data from files
+    # ---------------------------------------
+    # Loads the train json file containing the calibration results
+    train_json_file = args['json_file']
+    f = open(train_json_file, 'r')
+    dataset = json.load(f)
+
+    number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
+                        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+
+    number_of_sensors = len(dataset['sensors'].keys())
+
+    # Report all collections
+    CollectionInfo = namedtuple('collection_info', ['x', 'y'])
+    collections_info = {}
+    for collection_key, collection in dataset['collections'].items():
+        print('\nCollection ' + collection_key + ':')
+
+        detections = {}  # dictionary of tuples sensor_key : (detetion?, partial?)
+        for sensor_key, sensor in dataset['sensors'].items():
+            print('Sensor ' + sensor_key)
+            if collection['labels'][sensor_key]['detected']:
+                # check if its a partial detection
+                if sensor['msg_type'] == 'Image':
+                    if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
+                        print('Partial detection')
+                        detections[sensor_key] = (True, True)
+                    else:
+                        print('Complete (non partial) detection')
+                        detections[sensor_key] = (True, False)
+                else:
+                    print('Complete (non partial) detection')
+                    detections[sensor_key] = (True, False)
+            else:
+                print('No detection')
+                detections[sensor_key] = (False, None)
+
+        # is the collection complete?
+        if sum([detections[key][0] for key in detections.keys()]) == number_of_sensors:
+            is_complete = True
+
+        # collection contains partial detections?
+        print([detections[key][1] for key in detections.keys()])
+        print([detections[key][1] for key in detections.keys()])
