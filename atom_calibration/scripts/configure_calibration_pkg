@@ -37,6 +37,9 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package name', type=str, required=True)
+    ap.add_argument("-utf", "--use_tfs", action="store_true",
+                    help='Use transformations in the bag file instead of generating new tfs from the xacro, '
+                         'joint_state_msgs and robot state publisher.')
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
@@ -110,50 +113,49 @@ if __name__ == "__main__":
     # Check the description file
     urdf_file = '/tmp/description.urdf'
     print('Parsing description file ' + description_file)
-    atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create a temp urdf file
+    atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create tmp urdf file
     try:
-        description = URDF.from_xml_file(urdf_file)  # read teh urdf file
+        description = URDF.from_xml_file(urdf_file)  # read the urdf file
     except:
-        atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # print out the xacro parsing
+        atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file,
+                                    verbose=True)  # print xacro parsing
         raise ValueError('Could not parse description file ' + description_file)
 
     # --------------------------------------------------------------------------
-    # Create calibration summary
+    # Create a tf graph to support verifications
     # --------------------------------------------------------------------------
-    g = Digraph('G', filename='summary', directory='/tmp/', graph_attr={'title': 'asdads'})  # create a graph
+    if not args['use_tfs']:  # create a graph using the information in the urdf
+        print('Creating transformation tree using the urdf robot description ...')
+        gx = nx.DiGraph()
 
-    for link in description.links:  # A graph node for each link in the urdf
-        rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
-        label = link.name
-        if config['world_link'] == link.name:
-            label += '\n(world link)'
-            rgb = matplotlib.colors.rgb2hex([1, 0, 0])
+        for link in description.links:  # A graph node for each link in the urdf
+            gx.add_node(link.name)
 
-        for sensor_key, sensor in config['sensors'].items():
-            if sensor['link'] == link.name:
-                label += '\n(data from sensor ' + sensor_key + ')'
-                rgb = matplotlib.colors.rgb2hex([0, 0.5, 0])
+        for joint in description.joints:  # atomic transformations are given by the joints
+            if joint.type == 'fixed':
+                gx.add_edge(joint.parent, joint.child, weight=1, type='static')
+            else:
+                gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
+    else:
+        print('Creating transformation tree using the tfs in the bagfile ...')
+        gx = nx.DiGraph()
 
-        g.node(link.name, label=label, _attributes={'penwidth': '2', 'color': rgb}, )
+        print('Loading bagfile ' + bag_file)
+        bag = rosbag.Bag(bag_file)
 
-    for joint in description.joints:  # atomic transformations are given by the joints
-        label = ''
-        rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
-        for sensor_key, sensor in config['sensors'].items():  # if the joint is marked for calibration
-            if sensor['parent_link'] == joint.parent and sensor['child_link'] == joint.child:
-                label += 'To be calibrated\n'
-                rgb = matplotlib.colors.rgb2hex([0, 0, 1])
+        for topic, msg, t in bag.read_messages(topics=['/tf']):
+            for transform in msg.transforms:
+                if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
+                    gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='dynamic')
 
-        if joint.type == 'fixed':
-            label += 'Static'
-        else:
-            label += 'Dynamic'
+        for topic, msg, t in bag.read_messages(topics=['/tf_static']):
+            for transform in msg.transforms:
+                if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
+                    gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='static')
 
-        g.edge(joint.parent, joint.child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor': rgb},
-               label=label)
-
-    # g.view()
-    g.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
+        bag.close()
+        # nx.draw(gx, with_labels=True)
+        # plt.show()
 
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
@@ -184,29 +186,24 @@ if __name__ == "__main__":
                                  ') does not exist in the bag file.' + Style.RESET_ALL)
 
     # Verify consistency of the tf tree
-    gx = nx.Graph()
-
-    for link in description.links:  # A graph node for each link in the urdf
-        gx.add_node(link.name)
-
-    for joint in description.joints:  # atomic transformations are given by the joints
-        gx.add_edge(joint.parent, joint.child, weight=1)
-
     frames_to_verify = {'world_link': config['world_link'],
                         'calibration_pattern.pattern_link': config['calibration_pattern']['parent_link']}
-    for sensor_key in config['sensors']: # Check if link, child_link and parent_link exist in the bagfile.
+    for sensor_key in config['sensors']:  # Check if link, child_link and parent_link exist in the bagfile.
         for frame in ['child_link', 'parent_link', 'link']:
             frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
 
-    print('Verifying tf frames given in config file...')
-    for key, frame in frames_to_verify.items():
-            if not  frame in gx:
-                raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
-                                 Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
-                                 Fore.BLUE + config_file + Style.RESET_ALL)
 
-    if nx.is_connected(gx):
-        print('TF tree is connected.')
+
+    print('Checking if all tf frames exist ...')
+    for key, frame in frames_to_verify.items():
+        if not frame in gx:
+            raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
+                             Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
+                             Fore.BLUE + config_file + Style.RESET_ALL)
+
+    # if nx.is_connected(gx):
+    if nx.is_weakly_connected(gx):
+            print('TF tree is connected.')
     else:
         pos = nx.random_layout(gx)
         edges, weights = zip(*nx.get_edge_attributes(gx, 'weight').items())
@@ -216,9 +213,11 @@ if __name__ == "__main__":
         raise ValueError('TF tree is not connected. Aborting.')
 
     # Pretty print of transformation chains
-    print('Transformations for sensors. Color coding is ' + Fore.RED + 'root link' + Fore.RESET + ', ' + Fore.BLUE + 'to be calibrated'
-          + Fore.RESET + ', ' + Fore.GREEN + 'dynamic transformation' + Fore.RESET + ', ' + Fore.LIGHTMAGENTA_EX +
-          'sensor data frame' + Fore.RESET + '.')
+    # TODO How to detect a dynamic transformation using the information in the bagfile's tfs?
+    print(
+        'Transformations for sensors. Color coding is ' + Fore.RED + 'root link' + Fore.RESET + ', ' + Fore.BLUE + 'to be calibrated'
+        + Fore.RESET + ', ' + Fore.GREEN + 'dynamic transformation' + Fore.RESET + ', ' + Fore.LIGHTMAGENTA_EX +
+        'sensor data frame' + Fore.RESET + '.')
     for sensor_key, sensor in config['sensors'].items():
         paths = nx.shortest_path(gx, config['world_link'], sensor['link'])  # path between root and sensor data frame
         print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET + ' to sensor ' + Fore.LIGHTMAGENTA_EX +
@@ -237,15 +236,47 @@ if __name__ == "__main__":
                         if joint.type == 'fixed':
                             s += path + ', '
                         else:
-                            s += Fore.GREEN + path +  Fore.RESET +  ', '
+                            s += Fore.GREEN + path + Fore.RESET + ', '
                         break
         s = s[:-2]
         s += ']'
         print(s)
 
-    # Get all tf topics in the bag file
+    # --------------------------------------------------------------------------
+    # Create dot calibration graph (used for printing out a summary)
+    # --------------------------------------------------------------------------
+    g = Digraph('G', filename='summary', directory='/tmp/', graph_attr={'title': 'graph'})  # create a graph
 
-    # TODO Check if config links exist in the tf topics of the bag file
+    for link in gx.nodes:  # A graph node for each link in the urdf
+        rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
+        label = link
+        if config['world_link'] == link:
+            label += '\n(world link)'
+            rgb = matplotlib.colors.rgb2hex([1, 0, 0])
+
+        for sensor_key, sensor in config['sensors'].items():
+            if sensor['link'] == link:
+                label += '\n(data from sensor ' + sensor_key + ')'
+                rgb = matplotlib.colors.rgb2hex([0, 0.5, 0])
+
+        g.node(link, label=label, _attributes={'penwidth': '2', 'color': rgb}, )
+
+    for parent, child, edge_data in gx.edges(data=True):  # atomic transformations are given by the joints
+        label = ''
+        type = edge_data['type']
+        rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
+        for sensor_key, sensor in config['sensors'].items():  # if the joint is marked for calibration
+            if sensor['parent_link'] == parent and sensor['child_link'] == child:
+                label += 'To be calibrated\n'
+                rgb = matplotlib.colors.rgb2hex([0, 0, 1])
+
+        label += type
+
+        g.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor': rgb},
+               label=label)
+
+    # g.view()
+    g.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
 
     # --------------------------------------------------------------------------
     # Create the playback launch file
@@ -258,6 +289,7 @@ if __name__ == "__main__":
         output = template.render(c={'filename': os.path.basename(playbag_launch_file),
                                     'date': dt_string,
                                     'bag_file': bag_file_rel,
+                                    'use_tfs': args['use_tfs'],
                                     'package_name': package_name,
                                     'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                     'use_compressed_topics': bool(compressed_topics),
@@ -549,23 +581,24 @@ if __name__ == "__main__":
         elif msg_type == 'sensor_msgs/LaserScan':
             # Labelled data
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                         'Marker_Topic': 'calibrate/labeled_data'}
-            )
+                                                                            'Marker_Topic': 'calibrate/labeled_data'}
+                                                                         )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif msg_type == 'sensor_msgs/PointCloud2':
             # Labelled data
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                         'Marker_Topic': 'calibrate/labeled_data'}
-            )
+                                                                            'Marker_Topic': 'calibrate/labeled_data'}
+                                                                         )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_calibrate, 'w'))
 
     # Print final report
-    print('\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n'
-          + package_path + '/calibration/summary.pdf')
+    print(
+        '\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n'
+        + package_path + '/calibration/summary.pdf')
     print('\nSuccessfully configured calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL +
           '. You can use the launch files:')
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(playbag_launch_file) + Style.RESET_ALL)

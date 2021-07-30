@@ -32,20 +32,31 @@
 <arg name="bag_file"  default="{{ c.bag_file }}"/>
 <arg name="bag_start" default="0"/>
 <arg name="bag_rate"  default ="1" />
+<arg name="use_tfs"  default ="{{ c.use_tfs }}" doc="If false ignore tfs in the bag file and use the xacro, joint_state_msgs and robot state publisher to generate new tfs."/>
 <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
 <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Load robot description and tf generators -->
 <param name="robot_description"     command="$(find xacro)/xacro $(arg description_file)"   />
-<node  name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+<group unless="$(arg use_tfs)">
+    <node  name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+</group>
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Playback the bag file -->
 <param name="/use_sim_time" value="true"/>
+
+<group if="$(arg use_tfs)"> <!--Play bag file using tfs, ignore joint states -->
+<node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+    args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /joint_states:=/joint_states_null"/>
+</group>
+<group unless="$(arg use_tfs)"> <!--Play bag file ignoring tfs-->
 <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
     args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null"/>
+</group>
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 {% if c.use_compressed_topics %}
