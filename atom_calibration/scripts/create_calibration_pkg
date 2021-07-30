@@ -19,6 +19,9 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package_name', type=str, required=True)
+    ap.add_argument("-utf", "--use_tfs", action="store_true",
+                    help='Use transformations in the bag file instead of generating new tfs from the xacro, '
+                         'joint_state_msgs and robot state publisher.')
     args = vars(ap.parse_args())
 
     # Initial setup
@@ -57,7 +60,10 @@ if __name__ == "__main__":
         f.write('#!/bin/sh')  # shebang
         f.write('\n# Auto generated on ' + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         f.write('\n#      ATOMIC Framework')
-        f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name)
+        if not args['use_tfs']:
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name)
+        else:
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '--use_tfs')
         f.close()
     execute('chmod +x ' + configure_file)  # make file executable
 
