@@ -38,6 +38,7 @@
 <arg name="bag_file"  default="{{ c.bag_file }}"/>
 <arg name="bag_start" default="0"/>
 <arg name="bag_rate"  default ="1" />
+<arg name="marker_size"  default ="{{ c.marker_size }}" />
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
@@ -53,7 +54,7 @@
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 <!-- Start set initial estimate node -->
 <node name="set_initial_estimate" pkg="atom_calibration" type="set_initial_estimate"
-    args="-s 0.5 -f $(arg output_file) -c $(arg config_file)" required="true" output="screen"/>
+    args="-s $(arg marker_size) -f $(arg output_file) -c $(arg config_file)" required="true" output="screen"/>
 <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 </launch>
