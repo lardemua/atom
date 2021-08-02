@@ -366,6 +366,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Setting up ' + rviz_set_initial_estimate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link'] # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
 
     # Create interactive marker display for moving the sensors
@@ -413,8 +414,8 @@ if __name__ == "__main__":
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
                                                                             'Topic': topic,
                                                                             'Color': color,
-                                                                            'Style': 'Points',
-                                                                            'Size__m_': 0.2,
+                                                                            'Style': 'Spheres',
+                                                                            'Size__m_': 0.02,
                                                                             'Alpha': 1})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
@@ -430,6 +431,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Setting up ' + rviz_collect_data + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link'] # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
 
     # Add interactive maker display to handle sensor manual labelling
@@ -489,8 +491,8 @@ if __name__ == "__main__":
                                                                             'Color': color,
                                                                             'Color_Transformer': 'AxisColor',
                                                                             'Axis': 'Z',
-                                                                            'Style': 'Points',
-                                                                            'Size__m_': 0.2,
+                                                                            'Style': 'Spheres',
+                                                                            'Size__m_': 0.02,
                                                                             'Alpha': 1})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
@@ -516,6 +518,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Setting up ' + rviz_calibrate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link'] # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
     displays.pop()  # remove the last item, which is the robot model
 
