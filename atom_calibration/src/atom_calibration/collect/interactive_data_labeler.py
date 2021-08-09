@@ -92,7 +92,6 @@ class LaserScanCluster:
     def __str__(self):
         return "Cluster " + str(self.cluster_count) + " contains idxs = " + str(self.idxs)
 
-
 class InteractiveDataLabeler:
     """
     Handles data labelling for a generic sensor:
@@ -183,7 +182,7 @@ class InteractiveDataLabeler:
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=0)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD(x=0.804, y=0.298,
-                                             z=-0.109)  # interactive marker to label the calibration pattern
+                                             z=0.409)  # interactive marker to label the calibration pattern
             # cluster (one time)
 
             # Labeler definitions
@@ -196,7 +195,7 @@ class InteractiveDataLabeler:
             self.ransac_threshold = 0.01  # RANSAC point-to-plane distance threshold to consider inliers
             # Chessboard point tracker distance threshold
             self.tracker_threshold = math.sqrt(((calib_pattern['dimension']['x'] - 1) * calib_pattern['size']) ** 2 + \
-                                               ((calib_pattern['dimension']['y'] - 1) * calib_pattern['size']) ** 2)
+                                               ((calib_pattern['dimension']['y'] - 1) * calib_pattern['size']) ** 2) * 0.8
 
             print('Created interactive marker for point clouds.')
 

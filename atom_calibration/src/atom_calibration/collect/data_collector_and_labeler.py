@@ -117,6 +117,7 @@ class DataCollectorAndLabeler:
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[sensor_key] = sensor_dict
 
+            print('config = ' + str(self.config))
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
                                                     args['marker_size'], self.config['calibration_pattern'])
 
