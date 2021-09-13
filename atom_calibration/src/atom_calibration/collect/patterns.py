@@ -110,6 +110,7 @@ class CharucoPattern(object):
 
         # param.doCornerRefinement = False
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
+        print('corners = ' + str(corners))
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
         if len(corners) > 4:
@@ -117,12 +118,14 @@ class CharucoPattern(object):
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
             # TODO is it 5x5 or 3x3 ...
+            # Commented this because it return error in more recent opencv versions
             # ccorners = cv2.cornerSubPix(gray, ccorners, (5, 5), (-1, -1), criteria)
-            #
+
             # A valid detection must have at least half the total number of corners.
-            # detected = ccorners is not None and len(ccorners) > self.number_of_corners / 2
-            # if detected:
-            #     return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
+            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 4
+            if detected:
+                return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
+
 
         return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 

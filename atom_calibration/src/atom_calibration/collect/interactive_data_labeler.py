@@ -338,9 +338,7 @@ class InteractiveDataLabeler:
             image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
 
             result = self.pattern.detect(image, equalize_histogram=True)
-            # print('\n\n\n\I am here !!! \n\n\n\n')
-            # rospy.signal_shutdown()
-            # exit(0)
+
             if result['detected']:
                 c = []
 
