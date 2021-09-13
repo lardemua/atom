@@ -133,7 +133,7 @@ class CharucoPattern(object):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             print("none")
             return
-
-        for point in result['keypoints']:
+        points = result['keypoints'].astype(np.int32)
+        for point in points:
             cv2.drawMarker(image, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
             cv2.circle(image, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
