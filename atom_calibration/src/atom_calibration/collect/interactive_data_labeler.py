@@ -29,6 +29,7 @@ from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerC
 from sensor_msgs.msg import *
 from sensor_msgs.msg import PointField
 from image_geometry import PinholeCameraModel
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 
 # local packages
 from atom_calibration.collect import patterns
@@ -115,7 +116,6 @@ class InteractiveDataLabeler:
 
         # Store variables to class attributes
         self.label_data = label_data
-        self.server = server
         self.menu_handler = menu_handler
         self.name = sensor_dict['_name']
         self.parent = sensor_dict['parent']
@@ -123,6 +123,8 @@ class InteractiveDataLabeler:
         self.marker_scale = marker_scale
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
+        # self.server = server
+        self.server = InteractiveMarkerServer(self.name + "/data_labeler")
         self.lock = threading.Lock()
 
         # self.calib_pattern = calib_pattern
@@ -771,6 +773,7 @@ class InteractiveDataLabeler:
 
         self.marker.name = self.name
         self.marker.description = self.name + '_labeler'
+        print('Creating IM with name ' + self.marker.name)
 
         # insert a box
         control = InteractiveMarkerControl()

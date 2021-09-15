@@ -440,6 +440,7 @@ if __name__ == "__main__":
            'Update_Topic': 'data_labeler/update'}
     )
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+    # TODO this will be the menu (only one)
 
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
@@ -505,6 +506,8 @@ if __name__ == "__main__":
                                                                             'Size__m_': 0.2,
                                                                             'Alpha': 0.05})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+            # TODO one interactive marker per sensor (of type lidar)
 
         else:
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
