@@ -110,7 +110,7 @@ class CharucoPattern(object):
 
         # param.doCornerRefinement = False
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
-        print('corners = ' + str(corners))
+        # print('corners = ' + str(corners))
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
         if len(corners) > 4:

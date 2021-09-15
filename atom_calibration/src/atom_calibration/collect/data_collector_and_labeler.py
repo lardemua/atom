@@ -380,7 +380,7 @@ class DataCollectorAndLabeler:
         all_frames = self.listener.getFrameStrings()
 
         for frame in all_frames:
-            # print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
+            print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
             try:
                 self.listener.waitForTransform(frame, self.world_link, now, rospy.Duration(3))
                 chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)
