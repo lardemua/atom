@@ -483,7 +483,15 @@ if __name__ == "__main__":
                                                                             'Alpha': 0.05})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            # TODO Add markers to display data clusters
+            # # TODO Add markers to display data clusters
+
+            rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
+                c={'Name': sensor_key + '-ManualDataLabeler-InteractiveMarkers',
+                   'Update_Topic': sensor_key + '/data_labeler/update'}
+            )
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+
 
         elif msg_type == 'sensor_msgs/PointCloud2':
             # Raw data
@@ -508,6 +516,12 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # TODO one interactive marker per sensor (of type lidar)
+
+            rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
+                c={'Name': sensor_key + '-ManualDataLabeler-InteractiveMarkers',
+                   'Update_Topic': sensor_key + '/data_labeler/update'}
+            )
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         else:
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
