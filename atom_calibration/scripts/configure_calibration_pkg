@@ -515,8 +515,7 @@ if __name__ == "__main__":
                                                                             'Alpha': 0.05})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            # TODO one interactive marker per sensor (of type lidar)
-
+            # Interactive marker for the labeler
             rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
                 c={'Name': sensor_key + '-ManualDataLabeler-InteractiveMarkers',
                    'Update_Topic': sensor_key + '/data_labeler/update'}
