@@ -17,7 +17,7 @@ import tf
 import random
 import atom_core.pypcd as pypcd
 from atom_core.config_io import uriReader
-from atom_core.naming import generateName
+from atom_core.naming import generateName, generateKey
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
