@@ -76,7 +76,7 @@ def main():
                     action='store_true', default=False)
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=('translation', 'rotation'),
                     help="Percentage of noise to add to the initial guess atomic transformations set before.",
-                    type=float, default=0),
+                    type=float, default=[0.0, 0.0]),
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help='A string to be evaluated into a lambda function that receives a sensor name as input and '
                          'returns True or False to indicate if the sensor should be loaded (and used in the '
@@ -135,10 +135,9 @@ def main():
             transform['child'] = generateName(transform['child'], suffix='ini')
 
     # ---------------------------------------
-    # --- Add noise to the initial guess atomic transformations to be calibrated, if desired
+    # --- Add noise to the initial guess atomic transformations to be calibrated.
     # ---------------------------------------
-    if args['noisy_initial_guess'] is not None:
-        addNoiseToInitialGuess(dataset, args)
+    addNoiseToInitialGuess(dataset, args)
 
     # ---------------------------------------
     # --- DETECT EDGES IN THE LASER SCANS
