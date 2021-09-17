@@ -439,7 +439,7 @@ def addNoiseToInitialGuess(dataset, args):
 
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
-            tf_link = calibration_parent + '-' + calibration_child
+            tf_link = generateKey(calibration_parent, calibration_child, suffix='')
 
             # Get original transformation
             quat = dataset['collections'][collection_key]['transforms'][tf_link]['quat']
