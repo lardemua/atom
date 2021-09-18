@@ -337,7 +337,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         else:
             gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
 
-    # Evaluate for each link if it may move or not, to see if it needs to be drawn for each collection
+    # Evaluate for each link if it may move or not, to see if it needs to be drawn for each collection.
+    # TODO this should be done by looking at the dataset transforms, the xacro might not work with the use_tfs option.
     immovable_links = []
     movable_links = []
     for link in xml_robot.links:
@@ -414,7 +415,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 # Draw immovable links
                 m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                       frame_id_suffix=generateName('', suffix='ini'),
-                                      namespace=generateName('immovable', suffix='ini'),
+                                      namespace=generateName('immovabl', suffix='ini'),
                                       rgba=rgba, skip_links=movable_links)
                 markers.markers.extend(m.markers)
 
