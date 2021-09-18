@@ -177,7 +177,7 @@ def createPatternLabels(args, dataset, step=0.02):
             # for sensor_key, sensor in dataset['sensors'].items():
 
             if not collection['labels'][sensor_key]['detected']:  # if chessboard not detected by sensor in collection
-                print('Collection ' + str(collection_key) + ': Chessboard not detected by sensor ' + str(sensor_key))
+                print('Collection ' + str(collection_key) + ' is partial: Pattern not detected by sensor ' + str(sensor_key))
                 continue
 
             # change accordingly to the first camera to give chessboard first poses

@@ -115,7 +115,7 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
         # rgba = graphics['collections'][collection_key]['color']
         # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
 
-        print('Got the mesh it is: ' + dataset['calibration_config']['calibration_pattern']['mesh_file'])
+        # print('Got the mesh it is: ' + dataset['calibration_config']['calibration_pattern']['mesh_file'])
         m = Marker(header=Header(frame_id=frame_id, stamp=now),
                    ns=str(collection_key) + '-mesh', id=0, frame_locked=True,
                    type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),

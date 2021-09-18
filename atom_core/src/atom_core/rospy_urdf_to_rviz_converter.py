@@ -76,7 +76,8 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespa
             if hasattr(geom, 'scale'):
                 if not geom.scale is None:
                     sx, sy, sz = geom.scale[0], geom.scale[1], geom.scale[2]
-                    print('Setting scale for link ' + link.name + ' to sx=' + str(sx) + ', sy=' + str(sy) + ', sz=',
+                    if verbose:
+                        print('Setting scale for link ' + link.name + ' to sx=' + str(sx) + ', sy=' + str(sy) + ', sz=',
                           str(sz))
 
             if not rgba is None:  # select link color

@@ -283,7 +283,7 @@ def write_pcd(filename, pointcloud, mode='binary'):
     pc.save_pcd(filename, compression=mode)
 
 
-def read_pcd(filename, cloud_header=None):
+def read_pcd(filename, cloud_header=None, verbose=False):
     """
     This is meant to replace the old read_pcd from Andre which broke when migrating to python3.
     :param filename:
@@ -293,7 +293,8 @@ def read_pcd(filename, cloud_header=None):
     if not os.path.isfile(filename):
         raise Exception("[read_pcd] File does not exist.")
 
-    print('Reading point cloud from ' + Fore.BLUE + filename + Style.RESET_ALL)
+    if verbose:
+        print('Reading point cloud from ' + Fore.BLUE + filename + Style.RESET_ALL)
     pc = pypcd.PointCloud.from_path(filename)
 
     cloud = pc.to_msg()
@@ -414,7 +415,7 @@ def filterCollectionsFromDataset(dataset, args):
                          'dataset and your collection selection function.')
 
     print('After filtering, will use ' + str(len(dataset['collections'].keys())) + ' collections: ' + str(
-        dataset['collections'].keys()))
+        list(dataset['collections'].keys())))
 
     return dataset
 

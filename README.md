@@ -389,6 +389,7 @@ sudo pip3 install -r requirements.txt
  * Eurico Pedrosa - University of Aveiro
  * Tiago Madeira - University of Aveiro
  * André Aguiar - INESC TEC
+ * Daniela Rato - University of Aveiro
 
 # Maintainers
 
