@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
     # if nx.is_connected(gx):
     if nx.is_weakly_connected(gx):
-            print('TF tree is connected.')
+        print('TF tree is connected.')
     else:
         pos = nx.random_layout(gx)
         edges, weights = zip(*nx.get_edge_attributes(gx, 'weight').items())

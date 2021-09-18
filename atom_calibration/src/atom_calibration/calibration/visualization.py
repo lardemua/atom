@@ -8,6 +8,8 @@ import copy
 import math
 import os
 import pprint
+import networkx as nx
+import matplotlib.pyplot as plt
 
 # 3rd-party
 import colorama
@@ -144,6 +146,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
     rospy.loginfo('Reading description file ' + description_file + '...')
+    # TODO not sure this should be done because of the use_tfs functionality ...
     xml_robot = readXacroFile(description_file)
 
     # Initialize ROS stuff
@@ -318,6 +321,45 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -----------------------------------------------------------------------------------------------------
     # -------- Robot meshes
     # -----------------------------------------------------------------------------------------------------
+
+    # Create a transformation tree to analyse which links are dynamic
+    # Dynamic links (not joints) are links which are not immovable, meaning they may move around. This means they have to
+    # be drawn for each collection.
+    print('Creating transformation tree using the urdf robot description ...')
+    gx = nx.DiGraph()
+
+    for link in xml_robot.links:  # A graph node for each link in the urdf
+        gx.add_node(link.name)
+
+    for joint in xml_robot.joints:  # atomic transformations are given by the joints
+        if joint.type == 'fixed':
+            gx.add_edge(joint.parent, joint.child, weight=1, type='static')
+        else:
+            gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
+
+    # Evaluate for each link if it may move or not, to see if it needs to be drawn for each collection
+    immovable_links = []
+    movable_links = []
+    for link in xml_robot.links:
+        # print("Analysing link: " + str(link.name))
+        path = nx.shortest_path(gx, dataset['calibration_config']['world_link'], link.name)  # path between root and sensor data frame
+        # print('Path from ' + Fore.RED + dataset['calibration_config']['world_link'] + Fore.RESET + ' to link ' + Fore.LIGHTMAGENTA_EX +
+        #   link.name + Fore.RESET + ':\n' + str(path))
+
+        is_immovable = True
+        for parent, child in zip(path[:-1], path[1:]):
+            if not gx.get_edge_data(parent, child)['type'] == 'static':
+                # print('link ' + link.name + ': goes through the ' + parent + ' to ' + child + ' dynamic transformation')
+                is_immovable = False
+                movable_links.append(link.name)
+                break
+
+        if is_immovable:
+            immovable_links.append(link.name)
+
+    print('immovable links are: ' + str(immovable_links))
+    print('movable links are: ' + str(movable_links))
+
     # Check whether the robot is static, in the sense that all of its joints are fixed. If so, for efficiency purposes,
     # only one robot mesh (from the selected collection) is published.
     if args['all_joints_fixed']:  # assume the robot is static
@@ -336,7 +378,7 @@ def setupVisualization(dataset, args, selected_collection_key):
         print('Robot has all joints fixed. Will render only collection ' + selected_collection_key)
         rgba = [.5, .5, .5, 1]  # best color we could find
         m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
-                              namespace=selected_collection_key,
+                              namespace='immovable',
                               rgba=rgba)
         markers.markers.extend(m.markers)
 
@@ -344,28 +386,45 @@ def setupVisualization(dataset, args, selected_collection_key):
             rgba = [.1, .1, .8, 0.1]  # best color we could find
             m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
                                   frame_id_suffix=generateName('', suffix='ini'),
-                                  namespace=generateName(selected_collection_key, suffix='ini'),
+                                  namespace=generateName('immovable', suffix='ini'),
                                   rgba=rgba)
             markers.markers.extend(m.markers)
 
     else:  # render robot meshes for all collections
+        print('Robot has some dynamic joints. Will use advanced rendering ...')
+
+        # Draw immovable links
+        rgba = [.5, .5, .5, 1]  # best color we could find
+        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
+                              namespace='immovable',
+                              rgba=rgba, skip_links=movable_links)
+        markers.markers.extend(m.markers)
+
+        # Draw movable links
         for collection_key, collection in dataset['collections'].items():
             rgba = graphics['collections'][collection_key]['color']
             rgba[3] = 0.2  # change the alpha
-            # rgba = [.5, .5, .5, 0.2]  # best color we could find
-            # rgba = [.5, .5, .5, 1]  # best color we could find
             m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                   namespace=collection_key,
-                                  rgba=rgba)
+                                  rgba=rgba, skip_links=immovable_links)
             markers.markers.extend(m.markers)
 
             if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
                 rgba = [.1, .1, .8, 0.1]  # best color we could find
+                # Draw immovable links
                 m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                       frame_id_suffix=generateName('', suffix='ini'),
-                                      namespace=generateName(collection_key, suffix='ini'),
-                                      rgba=rgba)
+                                      namespace=generateName('immovable', suffix='ini'),
+                                      rgba=rgba, skip_links=movable_links)
                 markers.markers.extend(m.markers)
+
+                # Draw movable links
+                for collection_key, collection in dataset['collections'].items():
+                    m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
+                                          frame_id_suffix=generateName('', suffix='ini'),
+                                          namespace=generateName(collection_key, suffix='ini'),
+                                          rgba=rgba, skip_links=immovable_links)
+                    markers.markers.extend(m.markers)
 
     graphics['ros']['robot_mesh_markers'] = markers
 

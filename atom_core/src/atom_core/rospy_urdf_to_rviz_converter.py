@@ -25,7 +25,8 @@ def xmlDescriptionFromXacroFile(filename):
     return URDF.from_xml_file(tmp_file)
 
 
-def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespace=None, rgba=None, verbose=False):
+def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespace=None, rgba=None, verbose=False,
+                      skip_links=[]):
     """
     :param _robot_description:
     :param frame_id_prefix:
@@ -49,6 +50,10 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespa
 
     counter = 0
     for link in xml_robot.links:
+
+        if link.name in skip_links:
+            # print('Skiping link ' + link.name)
+            continue
 
         if verbose:
             print("Analysing link: " + str(link.name))
