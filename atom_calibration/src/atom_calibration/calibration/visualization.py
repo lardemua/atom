@@ -322,54 +322,26 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -------- Robot meshes
     # -----------------------------------------------------------------------------------------------------
 
-
-    for link in xml_robot.links:  # A graph node for each link in the urdf
+    # Evaluate for each link if it may move or not (movable or immovalbe), to see if it needs to be drawn for each
+    # collection. This is done by comparing the several transformations from the world_link to the <link> obtained
+    # from the collections.
+    immovable_links = []
+    movable_links = []
+    for link in xml_robot.links:  # cycle all links
 
         print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
+        first_time = True
         for collection_key, collection in dataset['collections'].items():
             transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name, collection['transforms'])
             print('Collection ' + collection_key + ': ')
-            print(transform)
-
-        if link.name == 'lidar_1':
-            exit(0)
-
-
-    exit(0)
-    # Create a transformation tree to analyse which links are dynamic
-    # Dynamic links (not joints) are links which are not immovable, meaning they may move around. This means they have to
-    # be drawn for each collection.
-    print('Creating transformation tree using the urdf robot description ...')
-    gx = nx.DiGraph()
-
-    for link in xml_robot.links:  # A graph node for each link in the urdf
-        gx.add_node(link.name)
-
-    for joint in xml_robot.joints:  # atomic transformations are given by the joints
-        if joint.type == 'fixed':
-            gx.add_edge(joint.parent, joint.child, weight=1, type='static')
-        else:
-            gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
-
-    # Evaluate for each link if it may move or not, to see if it needs to be drawn for each collection.
-    # TODO this should be done by looking at the dataset transforms, the xacro might not work with the use_tfs option.
-    immovable_links = []
-    movable_links = []
-    for link in xml_robot.links:
-        # print("Analysing link: " + str(link.name))
-        path = nx.shortest_path(gx, dataset['calibration_config']['world_link'], link.name)  # path between root and sensor data frame
-        # print('Path from ' + Fore.RED + dataset['calibration_config']['world_link'] + Fore.RESET + ' to link ' + Fore.LIGHTMAGENTA_EX +
-        #   link.name + Fore.RESET + ':\n' + str(path))
-
-        is_immovable = True
-        for parent, child in zip(path[:-1], path[1:]):
-            if not gx.get_edge_data(parent, child)['type'] == 'static':
-                # print('link ' + link.name + ': goes through the ' + parent + ' to ' + child + ' dynamic transformation')
-                is_immovable = False
+            if first_time:
+                first_time = False
+                transform_first_time = transform
+            elif not np.array_equal(transform_first_time, transform):
                 movable_links.append(link.name)
                 break
 
-        if is_immovable:
+        if link.name not in movable_links:
             immovable_links.append(link.name)
 
     print('immovable links are: ' + str(immovable_links))
