@@ -322,6 +322,20 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -------- Robot meshes
     # -----------------------------------------------------------------------------------------------------
 
+
+    for link in xml_robot.links:  # A graph node for each link in the urdf
+
+        print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
+        for collection_key, collection in dataset['collections'].items():
+            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name, collection['transforms'])
+            print('Collection ' + collection_key + ': ')
+            print(transform)
+
+        if link.name == 'lidar_1':
+            exit(0)
+
+
+    exit(0)
     # Create a transformation tree to analyse which links are dynamic
     # Dynamic links (not joints) are links which are not immovable, meaning they may move around. This means they have to
     # be drawn for each collection.
