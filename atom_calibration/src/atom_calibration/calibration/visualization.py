@@ -201,6 +201,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     # We need to republish a new image at every visualization
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+            # print(sensor_key)
             if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
                 continue
 
@@ -487,7 +488,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
 
 def visualizationFunction(models):
-    print(Fore.RED + 'Visualization function called.' + Style.RESET_ALL)
+    # print(Fore.RED + 'Visualization function called.' + Style.RESET_ALL)
     # Get the data from the meshes
     dataset = models['dataset']
     args = models['args']
@@ -497,7 +498,7 @@ def visualizationFunction(models):
     config = models['dataset']['calibration_config']
     graphics = models['graphics']
 
-    print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
+    # print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
 
     now = rospy.Time.now()  # time used to publish all visualization messages
 
@@ -566,7 +567,7 @@ def visualizationFunction(models):
 
     graphics['ros']['tf_broadcaster'].sendTransform(transfoms)
 
-    print("graphics['ros']['Counter'] = " + str(graphics['ros']['Counter']))
+    # print("graphics['ros']['Counter'] = " + str(graphics['ros']['Counter']))
     if graphics['ros']['Counter'] < 5:
         graphics['ros']['Counter'] += 1
         return None
