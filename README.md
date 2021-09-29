@@ -254,6 +254,9 @@ Here is an example of how the calibration procedure should look like.
 
 <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_calibration.gif" width="600"/> 
 
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/1NOEBKDMIpk/0.jpg)](https://www.youtube.com/watch?v=1NOEBKDMIpk)
+
+
 # Examples
 
 So far, we have used **ATOM** to successfully calibrate several robotic platforms:
