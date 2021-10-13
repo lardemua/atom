@@ -9,6 +9,7 @@ import atom_core.ros_utils
 import sys
 
 # 3rd-party
+import ros
 import rospy
 
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
@@ -145,3 +146,6 @@ if __name__ == "__main__":
     print('Changes applied ...')
 
     rospy.spin()
+    # rate = rospy.Rate(1000)
+    # while not rospy.is_shutdown():
+    #     rate.sleep()

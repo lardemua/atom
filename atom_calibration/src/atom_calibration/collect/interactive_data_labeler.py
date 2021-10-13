@@ -150,27 +150,27 @@ class InteractiveDataLabeler:
             self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled',
                                                              sensor_msgs.msg.PointCloud2,
-                                                             queue_size=0)  # publish a point cloud with the points
+                                                             queue_size=1)  # publish a point cloud with the points
             # in the selected cluster
             self.publisher_clusters = rospy.Publisher(self.topic + '/clusters', sensor_msgs.msg.PointCloud2,
-                                                      queue_size=0)  # publish a point cloud with coloured clusters
+                                                      queue_size=1)  # publish a point cloud with coloured clusters
             self.createInteractiveMarker()  # interactive marker to label the calibration pattern cluster (one time)
             print('Created interactive marker for laser scans.')
         elif self.msg_type_str in ['Image'] and self.label_data:
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
-                                                            queue_size=0)  # publish
+                                                            queue_size=1)  # publish
             # images with the detected chessboard overlaid onto the image.
 
         elif self.msg_type_str in [
             'PointCloud2TIAGO'] and self.label_data:  # TODO, this will have to be revised later on Check #44
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
-                                                             queue_size=0)  # publish a point cloud with the points
+                                                             queue_size=1)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
             self.bridge = CvBridge()
             self.publisher_labelled_depth_image = rospy.Publisher(self.topic + '/depth_image_labelled',
                                                                   sensor_msgs.msg.Image,
-                                                                  queue_size=0)  # publish
+                                                                  queue_size=1)  # publish
 
             self.cam_model = PinholeCameraModel()
             topic_name = os.path.dirname(self.topic) + '/camera_info'
@@ -182,7 +182,7 @@ class InteractiveDataLabeler:
 
         elif self.msg_type_str in ['PointCloud2'] and self.label_data:  # Velodyne data (Andre Aguiar)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
-                                                             queue_size=0)  # publish a point cloud with the points
+                                                             queue_size=1)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD(x=0.804, y=0.298,
                                              z=0.409)  # interactive marker to label the calibration pattern
             # cluster (one time)
@@ -209,20 +209,28 @@ class InteractiveDataLabeler:
                 # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
 
         # Subscribe to the message topic containing sensor data
-        print(self.msg_type)
-        self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=None)
+        # https://github.com/ros/ros_comm/issues/536
+        # https://github.com/lmb-freiburg/rgbd-pose3d/issues/5
+        # TODO figure out which is the adequate size, this was trial and error
+        self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1, buff_size=10000000000)
 
     def sensorDataReceivedCallback(self, msg):
+        # rospy.loginfo(self.name + ' (Before lock) received msg which is ' + str((rospy.Time.now() - msg.header.stamp).to_sec()) + ' secs.')
+
+        stamp_before_lock = rospy.Time.now()
         self.lock.acquire()  # use semaphores to make sure the data is not being written on two sides simultaneously
+        # self.lock.acquire(blocking=False)  # use semaphores to make sure the data is not being written on two sides simultaneously
         self.msg = msg  # make a local copy of sensor data
-        # now = rospy.Time.now()
+        now = rospy.Time.now()
         if self.label_data:
             self.labelData  # label the data
         # rospy.loginfo('Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
         self.lock.release()  # release lock
+        # rospy.loginfo('(With Lock) Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
 
     @property
     def labelData(self):
+        # print('Labelling data for sensor ' + self.name)
         # Reset detected and idxs values to make sure we are not using information from a previous labelling
         self.labels['detected'] = False
         self.labels['idxs'] = []
@@ -336,9 +344,11 @@ class InteractiveDataLabeler:
 
         elif self.msg_type_str == 'Image':  # Cameras -------------------------------------------
 
+            # rospy.loginfo(
+            #     'Labelling image for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
+
             # Convert to opencv image and save image to disk
             image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
-
             result = self.pattern.detect(image, equalize_histogram=True)
 
             if result['detected']:
@@ -643,6 +653,10 @@ class InteractiveDataLabeler:
             print('all. took ' + str((rospy.Time.now() - tall).to_sec()))
 
         elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
+
+            # rospy.loginfo(
+            #     'Labelling PointCloud for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
+
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
                                            self.marker.pose.position.z  # interactive marker pose
