@@ -33,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 # local packages
 import atom_core.utilities as utilities
 
+
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
@@ -70,6 +71,7 @@ if __name__ == "__main__":
     # Template engine setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
     env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
+    env.add_extension('jinja2.ext.do')
 
     # Date
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -185,14 +187,24 @@ if __name__ == "__main__":
                 raise ValueError(Fore.RED + ' Topic ' + topic + ' (from sensor ' + sensor_key +
                                  ') does not exist in the bag file.' + Style.RESET_ALL)
 
+    throttle_topics = {}
+    use_throttle_topics={}
+    for sensor_key in config['sensors']:
+        throttle = config['sensors'][sensor_key]['throttle']
+        topic = config['sensors'][sensor_key]['topic_name']
+        if throttle == 0:
+            use_throttle = False
+        else:
+            use_throttle = True
+        throttle_topics[topic] = {'throttled_topic': topic, 'sensor_key': sensor_key, 'use_throttle': use_throttle,
+                                  'throttle_hz': throttle}
+
     # Verify consistency of the tf tree
     frames_to_verify = {'world_link': config['world_link'],
                         'calibration_pattern.pattern_link': config['calibration_pattern']['parent_link']}
     for sensor_key in config['sensors']:  # Check if link, child_link and parent_link exist in the bagfile.
         for frame in ['child_link', 'parent_link', 'link']:
             frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
-
-
 
     print('Checking if all tf frames exist ...')
     for key, frame in frames_to_verify.items():
@@ -293,7 +305,8 @@ if __name__ == "__main__":
                                     'package_name': package_name,
                                     'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                     'use_compressed_topics': bool(compressed_topics),
-                                    'compressed_topics': compressed_topics
+                                    'compressed_topics': compressed_topics,
+                                    'throttle_topics': throttle_topics
                                     })
         f.write(output.encode('utf-8'))
 
@@ -366,7 +379,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Setting up ' + rviz_set_initial_estimate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
-    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link'] # set fixed frame to world_link
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
+        'world_link']  # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
 
     # Create interactive marker display for moving the sensors
@@ -431,7 +445,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Setting up ' + rviz_collect_data + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
-    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link'] # set fixed frame to world_link
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
+        'world_link']  # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
 
     # Add interactive maker display to handle sensor manual labelling
@@ -534,7 +549,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Setting up ' + rviz_calibrate + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
-    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link'] # set fixed frame to world_link
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
+        'world_link']  # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
     displays.pop()  # remove the last item, which is the robot model
 

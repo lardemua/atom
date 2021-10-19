@@ -65,11 +65,13 @@ sensors:
     #   /world_camera/rgb/image_raw
     #
     # Example:
+    # Set throttle: 0 if you don't want to change the framerate of the sensor
     hand_camera:
         link: "hand_camera_optical_frame"
         parent_link: "end_effector"
         child_link: "hand_camera"
         topic_name: "/hand_camera/image_raw"
+        throttle: 10
 
     # You can have more than one sensor:
     another_camera:
@@ -77,6 +79,7 @@ sensors:
         parent_link: "end_effector"
         child_link: "another_camera"
         topic_name: "/another_camera/image_raw"
+        throttle: 10
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
