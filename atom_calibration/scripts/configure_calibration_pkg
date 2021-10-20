@@ -114,6 +114,10 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Check the description file
     urdf_file = '/tmp/description.urdf'
+    if os.path.exists(urdf_file):
+        print('Deleting temporary file ' + urdf_file)
+        os.remove(urdf_file)
+
     print('Parsing description file ' + description_file)
     atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create tmp urdf file
     try:
