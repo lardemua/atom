@@ -43,7 +43,7 @@
     {% set remapping = [] %}
     {% for key, value in c.throttle_topics.items() -%}
     {% if value['use_throttle'] %}
-    <node pkg="topic_tools" type="throttle" name="throttle_{{ value['sensor_key'] }}"
+    <node pkg="topic_tools" type="throttle" name="throttler_{{ value['sensor_key'] }}"
           args="messages {{ key }}_to_throttle {{ value['throttle_hz'] }} {{ key }}"/>
         {% do remapping.append( key ~ ':=' ~ key ~ '_to_throttle' )%}
     {% endif %}

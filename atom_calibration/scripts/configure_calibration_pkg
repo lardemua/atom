@@ -33,7 +33,6 @@ from jinja2 import Environment, FileSystemLoader
 # local packages
 import atom_core.utilities as utilities
 
-
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
@@ -136,6 +135,7 @@ if __name__ == "__main__":
 
         for link in description.links:  # A graph node for each link in the urdf
             gx.add_node(link.name)
+            print(link.name)
 
         for joint in description.joints:  # atomic transformations are given by the joints
             if joint.type == 'fixed':
@@ -192,14 +192,23 @@ if __name__ == "__main__":
                                  ') does not exist in the bag file.' + Style.RESET_ALL)
 
     throttle_topics = {}
-    use_throttle_topics={}
+    use_throttle_topics = {}
     for sensor_key in config['sensors']:
-        throttle = config['sensors'][sensor_key]['throttle']
         topic = config['sensors'][sensor_key]['topic_name']
-        if throttle == 0:
-            use_throttle = False
-        else:
+        topic_compressed = topic + '/compressed'
+        if topic_compressed in bag_topics:  # Check if the topic is a compressed image topic
+            topic = topic_compressed
+        if 'throttle' in config['sensors'][sensor_key]:
+            throttle = config['sensors'][sensor_key]['throttle']
+            print('Sensor ' + sensor_key + ' has throttle')
+
             use_throttle = True
+        else:
+            print('Sensor ' + sensor_key + ' does not have throttle')
+            throttle = None
+            use_throttle = False
+        # else:
+
         throttle_topics[topic] = {'throttled_topic': topic, 'sensor_key': sensor_key, 'use_throttle': use_throttle,
                                   'throttle_hz': throttle}
 
@@ -211,6 +220,7 @@ if __name__ == "__main__":
             frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
 
     print('Checking if all tf frames exist ...')
+    print(frames_to_verify)
     for key, frame in frames_to_verify.items():
         if not frame in gx:
             raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
