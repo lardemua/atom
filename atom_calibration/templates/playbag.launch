@@ -79,7 +79,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Image Topic Decompression -->
     {% for key, value in c.compressed_topics.items() -%}
-    <node pkg="image_transport" type="republish" name="republish_{{ value['sensor_key'] }}" output="screen"
+    <node pkg="image_transport" type="republish" name="decompressor_{{ value['sensor_key'] }}" output="screen"
           args="compressed in:={{ key }} raw out:={{ key }}"/>
     {% endfor %}
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
