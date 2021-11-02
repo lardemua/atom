@@ -143,6 +143,8 @@ class InteractiveDataLabeler:
         self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.topic)
         print('msg_type_str is = ' + str(self.msg_type_str))
 
+        #TODO decide which labeler to use
+
         # Handle the interactive labelling of data differently according to the sensor message types.
         if self.msg_type_str in ['LaserScan'] and self.label_data:
             # TODO parameters given from a command line input?

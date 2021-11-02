@@ -117,7 +117,7 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
     ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true',
-                    default=False)z
+                    default=False)
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
     print("\nArgument list=" + str(args) + '\n')
