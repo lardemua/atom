@@ -22,7 +22,7 @@ from atom_calibration.calibration.getters_and_setters import getterTransform, se
     setterCameraIntrinsics
 
 from atom_core.naming import generateKey, generateName
-from atom_core.utilities import waitForKeyPress
+from atom_core.utilities import waitForKeyPress, waitForKeyPress2
 from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
 import atom_calibration.calibration.patterns_config as patterns
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
@@ -470,7 +470,7 @@ def main():
     # --- Start Optimization
     # ---------------------------------------
     if args['phased_execution']:
-        waitForKeyPress(function=opt.callObjectiveFunction, timeout=0.1)
+        waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
     print('Initializing optimization ...')
     # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
@@ -480,9 +480,8 @@ def main():
     opt.startOptimization(optimization_options=options)
 
 
-
     if args['phased_execution']:
-        waitForKeyPress(opt.callObjectiveFunction, timeout=0.1, message=Fore.RED + 'Optimization finished' +
+        waitForKeyPress2(opt.callObjectiveFunction, timeout=0.1, message=Fore.RED + 'Optimization finished' +
                                                                         Style.RESET_ALL)
     # Error Report
     print('\nFinal errors:')

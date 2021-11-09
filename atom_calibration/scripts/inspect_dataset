@@ -171,7 +171,7 @@ def main():
     # ---------------------------------------
     # --- Collection by collections
     # ---------------------------------------
-    # number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
+   # number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
     #                     int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
     #
     # for collection_key, collection in dataset['collections'].items():
