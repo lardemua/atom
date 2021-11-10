@@ -65,7 +65,7 @@ sensors:
     #   /world_camera/rgb/image_raw
     #
     # Example:
-    # Set throttle: 0 if you don't want to change the framerate of the sensor
+    # Set throttle: desired_frame_rate. If you don't use throttle, collapse the throttle option
     hand_camera:
         link: "hand_camera_optical_frame"
         parent_link: "end_effector"

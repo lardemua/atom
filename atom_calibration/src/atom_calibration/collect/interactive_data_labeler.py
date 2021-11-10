@@ -215,7 +215,7 @@ class InteractiveDataLabeler:
         # https://github.com/lmb-freiburg/rgbd-pose3d/issues/5
         # TODO figure out which is the adequate size, this was trial and error
         # self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1, buff_size=10000000000)
-        self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1, buff_size=52428800)
+        self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1, buff_size=10000000000)
 
 
     def sensorDataReceivedCallback(self, msg):
