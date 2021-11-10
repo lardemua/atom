@@ -201,7 +201,7 @@ def main():
     # Add parameters related to the sensors
     translation_delta = 0.2
     # TODO temporary placement of top_left_camera
-    # dataset['calibration_config']['anchored_sensor'] = 'left_camera'
+    # dataset['calibration_config']['anchored_sensor'] = 'world_camera'
     print('Anchored sensor is ' + Fore.GREEN + dataset['calibration_config'][
         'anchored_sensor'] + Style.RESET_ALL)
 
@@ -274,7 +274,9 @@ def main():
                     not child == initial_estimate['child']:
                 raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
 
-
+            # TODO remove this test only used for mmtbot in simulation, dataset test2
+            initial_estimate['trans'] = [-0.03145546838641167,1.479259967803955,0.7253881692886353]
+            initial_estimate['quat'] =[0.6966770887374878,0.0,0.0,0.7173848748207092]
 
             collection['transforms'][transform_key] = {'parent': parent, 'child': child,
                                                        'trans': initial_estimate['trans'],
@@ -284,12 +286,18 @@ def main():
             #   a) The Getter will pick up transform from the collection collection_key
             #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the
             #   corresponding collection
+            initial_transform = getterTransform(dataset, transform_key=transform_key,
+                                                collection_name=collection_key)
+            bound_max = [x + sys.float_info.epsilon for x in initial_transform]
+            bound_min = [x - sys.float_info.epsilon for x in initial_transform]
+
             opt.pushParamVector(group_name='c' + collection_key + '_' + transform_key, data_key='dataset',
                                 getter=partial(getterTransform, transform_key=transform_key,
                                                collection_name=collection_key),
                                 setter=partial(setterTransform, transform_key=transform_key,
                                                collection_name=collection_key),
-                                suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
+                                suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'],
+                                bound_max=bound_max, bound_min=bound_min)
 
     else:  # fixed pattern ---------------------------------------------------------------------------------------------
         # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
@@ -418,7 +426,10 @@ def main():
             # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
             #       ' affected by parameters:\n' + str(params))
 
+
+    # opt.printParameters()
     # opt.printResiduals()
+    # exit(0)
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
