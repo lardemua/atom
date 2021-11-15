@@ -42,93 +42,101 @@ world_link: "base_link"
 # ATOM will calibrate the extrinsic parameters of your sensors.
 # In this section you should discriminate the sensors that will be part of the calibrations.
 sensors:
-    # Each key will define a sensor and its name, which will be use throughout the calibration.
-    # Each sensor definition must have the following properties:
-    #       link:
-    #           The frame of the sensor's data (i.e. the header.frame_id).
-    #
-    #       parent_link:
-    #           The parent link of the transformation (i.e. link) to be calibrated.
-    #
-    #       child_link:
-    #           This is the transformation (i.e. link) that we be optimized.
-    #
-    #       topic_name:
-    #           Name of the ROS topic that contains the data produced by this sensor.
-    #           If you are calibrating an camera, you should use the raw image produced by the
-    #           sensors. Additionally, it the topic is an image it will automatically use the
-    #           respective `camera_info` topic.
-    #
-    # If you are using an image compressed topic such as:
-    #   /world_camera/rgb/image_raw/compressed
-    # you should not add the "compressed" part, use only:
-    #   /world_camera/rgb/image_raw
-    #
-    # Example:
-    # Set throttle: desired_frame_rate. If you don't use throttle, collapse the throttle option
-    hand_camera:
-        link: "hand_camera_optical_frame"
-        parent_link: "end_effector"
-        child_link: "hand_camera"
-        topic_name: "/hand_camera/image_raw"
-        throttle: 10
+  # Each key will define a sensor and its name, which will be use throughout the calibration.
+  # Each sensor definition must have the following properties:
+  #       sensor_id:
+  #           Set this to identify the sensor modality. If this flag is not set, the sensor will be
+  #           identified by the message type.
+  #           Current options: lidar, rgb, depth, laserscan
+  #
+  #       link:
+  #           The frame of the sensor's data (i.e. the header.frame_id).
+  #
+  #       parent_link:
+  #           The parent link of the transformation (i.e. link) to be calibrated.
+  #
+  #       child_link:
+  #           This is the transformation (i.e. link) that we be optimized.
+  #
+  #       topic_name:
+  #           Name of the ROS topic that contains the data produced by this sensor.
+  #           If you are calibrating an camera, you should use the raw image produced by the
+  #           sensors. Additionally, it the topic is an image it will automatically use the
+  #           respective `camera_info` topic.
+  #
+  #       throttle:
+  #           Set throttle: desired_frame_rate. If you don't use throttle, collapse the throttle option
+  # If you are using an image compressed topic such as:
+  #   /world_camera/rgb/image_raw/compressed
+  # you should not add the "compressed" part, use only:
+  #   /world_camera/rgb/image_raw
+  #
 
-    # You can have more than one sensor:
-    another_camera:
-        link: "another_camera_optical_frame"
-        parent_link: "end_effector"
-        child_link: "another_camera"
-        topic_name: "/another_camera/image_raw"
-        throttle: 10
+  hand_camera:
+    sensor_id: rgb
+    link: "hand_camera_optical_frame"
+    parent_link: "end_effector"
+    child_link: "hand_camera"
+    topic_name: "/hand_camera/image_raw"
+    throttle: 10
+
+  # You can have more than one sensor:
+  another_camera:
+    sensor_id: rgb
+    link: "another_camera_optical_frame"
+    parent_link: "end_effector"
+    child_link: "another_camera"
+    topic_name: "/another_camera/image_raw"
+    throttle: 10
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
 calibration_pattern:
 
-    # The frame id (or link) of the pattern.
-    # This link/transformation will be optimized.
-    link: "chessboard_link"
+  # The frame id (or link) of the pattern.
+  # This link/transformation will be optimized.
+  link: "chessboard_link"
 
-    # The parent frame id (or link) of the pattern.
-    # For example, in hand-eye calibration the parent link
-    # of the pattern can be the end-effector or the base of the arm
-    parent_link: "end_effector"
+  # The parent frame id (or link) of the pattern.
+  # For example, in hand-eye calibration the parent link
+  # of the pattern can be the end-effector or the base of the arm
+  parent_link: "end_effector"
 
-    # Defines if the pattern link is the same in all collections (i.e. fixed=true),
-    # or each collection will have its own estimate of the link transformation.
-    fixed: true
+  # Defines if the pattern link is the same in all collections (i.e. fixed=true),
+  # or each collection will have its own estimate of the link transformation.
+  fixed: true
 
-    # The type of pattern used for the calibration.
-    # Supported pattern are:
-    # - chessboard
-    # - charuco
-    pattern_type: "chessboard"
+  # The type of pattern used for the calibration.
+  # Supported pattern are:
+  # - chessboard
+  # - charuco
+  pattern_type: "chessboard"
 
-    # If the pattern type is "charuco" you need to define
-    # the aruco dictionary used by the pattern.
-    # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
-    dictionary: "DICT_5X5_100"
+  # If the pattern type is "charuco" you need to define
+  # the aruco dictionary used by the pattern.
+  # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
+  dictionary: "DICT_5X5_100"
 
-    # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
-    # See: description_file
-    mesh_file: "package://atom_calibration/meshes/charuco_5x5.dae"
+  # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
+  # See: description_file
+  mesh_file: "package://atom_calibration/meshes/charuco_5x5.dae"
 
-    # The border width from the edge corner to the pattern physical edge.
-    # Used for 3D sensors and lidars.
-    # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
-    border_size: {'x': 0.05, 'y': 0.05}
+  # The border width from the edge corner to the pattern physical edge.
+  # Used for 3D sensors and lidars.
+  # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
+  border_size: { 'x': 0.05, 'y': 0.05 }
 
-    # The number of corners the pattern has in the X and Y dimensions.
-    # Note: The charuco detector uses the number of squares per dimension in its detector.
-    # Internally we add a +1 to Y and X dimensions to account for that.
-    # Therefore, the number of corners should be used even for the charuco pattern.
-    dimension: {"x": 9, "y": 6}
+  # The number of corners the pattern has in the X and Y dimensions.
+  # Note: The charuco detector uses the number of squares per dimension in its detector.
+  # Internally we add a +1 to Y and X dimensions to account for that.
+  # Therefore, the number of corners should be used even for the charuco pattern.
+  dimension: { "x": 9, "y": 6 }
 
-    # The length of the square edge.
-    size: 0.02
+  # The length of the square edge.
+  size: 0.02
 
-    # The length of the charuco inner marker.
-    inner_size: 0.015
+  # The length of the charuco inner marker.
+  inner_size: 0.015
 
 
 # Miscellaneous configuration
