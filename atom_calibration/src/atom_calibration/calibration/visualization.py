@@ -205,7 +205,8 @@ def setupVisualization(dataset, args, selected_collection_key):
             if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
                 continue
 
-            if sensor['msg_type'] == 'Image':
+            # if sensor['msg_type'] == 'Image':
+            if sensor['sensor_id'] == 'rgb':
                 msg_type = sensor_msgs.msg.Image
                 topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
                 topic_name = '~c' + str(collection_key) + topic + '/labeled'
@@ -224,7 +225,8 @@ def setupVisualization(dataset, args, selected_collection_key):
             if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
                 continue
 
-            if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
+            # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
+            if sensor['sensor_id']=='laserscan':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -277,8 +279,8 @@ def setupVisualization(dataset, args, selected_collection_key):
                     marker.points.append(p)
                 markers.markers.append(copy.deepcopy(marker))
 
-            if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
-
+            # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
+            if sensor['sensor_id']=='lidar':
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -444,7 +446,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
-            if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
+            # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
+            if sensor['sensor_id']=='laserscan' or sensor['sensor_id']=='lidar':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -603,7 +606,8 @@ def visualizationFunction(models):
             if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
                 continue
 
-            if sensor['msg_type'] == 'Image':
+            # if sensor['msg_type'] == 'Image':
+            if sensor['sensor_id']=='rgb':
                 if args['show_images']:
                     image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
                     width = collection['data'][sensor_key]['width']
@@ -644,11 +648,13 @@ def visualizationFunction(models):
                     graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
 
-            elif sensor['msg_type'] == 'LaserScan':
+            # elif sensor['msg_type'] == 'LaserScan':
+            elif sensor['sensor_id'] == 'laserscan':
                 pass
-            elif sensor['msg_type'] == 'PointCloud2':
+            # elif sensor['msg_type'] == 'PointCloud2':
+            elif sensor['sensor_id'] == 'lidar':
                 pass
             else:
-                raise ValueError("Unknown sensor msg_type")
+                raise ValueError("Unknown sensor msg_type or sensor_id")
 
     graphics['ros']['Rate'].sleep()

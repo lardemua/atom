@@ -57,11 +57,20 @@ def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _datase
     return points
 
 
+# @Cache(args_to_ignore=['residuals', 'dataset'])
+# def getNormalizerForMsgType(msg_type, residuals, dataset):
+#     values = []
+#     for sensor_key, sensor in dataset['sensors'].items():
+#         if sensor['msg_type'] == msg_type:
+#             values += [residuals[k] for k in residuals.keys() if sensor_key in k]
+#
+#     return np.mean(values)
+
 @Cache(args_to_ignore=['residuals', 'dataset'])
-def getNormalizerForMsgType(msg_type, residuals, dataset):
+def getNormalizerForMsgType(sensor_id, residuals, dataset):
     values = []
     for sensor_key, sensor in dataset['sensors'].items():
-        if sensor['msg_type'] == msg_type:
+        if sensor['sensor_id'] == sensor_id:
             values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
     return np.mean(values)
@@ -112,8 +121,8 @@ def objectiveFunction(data):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
 
-            if sensor['msg_type'] == 'Image':
-
+            # if sensor['msg_type'] == 'Image':
+            if sensor['sensor_id'] == 'rgb':
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
                 pts_in_pattern = getPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
@@ -144,7 +153,7 @@ def objectiveFunction(data):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
                                        (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer[
-                                   'Image']
+                                   'rgb']
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
@@ -157,7 +166,8 @@ def objectiveFunction(data):
 
 
 
-            elif sensor['msg_type'] == 'LaserScan':
+            # elif sensor['msg_type'] == 'LaserScan':
+            elif sensor['sensor_id']=='laserscan':
                 # Get laser points that belong to the chessboard
                 idxs = collection['labels'][sensor_key]['idxs']
                 rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
@@ -206,14 +216,14 @@ def objectiveFunction(data):
                 rname = collection_key + '_' + sensor_key + '_eright'
                 r[rname] = float(np.amin(distance.cdist(extrema_right.transpose(),
                                                         pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
-                           normalizer['LaserScan']
+                           normalizer['laserscan']
 
                 # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
                 extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eleft'
                 r[rname] = float(np.amin(distance.cdist(extrema_left.transpose(),
                                                         pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
-                           normalizer['LaserScan']
+                           normalizer['laserscan']
 
                 # --- Residuals: Longitudinal distance for inner points
                 pts = []
@@ -233,7 +243,7 @@ def objectiveFunction(data):
 
                     rname = collection_key + '_' + sensor_key + '_inner_' + str(idx)
                     r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean'))) / \
-                               normalizer['LaserScan']
+                               normalizer['laserscan']
 
                 # --- Residuals: Beam direction distance from point to chessboard plan
                 # For computing the intersection we need:
@@ -279,13 +289,14 @@ def objectiveFunction(data):
                                          collection_key)
 
                     rname = collection_key + '_' + sensor_key + '_beam_' + str(idx)
-                    r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho) / normalizer['LaserScan']
+                    r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho) / normalizer['laserscan']
 
                     if args['ros_visualization']:
                         marker.points.append(deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
-            elif sensor['msg_type'] == 'PointCloud2':
+            # elif sensor['msg_type'] == 'PointCloud2':
+            elif sensor['sensor_id'] == 'lidar':
                 # Get the 3D LiDAR labelled points for the given collection
                 points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
@@ -305,7 +316,7 @@ def objectiveFunction(data):
                 for idx in collection['labels'][sensor_key]['samples']:
                     # Compute the residual: absolute of z component
                     rname = rname_pre + str(idx)
-                    r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['PointCloud2']
+                    r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['lidar']
 
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
@@ -332,24 +343,24 @@ def objectiveFunction(data):
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(distance.cdist(m_pt,
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
-                               normalizer['PointCloud2']
+                               normalizer['lidar']
                 # ------------------------------------------------------------------------------------------------
 
             else:
-                raise ValueError("Unknown sensor msg_type")
+                raise ValueError("Unknown sensor msg_type or sensor_id")
 
     if args['verbose']:
         print("Errors per sensor:")
         for sensor_key, sensor in dataset['sensors'].items():
             keys = [k for k in r.keys() if sensor_key in k]
-            v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
+            v = [r[k] * normalizer[sensor['sensor_id']] for k in keys]
             print('  ' + sensor_key + " " + str(np.mean(v)))
 
         for collection_key, collection in dataset['collections'].items():
             v = []
             for sensor_key, sensor in dataset['sensors'].items():
                 keys = [k for k in r.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
-                v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
+                v = [r[k] * normalizer[sensor['sensor_id']] for k in keys]
                 print('Collection ' + collection_key + ' ' + sensor_key + ' has ' + str(np.mean(v)))
 
         # per_col_sensor = {str(c): {str(s): {'avg': mean([r[k] for k in r.keys() if c == k.split('_')[0] and s in k]),

@@ -152,7 +152,8 @@ def main():
     # ---------------------------------------
     # TODO this should go to the collect and label
     for sensor_key, sensor in dataset['sensors'].items():
-        if sensor['msg_type'] == 'LaserScan':  # only for lasers
+        # if sensor['msg_type'] == 'LaserScan':  # only for lasers
+        if sensor['sensor_id'] == 'laserscan':  # only for lasers
             for collection_key, collection in dataset['collections'].items():
                 idxs = collection['labels'][sensor_key]['idxs']
                 edges = []  # a list of edges
@@ -201,7 +202,7 @@ def main():
     # Add parameters related to the sensors
     translation_delta = 0.2
     # TODO temporary placement of top_left_camera
-    # dataset['calibration_config']['anchored_sensor'] = 'world_camera'
+    # dataset['calibration_config']['anchored_sensor'] = 'left_camera'
     print('Anchored sensor is ' + Fore.GREEN + dataset['calibration_config'][
         'anchored_sensor'] + Style.RESET_ALL)
 
@@ -246,7 +247,8 @@ def main():
     # TODO bound_min and max for intrinsics
     if args['optimize_intrinsics']:
         for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
+            # if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
+            if sensor['sensor_id'] == 'rgb':  # if sensor is a camera add intrinsics
                 opt.pushParamVector(group_name=str(sensor_key) + '_intrinsics', data_key='dataset',
                                     getter=partial(getterCameraIntrinsics, sensor_key=sensor_key),
                                     setter=partial(setterCameraIntrinsics, sensor_key=sensor_key),
@@ -274,9 +276,7 @@ def main():
                     not child == initial_estimate['child']:
                 raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
 
-            # TODO remove this test only used for mmtbot in simulation, dataset test2
-            initial_estimate['trans'] = [-0.03145546838641167,1.479259967803955,0.7253881692886353]
-            initial_estimate['quat'] =[0.6966770887374878,0.0,0.0,0.7173848748207092]
+
 
             collection['transforms'][transform_key] = {'parent': parent, 'child': child,
                                                        'trans': initial_estimate['trans'],
@@ -286,18 +286,12 @@ def main():
             #   a) The Getter will pick up transform from the collection collection_key
             #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the
             #   corresponding collection
-            initial_transform = getterTransform(dataset, transform_key=transform_key,
-                                                collection_name=collection_key)
-            bound_max = [x + sys.float_info.epsilon for x in initial_transform]
-            bound_min = [x - sys.float_info.epsilon for x in initial_transform]
-
             opt.pushParamVector(group_name='c' + collection_key + '_' + transform_key, data_key='dataset',
                                 getter=partial(getterTransform, transform_key=transform_key,
                                                collection_name=collection_key),
                                 setter=partial(setterTransform, transform_key=transform_key,
                                                collection_name=collection_key),
-                                suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'],
-                                bound_max=bound_max, bound_min=bound_min)
+                                suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
 
     else:  # fixed pattern ---------------------------------------------------------------------------------------------
         # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
@@ -366,8 +360,10 @@ def main():
             params = opt.getParamsContainingPattern(sensors_transform_key)
 
             # Intrinsics parameters
-            if sensor['msg_type'] == 'Image' and args['optimize_intrinsics']:
+            # if sensor['msg_type'] == 'Image' and args['optimize_intrinsics']:
+            if sensor['sensor_id'] == 'rgb' and args['optimize_intrinsics']:
                 params.extend(opt.getParamsContainingPattern(sensor_key + '_intrinsics'))
+
 
             # Pattern related parameters
             if dataset['calibration_config']['calibration_pattern']['fixed']:
@@ -381,14 +377,15 @@ def main():
 
             params.extend(opt.getParamsContainingPattern(pattern_transform_key))  # pattern related params
 
-            if sensor['msg_type'] == 'Image':  # if sensor is a camera use four residuals
-
+            # if sensor['msg_type'] == 'Image':  # if sensor is a camera use four residuals
+            if sensor['sensor_id'] == 'rgb':
                 # Compute step as a function of residual sampling factor
                 for idx in collection['labels'][sensor_key]['idxs']:  # using all pattern corners
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(idx['id'])
                     opt.pushResidual(name=rname, params=params)
 
-            elif sensor['msg_type'] == 'LaserScan':  # if sensor is a 2D lidar add two residuals
+            # elif sensor['msg_type'] == 'LaserScan':  # if sensor is a 2D lidar add two residuals
+            elif sensor['sensor_id']=='laserscan':
                 # TODO Implement sampling here if relevant
                 # Extrema points (longitudinal error)
                 opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_eleft', params=params)
@@ -402,7 +399,8 @@ def main():
                 for idx in range(0, len(collection['labels'][sensor_key]['idxs'])):
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_beam_' + str(idx), params=params)
 
-            elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
+            # elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
+            elif sensor['sensor_id']=='lidar':
 
                 # Laser beam error (or orthogonal error) ==
 
@@ -426,10 +424,7 @@ def main():
             # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
             #       ' affected by parameters:\n' + str(params))
 
-
-    # opt.printParameters()
     # opt.printResiduals()
-    # exit(0)
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
@@ -441,20 +436,35 @@ def main():
     # ---------------------------------------
     # --- Get a normalizer for each residual type
     # ---------------------------------------
-    msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
-    normalizer = {k: 1.0 for k in msg_types}
+    # msg_types = set([s['msg_type'] for s in dataset['sensors'].values()])
+    # normalizer = {k: 1.0 for k in msg_types}
+    # opt.addDataModel('normalizer', normalizer)
+    #
+    # residuals = objectiveFunction(opt.data_models)
+    # opt.callObjectiveFunction()
+    # for msg_type in msg_types:
+    #     values = []
+    #     for sensor_key, sensor in dataset['sensors'].items():
+    #         if sensor['msg_type'] == msg_type:
+    #             values += [residuals[k] for k in residuals.keys() if sensor_key in k]
+    #
+    #     # If the normalizer is to big, the residuals may loose their influence when close to zero.
+    #     normalizer[msg_type] = np.abs(np.log(np.mean(values)))
+
+    sensor_ids = set([s['sensor_id'] for s in dataset['sensors'].values()])
+    normalizer = {k: 1.0 for k in sensor_ids}
     opt.addDataModel('normalizer', normalizer)
 
     residuals = objectiveFunction(opt.data_models)
     opt.callObjectiveFunction()
-    for msg_type in msg_types:
+    for sensor_id in sensor_ids:
         values = []
         for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['msg_type'] == msg_type:
+            if sensor['sensor_id'] == sensor_id:
                 values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
         # If the normalizer is to big, the residuals may loose their influence when close to zero.
-        normalizer[msg_type] = np.abs(np.log(np.mean(values)))
+        normalizer[sensor_id] = np.abs(np.log(np.mean(values)))
 
     # ---------------------------------------
     # --- Profile Objective Function
@@ -499,7 +509,7 @@ def main():
     r = objectiveFunction(opt.data_models)
     for sensor_key, sensor in dataset['sensors'].items():
         keys = [k for k in r.keys() if sensor_key in k]
-        v = [r[k] * normalizer[sensor['msg_type']] for k in keys]
+        v = [r[k] * normalizer[sensor['sensor_id']] for k in keys]
         print("Sensor " + sensor_key + " " + str(np.mean(v)))
 
     # ---------------------------------------
