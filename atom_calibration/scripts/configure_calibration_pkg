@@ -386,7 +386,7 @@ if __name__ == "__main__":
                 config['sensors'][sensor_key]['sensor_id'] not in ['rgb', 'depth', 'lidar', 'laserscan']):
             print(
                 Fore.YELLOW + 'Warning: Sensor ID not properly identified for sensor ' + sensor_key + ' with topic '
-                + topic + "Sensor will be identified by message type."+ Style.RESET_ALL)
+                + topic + "Sensor will be identified by message type." + Style.RESET_ALL)
             if msg_type == 'sensor_msgs/CompressedImage' or \
                     msg_type == 'sensor_msgs/Image':
                 config['sensors'][sensor_key]['sensor_id'] = 'rgb'
@@ -395,9 +395,9 @@ if __name__ == "__main__":
             elif msg_type == 'sensor_msgs/PointCloud2':
                 config['sensors'][sensor_key]['sensor_id'] = 'lidar'
             else:
-                raise ValueError(Fore.RED +  'Error: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
+                raise ValueError(
+                    Fore.RED + 'Error: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                     + topic + Style.RESET_ALL)
-
 
     # --------------------------------------------------------------------------
     # Create the rviz config core displays (used in several rviz config files)
@@ -439,14 +439,14 @@ if __name__ == "__main__":
         #     msg_type = bag_info[1][topic].msg_type
         # else:
         #     msg_type = bag_info[1][topic_compressed].msg_type
-        sensor_id=config['sensors'][sensor_key]['sensor_id']
+        sensor_id = config['sensors'][sensor_key]['sensor_id']
 
         print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + sensor_id + ')')
 
         # if msg_type == 'sensor_msgs/CompressedImage' or \
         #         msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
-        #TODO check if depth should be here or not
-        if sensor_id== 'rgb' or sensor_id=='depth':
+        # TODO check if depth should be here or not
+        if sensor_id == 'rgb' or sensor_id == 'depth':
 
             # Raw image
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Image',
@@ -459,7 +459,7 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
-        elif sensor_id=='laserscan':
+        elif sensor_id == 'laserscan':
             # Raw data
             rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-LaserScan',
                                                                           'Topic': topic,
@@ -467,7 +467,7 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/PointCloud2':
-        elif sensor_id=='lidar':
+        elif sensor_id == 'lidar':
             # Raw data
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
                                                                             'Topic': topic,
@@ -510,13 +510,13 @@ if __name__ == "__main__":
         #     msg_type = bag_info[1][topic].msg_type
         # else:
         #     msg_type = bag_info[1][topic_compressed].msg_type
-        sensor_id=config['sensors'][sensor_key]['sensor_id']
+        sensor_id = config['sensors'][sensor_key]['sensor_id']
 
         print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + sensor_id + ')')
 
         # if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # displays for camera sensor
-        #TODO check if depth should be here or separated
-        if sensor_id=='rgb' or sensor_id=='depth':
+        # TODO check if depth should be here or separated
+        if sensor_id == 'rgb' or sensor_id == 'depth':
             # Image
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
                                                                       'Image_Topic': topic + '/labeled'})
@@ -528,7 +528,7 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
-        elif sensor_id=='laserscan':
+        elif sensor_id == 'laserscan':
             rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-LaserScan',
                                                                           'Topic': topic,
                                                                           'Color': color})
@@ -555,7 +555,7 @@ if __name__ == "__main__":
 
 
         # elif msg_type == 'sensor_msgs/PointCloud2':
-        elif sensor_id=='lidar':
+        elif sensor_id == 'lidar':
             # Raw data
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
                                                                             'Topic': topic,
@@ -648,7 +648,7 @@ if __name__ == "__main__":
         sensor_id = config['sensors'][sensor_key]['sensor_id']
 
         print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + sensor_id + ')')
-        #TODO check if depth should be here or separated
+        # TODO check if depth should be here or separated
         if sensor_id == 'rgb' or sensor_id == 'depth':  # displays for camera sensor
 
             # Image
