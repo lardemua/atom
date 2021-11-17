@@ -374,9 +374,6 @@ class DataCollectorAndLabeler:
         self.data_stamp += 1
 
         # # create metadata
-        # self.metadata[self.timestamp] = str(time.time())
-        # self.metadata[self.date] = time.ctime(time.time())
-        # self.metadata[self.user] = getpass.getuser()
         self.metadata={"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser()}
 
         # Save to json file
