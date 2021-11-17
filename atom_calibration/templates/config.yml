@@ -44,11 +44,6 @@ world_link: "base_link"
 sensors:
   # Each key will define a sensor and its name, which will be use throughout the calibration.
   # Each sensor definition must have the following properties:
-  #       sensor_id:
-  #           Set this to identify the sensor modality. If this flag is not set, the sensor will be
-  #           identified by the message type.
-  #           Current options: lidar, rgb, depth, laserscan
-  #
   #       link:
   #           The frame of the sensor's data (i.e. the header.frame_id).
   #
@@ -63,9 +58,14 @@ sensors:
   #           If you are calibrating an camera, you should use the raw image produced by the
   #           sensors. Additionally, it the topic is an image it will automatically use the
   #           respective `camera_info` topic.
-  #
+  # OPTIONAL
   #       throttle:
   #           Set throttle: desired_frame_rate. If you don't use throttle, collapse the throttle option
+  #       modality:
+  #           Set this to identify the sensor modality. If this flag is not set, the sensor will be
+  #           identified by the message type.
+  #           Current options: lidar3d, rgb, depth, lidar2d
+  #
   # If you are using an image compressed topic such as:
   #   /world_camera/rgb/image_raw/compressed
   # you should not add the "compressed" part, use only:
@@ -73,21 +73,23 @@ sensors:
   #
 
   hand_camera:
-    sensor_id: rgb
     link: "hand_camera_optical_frame"
     parent_link: "end_effector"
     child_link: "hand_camera"
     topic_name: "/hand_camera/image_raw"
     throttle: 10
+    modality: rgb
+
 
   # You can have more than one sensor:
   another_camera:
-    sensor_id: rgb
     link: "another_camera_optical_frame"
     parent_link: "end_effector"
     child_link: "another_camera"
     topic_name: "/another_camera/image_raw"
     throttle: 10
+    modality: rgb
+
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.

@@ -7,6 +7,8 @@ import atom_core.config_io
 import atom_core.dataset_io
 import time
 from datetime import datetime
+from datetime import date
+import getpass
 
 # 3rd-party
 import atom_msgs.srv
@@ -59,8 +61,12 @@ class DataCollectorAndLabeler:
         self.server = server
         self.menu_handler = menu_handler
         self.data_stamp = 0
+        self.timestamp = ""
+        self.date = ""
+        self.user = ""
         self.collections = {}
         self.additional_data = {}
+        self.metadata = {}
         self.bridge = CvBridge()
 
         self.config = loadConfig(args['calibration_file'])
@@ -77,7 +83,7 @@ class DataCollectorAndLabeler:
         for sensor_key, value in self.config['sensors'].items():
 
             # Create a dictionary that describes this sensor
-            sensor_dict = {'_name': sensor_key, 'sensor_id': value['sensor_id'], 'parent': value['link'],
+            sensor_dict = {'_name': sensor_key, 'modality': value['modality'], 'parent': value['link'],
                            'calibration_parent': value['parent_link'],
                            'calibration_child': value['child_link']}
 
@@ -91,10 +97,10 @@ class DataCollectorAndLabeler:
             print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
             sensor_dict['topic'] = value['topic_name']
             sensor_dict['msg_type'] = msg_type
-            sensor_id = value['sensor_id']
+            modality = value['modality']
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
-            if sensor_id == 'rgb':  # if it is an image must get camera_info
+            if modality == 'rgb':  # if it is an image must get camera_info
                 sensor_dict['camera_info_topic'] = os.path.dirname(sensor_dict['topic']) + '/camera_info'
                 from sensor_msgs.msg import CameraInfo
                 print('Waiting for camera_info message on topic ' + sensor_dict['camera_info_topic'] + ' ...')
@@ -130,7 +136,7 @@ class DataCollectorAndLabeler:
         # Additional data loop
         if 'additional_data' in self.config:
             for description, value in self.config['additional_data'].items():
-                data_dict = {'_name': description,'sensor_id': value['sensor_id'], 'parent': value['link'],
+                data_dict = {'_name': description, 'modality': value['modality'], 'parent': value['link'],
                              'calibration_parent': value['parent_link'], 'calibration_child': value['child_link']}
 
                 print("Waiting for message " + value['topic_name'] + ' ...')
@@ -305,6 +311,7 @@ class DataCollectorAndLabeler:
         all_sensor_data_dict = {}
         all_sensor_labels_dict = {}
         all_additional_data_dict = {}
+        # metadata={}
 
         for sensor_key, sensor in self.sensors.items():
             print('Collecting data from ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ': sensor_key')
@@ -352,7 +359,7 @@ class DataCollectorAndLabeler:
             # Update sensor labels ---------------------------------------------
             # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
             #     all_sensor_labels_dict[sensor_key] = labels
-            if sensor['sensor_id'] in ['rgb', 'laserscan', 'depth','lidar']:
+            if sensor['modality'] in ['rgb', 'lidar2d', 'depth', 'lidar3d']:
                 all_sensor_labels_dict[sensor_key] = labels
             else:
                 raise ValueError('Unknown message type.')
@@ -366,9 +373,15 @@ class DataCollectorAndLabeler:
         self.collections[self.data_stamp] = collection_dict
         self.data_stamp += 1
 
+        # # create metadata
+        # self.metadata[self.timestamp] = str(time.time())
+        # self.metadata[self.date] = time.ctime(time.time())
+        # self.metadata[self.user] = getpass.getuser()
+        self.metadata={"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser()}
+
         # Save to json file
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,
-             'calibration_config': self.config}
+             'calibration_config': self.config, 'metadata': self.metadata}
         output_file = self.output_folder + '/data_collected.json'
         atom_core.dataset_io.saveResultsJSON(output_file, D)
 

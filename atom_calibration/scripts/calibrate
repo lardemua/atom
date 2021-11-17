@@ -153,7 +153,7 @@ def main():
     # TODO this should go to the collect and label
     for sensor_key, sensor in dataset['sensors'].items():
         # if sensor['msg_type'] == 'LaserScan':  # only for lasers
-        if sensor['sensor_id'] == 'laserscan':  # only for lasers
+        if sensor['modality'] == 'lidar2d':  # only for lasers
             for collection_key, collection in dataset['collections'].items():
                 idxs = collection['labels'][sensor_key]['idxs']
                 edges = []  # a list of edges
@@ -248,7 +248,7 @@ def main():
     if args['optimize_intrinsics']:
         for sensor_key, sensor in dataset['sensors'].items():
             # if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
-            if sensor['sensor_id'] == 'rgb':  # if sensor is a camera add intrinsics
+            if sensor['modality'] == 'rgb':  # if sensor is a camera add intrinsics
                 opt.pushParamVector(group_name=str(sensor_key) + '_intrinsics', data_key='dataset',
                                     getter=partial(getterCameraIntrinsics, sensor_key=sensor_key),
                                     setter=partial(setterCameraIntrinsics, sensor_key=sensor_key),
@@ -361,7 +361,7 @@ def main():
 
             # Intrinsics parameters
             # if sensor['msg_type'] == 'Image' and args['optimize_intrinsics']:
-            if sensor['sensor_id'] == 'rgb' and args['optimize_intrinsics']:
+            if sensor['modality'] == 'rgb' and args['optimize_intrinsics']:
                 params.extend(opt.getParamsContainingPattern(sensor_key + '_intrinsics'))
 
 
@@ -378,14 +378,14 @@ def main():
             params.extend(opt.getParamsContainingPattern(pattern_transform_key))  # pattern related params
 
             # if sensor['msg_type'] == 'Image':  # if sensor is a camera use four residuals
-            if sensor['sensor_id'] == 'rgb':
+            if sensor['modality'] == 'rgb':
                 # Compute step as a function of residual sampling factor
                 for idx in collection['labels'][sensor_key]['idxs']:  # using all pattern corners
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(idx['id'])
                     opt.pushResidual(name=rname, params=params)
 
             # elif sensor['msg_type'] == 'LaserScan':  # if sensor is a 2D lidar add two residuals
-            elif sensor['sensor_id']=='laserscan':
+            elif sensor['modality']=='lidar2d':
                 # TODO Implement sampling here if relevant
                 # Extrema points (longitudinal error)
                 opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_eleft', params=params)
@@ -400,7 +400,7 @@ def main():
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_beam_' + str(idx), params=params)
 
             # elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
-            elif sensor['sensor_id']=='lidar':
+            elif sensor['modality']=='lidar3d':
 
                 # Laser beam error (or orthogonal error) ==
 
@@ -451,20 +451,20 @@ def main():
     #     # If the normalizer is to big, the residuals may loose their influence when close to zero.
     #     normalizer[msg_type] = np.abs(np.log(np.mean(values)))
 
-    sensor_ids = set([s['sensor_id'] for s in dataset['sensors'].values()])
-    normalizer = {k: 1.0 for k in sensor_ids}
+    modalitys = set([s['modality'] for s in dataset['sensors'].values()])
+    normalizer = {k: 1.0 for k in modalitys}
     opt.addDataModel('normalizer', normalizer)
 
     residuals = objectiveFunction(opt.data_models)
     opt.callObjectiveFunction()
-    for sensor_id in sensor_ids:
+    for modality in modalitys:
         values = []
         for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['sensor_id'] == sensor_id:
+            if sensor['modality'] == modality:
                 values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
         # If the normalizer is to big, the residuals may loose their influence when close to zero.
-        normalizer[sensor_id] = np.abs(np.log(np.mean(values)))
+        normalizer[modality] = np.abs(np.log(np.mean(values)))
 
     # ---------------------------------------
     # --- Profile Objective Function
@@ -509,7 +509,7 @@ def main():
     r = objectiveFunction(opt.data_models)
     for sensor_key, sensor in dataset['sensors'].items():
         keys = [k for k in r.keys() if sensor_key in k]
-        v = [r[k] * normalizer[sensor['sensor_id']] for k in keys]
+        v = [r[k] * normalizer[sensor['modality']] for k in keys]
         print("Sensor " + sensor_key + " " + str(np.mean(v)))
 
     # ---------------------------------------

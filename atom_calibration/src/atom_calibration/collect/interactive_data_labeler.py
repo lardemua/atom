@@ -121,7 +121,7 @@ class InteractiveDataLabeler:
         self.name = sensor_dict['_name']
         self.parent = sensor_dict['parent']
         self.topic = sensor_dict['topic']
-        self.sensor_id = sensor_dict['sensor_id']
+        self.modality = sensor_dict['modality']
         self.marker_scale = marker_scale
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
@@ -149,7 +149,7 @@ class InteractiveDataLabeler:
 
         # Handle the interactive labelling of data differently according to the sensor message types.
         # if self.msg_type_str in ['LaserScan'] and self.label_data:
-        if self.sensor_id == 'laserscan' and self.label_data:
+        if self.modality == 'lidar2d' and self.label_data:
             # TODO parameters given from a command line input?
             self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
             self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
@@ -162,7 +162,7 @@ class InteractiveDataLabeler:
             self.createInteractiveMarker()  # interactive marker to label the calibration pattern cluster (one time)
             print('Created interactive marker for laser scans.')
         # elif self.msg_type_str in ['Image'] and self.label_data:
-        elif self.sensor_id == 'rgb' and self.label_data:
+        elif self.modality == 'rgb' and self.label_data:
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=1)  # publish
@@ -187,7 +187,7 @@ class InteractiveDataLabeler:
         #     print('Created interactive marker for point clouds.')
 
         # elif self.msg_type_str in ['PointCloud2'] and self.label_data:  # Velodyne data (Andre Aguiar)
-        elif self.sensor_id == 'lidar' and self.label_data:  # Velodyne data (Andre Aguiar)
+        elif self.modality == 'lidar3d' and self.label_data:  # Velodyne data (Andre Aguiar)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=1)  # publish a point cloud with the points
             self.createInteractiveMarkerRGBD(x=0.804, y=0.298,
@@ -209,7 +209,7 @@ class InteractiveDataLabeler:
 
             print('Created interactive marker for point clouds.')
 
-        elif self.sensor_id == 'depth' and self.label_data:  # Velodyne data (Andre Aguiar)
+        elif self.modality == 'depth' and self.label_data:  # Velodyne data (Andre Aguiar)
             print('Depth labeller under construction')
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
@@ -219,7 +219,7 @@ class InteractiveDataLabeler:
             if self.label_data:
                 # We handle only know message types
                 raise ValueError(
-                    'Message type ' + self.sensor_id + ' for topic ' + self.topic + 'is of an unknown type.')
+                    'Message type ' + self.modality + ' for topic ' + self.topic + 'is of an unknown type.')
                 # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
 
         # Subscribe to the message topic containing sensor data
@@ -253,7 +253,7 @@ class InteractiveDataLabeler:
 
         # Labelling process dependent of the sensor type
         # if self.msg_type_str == 'LaserScan':  # 2D LIDARS -------------------------------------
-        if self.sensor_id == 'laserscan':  # 2D LIDARS -------------------------------------
+        if self.modality == 'lidar2d':  # 2D LIDARS -------------------------------------
             # For 2D LIDARS the process is the following: First cluster all the range data into clusters. Then,
             # associate one of the clusters with the calibration pattern by selecting the cluster which is closest to
             # the rviz interactive marker.
@@ -360,7 +360,7 @@ class InteractiveDataLabeler:
             self.publisher_selected_points.publish(pc_msg)
 
         # elif self.msg_type_str == 'Image':  # Cameras -------------------------------------------
-        elif self.sensor_id == 'rgb':
+        elif self.modality == 'rgb':
             # rospy.loginfo(
             #     'Labelling image for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
 
@@ -396,281 +396,8 @@ class InteractiveDataLabeler:
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_image.publish(msg_out)
 
-        elif self.msg_type_str == 'PointCloud2TIAGO':  # RGB-D pointcloud -------------------------------------------
-            # TODO, this will have to be revised later on Check #44
-
-            # print("Found point cloud!")
-
-            tall = rospy.Time.now()
-
-            # Get 3D coords
-            t = rospy.Time.now()
-            # points = pc2.read_points_list(self.msg, skip_nans=False, field_names=("x", "y", "z"))
-            print('0. took ' + str((rospy.Time.now() - t).to_sec()))
-
-            # Get the marker position
-            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z  # interactive marker pose
-
-            t = rospy.Time.now()
-            # Project points
-            print('x_marker=' + str(x_marker))
-            print('y_marker=' + str(y_marker))
-            print('z_marker=' + str(z_marker))
-            seed_point = self.cam_model.project3dToPixel((x_marker, y_marker, z_marker))
-            print('seed_point = ' + str(seed_point))
-            if np.isnan(seed_point[0]):  # something went wrong, reposition marker on initial position and return
-                self.marker.pose.position.x = 0
-                self.marker.pose.position.y = 0
-                self.marker.pose.position.z = 4
-                self.menu_handler.reApply(self.server)
-                self.server.applyChanges()
-                rospy.logwarn('Could not project pixel, putting marker in home position.')
-                return
-
-            seed_point = (int(round(seed_point[0])), int(round(seed_point[1])))
-
-            # Check if projection is inside the image
-            x = seed_point[0]
-            y = seed_point[1]
-            if x < 0 or x >= self.cam_model.width or y < 0 or y >= self.cam_model.height:
-                rospy.logwarn('Projection of point is outside of image. Not labelling point cloud.')
-                return
-
-            print('1. took ' + str((rospy.Time.now() - t).to_sec()))
-
-            t = rospy.Time.now()
-            # Wait for depth image message
-            imgmsg = rospy.wait_for_message('/top_center_rgbd_camera/depth/image_rect', Image)
-
-            print('2. took ' + str((rospy.Time.now() - t).to_sec()))
-
-            t = rospy.Time.now()
-
-            # img = self.bridge.imgmsg_to_cv2(imgmsg, desired_encoding="8UC1")
-            img_raw = self.bridge.imgmsg_to_cv2(imgmsg, desired_encoding="passthrough")
-
-            img = deepcopy(img_raw)
-            img_float = img.astype(np.float32)
-            img_float = img_float
-
-            h, w = img.shape
-            # print('img type = ' + str(img.dtype))
-            # print('img_float type = ' + str(img_float.dtype))
-            # print('img_float shape = ' + str(img_float.shape))
-
-            mask = np.zeros((h + 2, w + 2, 1), np.uint8)
-
-            # mask[seed_point[1] - 2:seed_point[1] + 2, seed_point[0] - 2:seed_point[0] + 2] = 255
-
-            # PCA + Consensus + FloodFill ------------------
-
-            # get 10 points around the seed
-            # seed = {'x': seed_point[0], 'y': seed_point[1]}
-            # pts = []
-            # pts.append({'x': seed['x'], 'y': seed['y'] - 10})  # top neighbor
-            # pts.append({'x': seed['x'], 'y': seed['y'] + 10})  # bottom neighbor
-            # pts.append({'x': seed['x'] - 1, 'y': seed['y']})  # left neighbor
-            # pts.append({'x': seed['x'] + 1, 'y': seed['y']})  # right neighbor
-            #
-            # def fitPlaneLTSQ(XYZ):
-            #     (rows, cols) = XYZ.shape
-            #     G = np.ones((rows, 3))
-            #     G[:, 0] = XYZ[:, 0]  # X
-            #     G[:, 1] = XYZ[:, 1]  # Y
-            #     Z = XYZ[:, 2]
-            #     (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z)
-            #     normal = (a, b, -1)
-            #     nn = np.linalg.norm(normal)
-            #     normal = normal / nn
-            #     return (c, normal)
-            #
-            # data = np.random.randn(100, 3) / 3
-            # data[:, 2] /= 10
-            # c, normal = fitPlaneLTSQ(data)
-
-            # out flood fill ------------------
-            # to_visit = [{'x': seed_point[0], 'y': seed_point[1]}]
-            # # filled = []
-            # threshold = 0.05
-            # filled_img = np.zeros((h, w), dtype=np.bool)
-            # visited_img = np.zeros((h, w), dtype=np.bool)
-            #
-            # def isInsideBox(p, min_x, max_x, min_y, max_y):
-            #     if min_x <= p['x'] < max_x and min_y <= p['y'] < max_y:
-            #         return True
-            #     else:
-            #         return False
-            #
-            # def getNotVisitedNeighbors(p, min_x, max_x, min_y, max_y, img):
-            #     neighbors = []
-            #     tmp_neighbors = []
-            #     tmp_neighbors.append({'x': p['x'], 'y': p['y'] - 1})  # top neighbor
-            #     tmp_neighbors.append({'x': p['x'], 'y': p['y'] + 1})  # bottom neighbor
-            #     tmp_neighbors.append({'x': p['x'] - 1, 'y': p['y']})  # left neighbor
-            #     tmp_neighbors.append({'x': p['x'] + 1, 'y': p['y']})  # right neighbor
-            #
-            #     for idx, n in enumerate(tmp_neighbors):
-            #         if isInsideBox(n, min_x, max_x, min_y, max_y) and not img[n['y'], n['x']] == True:
-            #             neighbors.append(n)
-            #
-            #     return neighbors
-            #
-            # cv2.namedWindow('Filled', cv2.WINDOW_NORMAL)
-            # cv2.namedWindow('Visited', cv2.WINDOW_NORMAL)
-            # cv2.namedWindow('To Visit', cv2.WINDOW_NORMAL)
-            # while to_visit != []:
-            #     p = to_visit[0]
-            #     # print('Visiting ' + str(p))
-            #     range_p = img_float[p['y'], p['x']]
-            #     to_visit.pop(0)  # remove p from to_visit
-            #     # filled.append(p)  # append p to filled
-            #     filled_img[p['y'], p['x']] = True
-            #     # print(filled)
-            #
-            #     # compute neighbors of this point
-            #     neighbors = getNotVisitedNeighbors(p, 0, w, 0, h, visited_img)
-            #
-            #     # print('neighbors ' + str(neighbors))
-            #
-            #     for n in neighbors:  # test if should propagate to neighbors
-            #         range_n = img_float[n['y'], n['x']]
-            #         visited_img[n['y'], n['x']] = True
-            #
-            #         if abs(range_n - range_p) <= threshold:
-            #             # if not n in to_visit:
-            #             to_visit.append(n)
-            #
-            #     # Create the mask image
-            # to_visit_img = np.zeros((h, w), dtype=np.bool)
-            # for p in to_visit:
-            #     to_visit_img[p['y'], p['x']] = True
-            #
-            #
-            # # print('To_visit ' + str(to_visit))
-            #
-            # cv2.imshow('Filled', filled_img.astype(np.uint8) * 255)
-            # cv2.imshow('Visited', visited_img.astype(np.uint8) * 255)
-            # cv2.imshow('To Visit', to_visit_img.astype(np.uint8) * 255)
-            # key = cv2.waitKey(5)
-
-            # --------------------------------
-
-            img_float2 = deepcopy(img_float)
-            cv2.floodFill(img_float2, mask, seed_point, 128, 80, 80,
-                          8 | (128 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE)
-
-            # Switch coords of seed point
-            # mask[seed_point[1]-2:seed_point[1]+2, seed_point[0]-2:seed_point[0]+2] = 255
-
-            tmpmask = mask[1:h + 1, 1:w + 1]
-
-            cv2.namedWindow('tmpmask', cv2.WINDOW_NORMAL)
-            cv2.imshow('tmpmask', tmpmask)
-
-            def onMouse(event, x, y, flags, param):
-                print("x = " + str(x) + ' y = ' + str(y) + ' value = ' + str(img_float2[y, x]))
-
-            cv2.namedWindow('float', cv2.WINDOW_GUI_EXPANDED)
-            cv2.setMouseCallback('float', onMouse, param=None)
-            cv2.imshow('float', img_raw)
-            key = cv2.waitKey(0)
-
-            print('3. took ' + str((rospy.Time.now() - t).to_sec()))
-            t = rospy.Time.now()
-
-            # calculate moments of binary image
-            M = cv2.moments(tmpmask)
-
-            self.labels['detected'] = True
-            print('4. took ' + str((rospy.Time.now() - t).to_sec()))
-            t = rospy.Time.now()
-
-            if M["m00"] != 0:
-                # calculate x,y coordinate of center
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-
-                red = deepcopy(img)
-                # bmask =  tmpmask.astype(np.bool)
-
-                print(tmpmask.shape)
-                tmpmask = np.reshape(tmpmask, (480, 640))
-
-                print(img.shape)
-
-                red[tmpmask != 0] = red[tmpmask != 0] + 10000
-
-                img = cv2.merge((img, img, red))
-
-                img[cY - 2:cY + 2, cX - 2:cX + 2, 1] = 30000
-
-                img[seed_point[1] - 2:seed_point[1] + 2, seed_point[0] - 2:seed_point[0] + 2, 0] = 30000
-
-                # img[100:400, 20:150] = 255
-
-                cv2.imshow("mask", img)
-                cv2.waitKey(5)
-
-                # msg_out = self.bridge.cv2_to_imgmsg(showcenter, encoding="passthrough")
-                # msg_out.header.stamp = self.msg.header.stamp
-                # msg_out.header.frame_id = self.msg.header.frame_id
-
-                # self.publisher_labelled_depth_image.publish(msg_out)
-
-                # coords = points[cY * 640 + cX]
-                # print('coords' + str(coords))
-
-                ray = self.cam_model.projectPixelTo3dRay((cX, cY))
-
-                print('ray' + str(ray))
-                print('img' + str(img_float.shape))
-
-                print(type(cX))
-                print(type(cY))
-                print(type(ray))
-
-                dist = float(img_float[cX, cY])
-                print('dist = ' + str(dist))
-                x = ray[0] * dist
-                y = ray[1] * dist
-                z = ray[2] * dist
-
-                print('xyz = ' + str(x) + ' ' + str(y) + ' ' + str(z))
-
-                # if not math.isnan(coords[0]):
-                #     self.marker.pose.position.x = coords[0]
-                #     self.marker.pose.position.y = coords[1]
-                #     self.marker.pose.position.z = coords[2]
-                #     self.menu_handler.reApply(self.server)
-                #     self.server.applyChanges()
-
-                if dist > 0.1:
-                    # self.marker.pose.position.x = x
-                    # self.marker.pose.position.y = y
-                    # self.marker.pose.position.z = z
-                    # self.menu_handler.reApply(self.server)
-                    # self.server.applyChanges()
-                    pass
-
-            print('5. took ' + str((rospy.Time.now() - t).to_sec()))
-            # idx = np.where(tmpmask == 100)
-            # # Create tuple with (l, c)
-            # pointcoords = list(zip(idx[0], idx[1]))
-            #
-            # points = pc2.read_points_list(self.msg, skip_nans=False, field_names=("x", "y", "z"))
-            # tmppoints = []
-            #
-            # for coord in pointcoords:
-            #     pointidx = (coord[0]) * 640 + (coord[1])
-            #     tmppoints.append(points[pointidx])
-            #
-            # msg_out = createRosCloud(tmppoints, self.msg.header.stamp, self.msg.header.frame_id)
-            #
-            # self.publisher_selected_points.publish(msg_out)
-            print('all. took ' + str((rospy.Time.now() - tall).to_sec()))
-
         # elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
-        elif self.sensor_id == 'lidar':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
+        elif self.modality == 'lidar3d':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
 
             # rospy.loginfo(
             #     'Labelling PointCloud for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
@@ -713,7 +440,7 @@ class InteractiveDataLabeler:
             # print(colorama.Fore.RED + 'Labelled point cloud ' + colorama.Style.RESET_ALL)
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
-        elif self.sensor_id == 'depth':# depth camera - Daniela ---------------------------------
+        elif self.modality == 'depth':# depth camera - Daniela ---------------------------------
             print("Depth camera labeller under construction.")
 
     def markerFeedback(self, feedback):
