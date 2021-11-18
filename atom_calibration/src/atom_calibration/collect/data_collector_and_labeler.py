@@ -68,6 +68,7 @@ class DataCollectorAndLabeler:
         self.additional_data = {}
         self.metadata = {}
         self.bridge = CvBridge()
+        self.dataset_version = "2.0"
 
         self.config = loadConfig(args['calibration_file'])
         if self.config is None:
@@ -201,7 +202,7 @@ class DataCollectorAndLabeler:
             # Save new dataset to json file
             D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data,
                  'collections': self.collections, 'calibration_config': self.config}
-            output_file = self.output_folder + '/data_collected.json'
+            output_file = self.output_folder + '/dataset.json'
             atom_core.dataset_io.saveResultsJSON(output_file, D)
 
             print(Fore.YELLOW + 'Deleted collection ' + request.collection_name + Style.RESET_ALL)
@@ -229,7 +230,7 @@ class DataCollectorAndLabeler:
     def callbackGetDataset(self, request):
         print('callbackGetDataset service called')
 
-        dataset_file = self.output_folder + '/data_collected.json'
+        dataset_file = self.output_folder + '/dataset.json'
         try:
             file = open(dataset_file, 'r')
             dataset_stream = file.read()
@@ -373,13 +374,18 @@ class DataCollectorAndLabeler:
         self.collections[self.data_stamp] = collection_dict
         self.data_stamp += 1
 
+        dataset_name= self.output_folder.split('/')[-1]
+        # print(dataset_name)
+
         # # create metadata
-        self.metadata={"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser()}
+        self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
+                         'version': self.dataset_version, 'robot_name': self.config['robot_name'],
+                         'dataset_name': dataset_name}
 
         # Save to json file
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,
-             'calibration_config': self.config, 'metadata': self.metadata}
-        output_file = self.output_folder + '/data_collected.json'
+             'calibration_config': self.config, '_metadata': self.metadata}
+        output_file = self.output_folder + '/dataset.json'
         atom_core.dataset_io.saveResultsJSON(output_file, D)
 
         self.unlockAllLabelers()

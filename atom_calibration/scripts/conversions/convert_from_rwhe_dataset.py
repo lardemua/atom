@@ -218,4 +218,4 @@ if __name__ == "__main__":
 
     # Create top level dictionary and save to file
     D['sensors'] = sensors
-    createJSONFile(args['dataset_out'] + '/data_collected.json', D)
+    createJSONFile(args['dataset_out'] + '/dataset.json', D)

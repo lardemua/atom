@@ -314,5 +314,5 @@ if __name__ == "__main__":
             print('Created collection ' + image_idx + ' of ' + str(len(image_paths) - 1))
 
     D['collections'] = collections
-    createJSONFile(args['dataset_out'] + '/data_collected.json', D)
+    createJSONFile(args['dataset_out'] + '/dataset.json', D)
 
