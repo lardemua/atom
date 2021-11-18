@@ -84,7 +84,6 @@ if __name__ == "__main__":
 
     # Sensors colormap. Access with:  color_map_sensors[idx, :]
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
-
     # --------------------------------------------------------------------------
     # Setup the description file
     # --------------------------------------------------------------------------
@@ -371,6 +370,8 @@ if __name__ == "__main__":
                                     'rviz_calibrate': rviz_calibrate
                                     })
         f.write(output.encode('utf-8'))
+
+
 
     # --------------------------------------------------------------------------
     # Check if modalitys are properly created
