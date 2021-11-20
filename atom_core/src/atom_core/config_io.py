@@ -110,7 +110,10 @@ def verifyConfig(config, template_config, upper_key=None):
     for key in template_config:
         # print('Checking key ' + key)
         if not key in config:
-            missing_keys.append(upper_key + '/' + key)
+            if upper_key is None:
+                missing_keys.append(key)
+            else:
+                missing_keys.append(upper_key + '/' + key)
             # print(str(key) + ' is not here: ' + str(config))
         elif type(config[key]) is dict and not key == 'sensors':
             # print('key ' + key + ' is a dict')
@@ -127,15 +130,16 @@ def verifyConfig(config, template_config, upper_key=None):
 def loadConfig(filename, check_paths=True):
     config = loadYMLConfig(filename)
 
-    if "robot_name" not in config.keys():  # in config:
-        raise ValueError(Fore.RED +
-            'Error: argument robot_name is missing in config.yaml'+ Style.RESET_ALL)
+    # if "robot_name" not in config.keys():  # in config:
+    #     raise ValueError(Fore.RED +
+    #         'Error: argument robot_name is missing in config.yaml'+ Style.RESET_ALL)
         # exit(0)
     # Check if config has all the necessary keys.
     rospack = rospkg.RosPack()
     template_file = rospack.get_path('atom_calibration') + '/templates/config.yml'
     template_config = loadYMLConfig(template_file)
     missing_parameters = verifyConfig(config, template_config)
+    print(missing_parameters)
 
     if missing_parameters:  # list is not empty
         raise ValueError(Fore.RED + 'Your config file ' + filename +
