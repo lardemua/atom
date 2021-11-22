@@ -126,10 +126,10 @@ def verifyConfig(config, template_config, upper_key=None):
 
 def loadConfig(filename, check_paths=True):
     config = loadYMLConfig(filename)
-
-    if "robot_name" not in config.keys():  # in config:
-        raise ValueError(Fore.RED +
-            'Error: argument robot_name is missing in config.yaml'+ Style.RESET_ALL)
+    #
+    # if "robot_name" not in config.keys():  # in config:
+    #     raise ValueError(Fore.RED +
+    #         'Error: argument robot_name is missing in config.yaml'+ Style.RESET_ALL)
         # exit(0)
     # Check if config has all the necessary keys.
     rospack = rospkg.RosPack()

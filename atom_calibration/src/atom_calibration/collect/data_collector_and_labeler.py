@@ -20,6 +20,8 @@ from interactive_markers.menu_handler import *
 from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
+from urdf_parser_py.urdf import URDF
+
 
 # local packages
 from atom_core.naming import generateKey
@@ -375,11 +377,12 @@ class DataCollectorAndLabeler:
         self.data_stamp += 1
 
         dataset_name= self.output_folder.split('/')[-1]
-        # print(dataset_name)
+        description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
+        description = URDF.from_xml_file(description_file)
 
         # # create metadata
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
-                         'version': self.dataset_version, 'robot_name': self.config['robot_name'],
+                         'version': self.dataset_version, 'robot_name': description.name,
                          'dataset_name': dataset_name}
 
         # Save to json file
