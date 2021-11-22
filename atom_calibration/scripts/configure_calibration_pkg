@@ -82,6 +82,7 @@ if __name__ == "__main__":
     print('Loading config file ' + config_file)
     config = atom_core.config_io.loadConfig(config_file)
 
+
     # Sensors colormap. Access with:  color_map_sensors[idx, :]
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
     # --------------------------------------------------------------------------
@@ -124,6 +125,11 @@ if __name__ == "__main__":
         atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file,
                                     verbose=True)  # print xacro parsing
         raise ValueError('Could not parse description file ' + description_file)
+
+
+    print('Description is')
+    print(description.name)
+    exit(0)
 
     # --------------------------------------------------------------------------
     # Create a tf graph to support verifications
@@ -374,7 +380,7 @@ if __name__ == "__main__":
 
 
     # --------------------------------------------------------------------------
-    # Check if modalitys are properly created
+    # Check if modalities are properly created
     # --------------------------------------------------------------------------
     #TODO change lidar to lidar3d and lidar2d to lidar2d; change modality to modality
     for sensor_key in config['sensors']:
