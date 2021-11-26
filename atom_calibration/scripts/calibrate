@@ -150,7 +150,7 @@ def main():
     # ---------------------------------------
     # --- DETECT EDGES IN THE LASER SCANS
     # ---------------------------------------
-    # TODO this should go to the collect and label
+    # TODO this should go to the collect and label Analtino
     for sensor_key, sensor in dataset['sensors'].items():
         # if sensor['msg_type'] == 'LaserScan':  # only for lasers
         if sensor['modality'] == 'lidar2d':  # only for lasers

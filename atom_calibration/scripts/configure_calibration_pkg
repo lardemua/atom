@@ -126,11 +126,6 @@ if __name__ == "__main__":
                                     verbose=True)  # print xacro parsing
         raise ValueError('Could not parse description file ' + description_file)
 
-
-    print('Description is')
-    print(description.name)
-    exit(0)
-
     # --------------------------------------------------------------------------
     # Create a tf graph to support verifications
     # --------------------------------------------------------------------------
