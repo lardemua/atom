@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+# stdlib
+import sys
+import argparse
+
+# 3rd-party
+import rospy
+
+from sensor_msgs.msg import Image
+
+# local packages
+from atom_calibration.collect.label_messages import labelDepthMsg
+from atom_core.ros_utils import filterLaunchArguments
+from atom_core.config_io import loadConfig
+from atom_calibration.initial_estimate.sensor import Sensor
+
+import rospy
+from std_msgs.msg import String
+
+
+def callbackMessageReceived(msg):
+    rospy.loginfo('Received depth message')
+
+    # Convert
+
+    rospy.loginfo('Starting to label ...')
+
+    labelDepthMsg(msg)
+
+    rospy.loginfo('Labelling ended.')
+
+
+def main():
+    rospy.init_node('test_label_depth_msg', anonymous=False)
+
+    rospy.Subscriber('depth_image_topic', Image, callbackMessageReceived)
+
+    # spin() simply keeps python from exiting until this node is stopped
+    rospy.spin()
+
+if __name__ == '__main__':
+    main()
+

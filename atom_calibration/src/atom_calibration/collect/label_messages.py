@@ -2,6 +2,7 @@ import math
 import random
 import struct
 
+import rospy
 import scipy
 import numpy as np
 import atom_core.dataset_io
@@ -192,8 +193,9 @@ def convertDepthImage32FC1to16UC1(image_in):
 
 def labelDepthMsg(image):
     # initialization
-    start = time.time()
 
+
+    now = rospy.Time.now()
     labels = {}
     kernel = np.ones((6, 6), np.uint8)
 
@@ -204,6 +206,7 @@ def labelDepthMsg(image):
 
     propagation_threshold = 200
     height, width = image.shape
+    print('Image size is ' + str(height) + ', ' +str(width))
     getLinearIndex = functools.partial(getLinearIndexWidth, width=width)
 
     # pre processing the image
@@ -222,10 +225,15 @@ def labelDepthMsg(image):
     cv_image_array = cv2.GaussianBlur(cv_image_array, (5, 5), 0)
     img_closed = cv2.morphologyEx(cv_image_array, cv2.MORPH_CLOSE, kernel)
 
-    end = time.time()
-    print(f"Time after pre processing {end - start}\n ")
+    print('Time taken in preprocessing ' + str((rospy.Time.now()-now).to_sec()))
+
+    # -------------------------------------
+    # Flood fill
+    # -------------------------------------
+    now = rospy.Time.now()
 
     x, y = 672, 141
+    # x, y = 0, 0
     # pix = image[y, x]
     seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
     visited_mask = np.zeros(image.shape, dtype=bool)
@@ -254,8 +262,14 @@ def labelDepthMsg(image):
 
         del seed_points[point_key]
 
-    end = time.time()
-    print(f"Time after flood fill {end - start} \n")
+    print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
+
+
+
+    now = rospy.Time.now()
+    # -------------------------------------
+    # Canny -------------------------------
+    # -------------------------------------
 
     # propagated_mask = propagated_mask.astype(np.uint8) * 255
     fill_holes = ndimage.morphology.binary_fill_holes(propagated_mask)
@@ -266,8 +280,7 @@ def labelDepthMsg(image):
     # calculate moments of binary image
     M = cv2.moments(fill_holes)
 
-    end = time.time()
-    print(f"Time after canny {end - start} \n")
+    print('Time taken in canny ' + str((rospy.Time.now()-now).to_sec()))
 
     # calculate x,y coordinate of center
     cX = int(M["m10"] / M["m00"])
