@@ -6,6 +6,15 @@ import scipy
 import numpy as np
 import atom_core.dataset_io
 import ros_numpy
+import functools
+from scipy import ndimage
+
+
+from cv_bridge import CvBridge
+from cv2 import imwrite
+import numpy as np
+import time
+import cv2
 
 
 def labelImageMsg():
@@ -162,5 +171,115 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # Count the number of limit points (just for debug)
     number_of_limit_points = len(labels['idxs_limit_points'])
 
-
     return labels, seed_point, inliers
+
+
+def convertDepthImage32FC1to16UC1(image_in):
+    """
+    The assumption is that the image_in is a float 32 bit np array, which contains the range values in meters.
+    The image_out will be a 16 bit unsigned int  [0, 65536] which will store the range in millimeters.
+    As a convetion, nans will be set to the maximum number available for uint16
+    :param image_in: np array with dtype float32
+    :return: np array with dtype uint16
+    """
+
+    # mask_nans = np.isnan(image_in)
+    image_mm_float = image_in * 1000  # convert meters to millimeters
+    image_mm_float = np.round(image_mm_float)  # round the millimeters
+    image_out = image_mm_float.astype(np.uint16)  # side effect: nans become 0s
+    return image_out
+
+
+def labelDepthMsg(image):
+    # initialization
+    start = time.time()
+
+    labels = {}
+    kernel = np.ones((6, 6), np.uint8)
+
+    def getLinearIndexWidth(x, y, width):
+        """ Gets the linear pixel index given the x,y and the image width """
+        return x + y * width
+
+
+    propagation_threshold = 200
+    height, width = image.shape
+    getLinearIndex = functools.partial(getLinearIndexWidth, width=width)
+
+    # pre processing the image
+    if image.dtype == np.float32:
+        cv_image_array = convertDepthImage32FC1to16UC1(image)
+        cv2.normalize(cv_image_array, cv_image_array, 0, 65535, cv2.NORM_MINMAX)
+    else:
+        cv_image_array = np.array(image)
+        cv2.normalize(cv_image_array, cv_image_array, 0, 65535, cv2.NORM_MINMAX)
+        cv_image_array[np.where((cv_image_array > [20000]))] = [0]
+        cv_image_array[np.where((cv_image_array == [0]))] = [2500]
+        cv2.normalize(cv_image_array, cv_image_array, 0, 65535, cv2.NORM_MINMAX)
+
+
+
+    cv_image_array = cv2.GaussianBlur(cv_image_array, (5, 5), 0)
+    img_closed = cv2.morphologyEx(cv_image_array, cv2.MORPH_CLOSE, kernel)
+
+    end = time.time()
+    print(f"Time after pre processing {end - start}\n ")
+
+    x, y = 672, 141
+    # pix = image[y, x]
+    seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
+    visited_mask = np.zeros(image.shape, dtype=bool)
+    visited_mask[y, x] = True
+    propagated_mask = np.zeros(image.shape, dtype=bool)
+    propagated_mask[y, x] = True
+
+    while seed_points:  # while we have a non empty dictionary of seed points, propagate
+        point_key = list(seed_points.keys())[0]  # pick up first point in the dict
+        point = seed_points[point_key]
+
+        # use a N4 neighborhood for simplification
+        #                     up      down     left    right
+        neighbour_deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        for dy, dx in neighbour_deltas:
+            x, y = point['x'] + dx, point['y'] + dy
+            if x < 0 or x >= width or y < 0 or y >= height:  # outside the image
+                continue
+            visited_mask[y, x] = True
+            if not propagated_mask[y, x]:  # not visited yet
+                pix = image[y, x]
+                if abs(float(pix) - float(point['pix'])) < propagation_threshold:  # propagate into this neighbor
+                    seed_points[getLinearIndex(x, y)] = {'x': x, 'y': y, 'pix': pix}
+                    propagated_mask[y, x] = True
+
+        del seed_points[point_key]
+
+    end = time.time()
+    print(f"Time after flood fill {end - start} \n")
+
+    # propagated_mask = propagated_mask.astype(np.uint8) * 255
+    fill_holes = ndimage.morphology.binary_fill_holes(propagated_mask)
+    fill_holes = fill_holes.astype(np.uint8) * 255 #these are the idxs
+
+    canny = cv2.Canny(fill_holes, 100, 200) #these are the idxs_limit_points
+
+    # calculate moments of binary image
+    M = cv2.moments(fill_holes)
+
+    end = time.time()
+    print(f"Time after canny {end - start} \n")
+
+    # calculate x,y coordinate of center
+    cX = int(M["m10"] / M["m00"])
+    cY = int(M["m01"] / M["m00"])
+    new_seed_point = [cX, cY]
+    # result_image = canny.copy()
+    # colored_image=image.copy()
+    # result_image[propagated_mask == 255] = 255
+    # cv2.cvtColor(image, colored_image)
+    # result_image[canny == 255] = [0,255,0]
+    # cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
+
+    # new seed point will be the centroid of the detected chessboard in that image ... Assuming that the movement is smooth and the processing fast enough for this to work
+
+    return labels, canny, new_seed_point

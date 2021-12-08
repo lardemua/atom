@@ -137,7 +137,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
     if create_data_file:
         print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key) + ' msg type ' + sensor[
             'msg_type'])
-
+    #TODO add if for depth modality
     if create_data_file and sensor['msg_type'] == 'Image':  # save image.
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'

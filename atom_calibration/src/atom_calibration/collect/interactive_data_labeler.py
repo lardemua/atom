@@ -7,6 +7,8 @@ import atom_core.ros_utils
 import math
 import random
 import threading
+import time
+
 
 # from __builtin__ import enumerate
 from copy import deepcopy
@@ -34,7 +36,7 @@ from interactive_markers.interactive_marker_server import InteractiveMarkerServe
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
-from atom_calibration.collect.label_messages import labelPointCloud2Msg
+from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -168,24 +170,6 @@ class InteractiveDataLabeler:
                                                             queue_size=1)  # publish
             # images with the detected chessboard overlaid onto the image.
 
-        # elif self.msg_type_str in [
-        #     'PointCloud2TIAGO'] and self.label_data:  # TODO, this will have to be revised later on Check #44
-        #     self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
-        #                                                      queue_size=1)  # publish a point cloud with the points
-        #     self.createInteractiveMarkerRGBD()  # interactive marker to label the calibration pattern cluster (one time)
-        #     self.bridge = CvBridge()
-        #     self.publisher_labelled_depth_image = rospy.Publisher(self.topic + '/depth_image_labelled',
-        #                                                           sensor_msgs.msg.Image,
-        #                                                           queue_size=1)  # publish
-        #
-        #     self.cam_model = PinholeCameraModel()
-        #     topic_name = os.path.dirname(self.topic) + '/camera_info'
-        #     rospy.loginfo('Waiting for for camera info message on topic' + str(topic_name))
-        #     camera_info = rospy.wait_for_message('/top_center_rgbd_camera/depth/camera_info', CameraInfo)
-        #     print('... received!')
-        #     self.cam_model.fromCameraInfo(camera_info)
-        #     print('Created interactive marker for point clouds.')
-
         # elif self.msg_type_str in ['PointCloud2'] and self.label_data:  # Velodyne data (Andre Aguiar)
         elif self.modality == 'lidar3d' and self.label_data:  # Velodyne data (Andre Aguiar)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
@@ -212,8 +196,9 @@ class InteractiveDataLabeler:
         elif self.modality == 'depth' and self.label_data:  # Velodyne data (Andre Aguiar)
             print('Depth labeller under construction')
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
-            self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
+            self.publisher_labelled_depth = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=1)  # publish
+
 
         else:
             if self.label_data:
@@ -240,7 +225,7 @@ class InteractiveDataLabeler:
         now = rospy.Time.now()
         if self.label_data:
             self.labelData  # label the data
-        # rospy.loginfo('Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
+        rospy.loginfo('Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
         self.lock.release()  # release lock
         # rospy.loginfo('(With Lock) Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
 
@@ -441,7 +426,15 @@ class InteractiveDataLabeler:
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
         elif self.modality == 'depth':# depth camera - Daniela ---------------------------------
-            print("Depth camera labeller under construction.")
+            image = self.bridge.imgmsg_to_cv2(self.msg)
+            labels, result_image, new_seed_point = labelDepthMsg(image)
+
+            msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
+            msg_out.header.stamp = self.msg.header.stamp
+            msg_out.header.frame_id = self.msg.header.frame_id
+            self.publisher_labelled_depth.publish(msg_out)
+
+            # print("Depth camera labeller under construction.")
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')

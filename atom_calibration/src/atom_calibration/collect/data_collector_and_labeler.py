@@ -103,7 +103,7 @@ class DataCollectorAndLabeler:
             modality = value['modality']
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
-            if modality == 'rgb':  # if it is an image must get camera_info
+            if modality == 'rgb' or modality=='depth':  # if it is an image must get camera_info
                 sensor_dict['camera_info_topic'] = os.path.dirname(sensor_dict['topic']) + '/camera_info'
                 from sensor_msgs.msg import CameraInfo
                 print('Waiting for camera_info message on topic ' + sensor_dict['camera_info_topic'] + ' ...')
