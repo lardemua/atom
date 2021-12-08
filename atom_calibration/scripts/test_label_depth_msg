@@ -5,6 +5,7 @@ import sys
 import argparse
 
 # 3rd-party
+import cv_bridge
 import rospy
 
 from sensor_msgs.msg import Image
@@ -18,15 +19,14 @@ from atom_calibration.initial_estimate.sensor import Sensor
 import rospy
 from std_msgs.msg import String
 
+bridge = cv_bridge.CvBridge()
+
 
 def callbackMessageReceived(msg):
     rospy.loginfo('Received depth message')
-
-    # Convert
-
     rospy.loginfo('Starting to label ...')
 
-    labelDepthMsg(msg)
+    labels, result_image, new_seed_point = labelDepthMsg(msg, bridge, debug=True)
 
     rospy.loginfo('Labelling ended.')
 
@@ -39,6 +39,6 @@ def main():
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
+
 if __name__ == '__main__':
     main()
-

@@ -426,8 +426,7 @@ class InteractiveDataLabeler:
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
         elif self.modality == 'depth':# depth camera - Daniela ---------------------------------
-            image = self.bridge.imgmsg_to_cv2(self.msg)
-            labels, result_image, new_seed_point = labelDepthMsg(image)
+            labels, result_image, new_seed_point = labelDepthMsg(self.msg, self.bridge)
 
             msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp

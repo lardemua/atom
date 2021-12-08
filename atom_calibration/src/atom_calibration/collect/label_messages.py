@@ -1,7 +1,9 @@
+import copy
 import math
 import random
 import struct
 
+import cv_bridge
 import rospy
 import scipy
 import numpy as np
@@ -9,7 +11,6 @@ import atom_core.dataset_io
 import ros_numpy
 import functools
 from scipy import ndimage
-
 
 from cv_bridge import CvBridge
 from cv2 import imwrite
@@ -174,6 +175,41 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     return labels, seed_point, inliers
 
+def imageShowUInt16OrFloat32OrBool(image, window_name, max_value=5000.0):
+    """
+    Shows uint16 or float32 or bool images by normalizing them before using imshow
+    :param image: np nd array with dtype npuint16 or floar32
+    :param window_name: highgui window name
+    :param max_value: value to use for white color
+    """
+    if not (image.dtype == np.uint16 or image.dtype == float or image.dtype == np.float32 or image.dtype == bool):
+        raise ValueError('Cannot show image that is not uint16 or float. Dtype is ' + str(image.dtype))
+
+    # Opencv can only show 8bit uint images, so we must scale
+    # 0 -> 0
+    # 5000 (or larger) - > 255
+    image_scaled = copy.deepcopy(image)
+
+    if image.dtype == np.uint16:
+        image_scaled.astype(float)  # to not loose precision with the math
+        mask = image_scaled > max_value
+        image_scaled[mask] = max_value
+        image_scaled = image_scaled / max_value * 255.0
+        image_scaled = image_scaled.astype(np.uint8)
+
+    elif image.dtype == float or image.dtype == np.float32:
+        image_scaled = 1000.0 * image_scaled  # to go to millimeters
+        mask = image_scaled > max_value
+        image_scaled[mask] = max_value
+        image_scaled = image_scaled / max_value * 255.0
+        image_scaled = image_scaled.astype(np.uint8)
+
+    elif image.dtype == bool:
+        image_scaled = image_scaled.astype(np.uint8)
+        image_scaled = image_scaled*255
+
+    cv2.namedWindow(window_name)
+    cv2.imshow(window_name, image_scaled)
 
 def convertDepthImage32FC1to16UC1(image_in):
     """
@@ -191,25 +227,40 @@ def convertDepthImage32FC1to16UC1(image_in):
     return image_out
 
 
-def labelDepthMsg(image):
-    # initialization
+def getLinearIndexWidth(x, y, width):
+    """ Gets the linear pixel index given the x,y and the image width """
+    return x + y * width
 
 
+def labelDepthMsg(msg, bridge=None, debug=False):
+    # -------------------------------------
+    # Step 1: Convert ros message to opencv's image
+    # -------------------------------------
+    if bridge is None:
+        bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
+
+    image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
+
+    # -------------------------------------
+    # Step 2: Initialization
+    # -------------------------------------
     now = rospy.Time.now()
     labels = {}
     kernel = np.ones((6, 6), np.uint8)
-
-    def getLinearIndexWidth(x, y, width):
-        """ Gets the linear pixel index given the x,y and the image width """
-        return x + y * width
-
-
     propagation_threshold = 200
     height, width = image.shape
-    print('Image size is ' + str(height) + ', ' +str(width))
     getLinearIndex = functools.partial(getLinearIndexWidth, width=width)
+    print('Image size is ' + str(height) + ', ' + str(width))
 
-    # pre processing the image
+    if debug:
+        cv2.namedWindow('Original', cv2.WINDOW_AUTOSIZE)
+        imageShowUInt16OrFloat32OrBool(image, 'Original')
+        cv2.namedWindow('Visited', cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow('Propagated', cv2.WINDOW_AUTOSIZE)
+
+    # -------------------------------------
+    # Step 3: Preprocessing the image
+    # -------------------------------------
     if image.dtype == np.float32:
         cv_image_array = convertDepthImage32FC1to16UC1(image)
         cv2.normalize(cv_image_array, cv_image_array, 0, 65535, cv2.NORM_MINMAX)
@@ -220,15 +271,13 @@ def labelDepthMsg(image):
         cv_image_array[np.where((cv_image_array == [0]))] = [2500]
         cv2.normalize(cv_image_array, cv_image_array, 0, 65535, cv2.NORM_MINMAX)
 
-
-
     cv_image_array = cv2.GaussianBlur(cv_image_array, (5, 5), 0)
     img_closed = cv2.morphologyEx(cv_image_array, cv2.MORPH_CLOSE, kernel)
 
-    print('Time taken in preprocessing ' + str((rospy.Time.now()-now).to_sec()))
+    print('Time taken in preprocessing ' + str((rospy.Time.now() - now).to_sec()))
 
     # -------------------------------------
-    # Flood fill
+    # Step 3: Flood fill
     # -------------------------------------
     now = rospy.Time.now()
 
@@ -262,25 +311,28 @@ def labelDepthMsg(image):
 
         del seed_points[point_key]
 
+        imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
+        imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
+        cv2.waitKey(10)
+
     print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
 
-
-
     now = rospy.Time.now()
+
     # -------------------------------------
-    # Canny -------------------------------
+    # Step 4: Canny
     # -------------------------------------
 
     # propagated_mask = propagated_mask.astype(np.uint8) * 255
     fill_holes = ndimage.morphology.binary_fill_holes(propagated_mask)
-    fill_holes = fill_holes.astype(np.uint8) * 255 #these are the idxs
+    fill_holes = fill_holes.astype(np.uint8) * 255  # these are the idxs
 
-    canny = cv2.Canny(fill_holes, 100, 200) #these are the idxs_limit_points
+    canny = cv2.Canny(fill_holes, 100, 200)  # these are the idxs_limit_points
 
     # calculate moments of binary image
     M = cv2.moments(fill_holes)
 
-    print('Time taken in canny ' + str((rospy.Time.now()-now).to_sec()))
+    print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
 
     # calculate x,y coordinate of center
     cX = int(M["m10"] / M["m00"])
