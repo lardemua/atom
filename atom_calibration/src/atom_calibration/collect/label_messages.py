@@ -3,6 +3,7 @@ import math
 import random
 import struct
 
+import PIL.Image
 import cv_bridge
 import rospy
 import scipy
@@ -175,6 +176,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     return labels, seed_point, inliers
 
+
 def imageShowUInt16OrFloat32OrBool(image, window_name, max_value=5000.0):
     """
     Shows uint16 or float32 or bool images by normalizing them before using imshow
@@ -206,10 +208,11 @@ def imageShowUInt16OrFloat32OrBool(image, window_name, max_value=5000.0):
 
     elif image.dtype == bool:
         image_scaled = image_scaled.astype(np.uint8)
-        image_scaled = image_scaled*255
+        image_scaled = image_scaled * 255
 
     cv2.namedWindow(window_name)
     cv2.imshow(window_name, image_scaled)
+
 
 def convertDepthImage32FC1to16UC1(image_in):
     """
@@ -240,6 +243,8 @@ def labelDepthMsg(msg, bridge=None, debug=False):
         bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
 
     image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
+    image = cv2.pyrDown(image)
+    image = cv2.pyrDown(image)
 
     # -------------------------------------
     # Step 2: Initialization
@@ -247,16 +252,21 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     now = rospy.Time.now()
     labels = {}
     kernel = np.ones((6, 6), np.uint8)
-    propagation_threshold = 200
+    propagation_threshold = 600
     height, width = image.shape
     getLinearIndex = functools.partial(getLinearIndexWidth, width=width)
     print('Image size is ' + str(height) + ', ' + str(width))
 
     if debug:
-        cv2.namedWindow('Original', cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
         imageShowUInt16OrFloat32OrBool(image, 'Original')
-        cv2.namedWindow('Visited', cv2.WINDOW_AUTOSIZE)
-        cv2.namedWindow('Propagated', cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow('DiffUp', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('DiffDown', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('DiffLeft', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('DiffRight', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Seeds', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('Visited', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('Propagated', cv2.WINDOW_NORMAL)
 
     # -------------------------------------
     # Step 3: Preprocessing the image
@@ -277,11 +287,132 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     print('Time taken in preprocessing ' + str((rospy.Time.now() - now).to_sec()))
 
     # -------------------------------------
-    # Step 3: Flood fill
+    # Step 3: Flood fill (using np arrays)
     # -------------------------------------
     now = rospy.Time.now()
 
-    x, y = 672, 141
+    # x, y = 672, 141
+    # x, y = 372, 76
+    x, y = 180, 35
+    # x, y = 0, 0
+    # pix = image[y, x]
+    # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
+
+    # TODO This is not integrated with the preprocessing
+    # neighbor_up = np.zeros((3, 3), dtype=bool)
+    # neighbor_up[0, 1] = True
+    #
+    # neighbor_down = np.zeros((3, 3), dtype=bool)
+    # neighbor_down[2, 1] = True
+    #
+    # neighbor_right = np.zeros((3, 3), dtype=bool)
+    # neighbor_right[1, 2] = True
+    #
+    # neighbor_left = np.zeros((3, 3), dtype=bool)
+    # neighbor_left[1, 0] = True
+    # # print(neighbor_up)
+    #
+    # # array([[7, 1, 7, 8, 3, 6],
+    # #        [8, 0, 5, 3, 5, 3],
+    # #        [9, 3, 2, 4, 3, 9],
+    # #        [2, 9, 6, 9, 4, 6]])
+    # # >> > np.diff(A, axis=0)
+    # # array([[1, -1, -2, -5, 2, -3],
+    # #        [1, 3, -3, 1, -2, 6],
+    # #        [-7, 6, 4, 5, 1, -3]])
+    # # print(image.dtype)
+    # # print(cv_image_array.dtype)
+    #
+    # propagation_threshold = 0.05
+    #
+    # diff_up = np.absolute(np.diff(image, axis=0))
+    # diff_up = np.vstack((diff_up, np.ones((1, width)).astype(image.dtype) * propagation_threshold))
+    # diff_up = (diff_up < propagation_threshold).astype(bool)
+    # imageShowUInt16OrFloat32OrBool(diff_up, 'DiffUp')
+    #
+    # diff_down = np.absolute(np.diff(image, axis=0))
+    # diff_down = np.vstack((np.ones((1, width)).astype(image.dtype) * propagation_threshold + 1, diff_down))
+    # diff_down = (diff_down < propagation_threshold).astype(bool)
+    # imageShowUInt16OrFloat32OrBool(diff_down, 'DiffDown')
+    #
+    # diff_right = np.absolute(np.diff(image, axis=1))
+    # diff_right = np.hstack((diff_right, np.ones((height, 1)).astype(image.dtype) * propagation_threshold))
+    # diff_right = (diff_right < propagation_threshold).astype(bool)
+    # imageShowUInt16OrFloat32OrBool(diff_right, 'DiffRight')
+    #
+    # diff_left = np.absolute(np.diff(image, axis=1))
+    # diff_left = np.hstack((np.ones((height, 1)).astype(image.dtype) * propagation_threshold, diff_left))
+    # diff_left = (diff_left < propagation_threshold).astype(bool)
+    # imageShowUInt16OrFloat32OrBool(diff_left, 'DiffLeft')
+    #
+    # # diff_down = np.diff(image, axis=0)
+    # # diff_right = np.diff(image, axis=1)
+    # # diff_left = -np.diff(image, axis=1)
+    #
+    # # cv2.waitKey(0)
+    # # print('this is diff_up')
+    # # print(diff_up)
+    # # from matplotlib import pyplot as plt
+    # # plt.imshow(diff_up, cmap='gray')
+    # # plt.figure()
+    # # plt.imshow(diff_left, cmap='gray')
+    # # plt.show()
+    #
+    # seed_mask = np.zeros(image.shape, dtype=bool)
+    # seed_mask[y, x] = True
+    #
+    # visited_mask = np.zeros(image.shape, dtype=bool)
+    # visited_mask[y, x] = True
+    # propagated_mask = np.zeros(image.shape, dtype=bool)
+    # propagated_mask[y, x] = True
+    #
+    # area = 0
+    # area_prev = 1
+    # while not area == area_prev:
+    #     # up
+    #     dilated_mask_up = ndimage.binary_dilation(seed_mask, structure=neighbor_up)
+    #     propagated_up = np.logical_and(dilated_mask_up, diff_up)
+    #
+    #     # down
+    #     dilated_mask_down = ndimage.binary_dilation(seed_mask, structure=neighbor_down)
+    #     propagated_down = np.logical_and(dilated_mask_down, diff_down)
+    #
+    #     # right
+    #     dilated_mask_right = ndimage.binary_dilation(seed_mask, structure=neighbor_right)
+    #     propagated_right = np.logical_and(dilated_mask_right, diff_right)
+    #
+    #     # left
+    #     dilated_mask_left = ndimage.binary_dilation(seed_mask, structure=neighbor_left)
+    #     propagated_left = np.logical_and(dilated_mask_left, diff_left)
+    #
+    #     propagated_mask = np.logical_or.reduce((propagated_up, propagated_down, propagated_right, propagated_left))
+    #
+    #     # replace seed mask
+    #     seed_mask = np.logical_or(seed_mask, propagated_mask)
+    #
+    #     area_prev = area
+    #     area = np.sum(seed_mask)
+    #
+    #     # seed_mask = np.logical_or(np.logical_or(np.logical_or(propagated_up, propagated_right), propagated_down), propagated_left)
+    #
+    #
+    #
+    # print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
+    #
+    # # print(np.sum(propagated_now))
+    # imageShowUInt16OrFloat32OrBool(seed_mask, 'Seeds')
+    # # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
+    # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
+    # cv2.waitKey(1)
+    # now = rospy.Time.now()
+
+    # -------------------------------------
+    # Step 3: Flood fill (using lists)
+    # -------------------------------------
+    now = rospy.Time.now()
+    #
+    # x, y = 672, 141
+    x, y = 180, 35
     # x, y = 0, 0
     # pix = image[y, x]
     seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
@@ -294,7 +425,7 @@ def labelDepthMsg(msg, bridge=None, debug=False):
         point_key = list(seed_points.keys())[0]  # pick up first point in the dict
         point = seed_points[point_key]
 
-        # use a N4 neighborhood for simplification
+        # use a N4 neighbor_up for simplification
         #                     up      down     left    right
         neighbour_deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
@@ -311,9 +442,9 @@ def labelDepthMsg(msg, bridge=None, debug=False):
 
         del seed_points[point_key]
 
-        imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
-        imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
-        cv2.waitKey(10)
+        # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
+        # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
+        # cv2.waitKey(10)
 
     print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
 
