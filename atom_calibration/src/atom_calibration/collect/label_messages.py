@@ -252,7 +252,7 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     now = rospy.Time.now()
     labels = {}
     kernel = np.ones((6, 6), np.uint8)
-    propagation_threshold = 600
+    propagation_threshold = 0.2
     height, width = image.shape
     getLinearIndex = functools.partial(getLinearIndexWidth, width=width)
     print('Image size is ' + str(height) + ', ' + str(width))
@@ -264,9 +264,9 @@ def labelDepthMsg(msg, bridge=None, debug=False):
         cv2.namedWindow('DiffDown', cv2.WINDOW_NORMAL)
         cv2.namedWindow('DiffLeft', cv2.WINDOW_NORMAL)
         cv2.namedWindow('DiffRight', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('Seeds', cv2.WINDOW_NORMAL)
-        # cv2.namedWindow('Visited', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('Propagated', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('seed_mask', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('to_visit_mask', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('seeds_mask', cv2.WINDOW_NORMAL)
 
     # -------------------------------------
     # Step 3: Preprocessing the image
@@ -289,16 +289,16 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     # -------------------------------------
     # Step 3: Flood fill (using np arrays)
     # -------------------------------------
-    now = rospy.Time.now()
-
-    # x, y = 672, 141
-    # x, y = 372, 76
-    x, y = 180, 35
-    # x, y = 0, 0
+    # now = rospy.Time.now()
+    #
+    # # x, y = 672, 141
+    # # x, y = 372, 76
+    # x, y = 180, 35
+    # # x, y = 0, 0
     # pix = image[y, x]
     # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
-
-    # TODO This is not integrated with the preprocessing
+    #
+    # # TODO This is not integrated with the preprocessing
     # neighbor_up = np.zeros((3, 3), dtype=bool)
     # neighbor_up[0, 1] = True
     #
@@ -396,7 +396,6 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     #     # seed_mask = np.logical_or(np.logical_or(np.logical_or(propagated_up, propagated_right), propagated_down), propagated_left)
     #
     #
-    #
     # print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
     #
     # # print(np.sum(propagated_now))
@@ -407,55 +406,176 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     # now = rospy.Time.now()
 
     # -------------------------------------
-    # Step 3: Flood fill (using lists)
+    # Step 3: Flood fill (supersonic mode - hopefully ... )
     # -------------------------------------
+
     now = rospy.Time.now()
-    #
-    # x, y = 672, 141
-    x, y = 180, 35
-    # x, y = 0, 0
-    # pix = image[y, x]
-    seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
-    visited_mask = np.zeros(image.shape, dtype=bool)
-    visited_mask[y, x] = True
-    propagated_mask = np.zeros(image.shape, dtype=bool)
-    propagated_mask[y, x] = True
+    neighbors = np.ones((3, 3), dtype=bool)
 
-    while seed_points:  # while we have a non empty dictionary of seed points, propagate
-        point_key = list(seed_points.keys())[0]  # pick up first point in the dict
-        point = seed_points[point_key]
+    diff_up = np.absolute(np.diff(image, axis=0))
+    diff_up = np.vstack((diff_up, np.ones((1, width)).astype(image.dtype) * propagation_threshold))
+    diff_up = (diff_up < propagation_threshold).astype(bool)
+    diff_up = ndimage.binary_erosion(diff_up, structure=neighbors)
+    imageShowUInt16OrFloat32OrBool(diff_up, 'DiffUp')
 
-        # use a N4 neighbor_up for simplification
-        #                     up      down     left    right
-        neighbour_deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    diff_down = np.absolute(np.diff(image, axis=0))
+    diff_down = np.vstack((np.ones((1, width)).astype(image.dtype) * propagation_threshold + 1, diff_down))
+    diff_down = (diff_down < propagation_threshold).astype(bool)
+    diff_down = ndimage.binary_erosion(diff_down, structure=neighbors)
+    imageShowUInt16OrFloat32OrBool(diff_down, 'DiffDown')
 
-        for dy, dx in neighbour_deltas:
-            x, y = point['x'] + dx, point['y'] + dy
-            if x < 0 or x >= width or y < 0 or y >= height:  # outside the image
-                continue
-            visited_mask[y, x] = True
-            if not propagated_mask[y, x]:  # not visited yet
-                pix = image[y, x]
-                if abs(float(pix) - float(point['pix'])) < propagation_threshold:  # propagate into this neighbor
-                    seed_points[getLinearIndex(x, y)] = {'x': x, 'y': y, 'pix': pix}
-                    propagated_mask[y, x] = True
+    diff_right = np.absolute(np.diff(image, axis=1))
+    diff_right = np.hstack((diff_right, np.ones((height, 1)).astype(image.dtype) * propagation_threshold))
+    diff_right = (diff_right < propagation_threshold).astype(bool)
+    diff_right = ndimage.binary_erosion(diff_right, structure=neighbors)
+    imageShowUInt16OrFloat32OrBool(diff_right, 'DiffRight')
 
-        del seed_points[point_key]
+    diff_left = np.absolute(np.diff(image, axis=1))
+    diff_left = np.hstack((np.ones((height, 1)).astype(image.dtype) * propagation_threshold, diff_left))
+    diff_left = (diff_left < propagation_threshold).astype(bool)
+    diff_left = ndimage.binary_erosion(diff_left, structure=neighbors)
+    imageShowUInt16OrFloat32OrBool(diff_left, 'DiffLeft')
 
-        # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
-        # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
-        # cv2.waitKey(10)
+    propagation_threshold = 0.1
+    x, y = 672, 141
+    # x, y = 180, 35
+    # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
+
+    # seeds is a np array with:
+    # x coords
+    # y coords
+    # seeds = np.zeros((2,1), dtype=np.int)
+    seeds = np.array([[180], [35]], dtype=np.int)
+    # seeds = np.array([[660], [130]], dtype=np.int)
+    # seeds = np.array([[660, 672, 680], [130, 141, 150]], dtype=np.int)
+    # seeds[0,0] = 672
+    # seeds[1,0] = 141
+
+    to_visit_mask = np.ones(image.shape, dtype=bool)
+    seeds_mask = np.zeros(image.shape, dtype=bool)
+
+    while True:  # while we have a non empty dictionary of seed points, propagate
+
+        # print('------------------------------\n')
+        # print('seeds = \n' + str(seeds))
+
+        # up
+        seeds_up = copy.copy(seeds)
+        seeds_up[1, :] -= 1
+        # print('seeds_up ' + str(seeds_up.shape) + ' = \n' + str(seeds_up))
+        mask_up = np.logical_and(diff_up[seeds_up[1, :], seeds_up[0, :]], to_visit_mask[seeds_up[1, :], seeds_up[0, :]])
+        # print('mask_up = \n' + str(mask_up))
+        propagated_up = seeds_up[:, mask_up]
+        # print('propagated_up = \n' + str(propagated_up))
+
+        # down
+        seeds_down = copy.copy(seeds)
+        seeds_down[1, :] += 1
+        # print('seeds_down = \n' + str(seeds_down))
+        mask_down = np.logical_and(diff_down[seeds_down[1, :], seeds_down[0, :]],
+                                   to_visit_mask[seeds_down[1, :], seeds_down[0, :]])
+        # print('mask_down = \n' + str(mask_down))
+        propagated_down = seeds_down[:, mask_down]
+        # print('propagated_down = \n' + str(propagated_down))
+
+        # left
+        seeds_left = copy.copy(seeds)
+        seeds_left[0, :] -= 1
+        # print('seeds_left = \n' + str(seeds_left))
+        mask_left = np.logical_and(diff_left[seeds_left[1, :], seeds_left[0, :]],
+                                   to_visit_mask[seeds_left[1, :], seeds_left[0, :]])
+        # print('mask_left = \n' + str(mask_left))
+        propagated_left = seeds_left[:, mask_left]
+        # print('propagated_left = \n' + str(propagated_left))
+
+        # right
+        seeds_right = copy.copy(seeds)
+        seeds_right[0, :] += 1
+        # print('seeds_right = \n' + str(seeds_right))
+        mask_right = np.logical_and(diff_right[seeds_right[1, :], seeds_right[0, :]],
+                                    to_visit_mask[seeds_right[1, :], seeds_right[0, :]])
+        # print('mask_right = \n' + str(mask_right))
+        propagated_right = seeds_right[:, mask_right]
+        # print('propagated_right = \n' + str(propagated_right))
+
+        # set the seed points for the next iteration
+        seeds = np.hstack((propagated_up, propagated_down, propagated_left, propagated_right))
+        # seeds = np.hstack((propagated_up, propagated_down, propagated_left))
+        seeds = np.unique(seeds, axis=1)
+
+        visited = np.hstack((seeds_up, seeds_down, seeds_left, seeds_right))  # TODO add the seeds also?
+        to_visit_mask[visited[1, :], visited[0, :]] = False
+        # imageShowUInt16OrFloat32OrBool(to_visit_mask, 'to_visit_mask')
+
+        # print('seeds for next = \n' + str(seeds))
+
+        # seeds_mask = np.zeros(image.shape, dtype=bool)
+        seeds_mask[seeds[1, :], seeds[0, :]] = True
+        # imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
+        # cv2.waitKey(4)
+
+        # print(seeds.size)
+        if not seeds.size:  # termination condition: no more seed points
+            break
 
     print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
 
-    now = rospy.Time.now()
+    # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
+    # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
+    imageShowUInt16OrFloat32OrBool(to_visit_mask, 'to_visit_mask')
+    imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
+    cv2.waitKey(10)
+
+    # -------------------------------------
+    # Step 3: Flood fill (using lists)
+    # -------------------------------------
+    # now = rospy.Time.now()
+    # propagation_threshold = 0.1
+    # # x, y = 672, 141
+    # x, y = 180, 35
+    # # x, y = 0, 0
+    # # pix = image[y, x]
+    # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
+    # visited_mask = np.zeros(image.shape, dtype=bool)
+    # visited_mask[y, x] = True
+    # propagated_mask = np.zeros(image.shape, dtype=bool)
+    # propagated_mask[y, x] = True
+    #
+    # while seed_points:  # while we have a non empty dictionary of seed points, propagate
+    #     point_key = list(seed_points.keys())[0]  # pick up first point in the dict
+    #     point = seed_points[point_key]
+    #
+    #     # use a N4 neighbor_up for simplification
+    #     #                     up      down     left    right
+    #     neighbour_deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    #
+    #     for dy, dx in neighbour_deltas:
+    #         x, y = point['x'] + dx, point['y'] + dy
+    #         if x < 0 or x >= width or y < 0 or y >= height:  # outside the image
+    #             continue
+    #         visited_mask[y, x] = True
+    #         if not propagated_mask[y, x]:  # not visited yet
+    #             pix = image[y, x]
+    #             if abs(float(pix) - float(point['pix'])) < propagation_threshold:  # propagate into this neighbor
+    #                 seed_points[getLinearIndex(x, y)] = {'x': x, 'y': y, 'pix': pix}
+    #                 propagated_mask[y, x] = True
+    #
+    #     del seed_points[point_key]
+    #
+    # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
+    # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
+    # cv2.waitKey(0)
+    #
+    # print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
+    #
+    # now = rospy.Time.now()
 
     # -------------------------------------
     # Step 4: Canny
     # -------------------------------------
 
     # propagated_mask = propagated_mask.astype(np.uint8) * 255
-    fill_holes = ndimage.morphology.binary_fill_holes(propagated_mask)
+    fill_holes = ndimage.morphology.binary_fill_holes(seeds_mask)
     fill_holes = fill_holes.astype(np.uint8) * 255  # these are the idxs
 
     canny = cv2.Canny(fill_holes, 100, 200)  # these are the idxs_limit_points
