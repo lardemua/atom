@@ -235,7 +235,7 @@ def getLinearIndexWidth(x, y, width):
     return x + y * width
 
 
-def labelDepthMsg(msg, bridge=None, debug=False):
+def labelDepthMsg(msg, seed_x, seed_y, bridge=None, debug=False, pyrdown=0, scatter_seed=False):
     # -------------------------------------
     # Step 1: Convert ros message to opencv's image
     # -------------------------------------
@@ -243,8 +243,10 @@ def labelDepthMsg(msg, bridge=None, debug=False):
         bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
 
     image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
-    image = cv2.pyrDown(image)
-    image = cv2.pyrDown(image)
+    for idx in range(0, pyrdown):
+        image = cv2.pyrDown(image)
+        seed_x = int(seed_x / 2)
+        seed_y = int(seed_y / 2)
 
     # -------------------------------------
     # Step 2: Initialization
@@ -254,19 +256,21 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     kernel = np.ones((6, 6), np.uint8)
     propagation_threshold = 0.2
     height, width = image.shape
-    getLinearIndex = functools.partial(getLinearIndexWidth, width=width)
     print('Image size is ' + str(height) + ', ' + str(width))
+
+    # TODO remove this. Just to be able to use the real data bag files we have right now
+    cv2.line(image, (int(width * 0.3), 0), (int(width * 0.3), height), 0, 3)
 
     if debug:
         cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
         imageShowUInt16OrFloat32OrBool(image, 'Original')
-        cv2.namedWindow('DiffUp', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('DiffDown', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('DiffLeft', cv2.WINDOW_NORMAL)
-        cv2.namedWindow('DiffRight', cv2.WINDOW_NORMAL)
-        # cv2.namedWindow('seed_mask', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffUp', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffDown', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffLeft', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffRight', cv2.WINDOW_NORMAL)
         cv2.namedWindow('to_visit_mask', cv2.WINDOW_NORMAL)
         cv2.namedWindow('seeds_mask', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('ResultImage', cv2.WINDOW_NORMAL)
 
     # -------------------------------------
     # Step 3: Preprocessing the image
@@ -287,294 +291,120 @@ def labelDepthMsg(msg, bridge=None, debug=False):
     print('Time taken in preprocessing ' + str((rospy.Time.now() - now).to_sec()))
 
     # -------------------------------------
-    # Step 3: Flood fill (using np arrays)
-    # -------------------------------------
-    # now = rospy.Time.now()
-    #
-    # # x, y = 672, 141
-    # # x, y = 372, 76
-    # x, y = 180, 35
-    # # x, y = 0, 0
-    # pix = image[y, x]
-    # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
-    #
-    # # TODO This is not integrated with the preprocessing
-    # neighbor_up = np.zeros((3, 3), dtype=bool)
-    # neighbor_up[0, 1] = True
-    #
-    # neighbor_down = np.zeros((3, 3), dtype=bool)
-    # neighbor_down[2, 1] = True
-    #
-    # neighbor_right = np.zeros((3, 3), dtype=bool)
-    # neighbor_right[1, 2] = True
-    #
-    # neighbor_left = np.zeros((3, 3), dtype=bool)
-    # neighbor_left[1, 0] = True
-    # # print(neighbor_up)
-    #
-    # # array([[7, 1, 7, 8, 3, 6],
-    # #        [8, 0, 5, 3, 5, 3],
-    # #        [9, 3, 2, 4, 3, 9],
-    # #        [2, 9, 6, 9, 4, 6]])
-    # # >> > np.diff(A, axis=0)
-    # # array([[1, -1, -2, -5, 2, -3],
-    # #        [1, 3, -3, 1, -2, 6],
-    # #        [-7, 6, 4, 5, 1, -3]])
-    # # print(image.dtype)
-    # # print(cv_image_array.dtype)
-    #
-    # propagation_threshold = 0.05
-    #
-    # diff_up = np.absolute(np.diff(image, axis=0))
-    # diff_up = np.vstack((diff_up, np.ones((1, width)).astype(image.dtype) * propagation_threshold))
-    # diff_up = (diff_up < propagation_threshold).astype(bool)
-    # imageShowUInt16OrFloat32OrBool(diff_up, 'DiffUp')
-    #
-    # diff_down = np.absolute(np.diff(image, axis=0))
-    # diff_down = np.vstack((np.ones((1, width)).astype(image.dtype) * propagation_threshold + 1, diff_down))
-    # diff_down = (diff_down < propagation_threshold).astype(bool)
-    # imageShowUInt16OrFloat32OrBool(diff_down, 'DiffDown')
-    #
-    # diff_right = np.absolute(np.diff(image, axis=1))
-    # diff_right = np.hstack((diff_right, np.ones((height, 1)).astype(image.dtype) * propagation_threshold))
-    # diff_right = (diff_right < propagation_threshold).astype(bool)
-    # imageShowUInt16OrFloat32OrBool(diff_right, 'DiffRight')
-    #
-    # diff_left = np.absolute(np.diff(image, axis=1))
-    # diff_left = np.hstack((np.ones((height, 1)).astype(image.dtype) * propagation_threshold, diff_left))
-    # diff_left = (diff_left < propagation_threshold).astype(bool)
-    # imageShowUInt16OrFloat32OrBool(diff_left, 'DiffLeft')
-    #
-    # # diff_down = np.diff(image, axis=0)
-    # # diff_right = np.diff(image, axis=1)
-    # # diff_left = -np.diff(image, axis=1)
-    #
-    # # cv2.waitKey(0)
-    # # print('this is diff_up')
-    # # print(diff_up)
-    # # from matplotlib import pyplot as plt
-    # # plt.imshow(diff_up, cmap='gray')
-    # # plt.figure()
-    # # plt.imshow(diff_left, cmap='gray')
-    # # plt.show()
-    #
-    # seed_mask = np.zeros(image.shape, dtype=bool)
-    # seed_mask[y, x] = True
-    #
-    # visited_mask = np.zeros(image.shape, dtype=bool)
-    # visited_mask[y, x] = True
-    # propagated_mask = np.zeros(image.shape, dtype=bool)
-    # propagated_mask[y, x] = True
-    #
-    # area = 0
-    # area_prev = 1
-    # while not area == area_prev:
-    #     # up
-    #     dilated_mask_up = ndimage.binary_dilation(seed_mask, structure=neighbor_up)
-    #     propagated_up = np.logical_and(dilated_mask_up, diff_up)
-    #
-    #     # down
-    #     dilated_mask_down = ndimage.binary_dilation(seed_mask, structure=neighbor_down)
-    #     propagated_down = np.logical_and(dilated_mask_down, diff_down)
-    #
-    #     # right
-    #     dilated_mask_right = ndimage.binary_dilation(seed_mask, structure=neighbor_right)
-    #     propagated_right = np.logical_and(dilated_mask_right, diff_right)
-    #
-    #     # left
-    #     dilated_mask_left = ndimage.binary_dilation(seed_mask, structure=neighbor_left)
-    #     propagated_left = np.logical_and(dilated_mask_left, diff_left)
-    #
-    #     propagated_mask = np.logical_or.reduce((propagated_up, propagated_down, propagated_right, propagated_left))
-    #
-    #     # replace seed mask
-    #     seed_mask = np.logical_or(seed_mask, propagated_mask)
-    #
-    #     area_prev = area
-    #     area = np.sum(seed_mask)
-    #
-    #     # seed_mask = np.logical_or(np.logical_or(np.logical_or(propagated_up, propagated_right), propagated_down), propagated_left)
-    #
-    #
-    # print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
-    #
-    # # print(np.sum(propagated_now))
-    # imageShowUInt16OrFloat32OrBool(seed_mask, 'Seeds')
-    # # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
-    # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
-    # cv2.waitKey(1)
-    # now = rospy.Time.now()
-
-    # -------------------------------------
     # Step 3: Flood fill (supersonic mode - hopefully ... )
     # -------------------------------------
-
     now = rospy.Time.now()
+
+    # Setup the difference images in all four directions
+    # erode to avoid problem discussed in https://github.com/lardemua/atom/issues/323 
     neighbors = np.ones((3, 3), dtype=bool)
 
     diff_up = np.absolute(np.diff(image, axis=0))
     diff_up = np.vstack((diff_up, np.ones((1, width)).astype(image.dtype) * propagation_threshold))
     diff_up = (diff_up < propagation_threshold).astype(bool)
     diff_up = ndimage.binary_erosion(diff_up, structure=neighbors)
-    imageShowUInt16OrFloat32OrBool(diff_up, 'DiffUp')
 
     diff_down = np.absolute(np.diff(image, axis=0))
     diff_down = np.vstack((np.ones((1, width)).astype(image.dtype) * propagation_threshold + 1, diff_down))
     diff_down = (diff_down < propagation_threshold).astype(bool)
     diff_down = ndimage.binary_erosion(diff_down, structure=neighbors)
-    imageShowUInt16OrFloat32OrBool(diff_down, 'DiffDown')
 
     diff_right = np.absolute(np.diff(image, axis=1))
     diff_right = np.hstack((diff_right, np.ones((height, 1)).astype(image.dtype) * propagation_threshold))
     diff_right = (diff_right < propagation_threshold).astype(bool)
     diff_right = ndimage.binary_erosion(diff_right, structure=neighbors)
-    imageShowUInt16OrFloat32OrBool(diff_right, 'DiffRight')
 
     diff_left = np.absolute(np.diff(image, axis=1))
     diff_left = np.hstack((np.ones((height, 1)).astype(image.dtype) * propagation_threshold, diff_left))
     diff_left = (diff_left < propagation_threshold).astype(bool)
     diff_left = ndimage.binary_erosion(diff_left, structure=neighbors)
-    imageShowUInt16OrFloat32OrBool(diff_left, 'DiffLeft')
 
+    # Initialize flood fill parameters
     propagation_threshold = 0.1
-    x, y = 672, 141
-    # x, y = 180, 35
-    # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
-
     # seeds is a np array with:
-    # x coords
-    # y coords
-    # seeds = np.zeros((2,1), dtype=np.int)
-    seeds = np.array([[180], [35]], dtype=np.int)
-    # seeds = np.array([[660], [130]], dtype=np.int)
-    # seeds = np.array([[660, 672, 680], [130, 141, 150]], dtype=np.int)
-    # seeds[0,0] = 672
-    # seeds[1,0] = 141
+    # seeds = np.array([[180], [35]], dtype=np.int)
+
+    # generate seed points in a cross around the give seed point coordinates (to tackle when the coordinate in in a
+    # black hole in the pattern).
+    if scatter_seed:
+        n = 10
+        thetas = np.linspace(0, 2 * math.pi, n)
+        print(thetas)
+        print(thetas.shape)
+        r = 8
+        initial_seeds = np.zeros((2, n), dtype=np.int)
+        print(initial_seeds)
+        for col in range(0, n):
+            x = seed_x + r * math.cos(thetas[col])
+            y = seed_y + r * math.sin(thetas[col])
+            initial_seeds[0, col] = x
+            initial_seeds[1, col] = y
+    else:
+        initial_seeds = np.array([[seed_x], [seed_y]], dtype=np.int)
 
     to_visit_mask = np.ones(image.shape, dtype=bool)
     seeds_mask = np.zeros(image.shape, dtype=bool)
+    seeds = copy.copy(initial_seeds)
 
-    while True:  # while we have a non empty dictionary of seed points, propagate
-
-        # print('------------------------------\n')
-        # print('seeds = \n' + str(seeds))
-
-        # up
-        seeds_up = copy.copy(seeds)
-        seeds_up[1, :] -= 1
-        # print('seeds_up ' + str(seeds_up.shape) + ' = \n' + str(seeds_up))
-        mask_up = np.logical_and(diff_up[seeds_up[1, :], seeds_up[0, :]], to_visit_mask[seeds_up[1, :], seeds_up[0, :]])
-        # print('mask_up = \n' + str(mask_up))
+    while True:  # flood fill loop
+        # up direction
+        seeds_up = copy.copy(seeds)  # make a copy
+        seeds_up[1, :] -= 1  # upper row
+        mask_up = np.logical_and(diff_up[seeds_up[1, :], seeds_up[0, :]],
+                                 to_visit_mask[seeds_up[1, :], seeds_up[0, :]])
         propagated_up = seeds_up[:, mask_up]
-        # print('propagated_up = \n' + str(propagated_up))
 
-        # down
-        seeds_down = copy.copy(seeds)
-        seeds_down[1, :] += 1
-        # print('seeds_down = \n' + str(seeds_down))
+        # down direction
+        seeds_down = copy.copy(seeds)  # make a copy
+        seeds_down[1, :] += 1  # lower row
         mask_down = np.logical_and(diff_down[seeds_down[1, :], seeds_down[0, :]],
                                    to_visit_mask[seeds_down[1, :], seeds_down[0, :]])
-        # print('mask_down = \n' + str(mask_down))
         propagated_down = seeds_down[:, mask_down]
-        # print('propagated_down = \n' + str(propagated_down))
 
-        # left
-        seeds_left = copy.copy(seeds)
-        seeds_left[0, :] -= 1
-        # print('seeds_left = \n' + str(seeds_left))
+        # left direction
+        seeds_left = copy.copy(seeds)  # make a copy
+        seeds_left[0, :] -= 1  # left column
         mask_left = np.logical_and(diff_left[seeds_left[1, :], seeds_left[0, :]],
                                    to_visit_mask[seeds_left[1, :], seeds_left[0, :]])
-        # print('mask_left = \n' + str(mask_left))
         propagated_left = seeds_left[:, mask_left]
-        # print('propagated_left = \n' + str(propagated_left))
 
-        # right
-        seeds_right = copy.copy(seeds)
-        seeds_right[0, :] += 1
-        # print('seeds_right = \n' + str(seeds_right))
+        # right direction
+        seeds_right = copy.copy(seeds)  # make a copy
+        seeds_right[0, :] += 1  # right column
         mask_right = np.logical_and(diff_right[seeds_right[1, :], seeds_right[0, :]],
                                     to_visit_mask[seeds_right[1, :], seeds_right[0, :]])
-        # print('mask_right = \n' + str(mask_right))
         propagated_right = seeds_right[:, mask_right]
-        # print('propagated_right = \n' + str(propagated_right))
 
         # set the seed points for the next iteration
         seeds = np.hstack((propagated_up, propagated_down, propagated_left, propagated_right))
-        # seeds = np.hstack((propagated_up, propagated_down, propagated_left))
-        seeds = np.unique(seeds, axis=1)
+        seeds = np.unique(seeds, axis=1)  # make sure our points are unique
 
-        visited = np.hstack((seeds_up, seeds_down, seeds_left, seeds_right))  # TODO add the seeds also?
-        to_visit_mask[visited[1, :], visited[0, :]] = False
-        # imageShowUInt16OrFloat32OrBool(to_visit_mask, 'to_visit_mask')
+        # Mark the visited points
+        to_visit_mask[seeds_up[1, :], seeds_up[0, :]] = False
+        to_visit_mask[seeds_down[1, :], seeds_down[0, :]] = False
+        to_visit_mask[seeds_left[1, :], seeds_left[0, :]] = False
+        to_visit_mask[seeds_right[1, :], seeds_right[0, :]] = False
 
-        # print('seeds for next = \n' + str(seeds))
-
-        # seeds_mask = np.zeros(image.shape, dtype=bool)
+        # seeds_mask = np.zeros(image.shape, dtype=bool) # Uncomment this to see the seed points on each iteration
         seeds_mask[seeds[1, :], seeds[0, :]] = True
-        # imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
-        # cv2.waitKey(4)
 
-        # print(seeds.size)
+        if debug:
+            # imageShowUInt16OrFloat32OrBool(diff_up, 'DiffUp')
+            # imageShowUInt16OrFloat32OrBool(diff_down, 'DiffDown')
+            # imageShowUInt16OrFloat32OrBool(diff_right, 'DiffRight')
+            # imageShowUInt16OrFloat32OrBool(diff_left, 'DiffLeft')
+            imageShowUInt16OrFloat32OrBool(to_visit_mask, 'to_visit_mask')
+            imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
+            cv2.waitKey(5)
+
         if not seeds.size:  # termination condition: no more seed points
             break
 
     print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
 
-    # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
-    # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
-    imageShowUInt16OrFloat32OrBool(to_visit_mask, 'to_visit_mask')
-    imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
-    cv2.waitKey(10)
-
-    # -------------------------------------
-    # Step 3: Flood fill (using lists)
-    # -------------------------------------
-    # now = rospy.Time.now()
-    # propagation_threshold = 0.1
-    # # x, y = 672, 141
-    # x, y = 180, 35
-    # # x, y = 0, 0
-    # # pix = image[y, x]
-    # seed_points = {getLinearIndex(x, y): {'x': x, 'y': y, 'pix': image[y, x]}}
-    # visited_mask = np.zeros(image.shape, dtype=bool)
-    # visited_mask[y, x] = True
-    # propagated_mask = np.zeros(image.shape, dtype=bool)
-    # propagated_mask[y, x] = True
-    #
-    # while seed_points:  # while we have a non empty dictionary of seed points, propagate
-    #     point_key = list(seed_points.keys())[0]  # pick up first point in the dict
-    #     point = seed_points[point_key]
-    #
-    #     # use a N4 neighbor_up for simplification
-    #     #                     up      down     left    right
-    #     neighbour_deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    #
-    #     for dy, dx in neighbour_deltas:
-    #         x, y = point['x'] + dx, point['y'] + dy
-    #         if x < 0 or x >= width or y < 0 or y >= height:  # outside the image
-    #             continue
-    #         visited_mask[y, x] = True
-    #         if not propagated_mask[y, x]:  # not visited yet
-    #             pix = image[y, x]
-    #             if abs(float(pix) - float(point['pix'])) < propagation_threshold:  # propagate into this neighbor
-    #                 seed_points[getLinearIndex(x, y)] = {'x': x, 'y': y, 'pix': pix}
-    #                 propagated_mask[y, x] = True
-    #
-    #     del seed_points[point_key]
-    #
-    # imageShowUInt16OrFloat32OrBool(visited_mask, 'Visited')
-    # imageShowUInt16OrFloat32OrBool(propagated_mask, 'Propagated')
-    # cv2.waitKey(0)
-    #
-    # print('Time taken in floodfill ' + str((rospy.Time.now() - now).to_sec()))
-    #
-    # now = rospy.Time.now()
-
     # -------------------------------------
     # Step 4: Canny
     # -------------------------------------
-
-    # propagated_mask = propagated_mask.astype(np.uint8) * 255
     fill_holes = ndimage.morphology.binary_fill_holes(seeds_mask)
     fill_holes = fill_holes.astype(np.uint8) * 255  # these are the idxs
 
@@ -582,20 +412,355 @@ def labelDepthMsg(msg, bridge=None, debug=False):
 
     # calculate moments of binary image
     M = cv2.moments(fill_holes)
-
     print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
 
-    # calculate x,y coordinate of center
-    cX = int(M["m10"] / M["m00"])
-    cY = int(M["m01"] / M["m00"])
-    new_seed_point = [cX, cY]
-    # result_image = canny.copy()
-    # colored_image=image.copy()
-    # result_image[propagated_mask == 255] = 255
-    # cv2.cvtColor(image, colored_image)
-    # result_image[canny == 255] = [0,255,0]
-    # cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
+    # -------------------------------------
+    # Step 5: Centroid
+    # -------------------------------------
+    m0 = M["m00"]
+    if m0 == 0:
+        cx = int(width / 2)
+        cy = int(height / 2)
+    else:
+        cx = int(M["m10"] / M["m00"])
+        cy = int(M["m01"] / M["m00"])
+    new_seed_point = [cx, cy]
 
-    # new seed point will be the centroid of the detected chessboard in that image ... Assuming that the movement is smooth and the processing fast enough for this to work
+    # -------------------------------------
+    # Step 6: Creating the output image
+    # -------------------------------------
+    # Create a nice color image as result
+    gui_image = np.zeros((height, width, 3), dtype=image.dtype)
+    max_value = 5
+    gui_image[:, :, 0] = image / max_value * 255
+    gui_image[:, :, 1] = image / max_value * 255
+    gui_image[:, :, 2] = image / max_value * 255
 
-    return labels, canny, new_seed_point
+    # "greenify" the filled region
+    gui_image[seeds_mask, 0] -= 10
+    gui_image[seeds_mask, 1] += 10
+    gui_image[seeds_mask, 2] -= 10
+
+    gui_image = gui_image.astype(np.uint8)
+
+    # Initial seed point as red dot
+    cv2.line(gui_image, (seed_x, seed_y), (seed_x, seed_y), (0, 0, 255), 3)
+
+    # initial seeds scatter points
+    if scatter_seed:
+        for col in range(0, initial_seeds.shape[1]):
+            x = initial_seeds[0, col]
+            y = initial_seeds[1, col]
+            cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
+
+    # next seed point as blue dot
+    cv2.line(gui_image, (cx, cy), (cx, cy), (255, 0, 0), 3)
+
+    # Draw the Canny boundary
+    mask_canny = canny.astype(bool)
+    gui_image[mask_canny, 0] = 25
+    gui_image[mask_canny, 1] = 255
+    gui_image[mask_canny, 2] = 25
+
+    # new seed point will be the centroid of the detected chessboard in that image ... Assuming that the movement is
+    # smooth and the processing fast enough for this to work
+
+    if debug:
+        cv2.imshow('ResultImage', gui_image)
+        cv2.waitKey(5)
+
+    return labels, canny, new_seed_point, seeds_mask
+
+
+def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, pyrdown=0,
+                   scatter_seed=False, subsample_solid_points=1, debug=False):
+    """
+    Labels rectangular patterns in ros image messages containing depth images.
+
+    :param msg: An image message with a depth image.
+    :param seed_x: x coordinate of seed point.
+    :param seed_y: y coordinate of seed point.
+    :param propagation_threshold: maximum value of pixel difference under which propagation occurs.
+    :param bridge: a cvbridge data structure to avoid having to constantly create one.
+    :param pyrdown: The ammount of times the image must be downscaled using pyrdown.
+    :param scatter_seed: To scatter the given seed in a circle of seed points. Useful because the given seed coordinate
+                         may fall under a black rectangle of the pattern.
+    :param subsample_solid_points: Subsample factor of solid pattern points to go into the output labels.
+    :param debug: Debug prints and shows images.
+    :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
+             gui_image, an image for visualization purposes which shows the result of the labelling.
+             new_seed_point, pixels coordinates of centroid of the pattern area.
+    """
+    # -------------------------------------
+    # Step 1: Convert ros message to opencv's image and downsample if needed, and make sure it is float in meters
+    # -------------------------------------
+    if bridge is None:  # Convert to opencv image
+        bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
+    image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
+
+    for idx in range(0, pyrdown):  # Downsample
+        image = cv2.pyrDown(image)
+        seed_x = int(seed_x / 2)
+        seed_y = int(seed_y / 2)
+
+    # TODO test for images that are uint16 (only float was tested)
+    if not image.dtype == np.float32:  # Make sure it is float
+        raise ValueError('image must be float type, and it is ' + str(image.dtype))
+
+    # -------------------------------------
+    # Step 2: Initialization
+    # -------------------------------------
+    height, width = image.shape
+    if pyrdown == 0:
+        original_height = height
+        original_width = width
+    else:
+        original_height = height * (2 * pyrdown)
+        original_width = width * (2 * pyrdown)
+
+    if debug:
+        print('Image size is ' + str(height) + ', ' + str(width))
+    # TODO remove this. Just to be able to use the real data bag files we have right now
+    cv2.line(image, (int(width * 0.3), 0), (int(width * 0.3), height), 0, 3)
+
+    # Setup the difference images in all four directions
+    # erode to avoid problem discussed in https://github.com/lardemua/atom/issues/323
+    neighbors = np.ones((3, 3), dtype=bool)
+
+    diff_up = np.absolute(np.diff(image, axis=0))
+    diff_up = np.vstack((diff_up, np.ones((1, width)).astype(image.dtype) * propagation_threshold))
+    diff_up = (diff_up < propagation_threshold).astype(bool)
+    diff_up = ndimage.binary_erosion(diff_up, structure=neighbors)
+
+    diff_down = np.absolute(np.diff(image, axis=0))
+    diff_down = np.vstack((np.ones((1, width)).astype(image.dtype) * propagation_threshold + 1, diff_down))
+    diff_down = (diff_down < propagation_threshold).astype(bool)
+    diff_down = ndimage.binary_erosion(diff_down, structure=neighbors)
+
+    diff_right = np.absolute(np.diff(image, axis=1))
+    diff_right = np.hstack((diff_right, np.ones((height, 1)).astype(image.dtype) * propagation_threshold))
+    diff_right = (diff_right < propagation_threshold).astype(bool)
+    diff_right = ndimage.binary_erosion(diff_right, structure=neighbors)
+
+    diff_left = np.absolute(np.diff(image, axis=1))
+    diff_left = np.hstack((np.ones((height, 1)).astype(image.dtype) * propagation_threshold, diff_left))
+    diff_left = (diff_left < propagation_threshold).astype(bool)
+    diff_left = ndimage.binary_erosion(diff_left, structure=neighbors)
+
+    # generate seed points in a cross around the give seed point coordinates (to tackle when the coordinate in in a
+    # black hole in the pattern).
+    if scatter_seed:
+        n = 10
+        thetas = np.linspace(0, 2 * math.pi, n)
+        r = 8
+        initial_seeds = np.zeros((2, n), dtype=np.int)
+        for col in range(0, n):
+            x = seed_x + r * math.cos(thetas[col])
+            y = seed_y + r * math.sin(thetas[col])
+            initial_seeds[0, col] = x
+            initial_seeds[1, col] = y
+    else:
+        initial_seeds = np.array([[seed_x], [seed_y]], dtype=np.int)
+
+    to_visit_mask = np.ones(image.shape, dtype=bool)
+    seeds_mask = np.zeros(image.shape, dtype=bool)
+    seeds = copy.copy(initial_seeds)
+
+    if debug:
+        cv2.namedWindow('Original', cv2.WINDOW_NORMAL)
+        imageShowUInt16OrFloat32OrBool(image, 'Original')
+        # cv2.namedWindow('DiffUp', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffDown', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffLeft', cv2.WINDOW_NORMAL)
+        # cv2.namedWindow('DiffRight', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('to_visit_mask', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('seeds_mask', cv2.WINDOW_NORMAL)
+        cv2.namedWindow('ResultImage', cv2.WINDOW_NORMAL)
+
+    # -------------------------------------
+    # Step 3: Flood fill (supersonic mode - hopefully ... )
+    # -------------------------------------
+    if debug:
+        now = rospy.Time.now()
+
+    while True:  # flood fill loop
+        # up direction
+        seeds_up = copy.copy(seeds)  # make a copy
+        seeds_up[1, :] -= 1  # upper row
+        mask_up = np.logical_and(diff_up[seeds_up[1, :], seeds_up[0, :]],
+                                 to_visit_mask[seeds_up[1, :], seeds_up[0, :]])
+        propagated_up = seeds_up[:, mask_up]
+
+        # down direction
+        seeds_down = copy.copy(seeds)  # make a copy
+        seeds_down[1, :] += 1  # lower row
+        mask_down = np.logical_and(diff_down[seeds_down[1, :], seeds_down[0, :]],
+                                   to_visit_mask[seeds_down[1, :], seeds_down[0, :]])
+        propagated_down = seeds_down[:, mask_down]
+
+        # left direction
+        seeds_left = copy.copy(seeds)  # make a copy
+        seeds_left[0, :] -= 1  # left column
+        mask_left = np.logical_and(diff_left[seeds_left[1, :], seeds_left[0, :]],
+                                   to_visit_mask[seeds_left[1, :], seeds_left[0, :]])
+        propagated_left = seeds_left[:, mask_left]
+
+        # right direction
+        seeds_right = copy.copy(seeds)  # make a copy
+        seeds_right[0, :] += 1  # right column
+        mask_right = np.logical_and(diff_right[seeds_right[1, :], seeds_right[0, :]],
+                                    to_visit_mask[seeds_right[1, :], seeds_right[0, :]])
+        propagated_right = seeds_right[:, mask_right]
+
+        # set the seed points for the next iteration
+        seeds = np.hstack((propagated_up, propagated_down, propagated_left, propagated_right))
+        seeds = np.unique(seeds, axis=1)  # make sure the points are unique
+
+        # Mark the visited points
+        to_visit_mask[seeds_up[1, :], seeds_up[0, :]] = False
+        to_visit_mask[seeds_down[1, :], seeds_down[0, :]] = False
+        to_visit_mask[seeds_left[1, :], seeds_left[0, :]] = False
+        to_visit_mask[seeds_right[1, :], seeds_right[0, :]] = False
+
+        # seeds_mask = np.zeros(image.shape, dtype=bool) # Uncomment this to see the seed points on each iteration
+        seeds_mask[seeds[1, :], seeds[0, :]] = True
+
+        if debug:
+            # imageShowUInt16OrFloat32OrBool(diff_up, 'DiffUp')
+            # imageShowUInt16OrFloat32OrBool(diff_down, 'DiffDown')
+            # imageShowUInt16OrFloat32OrBool(diff_right, 'DiffRight')
+            # imageShowUInt16OrFloat32OrBool(diff_left, 'DiffLeft')
+            imageShowUInt16OrFloat32OrBool(to_visit_mask, 'to_visit_mask')
+            imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
+            cv2.waitKey(5)
+
+        if not seeds.size:  # termination condition: no more seed points
+            break
+
+    if debug:
+        print('Time taken in floodfill (using debug=' + str(debug) + ') is ' + str((rospy.Time.now() - now).to_sec()))
+
+    # -------------------------------------
+    # Step 4: Postprocess the filled image
+    # -------------------------------------
+    if debug:
+        now = rospy.Time.now()
+
+    pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
+    pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # these are the idxs
+    pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
+    # TODO we could do the convex hull here tp avoid concavities ...
+
+    if debug:
+        cv2.namedWindow('pattern_solid_mask', cv2.WINDOW_NORMAL)
+        cv2.imshow('pattern_solid_mask', pattern_solid_mask)
+        cv2.namedWindow('pattern_edges_mask', cv2.WINDOW_NORMAL)
+        cv2.imshow('pattern_edges_mask', pattern_edges_mask)
+        print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
+
+    # -------------------------------------
+    # Step 5: Compute next iteration's seed point as centroid of filled mask
+    # -------------------------------------
+    moments = cv2.moments(pattern_solid_mask)  # compute moments of binary image
+    m0 = moments["m00"]
+    if m0 == 0:  # use center of image as backup value
+        cx = int(width / 2)
+        cy = int(height / 2)
+    else:
+        cx = int(moments["m10"] / moments["m00"])
+        cy = int(moments["m01"] / moments["m00"])
+    new_seed_point = {'x': cx, 'y': cy}  # pythonic
+
+    # -------------------------------------
+    # Step 6: Creating the output labels dictionary
+    # -------------------------------------
+    labels = {'detected': True, 'idxs': [], 'idxs_limit_points': []}
+
+    if m0 == 0:  # if no detection occurred
+        labels['detected'] = False
+    else:
+        # The coordinates in the labels must be given as linear indices of the image in the original size. Because of
+        # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
+        # Also, the solid mask coordinates may be subsampled because they are a lot of poiints
+
+        # Solid mask coordinates
+        sampled = np.zeros(image.shape, dtype=bool)
+        sampled[::subsample_solid_points, ::subsample_solid_points] = True
+        idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
+        if pyrdown > 0:
+            idxs_rows = idxs_rows * (2*pyrdown)  # compensate the pyr down
+            idxs_cols = idxs_cols * (2*pyrdown)
+        idxs_solid = idxs_cols + original_width * idxs_rows  # we will store the linear indices
+        labels['idxs'] = idxs_solid.tolist()
+
+        # Edges mask coordinates
+        idxs_rows, idxs_cols = np.where(pattern_edges_mask)
+        if pyrdown > 0:
+            idxs_rows = idxs_rows * (2*pyrdown)  # compensate the pyr down
+            idxs_cols = idxs_cols * (2*pyrdown)
+        idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
+        labels['idxs_limit_points'] = idxs.tolist()
+
+    # -------------------------------------
+    # Step 7: Creating the output image
+    # -------------------------------------
+    now = rospy.Time.now()
+    # Create a nice color image as result
+    gui_image = np.zeros((height, width, 3), dtype=image.dtype)
+    max_value = 5
+    gui_image[:, :, 0] = image / max_value * 255
+    gui_image[:, :, 1] = image / max_value * 255
+    gui_image[:, :, 2] = image / max_value * 255
+
+    if labels['detected']:
+        # "greenify" the filled region
+        gui_image[seeds_mask, 0] -= 10
+        gui_image[seeds_mask, 1] += 10
+        gui_image[seeds_mask, 2] -= 10
+        gui_image = gui_image.astype(np.uint8)
+
+        # show subsampled points
+        for idx in idxs_solid:
+            y = int(idx / original_width)
+            x = int(idx - y * original_width)
+
+            if pyrdown > 0:
+                y = int(y / (2*pyrdown))
+                x = int(x / (2 * pyrdown))
+
+
+
+            gui_image[y, x, 0] = 0
+            gui_image[y, x, 1] = 200
+            gui_image[y, x, 2] = 255
+
+
+
+        # Draw the Canny boundary
+        mask_canny = pattern_edges_mask.astype(bool)
+        gui_image[mask_canny, 0] = 25
+        gui_image[mask_canny, 1] = 255
+        gui_image[mask_canny, 2] = 25
+
+    # Initial seed point as red dot
+    cv2.line(gui_image, (seed_x, seed_y), (seed_x, seed_y), (0, 0, 255), 3)
+
+    # initial seeds scatter points
+    if scatter_seed:
+        for col in range(0, initial_seeds.shape[1]):
+            x = initial_seeds[0, col]
+            y = initial_seeds[1, col]
+            cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
+
+    # next seed point as blue dot
+    cv2.line(gui_image, (cx, cy), (cx, cy), (255, 0, 0), 3)
+
+    # new seed point will be the centroid of the detected chessboard in that image ... Assuming that the movement is
+    # smooth and the processing fast enough for this to work
+
+    if debug:
+        cv2.imshow('ResultImage', gui_image)
+        cv2.waitKey(5)
+        print('Time taken preparing gui image ' + str((rospy.Time.now() - now).to_sec()))
+
+    return labels, gui_image, new_seed_point

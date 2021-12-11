@@ -5,13 +5,14 @@ import sys
 import argparse
 
 # 3rd-party
+import cv2
 import cv_bridge
 import rospy
 
 from sensor_msgs.msg import Image
 
 # local packages
-from atom_calibration.collect.label_messages import labelDepthMsg
+from atom_calibration.collect.label_messages import labelDepthMsg, labelDepthMsg2, imageShowUInt16OrFloat32OrBool
 from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
 from atom_calibration.initial_estimate.sensor import Sensor
@@ -21,22 +22,34 @@ from std_msgs.msg import String
 
 bridge = cv_bridge.CvBridge()
 
+# result_image = None
+# filled_image = None
+# received_image = False
+# cv2.namedWindow('result_image', cv2.WINDOW_NORMAL)
+# cv2.namedWindow('filled_image', cv2.WINDOW_NORMAL)
+
 
 def callbackMessageReceived(msg):
     rospy.loginfo('Received depth message')
+
+    stamp = rospy.Time.now()
     rospy.loginfo('Starting to label ...')
 
-    labels, result_image, new_seed_point = labelDepthMsg(msg, bridge, debug=True)
+    # seed_x, seed_y = 300, 200
+    seed_x, seed_y = 800, 220
+    labels, result_image, new_seed_point = labelDepthMsg2(msg, seed_x=seed_x, seed_y=seed_y, bridge=bridge,
+                                                          pyrdown=1, scatter_seed=True, debug=False, subsample_solid_points=6)
+    rospy.loginfo('Labelling ended in ' + str((rospy.Time.now()-stamp).to_sec()))
 
-    rospy.loginfo('Labelling ended.')
+    cv2.namedWindow('labeled image', cv2.WINDOW_NORMAL)
+    cv2.imshow('labeled image', result_image)
+    cv2.waitKey(20)
 
 
 def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
-
     rospy.Subscriber('depth_image_topic', Image, callbackMessageReceived)
 
-    # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
 
