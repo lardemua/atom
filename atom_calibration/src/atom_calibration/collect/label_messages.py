@@ -547,7 +547,7 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
     diff_left = (diff_left < propagation_threshold).astype(bool)
     diff_left = ndimage.binary_erosion(diff_left, structure=neighbors)
 
-    # generate seed points in a cross around the give seed point coordinates (to tackle when the coordinate in in a
+    # generate seed points in a circle around the give seed point coordinates (to tackle when the coordinate in in a
     # black hole in the pattern).
     if scatter_seed:
         n = 10
@@ -647,7 +647,7 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
         now = rospy.Time.now()
 
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
-    pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # these are the idxs
+    pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255 # convert to uint8
     pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
     # TODO we could do the convex hull here tp avoid concavities ...
 
@@ -681,7 +681,7 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
     else:
         # The coordinates in the labels must be given as linear indices of the image in the original size. Because of
         # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
-        # Also, the solid mask coordinates may be subsampled because they are a lot of poiints
+        # Also, the solid mask coordinates may be subsampled because they contain a lot of points.
 
         # Solid mask coordinates
         sampled = np.zeros(image.shape, dtype=bool)
