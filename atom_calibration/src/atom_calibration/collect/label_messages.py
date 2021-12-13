@@ -18,6 +18,10 @@ from cv2 import imwrite
 import numpy as np
 import time
 import cv2
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
+from sensor_msgs.msg import CameraInfo, Image
+from visualization_msgs.msg import MarkerArray
 
 
 def labelImageMsg():
@@ -772,3 +776,123 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         print('Time taken preparing gui image ' + str((rospy.Time.now() - now).to_sec()))
 
     return labels, gui_image, new_seed_point
+
+
+
+def calculateFrustrum(w, h, f_x, f_y, frame_id):
+    marker = Marker()
+
+    marker.type = marker.LINE_LIST
+    marker.action = marker.ADD
+    marker.header.frame_id = frame_id
+    # marker scale
+    marker.scale.x = 0.01
+
+    # marker color
+    marker.color.a = 1.0
+    marker.color.r = 1.0
+    marker.color.g = 0.0
+    marker.color.b = 0.0
+
+    # marker orientaiton
+    marker.pose.orientation.x = 0.0
+    marker.pose.orientation.y = 0.0
+    marker.pose.orientation.z = 0.0
+    marker.pose.orientation.w = 1.0
+
+    # marker position
+    marker.pose.position.x = 0.0
+    marker.pose.position.y = 0.0
+    marker.pose.position.z = 0.0
+
+    P1 = Point()
+    P2 = Point()
+    P3 = Point()
+    P4 = Point()
+    P5 = Point()
+    P6 = Point()
+    P7 = Point()
+    P8 = Point()
+
+    Z_near = 0.3
+    Z_far = 8
+    fov_x = 2 * math.atan2(w, (2 * f_x))
+    fov_y = 2 * math.atan2(h, (2 * f_y))
+
+    x_n = math.tan(fov_x / 2) * Z_near
+    y_n = math.tan(fov_y / 2) * Z_near
+
+    x_f = math.tan(fov_x / 2) * Z_far
+    y_f = math.tan(fov_y / 2) * Z_far
+
+    P1.x = -x_n
+    P1.y = y_n
+    P1.z = Z_near
+
+    P2.x = x_n
+    P2.y = y_n
+    P2.z = Z_near
+
+    P3.x = x_n
+    P3.y = -y_n
+    P3.z = Z_near
+
+    P4.x = -x_n
+    P4.y = -y_n
+    P4.z = Z_near
+
+    P5.x = -x_f
+    P5.y = y_f
+    P5.z = Z_far
+
+    P6.x = x_f
+    P6.y = y_f
+    P6.z = Z_far
+
+    P7.x = x_f
+    P7.y = -y_f
+    P7.z = Z_far
+
+    P8.x = -x_f
+    P8.y = -y_f
+    P8.z = Z_far
+
+    # marker line points
+    marker.points = []
+
+    marker.points.append(P1)
+    marker.points.append(P2)
+
+    marker.points.append(P2)
+    marker.points.append(P3)
+
+    marker.points.append(P3)
+    marker.points.append(P4)
+
+    marker.points.append(P4)
+    marker.points.append(P1)
+
+    marker.points.append(P1)
+    marker.points.append(P5)
+    #
+    marker.points.append(P2)
+    marker.points.append(P6)
+
+    marker.points.append(P3)
+    marker.points.append(P7)
+
+    marker.points.append(P4)
+    marker.points.append(P8)
+
+    marker.points.append(P5)
+    marker.points.append(P6)
+
+    marker.points.append(P6)
+    marker.points.append(P7)
+
+    marker.points.append(P7)
+    marker.points.append(P8)
+
+    marker.points.append(P8)
+    marker.points.append(P5)
+    return marker

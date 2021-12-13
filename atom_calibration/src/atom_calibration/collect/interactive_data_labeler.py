@@ -33,10 +33,21 @@ from sensor_msgs.msg import PointField
 from image_geometry import PinholeCameraModel
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 
+import numpy
+import rospy
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
+from sensor_msgs.msg import CameraInfo, Image
+from visualization_msgs.msg import MarkerArray
+import random
+
+import math
+import image_geometry
+
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
-from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg2
+from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg2, calculateFrustrum
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -132,6 +143,7 @@ class InteractiveDataLabeler:
         self.lock = threading.Lock()
         self.seed = {'x': 510, 'y': 280}
 
+
         # self.calib_pattern = calib_pattern
         if calib_pattern['pattern_type'] == 'chessboard':
             self.pattern = patterns.ChessboardPattern(calib_pattern['dimension'], calib_pattern['size'])
@@ -199,6 +211,11 @@ class InteractiveDataLabeler:
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_depth = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=1)  # publish
+            self.publisher_frustrum = rospy.Publisher('draw_frustrum', Marker, queue_size=1)
+            self.pinhole_camera_model = image_geometry.PinholeCameraModel()
+            self.pinhole_camera_model.fromCameraInfo(sensor_dict['camera_info_msg'])
+            # self.camera_info = rospy.wait_for_message(self.topic, CameraInfo)
+
 
 
         else:
@@ -427,13 +444,22 @@ class InteractiveDataLabeler:
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
         elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
-            # labels, result_image, new_seed_point = labelDepthMsg(self.msg, self.bridge)
+
+            # publishing frustrum
+            f_x = self.pinhole_camera_model.fx()
+            f_y = self.pinhole_camera_model.fy()
+            frame_id = self.msg.header.frame_id
+            size = self.pinhole_camera_model.fullResolution()
+            w = size[0]
+            h = size[1]
+            marker_frustrum = calculateFrustrum(w, h, f_x, f_y, frame_id)
+            self.publisher_frustrum.publish(marker_frustrum)
+
+            #actual labelling
             labels, result_image, new_seed_point = labelDepthMsg2(self.msg, seed=self.seed,
                                                                   bridge=self.bridge,
                                                                   pyrdown=1, scatter_seed=True, debug=False,
                                                                   subsample_solid_points=6)
-            # print(labels)
-            # rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
 
             self.seed['x'] = new_seed_point['x']
             self.seed['y'] = new_seed_point['y']
@@ -443,7 +469,6 @@ class InteractiveDataLabeler:
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_depth.publish(msg_out)
 
-            # print("Depth camera labeller under construction.")
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')
