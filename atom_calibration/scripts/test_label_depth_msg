@@ -39,7 +39,7 @@ def callbackMessageReceived(msg, seed):
 
     # seed_x, seed_y = 800, 220
     # TODO add one seed point as dict for consistency
-    labels, result_image, new_seed_point = labelDepthMsg2(msg, seed_x=seed['x'], seed_y=seed['y'], bridge=bridge,
+    labels, result_image, new_seed_point = labelDepthMsg2(msg, seed=seed, bridge=bridge,
                                                           pyrdown=1, scatter_seed=True, debug=False,
                                                           subsample_solid_points=6)
     rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
@@ -55,8 +55,10 @@ def callbackMessageReceived(msg, seed):
 def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
 
-    seed = {'x':300, 'y':200}
-    rospy.Subscriber('depth_image_topic', Image, functools.partial(callbackMessageReceived, seed=seed))
+    # seed = {'x':300, 'y':200}
+    seed = {'x':510, 'y':280}
+
+    rospy.Subscriber('depth_image_topic', Image, functools.partial(callbackMessageReceived, seed=seed), queue_size=1)
 
 
     rospy.spin()

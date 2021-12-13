@@ -472,14 +472,13 @@ def labelDepthMsg(msg, seed_x, seed_y, bridge=None, debug=False, pyrdown=0, scat
     return labels, canny, new_seed_point, seeds_mask
 
 
-def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, pyrdown=0,
+def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
                    scatter_seed=False, subsample_solid_points=1, debug=False):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
     :param msg: An image message with a depth image.
-    :param seed_x: x coordinate of seed point.
-    :param seed_y: y coordinate of seed point.
+    :param seed: dictionary containing coordinates of seed point
     :param propagation_threshold: maximum value of pixel difference under which propagation occurs.
     :param bridge: a cvbridge data structure to avoid having to constantly create one.
     :param pyrdown: The ammount of times the image must be downscaled using pyrdown.
@@ -497,6 +496,9 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
     if bridge is None:  # Convert to opencv image
         bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
     image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
+
+    seed_x = seed['x']
+    seed_y = seed['y']
 
     for idx in range(0, pyrdown):  # Downsample
         image = cv2.pyrDown(image)
@@ -614,7 +616,9 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
 
         # set the seed points for the next iteration
         seeds = np.hstack((propagated_up, propagated_down, propagated_left, propagated_right))
-        seeds = np.unique(seeds, axis=1)  # make sure the points are unique
+        # print(seeds.shape)
+        if seeds.shape[1] != 0:
+            seeds = np.unique(seeds, axis=1)  # make sure the points are unique
 
         # Mark the visited points
         to_visit_mask[seeds_up[1, :], seeds_up[0, :]] = False
@@ -647,7 +651,7 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
         now = rospy.Time.now()
 
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
-    pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255 # convert to uint8
+    pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
     pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
     # TODO we could do the convex hull here tp avoid concavities ...
 
@@ -671,7 +675,7 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
         cy = int(moments["m01"] / moments["m00"])
 
     if pyrdown > 0:
-        cx = cx * (2*pyrdown)  # compensate the pyr down
+        cx = cx * (2 * pyrdown)  # compensate the pyr down
         cy = cy * (2 * pyrdown)  # compensate the pyr down
 
     new_seed_point = {'x': cx, 'y': cy}  # pythonic
@@ -693,16 +697,16 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
         sampled[::subsample_solid_points, ::subsample_solid_points] = True
         idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
         if pyrdown > 0:
-            idxs_rows = idxs_rows * (2*pyrdown)  # compensate the pyr down
-            idxs_cols = idxs_cols * (2*pyrdown)
+            idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
+            idxs_cols = idxs_cols * (2 * pyrdown)
         idxs_solid = idxs_cols + original_width * idxs_rows  # we will store the linear indices
         labels['idxs'] = idxs_solid.tolist()
 
         # Edges mask coordinates
         idxs_rows, idxs_cols = np.where(pattern_edges_mask)
         if pyrdown > 0:
-            idxs_rows = idxs_rows * (2*pyrdown)  # compensate the pyr down
-            idxs_cols = idxs_cols * (2*pyrdown)
+            idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
+            idxs_cols = idxs_cols * (2 * pyrdown)
         idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
         labels['idxs_limit_points'] = idxs.tolist()
 
@@ -730,16 +734,12 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
             x = int(idx - y * original_width)
 
             if pyrdown > 0:
-                y = int(y / (2*pyrdown))
+                y = int(y / (2 * pyrdown))
                 x = int(x / (2 * pyrdown))
-
-
 
             gui_image[y, x, 0] = 0
             gui_image[y, x, 1] = 200
             gui_image[y, x, 2] = 255
-
-
 
         # Draw the Canny boundary
         mask_canny = pattern_edges_mask.astype(bool)

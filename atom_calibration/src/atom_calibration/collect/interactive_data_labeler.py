@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 
 # stdlib
 import os
@@ -8,7 +9,6 @@ import math
 import random
 import threading
 import time
-
 
 # from __builtin__ import enumerate
 from copy import deepcopy
@@ -36,7 +36,7 @@ from interactive_markers.interactive_marker_server import InteractiveMarkerServe
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
-from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg
+from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg2
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -130,6 +130,7 @@ class InteractiveDataLabeler:
         # self.server = server
         self.server = InteractiveMarkerServer(self.name + "/data_labeler")
         self.lock = threading.Lock()
+        self.seed = {'x': 510, 'y': 280}
 
         # self.calib_pattern = calib_pattern
         if calib_pattern['pattern_type'] == 'chessboard':
@@ -425,8 +426,17 @@ class InteractiveDataLabeler:
             # print(colorama.Fore.RED + 'Labelled point cloud ' + colorama.Style.RESET_ALL)
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
-        elif self.modality == 'depth':# depth camera - Daniela ---------------------------------
-            labels, result_image, new_seed_point = labelDepthMsg(self.msg, self.bridge)
+        elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
+            # labels, result_image, new_seed_point = labelDepthMsg(self.msg, self.bridge)
+            labels, result_image, new_seed_point = labelDepthMsg2(self.msg, seed=self.seed,
+                                                                  bridge=self.bridge,
+                                                                  pyrdown=1, scatter_seed=True, debug=False,
+                                                                  subsample_solid_points=6)
+            # print(labels)
+            # rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
+
+            self.seed['x'] = new_seed_point['x']
+            self.seed['y'] = new_seed_point['y']
 
             msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp
