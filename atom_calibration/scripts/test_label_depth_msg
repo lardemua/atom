@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # stdlib
+import functools
 import sys
 import argparse
 
@@ -22,6 +23,7 @@ from std_msgs.msg import String
 
 bridge = cv_bridge.CvBridge()
 
+
 # result_image = None
 # filled_image = None
 # received_image = False
@@ -29,17 +31,21 @@ bridge = cv_bridge.CvBridge()
 # cv2.namedWindow('filled_image', cv2.WINDOW_NORMAL)
 
 
-def callbackMessageReceived(msg):
+def callbackMessageReceived(msg, seed):
     rospy.loginfo('Received depth message')
 
     stamp = rospy.Time.now()
     rospy.loginfo('Starting to label ...')
 
-    # seed_x, seed_y = 300, 200
-    seed_x, seed_y = 800, 220
-    labels, result_image, new_seed_point = labelDepthMsg2(msg, seed_x=seed_x, seed_y=seed_y, bridge=bridge,
-                                                          pyrdown=1, scatter_seed=True, debug=False, subsample_solid_points=6)
-    rospy.loginfo('Labelling ended in ' + str((rospy.Time.now()-stamp).to_sec()))
+    # seed_x, seed_y = 800, 220
+    # TODO add one seed point as dict for consistency
+    labels, result_image, new_seed_point = labelDepthMsg2(msg, seed_x=seed['x'], seed_y=seed['y'], bridge=bridge,
+                                                          pyrdown=1, scatter_seed=True, debug=False,
+                                                          subsample_solid_points=6)
+    rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
+
+    seed['x'] = new_seed_point['x']
+    seed['y'] = new_seed_point['y']
 
     cv2.namedWindow('labeled image', cv2.WINDOW_NORMAL)
     cv2.imshow('labeled image', result_image)
@@ -48,7 +54,10 @@ def callbackMessageReceived(msg):
 
 def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
-    rospy.Subscriber('depth_image_topic', Image, callbackMessageReceived)
+
+    seed = {'x':300, 'y':200}
+    rospy.Subscriber('depth_image_topic', Image, functools.partial(callbackMessageReceived, seed=seed))
+
 
     rospy.spin()
 

@@ -669,6 +669,11 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
     else:
         cx = int(moments["m10"] / moments["m00"])
         cy = int(moments["m01"] / moments["m00"])
+
+    if pyrdown > 0:
+        cx = cx * (2*pyrdown)  # compensate the pyr down
+        cy = cy * (2 * pyrdown)  # compensate the pyr down
+
     new_seed_point = {'x': cx, 'y': cy}  # pythonic
 
     # -------------------------------------
@@ -753,6 +758,9 @@ def labelDepthMsg2(msg, seed_x, seed_y, propagation_threshold=0.2, bridge=None, 
             cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
 
     # next seed point as blue dot
+    if pyrdown > 0:
+        cx = int(cx / (2 * pyrdown))
+        cy = int(cy / (2 * pyrdown))
     cv2.line(gui_image, (cx, cy), (cx, cy), (255, 0, 0), 3)
 
     # new seed point will be the centroid of the detected chessboard in that image ... Assuming that the movement is
