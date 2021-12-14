@@ -25,7 +25,7 @@ from atom_core.naming import generateKey, generateName
 from atom_core.utilities import waitForKeyPress, waitForKeyPress2
 from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
 import atom_calibration.calibration.patterns_config as patterns
-from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
+from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
 from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, \
     getPointCloudMessageFromDictionary, filterCollectionsFromDataset, filterSensorsFromDataset, \
@@ -111,8 +111,6 @@ def main():
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
 
-
-
     # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
     # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
     # related to the pattern pose (we use solve PNP for a camera).
@@ -122,7 +120,6 @@ def main():
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
-
 
     # ---------------------------------------
     # --- Store initial values for transformations to be optimized
@@ -143,41 +140,11 @@ def main():
     print('Selected collection key is ' + str(selected_collection_key))
 
     # ---------------------------------------
-    # --- Add noise to the initial guess atomic transformations to be calibrated.
-    # ---------------------------------------
-    addNoiseToInitialGuess(dataset, args, selected_collection_key)
-
-    # ---------------------------------------
-    # --- DETECT EDGES IN THE LASER SCANS
-    # ---------------------------------------
-    # TODO this should go to the collect and label Analtino
-    for sensor_key, sensor in dataset['sensors'].items():
-        # if sensor['msg_type'] == 'LaserScan':  # only for lasers
-        if sensor['modality'] == 'lidar2d':  # only for lasers
-            for collection_key, collection in dataset['collections'].items():
-                idxs = collection['labels'][sensor_key]['idxs']
-                edges = []  # a list of edges
-                for i in range(0, len(idxs) - 1):
-                    if (idxs[i + 1] - idxs[i]) != 1:
-                        edges.append(i)
-                        edges.append(i + 1)
-
-                # Remove first (right most) and last (left most) edges, since these are often false edges.
-                if len(edges) > 0:
-                    edges.pop(0)  # remove the first element.
-                if len(edges) > 0:
-                    edges.pop()  # if the index is not given, then the last element is popped out and removed.
-                collection['labels'][sensor_key]['edge_idxs'] = edges
-
-
-    # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
     opt = OptimizationUtils.Optimizer()
     opt.addDataModel('args', args)
     opt.addDataModel('dataset', dataset)
-
-
 
     # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
@@ -187,153 +154,16 @@ def main():
     graphics = setupVisualization(dataset, args, selected_collection_key)
     opt.addDataModel('graphics', graphics)
 
-    # opt.setVisualizationFunction(visualizationFunction, args['ros_visualization'], niterations=1, figures=[])
-
-    rate = rospy.Rate(10)  # 10hz
+    count = 0
+    rate = rospy.Rate(1)  # 10hz
     while not rospy.is_shutdown():
-        visualizationFunction(opt.data_models)
-        print('new iteration')
+        visualizationFunction(opt.data_models, selected_collection_key)
+        print('count = ' + str(count))
+        if count > 10:
+            selected_collection_key = '2'
+            print('changed selected_collection_key to' + str(selected_collection_key))
+        count += 1
         rate.sleep()
-
-    print('ja cheguei')
-    exit(0)
-
-    # ---------------------------------------
-    # --- SETUP OPTIMIZER: Add sensor parameters
-    # ---------------------------------------
-    # Each sensor will have a position (tx,ty,tz) and a rotation (r1,r2,r3)
-
-    # Add parameters related to the sensors
-    translation_delta = 0.2
-    # TODO temporary placement of top_left_camera
-    # dataset['calibration_config']['anchored_sensor'] = 'left_camera'
-    print('Anchored sensor is ' + Fore.GREEN + dataset['calibration_config'][
-        'anchored_sensor'] + Style.RESET_ALL)
-
-    anchored_sensor = dataset['calibration_config']['anchored_sensor']
-    if anchored_sensor in dataset['sensors']:
-        anchored_parent = dataset['sensors'][anchored_sensor]['calibration_parent']
-        anchored_child = dataset['sensors'][anchored_sensor]['calibration_child']
-        anchored_transform_key = atom_core.naming.generateKey(anchored_parent, anchored_child)
-    else:
-        anchored_transform_key = ''  # not transform is anchored
-    # TODO If we want and anchored sensor we should search (and fix) all the transforms in its chain that do are
-    #  being optimized
-
-    print('Creating parameters ...')
-    # Steaming from the config json, we define a transform to be optimized for each sensor. It could happen that two
-    # or more sensors define the same transform to be optimized (#120). To cope with this we first create a list of
-    # transformations to be optimized and then compute the unique set of that list.
-    transforms_set = set()
-    for sensor_key, sensor in dataset['sensors'].items():
-        transform_key = atom_core.naming.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
-        transforms_set.add(transform_key)
-
-    for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
-        initial_transform = getterTransform(dataset, transform_key=transform_key,
-                                            collection_name=selected_collection_key)
-
-        if transform_key == anchored_transform_key:
-            bound_max = [x + sys.float_info.epsilon for x in initial_transform]
-            bound_min = [x - sys.float_info.epsilon for x in initial_transform]
-        else:
-            bound_max = [+np.inf for x in initial_transform]
-            bound_min = [-np.inf for x in initial_transform]
-
-        opt.pushParamVector(group_name=transform_key, data_key='dataset',
-                            getter=partial(getterTransform, transform_key=transform_key,
-                                           collection_name=selected_collection_key),
-                            setter=partial(setterTransform, transform_key=transform_key,
-                                           collection_name=None),
-                            suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'], bound_max=bound_max, bound_min=bound_min)
-
-    # Intrinsics
-    # TODO bound_min and max for intrinsics
-    if args['optimize_intrinsics']:
-        for sensor_key, sensor in dataset['sensors'].items():
-            # if sensor['msg_type'] == 'Image':  # if sensor is a camera add intrinsics
-            if sensor['modality'] == 'rgb':  # if sensor is a camera add intrinsics
-                opt.pushParamVector(group_name=str(sensor_key) + '_intrinsics', data_key='dataset',
-                                    getter=partial(getterCameraIntrinsics, sensor_key=sensor_key),
-                                    setter=partial(setterCameraIntrinsics, sensor_key=sensor_key),
-                                    suffix=['_fx', '_fy', '_cx', '_cy', '_k1', '_k2', '_t1', '_t2', '_k3'])
-
-    # ---------------------------------------
-    # --- SETUP OPTIMIZER: Add pattern(s) parameters
-    # ---------------------------------------
-    # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
-
-    if not dataset['calibration_config']['calibration_pattern']['fixed']:  # Pattern not fixed -------------------------
-        # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
-        # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
-        # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
-        # publishing ROS, but we must add this to the parameter name.
-        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-        child = dataset['calibration_config']['calibration_pattern']['link']
-        transform_key = atom_core.naming.generateKey(parent, child)
-
-        for collection_key, collection in dataset['collections'].items():  # iterate all collections
-
-            # Set transform using the initial estimate of the transformations.
-            initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
-            if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
-                    not child == initial_estimate['child']:
-                raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
-
-
-
-            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
-                                                       'trans': initial_estimate['trans'],
-                                                       'quat': initial_estimate['quat']}
-
-            # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
-            #   a) The Getter will pick up transform from the collection collection_key
-            #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the
-            #   corresponding collection
-            opt.pushParamVector(group_name='c' + collection_key + '_' + transform_key, data_key='dataset',
-                                getter=partial(getterTransform, transform_key=transform_key,
-                                               collection_name=collection_key),
-                                setter=partial(setterTransform, transform_key=transform_key,
-                                               collection_name=collection_key),
-                                suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
-
-    else:  # fixed pattern ---------------------------------------------------------------------------------------------
-        # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
-        # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
-        # 'link']
-        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-        child = dataset['calibration_config']['calibration_pattern']['link']
-        transform_key = atom_core.naming.generateKey(parent, child)
-
-        # Set transform using the initial estimate of the transformations.
-        initial_estimate = dataset['patterns']['transforms_initial'][selected_collection_key]
-        if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
-                not child == initial_estimate['child']:
-            raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
-
-        # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
-        for collection_key, collection in dataset['collections'].items():
-            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
-                                                       'trans': initial_estimate['trans'],
-                                                       'quat': initial_estimate['quat']}
-
-        # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
-        #   a) The Getter will pick up the collection from one selected collection (it does not really matter which,
-        #       since they are replicas);
-        #   b) The Setter will received a transform value and copy that to all collection replicas, to ensure they
-        #       all have the same value. This is done by setting  "collection_name=None".
-        opt.pushParamVector(group_name=transform_key, data_key='dataset',
-                            getter=partial(getterTransform, transform_key=transform_key,
-                                           collection_name=selected_collection_key),
-                            setter=partial(setterTransform, transform_key=transform_key,
-                                           collection_name=None),
-                            suffix=['_x', '_y', '_z', '_r1', '_r2', '_r3'])
-
-    # opt.printParameters()
-
-
-
-
 
 if __name__ == "__main__":
     main()
