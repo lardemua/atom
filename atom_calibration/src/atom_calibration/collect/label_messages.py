@@ -778,7 +778,6 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     return labels, gui_image, new_seed_point
 
 
-
 def calculateFrustrum(w, h, f_x, f_y, frame_id):
     marker = Marker()
 
@@ -895,4 +894,18 @@ def calculateFrustrum(w, h, f_x, f_y, frame_id):
 
     marker.points.append(P8)
     marker.points.append(P5)
+
     return marker
+
+
+def pixelToWorld(fx, fy, cx, cy, X, Y, Z):
+    x_pix = (fx * X + cx * Z) / Z
+    y_pix = (fy * Y + cy * Z) / Z
+    return x_pix, y_pix
+
+
+def worldToPix(fx, fy, cx, cy, x_pix, y_pix, Z):
+    X = (fx * Z - cx * Z) / fx
+    Y = (fy * Z - cy * Z) / fy
+
+    return X, Y, Z

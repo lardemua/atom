@@ -47,7 +47,8 @@ import image_geometry
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
-from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg2, calculateFrustrum
+from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg2, calculateFrustrum, \
+    pixelToWorld, worldToPix
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -143,7 +144,6 @@ class InteractiveDataLabeler:
         self.lock = threading.Lock()
         self.seed = {'x': 510, 'y': 280}
 
-
         # self.calib_pattern = calib_pattern
         if calib_pattern['pattern_type'] == 'chessboard':
             self.pattern = patterns.ChessboardPattern(calib_pattern['dimension'], calib_pattern['size'])
@@ -207,13 +207,15 @@ class InteractiveDataLabeler:
             print('Created interactive marker for point clouds.')
 
         elif self.modality == 'depth' and self.label_data:  # Velodyne data (Andre Aguiar)
-            print('Depth labeller under construction')
+            # print('Depth labeller under construction')
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_depth = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=1)  # publish
-            self.publisher_frustrum = rospy.Publisher('draw_frustrum', Marker, queue_size=1)
+            self.publisher_frustrum = rospy.Publisher('frustrum_' + self.topic, Marker, queue_size=1)
             self.pinhole_camera_model = image_geometry.PinholeCameraModel()
             self.pinhole_camera_model.fromCameraInfo(sensor_dict['camera_info_msg'])
+            self.createInteractiveMarkerRGBD(x=0.804, y=0.298,
+                                             z=0.409)
             # self.camera_info = rospy.wait_for_message(self.topic, CameraInfo)
 
 
@@ -454,8 +456,24 @@ class InteractiveDataLabeler:
             h = size[1]
             marker_frustrum = calculateFrustrum(w, h, f_x, f_y, frame_id)
             self.publisher_frustrum.publish(marker_frustrum)
+            # self.server.insert(marker_frustrum, self.markerFeedback)
+            # self.menu_handler.apply(self.server, self.marker_frustrum.name)
+            # self.menu_handler.reApply(self.server)
+            # self.server.applyChanges()
 
-            #actual labelling
+            # get seed point from interactive marker
+            c_x = self.pinhole_camera_model.cx()
+            c_y = self.pinhole_camera_model.cy()
+            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z  # interactive marker pose
+            x_pix, y_pix = pixelToWorld(f_x, f_y, c_x, c_y, x_marker, y_marker, z_marker)
+            # print(self.pinhole_camera_model.fullResolution())
+
+            if x_pix > 0 and x_pix < self.pinhole_camera_model.fullResolution()[0] and y_pix > 0 and y_pix < \
+                    self.pinhole_camera_model.fullResolution()[1]:
+                self.seed['x'] = x_pix
+                self.seed['y'] = y_pix
+
+            # actual labelling
             labels, result_image, new_seed_point = labelDepthMsg2(self.msg, seed=self.seed,
                                                                   bridge=self.bridge,
                                                                   pyrdown=1, scatter_seed=True, debug=False,
@@ -469,9 +487,17 @@ class InteractiveDataLabeler:
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_depth.publish(msg_out)
 
+            # update interactive marker
+            X, Y, Z = worldToPix(f_x, f_y, c_x, c_y, self.seed['x'], self.seed['y'], z_marker)
+
+            self.marker.pose.position.x = X
+            self.marker.pose.position.y = Y
+            self.marker.pose.position.z = Z
+            self.menu_handler.reApply(self.server)
+            self.server.applyChanges()
 
     def markerFeedback(self, feedback):
-        # print(' sensor ' + self.name + ' received feedback')
+        print(' sensor ' + self.name + ' received feedback')
 
         # pass
         # self.optT.setTranslationFromPosePosition(feedback.pose.position)
@@ -614,3 +640,129 @@ class InteractiveDataLabeler:
 
         self.server.insert(self.marker, self.markerFeedback)
         self.menu_handler.apply(self.server, self.marker.name)
+
+    # def createMarkerFrustum(self):
+    #     marker = Marker()
+    #
+    #     marker.type = marker.LINE_LIST
+    #     marker.action = marker.ADD
+    #     marker.header.frame_id = frame_id
+    #     # marker scale
+    #     marker.scale.x = 0.01
+    #
+    #     # marker color
+    #     marker.color.a = 1.0
+    #     marker.color.r = 1.0
+    #     marker.color.g = 0.0
+    #     marker.color.b = 0.0
+    #
+    #     # marker orientaiton
+    #     marker.pose.orientation.x = 0.0
+    #     marker.pose.orientation.y = 0.0
+    #     marker.pose.orientation.z = 0.0
+    #     marker.pose.orientation.w = 1.0
+    #
+    #     # marker position
+    #     marker.pose.position.x = 0.0
+    #     marker.pose.position.y = 0.0
+    #     marker.pose.position.z = 0.0
+    #
+    #     self.server.insert(self.marker_frustrum, self.markerFeedback)
+    #     self.menu_handler.apply(self.server, self.marker_frustrum.name)
+    #
+    #
+    # def calculateFrustrum(self, marker, w, h, f_x, f_y, frame_id):
+    #     P1 = Point()
+    #     P2 = Point()
+    #     P3 = Point()
+    #     P4 = Point()
+    #     P5 = Point()
+    #     P6 = Point()
+    #     P7 = Point()
+    #     P8 = Point()
+    #
+    #     Z_near = 0.3
+    #     Z_far = 8
+    #     fov_x = 2 * math.atan2(w, (2 * f_x))
+    #     fov_y = 2 * math.atan2(h, (2 * f_y))
+    #
+    #     x_n = math.tan(fov_x / 2) * Z_near
+    #     y_n = math.tan(fov_y / 2) * Z_near
+    #
+    #     x_f = math.tan(fov_x / 2) * Z_far
+    #     y_f = math.tan(fov_y / 2) * Z_far
+    #
+    #     P1.x = -x_n
+    #     P1.y = y_n
+    #     P1.z = Z_near
+    #
+    #     P2.x = x_n
+    #     P2.y = y_n
+    #     P2.z = Z_near
+    #
+    #     P3.x = x_n
+    #     P3.y = -y_n
+    #     P3.z = Z_near
+    #
+    #     P4.x = -x_n
+    #     P4.y = -y_n
+    #     P4.z = Z_near
+    #
+    #     P5.x = -x_f
+    #     P5.y = y_f
+    #     P5.z = Z_far
+    #
+    #     P6.x = x_f
+    #     P6.y = y_f
+    #     P6.z = Z_far
+    #
+    #     P7.x = x_f
+    #     P7.y = -y_f
+    #     P7.z = Z_far
+    #
+    #     P8.x = -x_f
+    #     P8.y = -y_f
+    #     P8.z = Z_far
+    #
+    #     # marker line points
+    #     marker.points = []
+    #
+    #     marker.points.append(P1)
+    #     marker.points.append(P2)
+    #
+    #     marker.points.append(P2)
+    #     marker.points.append(P3)
+    #
+    #     marker.points.append(P3)
+    #     marker.points.append(P4)
+    #
+    #     marker.points.append(P4)
+    #     marker.points.append(P1)
+    #
+    #     marker.points.append(P1)
+    #     marker.points.append(P5)
+    #     #
+    #     marker.points.append(P2)
+    #     marker.points.append(P6)
+    #
+    #     marker.points.append(P3)
+    #     marker.points.append(P7)
+    #
+    #     marker.points.append(P4)
+    #     marker.points.append(P8)
+    #
+    #     marker.points.append(P5)
+    #     marker.points.append(P6)
+    #
+    #     marker.points.append(P6)
+    #     marker.points.append(P7)
+    #
+    #     marker.points.append(P7)
+    #     marker.points.append(P8)
+    #
+    #     marker.points.append(P8)
+    #     marker.points.append(P5)
+    #
+    #
+    #
+    #     # return marker
