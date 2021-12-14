@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""
+Casts an optimization problem using an ATOM dataset file as input. Then calibrates by running the optimization.
+"""
+import copy
+import json
+import os, math, signal, sys
+import argparse, random
+from functools import partial
+import numpy as np
+import ros_numpy
+
+# 3rd-party
+import rospy, tf
+from colorama import Fore, Style, Back
+from urdf_parser_py.urdf import URDF
+
+# own packages
+import OptimizationUtils.OptimizationUtils as OptimizationUtils
+import atom_core.naming
+from atom_calibration.calibration.getters_and_setters import getterTransform, setterTransform, getterCameraIntrinsics, \
+    setterCameraIntrinsics
+
+from atom_core.naming import generateKey, generateName
+from atom_core.utilities import waitForKeyPress, waitForKeyPress2
+from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
+import atom_calibration.calibration.patterns_config as patterns
+from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
+from atom_core.config_io import readXacroFile, uriReader
+from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, \
+    getPointCloudMessageFromDictionary, filterCollectionsFromDataset, filterSensorsFromDataset, \
+    addNoiseToInitialGuess
+
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    print('Stopping optimization (Ctrl+C pressed)')
+    sys.exit(0)
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+def main():
+    # ---------------------------------------
+    # --- Parse command line argument
+    # ---------------------------------------
+    signal.signal(signal.SIGINT, signal_handler)
+    # print('Press Ctrl+C')
+    # signal.pause()
+
+    ap = argparse.ArgumentParser()
+    ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
+    ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
+    ap.add_argument("-v", "--verbose", help="Be verbose", action='store_true', default=False)
+    ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action='store_true')
+    ap.add_argument("-si", "--show_images", help="shows images for each camera", action='store_true', default=False)
+    ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera instrinsics to the optimization",
+                    action='store_true', default=False)
+    ap.add_argument("-pof", "--profile_objective_function",
+                    help="Runs and prints a profile of the objective function, then exits.",
+                    action='store_true', default=False)
+    ap.add_argument("-sr", "--sample_residuals", help="Samples residuals", type=float, default=1)
+    ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
+    ap.add_argument("-ajf", "--all_joints_fixed",
+                    help="Assume all joints are fixed and because of that draw a single robot mesh. Overrides "
+                         "automatic detection of static robot.",
+                    action='store_true', default=False)
+    ap.add_argument("-uic", "--use_incomplete_collections",
+                    help="Remove any collection which does not have a detection for all sensors.",
+                    action='store_true', default=False)
+    ap.add_argument("-rpd", "--remove_partial_detections",
+                    help="Remove detected labels which are only partial. Used or the Charuco.",
+                    action='store_true', default=False)
+    ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=('translation', 'rotation'),
+                    help="Percentage of noise to add to the initial guess atomic transformations set before.",
+                    type=float, default=[0.0, 0.0]),
+    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help='A string to be evaluated into a lambda function that receives a sensor name as input and '
+                         'returns True or False to indicate if the sensor should be loaded (and used in the '
+                         'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
+                         'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
+                         'sensors left_laser and frontal_camera')
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help='A string to be evaluated into a lambda function that receives a collection name as input and '
+                         'returns True or False to indicate if the collection should be loaded (and used in the '
+                         'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
+                         'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
+    ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
+                                                          "after calling the optimization. Good for debugging.",
+                    action='store_true', default=False)
+    ap.add_argument("-ipg", "--initial_pose_ghost", help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
+                    action='store_true', default=False)
+    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False, default=None)
+    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False, default=None)
+
+    # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
+    arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
+    args = vars(ap.parse_args(args=arglist))
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read data from file
+    # ---------------------------------------
+    # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
+    dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
+
+    # ---------------------------------------
+    # --- Filter some collections and / or sensors from the dataset
+    # ---------------------------------------
+    dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
+
+    # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
+    # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
+    # related to the pattern pose (we use solve PNP for a camera).
+    dataset['patterns'] = patterns.createPatternLabels(args, dataset)  # TODO: Solve this strange dependency.
+
+    dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
+
+    print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
+        len(dataset['collections'].keys())) + ' collections.')
+
+    # ---------------------------------------
+    # --- Store initial values for transformations to be optimized
+    # ---------------------------------------
+    for collection_key, collection in dataset['collections'].items():
+        initial_transform_key = generateName('transforms', suffix='ini')
+        collection[initial_transform_key] = copy.deepcopy(collection['transforms'])
+        for transform_key, transform in collection[initial_transform_key].items():
+            transform['parent'] = generateName(transform['parent'], suffix='ini')
+            transform['child'] = generateName(transform['child'], suffix='ini')
+
+    # ---------------------------------------
+    # --- Define selected collection key.
+    # ---------------------------------------
+    # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
+    # transformation.
+    selected_collection_key = list(dataset['collections'].keys())[0]
+    print('Selected collection key is ' + str(selected_collection_key))
+
+    # ---------------------------------------
+    # --- SETUP OPTIMIZER: Create data models
+    # ---------------------------------------
+    opt = OptimizationUtils.Optimizer()
+    opt.addDataModel('args', args)
+    opt.addDataModel('dataset', dataset)
+
+    # ---------------------------------------
+    # --- DEFINE THE VISUALIZATION FUNCTION
+    # ---------------------------------------
+
+    print("Configuring visualization ... ")
+    graphics = setupVisualization(dataset, args, selected_collection_key)
+    opt.addDataModel('graphics', graphics)
+
+    count = 0
+    rate = rospy.Rate(1)  # 10hz
+    while not rospy.is_shutdown():
+        visualizationFunction(opt.data_models, selected_collection_key)
+        print('count = ' + str(count))
+        if count > 10:
+            selected_collection_key = '2'
+            print('changed selected_collection_key to' + str(selected_collection_key))
+        count += 1
+        rate.sleep()
+
+if __name__ == "__main__":
+    main()
