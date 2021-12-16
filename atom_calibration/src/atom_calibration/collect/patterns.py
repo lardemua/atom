@@ -131,7 +131,7 @@ class CharucoPattern(object):
 
     def drawKeypoints(self, image, result):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
-            print("none")
+            # print("none")
             return
         points = result['keypoints'].astype(np.int32)
         for point in points:

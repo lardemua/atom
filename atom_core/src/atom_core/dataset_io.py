@@ -23,6 +23,9 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1
+import imageio
+
 
 
 def loadResultsJSON(json_file, collection_selection_function):
@@ -53,7 +56,9 @@ def loadResultsJSON(json_file, collection_selection_function):
 
         for sensor_key, sensor in dataset['sensors'].items():
 
-            if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
+            if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d' or
+                    sensor[
+                        'modality'] == 'depth'):
                 continue  # only process images or point clouds
 
             # Check if we really need to load the file.
@@ -69,12 +74,14 @@ def loadResultsJSON(json_file, collection_selection_function):
             else:
                 raise ValueError('Dataset does not contain data nor data_file folders.')
 
-            if load_file and sensor['msg_type'] == 'Image':  # Load image.
+            if load_file and (sensor['modality'] == 'rgb' or sensor[
+                'modality'] == 'depth'):  # Load image.
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                 cv_image = cv2.imread(filename)
                 collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
 
-            elif load_file and sensor['msg_type'] == 'PointCloud2':  # Load point cloud.
+            elif load_file and (
+                    sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                 frame_id = str(collection['data'][sensor_key]['header']['frame_id'])
 
@@ -119,7 +126,8 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
 
 
 def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):
-    if not (sensor['msg_type'] == 'Image' or sensor['msg_type'] == 'PointCloud2'):
+    if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d' or sensor[
+        'modality'] == 'depth'):
         return
 
     # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
@@ -135,10 +143,12 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         create_data_file = True
 
     if create_data_file:
-        print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key) + ' msg type ' + sensor[
-            'msg_type'])
-    #TODO add if for depth modality
-    if create_data_file and sensor['msg_type'] == 'Image':  # save image.
+        print(
+            'Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key) + ' msg type ' +
+            sensor[
+                'msg_type'])
+    # TODO add if for depth modality
+    if create_data_file and sensor['modality'] == 'rgb':  # save image.
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
@@ -153,7 +163,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
-    elif create_data_file and sensor['msg_type'] == 'PointCloud2':  # save point cloud
+    elif create_data_file and sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d':  # save point cloud
         # Save file if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
@@ -164,6 +174,29 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
 
         # Add data_file field, and remove data field
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
+        dataset['collections'][collection_key][data_type][sensor_key][
+            'data_file'] = filename_relative  # add data_file field
+        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
+            del dataset['collections'][collection_key][data_type][sensor_key]['data']
+
+    elif create_data_file and sensor['modality'] == 'depth':
+        print('i dont know what im doing')
+        # Save image to disk if it does not exist
+        filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.png'
+        # filename_np=output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.npy'
+        if not os.path.isfile(filename):  # Write pointcloud to pcd file
+            cv_image = getCvImageFromDictionaryDepth(dataset['collections'][collection_key][data_type][sensor_key])
+            print("image from getimage")
+            print(cv_image.dtype)
+            cv_image = convertDepthImage32FC1to16UC1(cv_image)
+            # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
+            # cv2.imwrite(filename, cv_image)
+            imageio.imwrite(filename, cv_image)
+            # np.save(filename_np, cv_image)
+            print('Saved file ' + filename + '.')
+
+        # Add data_file field, and remove data field
+        filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
         if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
@@ -198,7 +231,30 @@ def getCvImageFromDictionary(dictionary_in, safe=False):
 
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
-    return bridge.imgmsg_to_cv2(msg, "bgr8")
+    return bridge.imgmsg_to_cv2(msg)
+
+
+def getCvImageFromDictionaryDepth(dictionary_in, safe=False):
+    """
+    Converts a dictionary (read from a json file) into an opencv image.
+    To do so it goes from dictionary -> ros_message -> cv_image
+    :param dictionary_in: the dictionary read from the json file.
+    :return: an opencv image.
+    """
+    if safe:
+        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
+    else:
+        d = dictionary_in
+
+    if 'data_file' in d:  # Delete data field from dictionary
+        del d['data_file']  # will disrupt the dictionary to ros message
+
+    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    bridge = CvBridge()
+    image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    print("image inside get image: ")
+    print(image.dtype)
+    return image
 
 
 def getPointCloudMessageFromDictionary(dictionary_in):
@@ -461,9 +517,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
 
         # Copy randomized transform to all collections
         for collection_key, collection in dataset['collections'].items():
-            dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
-            dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
-
-
-
-
+            dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = \
+                dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
+            dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
+                dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']

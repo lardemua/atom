@@ -111,7 +111,7 @@ class DataCollectorAndLabeler:
                 print('... received!')
                 from rospy_message_converter import message_converter
                 sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
-                sensor_dict['camera_info_msg'] = camera_info_msg
+                # sensor_dict['camera_info_msg'] = camera_info_msg
                 # print(camera_info_msg)
 
             # Get the kinematic chain form world_link to this sensor's parent link
