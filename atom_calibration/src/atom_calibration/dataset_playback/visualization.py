@@ -529,7 +529,6 @@ def visualizationFunction(models, selected_collection_key):
                                                              rotation=Quaternion(x=0, y=0, z=0, w=1)))
             transfoms.append(transform)
 
-        # Publish all current transforms
         for transform_key, transform in collection['transforms'].items():
             parent = generateName(transform['parent'], prefix='c' + collection_key)
             child = generateName(transform['child'], prefix='c' + collection_key)

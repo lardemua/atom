@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Casts an optimization problem using an ATOM dataset file as input. Then calibrates by running the optimization.
+casts an optimization problem using an atom dataset file as input. Then calibrates by running the optimization.
 """
 import copy
 import json
@@ -91,10 +91,13 @@ def main():
     ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
                                                           "after calling the optimization. Good for debugging.",
                     action='store_true', default=False)
-    ap.add_argument("-ipg", "--initial_pose_ghost", help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
+    ap.add_argument("-ipg", "--initial_pose_ghost",
+                    help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
                     action='store_true', default=False)
-    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False, default=None)
-    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False, default=None)
+    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False,
+                    default=None)
+    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False,
+                    default=None)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -147,6 +150,52 @@ def main():
     opt.addDataModel('dataset', dataset)
 
     # ---------------------------------------
+    # --- SETUP OPTIMIZER: Add pattern(s) parameters
+    # ---------------------------------------
+    # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
+
+    if not dataset['calibration_config']['calibration_pattern']['fixed']:  # Pattern not fixed -------------------------
+        # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
+        # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
+        # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
+        # publishing ROS, but we must add this to the parameter name.
+        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+        child = dataset['calibration_config']['calibration_pattern']['link']
+        transform_key = atom_core.naming.generateKey(parent, child)
+
+        for collection_key, collection in dataset['collections'].items():  # iterate all collections
+
+            # Set transform using the initial estimate of the transformations.
+            initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
+            if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
+                    not child == initial_estimate['child']:
+                raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
+
+            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
+                                                       'trans': initial_estimate['trans'],
+                                                       'quat': initial_estimate['quat']}
+
+    else:  # fixed pattern ---------------------------------------------------------------------------------------------
+        # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
+        # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
+        # 'link']
+        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+        child = dataset['calibration_config']['calibration_pattern']['link']
+        transform_key = atom_core.naming.generateKey(parent, child)
+
+        # Set transform using the initial estimate of the transformations.
+        initial_estimate = dataset['patterns']['transforms_initial'][selected_collection_key]
+        if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
+                not child == initial_estimate['child']:
+            raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
+
+        # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
+        for collection_key, collection in dataset['collections'].items():
+            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
+                                                       'trans': initial_estimate['trans'],
+                                                       'quat': initial_estimate['quat']}
+
+    # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
     # ---------------------------------------
 
@@ -164,6 +213,7 @@ def main():
             print('changed selected_collection_key to' + str(selected_collection_key))
         count += 1
         rate.sleep()
+
 
 if __name__ == "__main__":
     main()
