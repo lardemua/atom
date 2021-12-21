@@ -149,8 +149,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     xml_robot = readXacroFile(description_file)
 
     # Initialize ROS stuff
-    rospy.init_node("calibrate")
-    # rospy.init_node("dataset_playback") # TODO change name and also topics in RVIZ
+    rospy.init_node("dataset_playback")
     # graphics['ros']['tf_broadcaster'] = tf.TransformBroadcaster()
     graphics['ros']['tf_broadcaster'] = tf2_ros.TransformBroadcaster()
 
@@ -212,7 +211,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 topic_name = '~c' + str(collection_key) + topic + '/labeled'
                 graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
                     topic_name, msg_type, queue_size=0, latch=True)}
-
+                print('Created image publisher')
                 msg_type = sensor_msgs.msg.CameraInfo
                 topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
                 graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
@@ -529,7 +528,6 @@ def visualizationFunction(models, selected_collection_key):
                                                              rotation=Quaternion(x=0, y=0, z=0, w=1)))
             transfoms.append(transform)
 
-        # Publish all current transforms
         for transform_key, transform in collection['transforms'].items():
             parent = generateName(transform['parent'], prefix='c' + collection_key)
             child = generateName(transform['child'], prefix='c' + collection_key)
