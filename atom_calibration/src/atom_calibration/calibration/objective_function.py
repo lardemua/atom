@@ -11,11 +11,14 @@ from scipy.spatial import distance
 # 3rd-party
 import OptimizationUtils.utilities as opt_utilities
 from geometry_msgs.msg import Point
+from image_geometry import PinholeCameraModel
+from rospy_message_converter import message_converter
 
 # Own modules
-from atom_core.dataset_io import getPointCloudMessageFromDictionary
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, getCvImageFromDictionaryDepth
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
+from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 
 
 # -------------------------------------------------------------------------------
@@ -55,6 +58,41 @@ def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _datase
     points[2, :] = pc['z']
     points[3, :] = 1
     return points
+
+
+@Cache(args_to_ignore=['_dataset'])
+def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset, w):
+    img = getCvImageFromDictionaryDepth(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']
+    pinhole_camera_model = image_geometry.PinholeCameraModel()
+    pinhole_camera_model.fromCameraInfo(
+        message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                            _dataset['data'][_sensor_key]['camera_info']))
+    f_x = pinhole_camera_model.fx()
+    f_y = pinhole_camera_model.fy()
+    c_x = pinhole_camera_model.cx()
+    c_y = pinhole_camera_model.cy()
+    y_pix=int(idxs / w)
+    x_pix=int(idxs - y_pix * w)
+    Z=img[y_pix[1, :], x_pix[0, :]]/10000
+    X,Y,_=pixToWorld(f_x, f_y, c_x, c_y,x_pix, y_pix,)
+    points = np.zeros((4, len(idxs)))
+    points[1, :] = X
+    points[0, :] = Y
+    points[2, :] = Z
+    points[3, :] = 1
+    print(points)
+    return points
+    #
+    # cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    # pc = ros_numpy.numpify(cloud_msg)[idxs]
+    # points = np.zeros((4, pc.shape[0]))
+    # points[0, :] = pc['x']
+    # points[1, :] = pc['y']
+    # points[2, :] = pc['z']
+    # points[3, :] = 1
+    # return points
 
 
 # @Cache(args_to_ignore=['residuals', 'dataset'])
@@ -101,8 +139,6 @@ def objectiveFunction(data):
 
     normalizer = data['normalizer']
 
-
-
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
 
@@ -126,8 +162,6 @@ def objectiveFunction(data):
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
                 pts_in_pattern = getPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
-
-
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
@@ -167,7 +201,7 @@ def objectiveFunction(data):
 
 
             # elif sensor['msg_type'] == 'LaserScan':
-            elif sensor['modality']=='lidar2d':
+            elif sensor['modality'] == 'lidar2d':
                 # Get laser points that belong to the chessboard
                 idxs = collection['labels'][sensor_key]['idxs']
                 rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
@@ -279,7 +313,7 @@ def objectiveFunction(data):
                     marker.points = []
                     rviz_p0_in_laser = Point(p0_in_laser[0], p0_in_laser[1], p0_in_laser[2])
 
-                for idx in xrange(0, pts_in_laser.shape[1]):  # for all points
+                for idx in range(0, pts_in_laser.shape[1]):  # for all points
                     rho = rhos[idx]
                     p1_in_laser = pts_in_laser[:, idx]
                     pt_intersection = isect_line_plane_v3(p0_in_laser, p1_in_laser, p_co_in_laser, p_no_in_laser)
@@ -322,7 +356,7 @@ def objectiveFunction(data):
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
                 detected_limit_points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key,
-                                                                              'idxs_limit_points', dataset)
+                                                                             'idxs_limit_points', dataset)
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
@@ -345,6 +379,12 @@ def objectiveFunction(data):
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                                normalizer['lidar3d']
                 # ------------------------------------------------------------------------------------------------
+
+            elif sensor['modality'] == 'depth':
+                print("Depth calibration under construction")
+
+                # TODO ortogonal e longitudinal
+                # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
 
             else:
                 raise ValueError("Unknown sensor msg_type or modality")

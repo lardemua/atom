@@ -192,11 +192,10 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
             # cv2.imwrite(filename, cv_image)
             imageio.imwrite(filename, cv_image)
-            # np.save(filename_np, cv_image)
             print('Saved file ' + filename + '.')
 
         # Add data_file field, and remove data field
-        filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
+        filename_relative = sensor['_name'] + '_' + str(collection_key) + '.png'
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
         if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
