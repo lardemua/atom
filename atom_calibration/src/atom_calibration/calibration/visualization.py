@@ -206,7 +206,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 continue
 
             # if sensor['msg_type'] == 'Image':
-            if sensor['modality'] == 'rgb':
+            if sensor['modality'] == 'rgb' or sensor['modality'] == 'depth':
                 msg_type = sensor_msgs.msg.Image
                 topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
                 topic_name = '~c' + str(collection_key) + topic + '/labeled'
@@ -217,6 +217,17 @@ def setupVisualization(dataset, args, selected_collection_key):
                 topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
                 graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
                     rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
+            # if sensor['modality']=='depth':
+            #     msg_type = sensor_msgs.msg.Image
+            #     topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
+            #     topic_name = '~c' + str(collection_key) + topic + '/labeled'
+            #     graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
+            #         topic_name, msg_type, queue_size=0, latch=True)}
+            #
+            #     msg_type = sensor_msgs.msg.CameraInfo
+            #     topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
+            #     graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
+            #         rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
 
     # Create Labeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
@@ -226,7 +237,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 continue
 
             # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
-            if sensor['modality']=='lidar2d':
+            if sensor['modality'] == 'lidar2d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -280,7 +291,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
-            if sensor['modality']=='lidar3d':
+            if sensor['modality'] == 'lidar3d':
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -335,7 +346,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
         first_time = True
         for collection_key, collection in dataset['collections'].items():
-            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name, collection['transforms'])
+            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name,
+                                                    collection['transforms'])
             print('Collection ' + collection_key + ': ')
             if first_time:
                 first_time = False
@@ -447,7 +459,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
             # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
-            if sensor['modality']=='lidar2d' or sensor['modality']=='lidar3d':
+            if sensor['modality'] == 'lidar2d' or sensor['modality'] == 'lidar3d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -607,7 +619,7 @@ def visualizationFunction(models):
                 continue
 
             # if sensor['msg_type'] == 'Image':
-            if sensor['modality']=='rgb':
+            if sensor['modality'] == 'rgb':
                 if args['show_images']:
                     image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
                     width = collection['data'][sensor_key]['width']
@@ -653,6 +665,9 @@ def visualizationFunction(models):
                 pass
             # elif sensor['msg_type'] == 'PointCloud2':
             elif sensor['modality'] == 'lidar3d':
+                pass
+            elif sensor['modality'] == 'depth':
+                #TODO check what to do here
                 pass
             else:
                 raise ValueError("Unknown sensor msg_type or modality")

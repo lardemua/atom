@@ -9,6 +9,8 @@ import argparse, random
 from functools import partial
 import numpy as np
 import ros_numpy
+from pynput import keyboard
+
 
 # 3rd-party
 import rospy, tf
@@ -32,6 +34,12 @@ from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, \
     addNoiseToInitialGuess
 
 
+# global variavels
+
+# var to select the index of the collection we want to see
+global idx_collection
+
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -39,14 +47,37 @@ def signal_handler(sig, frame):
     print('Stopping optimization (Ctrl+C pressed)')
     sys.exit(0)
 
+# function to enable change collection in RViz through the keys
+def key_pressed(key, idx_max_collection, collections_list):
+    global idx_collection
+    
+    if key == keyboard.Key.right:
+        if idx_collection < idx_max_collection:
+            idx_collection += 1
+            print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
+        else:
+            print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
+    if key == keyboard.Key.left:
+        if idx_collection > 0:
+            idx_collection -= 1
+            print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
+        else:
+            print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
+    
+        
 
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
 def main():
+    
+    # var to select the index of the collection we want to see
+    global idx_collection
+    
     # ---------------------------------------
     # --- Parse command line argument
     # ---------------------------------------
+    
     signal.signal(signal.SIGINT, signal_handler)
     # print('Press Ctrl+C')
     # signal.pause()
@@ -103,6 +134,8 @@ def main():
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
 
+
+
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
@@ -123,7 +156,7 @@ def main():
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
-
+    
     # ---------------------------------------
     # --- Store initial values for transformations to be optimized
     # ---------------------------------------
@@ -139,8 +172,20 @@ def main():
     # ---------------------------------------
     # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
     # transformation.
-    selected_collection_key = list(dataset['collections'].keys())[0]
+    idx_collection = 0
+    collections_list = list(dataset['collections'].keys())
+    selected_collection_key = collections_list[idx_collection]
     print('Selected collection key is ' + str(selected_collection_key))
+    
+    # ---------------------------------------
+    # --- Define callback to change idx_collection
+    # ---------------------------------------
+    key_pressed_partial = partial(key_pressed, idx_max_collection = len(collections_list) - 1, collections_list = collections_list)
+    listener = keyboard.Listener(
+    on_press=key_pressed_partial)
+    listener.start()
+    
+    
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -203,15 +248,10 @@ def main():
     graphics = setupVisualization(dataset, args, selected_collection_key)
     opt.addDataModel('graphics', graphics)
 
-    count = 0
     rate = rospy.Rate(1)  # 10hz
     while not rospy.is_shutdown():
+        selected_collection_key =collections_list[idx_collection]
         visualizationFunction(opt.data_models, selected_collection_key)
-        print('count = ' + str(count))
-        if count > 10:
-            selected_collection_key = '2'
-            print('changed selected_collection_key to' + str(selected_collection_key))
-        count += 1
         rate.sleep()
 
 
