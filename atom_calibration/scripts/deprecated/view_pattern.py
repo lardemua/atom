@@ -27,14 +27,14 @@ class SimplePatternDetector:
             rospy.logerr("Unknown pattern '{}'".format(options['type']))
             sys.exit(1)
 
-        self.sub = rospy.Subscriber(options['topic'], Image, self.onImage, queue_size=1)
+        self.sub = rospy.Subscriber(options['topic'], Image, self.onImageReceived, queue_size=1)
         self.bridge = CvBridge()
         self.image_pub = rospy.Publisher(options['topic'] + '/labeled', Image, queue_size=1)
 
-    def onImage(self, image_msg):
+    def onImageReceived(self, image_msg):
 
         image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
-        result = self.pattern.detect(image, equalize_histogram=True)
+        result = self.pattern.detect(image, equalize_histogram=False)
         self.pattern.drawKeypoints(image, result)
 
         image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
