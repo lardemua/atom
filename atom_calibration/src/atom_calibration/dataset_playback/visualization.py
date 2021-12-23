@@ -581,19 +581,23 @@ def visualizationFunction(models, selected_collection_key):
         marker.header.stamp = now
 
     # Publish the meshes
-    graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
+  #  graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
     # Publish patterns
     for marker in graphics['ros']['MarkersPattern'].markers:
         marker.header.stamp = now
-    graphics['ros']['PubPattern'].publish(graphics['ros']['MarkersPattern'])
 
     # Publish Labelled Data
     for marker in graphics['ros']['MarkersLabeled'].markers:
         marker.header.stamp = now
 
-    # Create a new marker array which contains only the marker related to the selected collection
+    # Publish Laser Beams
+    for marker in graphics['ros']['MarkersLaserBeams'].markers:
+        marker.header.stamp = now
 
+
+    # Create a new marker array which contains only the marker related to the selected collection
+    # for the Labeled data
     marker_array = MarkerArray()
     for marker in graphics['ros']['MarkersLabeled'].markers:
         print(marker.header.frame_id)
@@ -603,10 +607,38 @@ def visualizationFunction(models, selected_collection_key):
 
     graphics['ros']['PubLabeled'].publish(marker_array)
 
-    # Publish Laser Beams
+    # Create a new marker array which contains only the marker related to the selected collection
+    # Publish the pattern data
+    marker_array_1 = MarkerArray()
+    for marker in graphics['ros']['MarkersPattern'].markers:
+        print(marker.header.frame_id)
+        prefix = marker.header.frame_id[:3]
+        if prefix == 'c' + str(selected_collection_key) + '_':
+            marker_array_1.markers.append(marker)
+
+    graphics['ros']['PubPattern'].publish(marker_array_1)
+
+    # Create a new marker array which contains only the marker related to the selected collection
+    # Publish the robot_mesh_
+    marker_array_1 = MarkerArray()
+    for marker in graphics['ros']['robot_mesh_markers'].markers:
+        print(marker.header.frame_id)
+        prefix = marker.header.frame_id[:3]
+        if prefix == 'c' + str(selected_collection_key) + '_':
+            marker_array_1.markers.append(marker)
+    graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
+
+    # Create a new marker array which contains only the marker related to the selected collection
+    # Publish the robot_mesh_
+    marker_array_2 = MarkerArray()
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
-        marker.header.stamp = now
+        print(marker.header.frame_id)
+        prefix = marker.header.frame_id[:3]
+        if prefix == 'c' + str(selected_collection_key) + '_':
+            marker_array_2.markers.append(marker)
+
     graphics['ros']['PubLaserBeams'].publish(graphics['ros']['MarkersLaserBeams'])
+
 
     # Publish Annotated images
     for collection_key, collection in collections.items():
@@ -656,6 +688,8 @@ def visualizationFunction(models, selected_collection_key):
                     camera_info_msg.header.frame_id = msg.header.frame_id
                     graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
+
+
 
             # elif sensor['msg_type'] == 'LaserScan':
             elif sensor['modality'] == 'lidar2d':

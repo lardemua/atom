@@ -7,8 +7,13 @@ import json
 import os, math, signal, sys
 import argparse, random
 from functools import partial
+
+import cv2
+import getch
+
 import numpy as np
 import ros_numpy
+import readchar
 
 # 3rd-party
 import rospy, tf
@@ -204,14 +209,51 @@ def main():
     opt.addDataModel('graphics', graphics)
 
     count = 0
-    rate = rospy.Rate(1)  # 10hz
+    rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
         visualizationFunction(opt.data_models, selected_collection_key)
-        print('count = ' + str(count))
-        if count > 10:
-            selected_collection_key = '2'
-            print('changed selected_collection_key to' + str(selected_collection_key))
         count += 1
+        print('count = ' + str(count))
+        if count > 50:
+            selected_collection_key = '2'
+            print('changed selected_collection_key to collection ' + str(selected_collection_key))
+
+        if count == 10:
+            selected_collection_key = '1'
+        if count == 20:
+            selected_collection_key = '2'
+        if count == 30:
+            selected_collection_key = '3'
+        if count == 40:
+            selected_collection_key = '4'
+
+          # """
+          # interactive keys (k) -----------------------------------------
+          # """
+        k=ord(getch.getch())# this is used to convert the keypress event in the keyboard or joypad , joystick to a ord value
+        # if ((k>=43)&(k<=68)|(k==45)|(k==113)|(k==97)):# to filter only the up , dowm ,left , right key /// this line can be removed or more key can be added to this
+        #     rospy.loginfo(str(k))# to print on  terminal
+        # # if k == 27 or k == ord("q"):
+        #
+        # if k == 43:  # character + to increase thickness
+        #     rospy.loginfo(str(k))  # to print on  terminal
+        #     count += 1
+        #     selected_collection_key = str(count)
+        #     if count >= 3:
+        #         selected_collection_key = 3
+        #         count = 3
+        #     print('changed selected_collection_key to collection ' + str(selected_collection_key))
+        #
+        # if k == 45:  # character - to decrease thickness
+        #     rospy.loginfo(str(k))  # to print on  terminal
+        #     count -= 1
+        #     selected_collection_key = str(count)
+        #     if count <= 0:
+        #         selected_collection_key = 0
+        #         count = 0
+        #     print('changed selected_collection_key to collection ' + str(selected_collection_key))
+
+
         rate.sleep()
 
 
