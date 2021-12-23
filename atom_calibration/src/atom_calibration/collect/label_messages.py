@@ -7,8 +7,6 @@ import PIL.Image
 import cv_bridge
 import rospy
 import scipy
-import numpy as np
-import atom_core.dataset_io
 import ros_numpy
 import functools
 from scipy import ndimage
@@ -559,9 +557,10 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     return labels, gui_image, new_seed_point
 
 
-def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id):
+def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns):
     marker = Marker()
 
+    marker.ns = ns
     marker.type = marker.LINE_LIST
     marker.action = marker.ADD
     marker.header.frame_id = frame_id
@@ -679,13 +678,13 @@ def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id):
     return marker
 
 
-def pixelToWorld(fx, fy, cx, cy, X, Y, Z):
+def worldToPix(fx, fy, cx, cy, X, Y, Z):
     x_pix = (fx * X + cx * Z) / Z
     y_pix = (fy * Y + cy * Z) / Z
     return x_pix, y_pix
 
 
-def worldToPix(fx, fy, cx, cy, x_pix, y_pix, Z):
+def pixToWorld(fx, fy, cx, cy, x_pix, y_pix, Z):
     X = (fx * Z - cx * Z) / fx
     Y = (fy * Z - cy * Z) / fy
 

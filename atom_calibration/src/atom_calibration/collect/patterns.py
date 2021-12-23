@@ -92,12 +92,13 @@ class CharucoPattern(object):
         if equalize_histogram:  # equalize image histogram
             gray = cv2.equalizeHist(gray)
 
+        # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
         params = cv2.aruco.DetectorParameters_create()
 
         # setup initial data
         # params.adaptiveThreshConstant = 2
         # params.adaptiveThreshWinSizeMin = 41
-        # params.adaptiveThreshWinSizeMax = 81
+        # params.adaptiveThreshWinSizeMax = 3
         # params.adaptiveThreshWinSizeStep = 5
         # params.minMarkerPerimeterRate = 0.003
         # params.maxMarkerPerimeterRate = 4
@@ -121,7 +122,7 @@ class CharucoPattern(object):
             # Commented this because it return error in more recent opencv versions
             # ccorners = cv2.cornerSubPix(gray, ccorners, (5, 5), (-1, -1), criteria)
 
-            # A valid detection must have at least half the total number of corners.
+            # A valid detection must have at least 25% of the total number of corners.
             detected = ccorners is not None and len(ccorners) > self.number_of_corners / 4
             if detected:
                 return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
