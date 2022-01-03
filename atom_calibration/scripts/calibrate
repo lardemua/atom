@@ -423,6 +423,7 @@ def main():
 
                 # Save it to be used in the objective function.
                 collection['labels'][sensor_key]['samples'] = samples
+                # print(samples)
 
                 for idx in samples:
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_oe_' + str(idx), params=params)
@@ -432,13 +433,14 @@ def main():
                 print("length is: " , len(collection['labels'][sensor_key]['idxs_limit_points']) )
                 for idx in range(0, len(collection['labels'][sensor_key]['idxs_limit_points'])):
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
-                    print(idx)
+                    # print(idx)
                     # print("extrema displacement error")
 
+            # print(opt.residuals.keys())
             # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
             #       ' affected by parameters:\n' + str(params))
 
-    opt.printResiduals()
+    # opt.printResiduals()
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX

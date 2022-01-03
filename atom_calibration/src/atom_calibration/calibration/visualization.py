@@ -329,6 +329,46 @@ def setupVisualization(dataset, args, selected_collection_key):
 
                 markers.markers.append(copy.deepcopy(marker))
 
+
+            #TODO setup visualization for depth
+            if sensor['modality'] == 'depth':
+                # Add labelled points to the marker
+                frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
+                                type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                scale=Vector3(x=0.02, y=0.02, z=0.02),
+                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                g=graphics['collections'][collection_key]['color'][1],
+                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                                )
+
+                points = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                for idx in range(0, points.shape[1]):
+                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+
+                markers.markers.append(copy.deepcopy(marker))
+
+                # Add limit points to the marker, this time with larger spheres
+                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
+                                frame_locked=True,
+                                type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                pose=Pose(position=Point(x=0, y=0, z=0),
+                                          orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                scale=Vector3(x=0.07, y=0.07, z=0.07),
+                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                g=graphics['collections'][collection_key]['color'][1],
+                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                                )
+
+                points = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+                for idx in range(0, points.shape[1]):
+                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+
+                markers.markers.append(copy.deepcopy(marker))
+
     graphics['ros']['MarkersLabeled'] = markers
     graphics['ros']['PubLabeled'] = rospy.Publisher('~labeled_data', MarkerArray, queue_size=0, latch=True)
 
@@ -601,6 +641,8 @@ def visualizationFunction(models):
         marker.header.stamp = now
     graphics['ros']['PubPattern'].publish(graphics['ros']['MarkersPattern'])
 
+
+#TODO update markers
     # Publish Labelled Data
     for marker in graphics['ros']['MarkersLabeled'].markers:
         marker.header.stamp = now

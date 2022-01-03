@@ -63,7 +63,7 @@ def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _datase
 # @Cache(args_to_ignore=['_dataset'])
 def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
     img = getCvImageFromDictionaryDepth(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
@@ -428,6 +428,7 @@ def objectiveFunction(data):
                 # ------------------------------------------------------------------------------------------------
                 detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key,
                                                                              'idxs_limit_points', dataset)
+                print(detected_limit_points_in_sensor.shape)
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
@@ -442,6 +443,7 @@ def objectiveFunction(data):
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                 np.float)
 
+                print("objective function: ", detected_limit_points_in_pattern.shape[1])
                 # Compute and save residuals
                 for idx in range(detected_limit_points_in_pattern.shape[1]):
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
@@ -452,7 +454,7 @@ def objectiveFunction(data):
 
                 # TODO ortogonal e longitudinal
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
-
+                # print(r.keys())
             else:
                 raise ValueError("Unknown sensor msg_type or modality")
 
