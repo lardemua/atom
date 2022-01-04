@@ -87,7 +87,7 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
 # @Cache(args_to_ignore=['_dataset'])
 def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    print(img.dtype)
+    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key][0:10]
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
@@ -100,6 +100,8 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
     size = pinhole_camera_model.fullResolution()
     w = size[0]
     h = size[1]
+    print('w=' + str(w))
+    print('h=' + str(h))
     idxs = np.array(idxs)
 
     x_pix, y_pix = np.unravel_index(idxs, (h, w))
@@ -111,22 +113,70 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
 
     for i in range(len(x_pix)):
         value = img[x_pix[i], y_pix[i]]
+        # value = img[y_pix[i], x_pix[i]]
         if np.isnan(value):
             print("image size: ", w, h, " x: ", x_pix[i], " ,y: ", y_pix[i], " nan")
         points[1, i], points[0, i], points[2, i] = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix[i], y_pix[i], value)
     points[3, :] = 1
+
+    print('done')
+    # exit(0)
     print(points)
-    return points
+    # return points
+
+    # New attempt from Miguel using lists  (I am never sure if the np arrays are actually working)
+    # the fact that lists are slow is unimportant because the result will be cached
+    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key][0:10]
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    xs = []
+    ys = []
+    zs = []
+    for idx in idxs: # iterate all points
+
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+
+        # get distance value for this pixel coordinate
+        distance = img[y_pix, x_pix]
+
+        # compute 3D point and add to list of coordinates xs, ys, zs
+        x,y,z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+        print('\nidx=' + str(idx))
+
+        print('c_x=' + str(c_x))
+        print('c_y=' + str(c_y))
+        print('f_x=' + str(f_x))
+        print('f_y=' + str(f_y))
+        print('x_pix=' + str(x_pix))
+        print('y_pix=' + str(y_pix))
+
+    homogeneous = np.ones((len(xs)))
+    points_mike = np.array((xs, ys, zs, homogeneous), dtype=float)
+    print(points_mike)
+    return points_mike
 
 
 def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
+    # You were using this
+    # from https://medium.com/yodayoda/from-depth-map-to-point-cloud-7473721d3f
+    # I tried this http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
+    # Not sure why it works, but my guess is that the values that we have in the image are not the distance but the z value already
+    
     # d *= self.pxToMetre
-    x_over_z = (cx - xpix) / fx
-    y_over_z = (cy - ypix) / fy
-    z = d / np.sqrt(1. + x_over_z ** 2 + y_over_z ** 2)
+    # x_over_z = (cx - xpix) / fx
+    x_over_z = (xpix - cx) / fx
+    # y_over_z = (cy - ypix) / fy
+    y_over_z = (ypix - cy) / fy
+    # z = d / np.sqrt(1. + x_over_z ** 2 + y_over_z ** 2)
+    z = d
     x = x_over_z * z
     y = y_over_z * z
-    print(x,y,z)
+    # print(x,y,z)
     return x, y, z
 
 

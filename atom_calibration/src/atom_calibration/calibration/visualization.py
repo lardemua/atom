@@ -290,7 +290,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                     marker.points.append(p)
                 markers.markers.append(copy.deepcopy(marker))
 
-            # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
+            # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ----------------------------
             if sensor['modality'] == 'lidar3d':
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
@@ -329,9 +329,8 @@ def setupVisualization(dataset, args, selected_collection_key):
 
                 markers.markers.append(copy.deepcopy(marker))
 
-
-            #TODO setup visualization for depth
-            if sensor['modality'] == 'depth':
+            # Setup visualization for depth
+            if sensor['modality'] == 'depth': # -------- Publish the depth  ----------------------------
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -641,8 +640,7 @@ def visualizationFunction(models):
         marker.header.stamp = now
     graphics['ros']['PubPattern'].publish(graphics['ros']['MarkersPattern'])
 
-
-#TODO update markers
+    # TODO update markers
     # Publish Labelled Data
     for marker in graphics['ros']['MarkersLabeled'].markers:
         marker.header.stamp = now
@@ -709,7 +707,7 @@ def visualizationFunction(models):
             elif sensor['modality'] == 'lidar3d':
                 pass
             elif sensor['modality'] == 'depth':
-                #TODO check what to do here
+                # TODO check what to do here
                 pass
             else:
                 raise ValueError("Unknown sensor msg_type or modality")
