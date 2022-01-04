@@ -126,7 +126,7 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
         # print(x, y)
         value = img[y_pix[i], x_pix[i]]
         # print(value)
-        X[0][i], Y[0][i], Z[0][i] = pixToWorld(f_x, f_y, c_x, c_y, x_pix, y_pix, value / 10000)
+        X[0][i], Y[0][i], Z[0][i] = pixToWorld(f_x, f_y, c_x, c_y, x_pix, y_pix, value)
     points = np.zeros((4, len(idxs)))
     points[1, :] = X
     points[0, :] = Y

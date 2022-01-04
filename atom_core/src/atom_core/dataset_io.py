@@ -23,9 +23,16 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
 import imageio
 
+def printImageInfo(image, text=None):
+    if not text is None:
+        print(text +
+              '\n\tshape = ' + str(image.shape) +
+              '\n\tdtype = ' + str(image.dtype) +
+              '\n\tmax value = ' + str(np.nanmax(image)) +
+              '\n\tmin value = ' + str(np.nanmin(image)))
 
 def loadResultsJSON(json_file, collection_selection_function):
     # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
@@ -80,8 +87,25 @@ def loadResultsJSON(json_file, collection_selection_function):
 
             elif load_file and sensor['modality'] == 'depth':
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
-                cv_image = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-                collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image))
+
+                print(collection['data'][sensor_key]['header']['frame_id'])
+                cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+                cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters, scale=10000.0)
+
+                printImageInfo(cv_image_int16_tenths_of_millimeters, text='cv_image_int16_tenths_of_millimeters')
+                printImageInfo(cv_image_float32_meters, text='cv_image_float32_meters')
+
+                # collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image_float32_meters))
+
+                msg = getDictionaryFromDepthImage(cv_image_float32_meters)
+                collection['data'][sensor_key]['data'] = msg['data']
+                # TODO eliminate data_file
+                # TODO Why this is not needed for rgb? Should be done as well
+
+                print(collection['data'][sensor_key]['header']['frame_id'])
+                # print(collection['data'][sensor_key].keys())
+                # TODO verify if values in the dataset or ok
+                # exit(0)
 
             elif load_file and (
                     sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
@@ -191,7 +215,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             cv_image = getCvImageFromDictionaryDepth(dataset['collections'][collection_key][data_type][sensor_key])
             print("image from getimage")
             print(cv_image.dtype)
-            cv_image = convertDepthImage32FC1to16UC1(cv_image)
+            cv_image = convertDepthImage32FC1to16UC1(cv_image, scale=10000) # Better to use tenths of milimeters
             # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
             # cv2.imwrite(filename, cv_image)
             imageio.imwrite(filename, cv_image)
@@ -222,7 +246,7 @@ def getDictionaryFromDepthImage(cv_image):
     :return: A dictionary converted from the ros message.
     """
     bridge = CvBridge()
-    msg = bridge.cv2_to_imgmsg(cv_image, "mono16")
+    msg = bridge.cv2_to_imgmsg(cv_image, "passthrough")
     return message_converter.convert_ros_message_to_dictionary(msg)
 
 
