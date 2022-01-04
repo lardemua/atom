@@ -207,7 +207,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
     elif create_data_file and sensor['modality'] == 'depth':
-        print('i dont know what im doing')
+        # print('i dont know what im doing')
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.png'
         # filename_np=output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.npy'
@@ -288,8 +288,8 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    print("image inside get image: ")
-    print(image.dtype)
+    # print("image inside get image: ")
+    # print(image.dtype)
     return image
 
 

@@ -22,7 +22,6 @@ from atom_core.cache import Cache
 from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 
 
-
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -80,8 +79,8 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    print("image inside get image: ")
-    print(image.dtype)
+    # print("image inside get image: ")
+    # print(image.dtype)
     return image
 
 
@@ -102,48 +101,42 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
     w = size[0]
     h = size[1]
     idxs = np.array(idxs)
-    # x_pix = np.zeros((1, len(idxs)))
-    # y_pix = np.zeros((1, len(idxs)))
 
-    # h = size[1]
-    x_pix, y_pix = np.unravel_index(idxs, (w, h))
-
-    # n = 0
-    # for idx in idxs:
-    #     x_pix, y_pix=np.unravel_index(idx,(h,w))
-    #
-    #     y_pix_2 = np.rint(idx / w)
-    #     x_pix[n] = np.rint(idx - y_pix[n] * w)
-        # print(x_pix, y_pix, y_pix_2)
-        # n = n + 1
-    X = np.zeros((1, len(x_pix)))
-    Y = np.zeros((1, len(x_pix)))
-    Z = np.zeros((1, len(x_pix)))
-    for i in range(len(x_pix)):
-        # print(i)
-        # y = y_pix[i]
-        # x = x_pix[i]
-        # print(x, y)
-        value = img[y_pix[i], x_pix[i]]
-        # print(value)
-        X[0][i], Y[0][i], Z[0][i] = pixToWorld(f_x, f_y, c_x, c_y, x_pix, y_pix, value)
+    x_pix, y_pix = np.unravel_index(idxs, (h, w))
+    printImageInfo(img, "calibration")
+    # X = np.zeros((1, len(x_pix)))
+    # Y = np.zeros((1, len(x_pix)))
+    # Z = np.zeros((1, len(x_pix)))
     points = np.zeros((4, len(idxs)))
-    points[1, :] = X
-    points[0, :] = Y
-    points[2, :] = Z
+
+    for i in range(len(x_pix)):
+        value = img[x_pix[i], y_pix[i]]
+        if np.isnan(value):
+            print("image size: ", w, h, " x: ", x_pix[i], " ,y: ", y_pix[i], " nan")
+        points[1, i], points[0, i], points[2, i] = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix[i], y_pix[i], value)
     points[3, :] = 1
     print(points)
     return points
-    #
-    # cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
-    # pc = ros_numpy.numpify(cloud_msg)[idxs]
-    # points = np.zeros((4, pc.shape[0]))
-    # points[0, :] = pc['x']
-    # points[1, :] = pc['y']
-    # points[2, :] = pc['z']
-    # points[3, :] = 1
-    # return points
+
+
+def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
+    # d *= self.pxToMetre
+    x_over_z = (cx - xpix) / fx
+    y_over_z = (cy - ypix) / fy
+    z = d / np.sqrt(1. + x_over_z ** 2 + y_over_z ** 2)
+    x = x_over_z * z
+    y = y_over_z * z
+    print(x,y,z)
+    return x, y, z
+
+
+def printImageInfo(image, text=None):
+    if not text is None:
+        print(text +
+              '\n\tshape = ' + str(image.shape) +
+              '\n\tdtype = ' + str(image.dtype) +
+              '\n\tmax value = ' + str(np.nanmax(image)) +
+              '\n\tmin value = ' + str(np.nanmin(image)))
 
 
 # @Cache(args_to_ignore=['residuals', 'dataset'])
@@ -432,7 +425,7 @@ def objectiveFunction(data):
                 # ------------------------------------------------------------------------------------------------
 
             elif sensor['modality'] == 'depth':
-                print("Depth calibration under construction")
+                # print("Depth calibration under construction")
                 points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
@@ -453,7 +446,7 @@ def objectiveFunction(data):
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
                 detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key,
-                                                                             'idxs_limit_points', dataset)
+                                                                                  'idxs_limit_points', dataset)
                 print(detected_limit_points_in_sensor.shape)
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']

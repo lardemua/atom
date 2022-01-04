@@ -481,6 +481,13 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         sampled = np.zeros(image.shape, dtype=bool)
         sampled[::subsample_solid_points, ::subsample_solid_points] = True
         idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
+        # if not np.isnan(sampled[idxs_rows][idxs_cols]):
+        for i in range(len(idxs_rows)):
+            if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
+                print("I'm NaN - idxs ")
+                np.delete(idxs_cols, i)
+                np.delete(idxs_rows, i)
+
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
@@ -489,6 +496,12 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
 
         # Edges mask coordinates
         idxs_rows, idxs_cols = np.where(pattern_edges_mask)
+        for i in range(len(idxs_rows)):
+            if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
+                print("I'm NaN - idxs limits ")
+                np.delete(idxs_cols, i)
+                np.delete(idxs_rows, i)
+        # if not np.isnan(pattern_edges_mask[idxs_rows][idxs_cols]):
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
