@@ -27,7 +27,6 @@ from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC
 import imageio
 
 
-
 def loadResultsJSON(json_file, collection_selection_function):
     # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
     #   and our guide lines is to use environment variables, which the shell already expands.
@@ -74,11 +73,15 @@ def loadResultsJSON(json_file, collection_selection_function):
             else:
                 raise ValueError('Dataset does not contain data nor data_file folders.')
 
-            if load_file and (sensor['modality'] == 'rgb' or sensor[
-                'modality'] == 'depth'):  # Load image.
+            if load_file and (sensor['modality'] == 'rgb'):  # Load image.
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                 cv_image = cv2.imread(filename)
                 collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
+
+            elif load_file and sensor['modality'] == 'depth':
+                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                cv_image = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+                collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image))
 
             elif load_file and (
                     sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
@@ -210,6 +213,16 @@ def getDictionaryFromCvImage(cv_image):
     """
     bridge = CvBridge()
     msg = bridge.cv2_to_imgmsg(cv_image, "bgr8")
+    return message_converter.convert_ros_message_to_dictionary(msg)
+
+def getDictionaryFromDepthImage(cv_image):
+    """
+    Creates a dictionary from the opencv image, going from cvimage -> ros_message -> dictionary.
+    :param cv_image:  the image in opencv format.
+    :return: A dictionary converted from the ros message.
+    """
+    bridge = CvBridge()
+    msg = bridge.cv2_to_imgmsg(cv_image, "mono16")
     return message_converter.convert_ros_message_to_dictionary(msg)
 
 

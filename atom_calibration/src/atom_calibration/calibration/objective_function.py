@@ -79,7 +79,7 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
 
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
-    image = bridge.imgmsg_to_cv2(msg, desired_encoding='mono16')
+    image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
     print("image inside get image: ")
     print(image.dtype)
     return image
