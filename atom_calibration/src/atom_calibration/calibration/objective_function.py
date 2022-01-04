@@ -1,7 +1,7 @@
 # stdlib
 import atom_core.atom
 import math
-from copy import deepcopy
+import copy
 
 import chardet
 import numpy as np
@@ -13,12 +13,14 @@ import OptimizationUtils.utilities as opt_utilities
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
+from cv_bridge import CvBridge
 
 # Own modules
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, getCvImageFromDictionaryDepth
+from atom_core.dataset_io import getPointCloudMessageFromDictionary
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
 from atom_calibration.collect.label_messages import pixToWorld, worldToPix
+
 
 
 # -------------------------------------------------------------------------------
@@ -60,9 +62,33 @@ def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _datase
     return points
 
 
+def getDepthImageFromDictionary(dictionary_in, safe=False):
+    """
+    Converts a dictionary (read from a json file) into an opencv image.
+    To do so it goes from dictionary -> ros_message -> cv_image
+    :param dictionary_in: the dictionary read from the json file.
+    :return: an opencv image.
+    """
+    if safe:
+        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
+    else:
+        d = dictionary_in
+
+    if 'data_file' in d:  # Delete data field from dictionary
+        del d['data_file']  # will disrupt the dictionary to ros message
+
+    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    bridge = CvBridge()
+    image = bridge.imgmsg_to_cv2(msg, desired_encoding='mono16')
+    print("image inside get image: ")
+    print(image.dtype)
+    return image
+
+
 # @Cache(args_to_ignore=['_dataset'])
 def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
-    img = getCvImageFromDictionaryDepth(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    print(img.dtype)
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
@@ -100,13 +126,13 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
         # print(x, y)
         value = img[y_pix[i], x_pix[i]]
         # print(value)
-        X[0][i], Y[0][i], Z[0][i] = pixToWorld(f_x, f_y, c_x, c_y, x_pix, y_pix, value[0] / 10000)
+        X[0][i], Y[0][i], Z[0][i] = pixToWorld(f_x, f_y, c_x, c_y, x_pix, y_pix, value / 10000)
     points = np.zeros((4, len(idxs)))
     points[1, :] = X
     points[0, :] = Y
     points[2, :] = Z
     points[3, :] = 1
-    # print(points)
+    print(points)
     return points
     #
     # cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
@@ -221,7 +247,7 @@ def objectiveFunction(data):
                 collection['labels'][sensor_key]['idxs_projected'] = idxs_projected  # store projections
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
-                    collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
+                    collection['labels'][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
 
 
 
@@ -351,7 +377,7 @@ def objectiveFunction(data):
                     r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho) / normalizer['lidar2d']
 
                     if args['ros_visualization']:
-                        marker.points.append(deepcopy(rviz_p0_in_laser))
+                        marker.points.append(copy.deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
             # elif sensor['msg_type'] == 'PointCloud2':
