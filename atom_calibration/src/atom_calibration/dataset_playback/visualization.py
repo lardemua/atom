@@ -19,13 +19,14 @@ import rospy
 import numpy as np
 import tf
 import tf2_ros
+import visualization_msgs.msg
 from atom_core.cache import Cache
 
 from rospy_message_converter import message_converter
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
-from std_msgs.msg import Header, ColorRGBA
+from std_msgs.msg import Header, ColorRGBA, UInt8MultiArray
 from urdf_parser_py.urdf import URDF
-from sensor_msgs.msg import Image, sensor_msgs, CameraInfo, geometry_msgs
+from sensor_msgs.msg import Image, sensor_msgs, CameraInfo, geometry_msgs, PointCloud2
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion, Transform, TransformStamped
 from cv_bridge import CvBridge
@@ -217,15 +218,18 @@ def setupVisualization(dataset, args, selected_collection_key):
                 graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
                     rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
 
-    # Create Labeled Data publishers ----------------------------------------------------------
+    # Create Labeled and Unlabeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
+    lidar_data = []
+    graphics['ros']['PubPointCloud'] = dict()
     for collection_key, collection in dataset['collections'].items():
+        graphics['ros']['PubPointCloud'][collection_key] = dict()
         for sensor_key, sensor in dataset['sensors'].items():
             if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
                 continue
 
             # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
-            if sensor['modality']=='lidar2d':
+            if sensor['modality'] == 'lidar2d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -279,24 +283,41 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
-            if sensor['modality']=='lidar3d':
+            if sensor['modality'] == 'lidar3d':
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.02, y=0.02, z=0.02),
+                                scale=Vector3(x=0.05, y=0.05, z=0.05),
                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                                 g=graphics['collections'][collection_key]['color'][1],
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
                 points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+
                 for idx in range(0, points.shape[1]):
                     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
-                markers.markers.append(copy.deepcopy(marker))
+                # # Add unlabeled points to the marker
+                # marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                #                 ns=str(collection_key) + '-' + str(sensor_key) + '-unlabeled', id=-1, frame_locked=True,
+                #                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                #                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                #                 scale=Vector3(x=0.03, y=0.03, z=0.03),
+                #                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                #                                 g=graphics['collections'][collection_key]['color'][1],
+                #                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                #                 )
+                #
+                # points = getUnlabeledPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                #
+                # for idx in range(0, points.shape[1]):
+                #     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                #
+                # markers_unlabeled.markers.append(copy.deepcopy(marker))
 
                 # Add limit points to the marker, this time with larger spheres
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -317,7 +338,21 @@ def setupVisualization(dataset, args, selected_collection_key):
 
                 markers.markers.append(copy.deepcopy(marker))
 
+                # Add 3D lidar data
+                original_pointcloud_msg = getPointCloudMessageFromDictionary(dataset['collections'][collection_key]['data'][sensor_key])
+                final_pointcloud_msg = PointCloud2(header=Header(frame_id=frame_id, stamp=now),
+                                       height=original_pointcloud_msg.height, width=original_pointcloud_msg.width,
+                                       fields=original_pointcloud_msg.fields, is_bigendian=original_pointcloud_msg.is_bigendian,
+                                       point_step=original_pointcloud_msg.point_step, row_step=original_pointcloud_msg.row_step,
+                                       data=original_pointcloud_msg.data, is_dense=original_pointcloud_msg.is_dense)
+                lidar_data.append(final_pointcloud_msg)
+                graphics['ros']['PubPointCloud'][collection_key][sensor_key] = \
+                    rospy.Publisher('/c' + str(collection_key) + '_'+ str(sensor_key) + '/points',
+                                    PointCloud2, queue_size=0, latch=True)
+
+
     graphics['ros']['MarkersLabeled'] = markers
+    graphics['ros']['PointClouds'] = lidar_data
     graphics['ros']['PubLabeled'] = rospy.Publisher('~labeled_data', MarkerArray, queue_size=0, latch=True)
 
     # -----------------------------------------------------------------------------------------------------
@@ -334,7 +369,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
         first_time = True
         for collection_key, collection in dataset['collections'].items():
-            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name, collection['transforms'])
+            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name,
+                                                    collection['transforms'])
             print('Collection ' + collection_key + ': ')
             if first_time:
                 first_time = False
@@ -446,7 +482,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue
             # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
-            if sensor['modality']=='lidar2d' or sensor['modality']=='lidar3d':
+            if sensor['modality'] == 'lidar2d' or sensor['modality'] == 'lidar3d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
@@ -489,7 +525,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     return graphics
 
 
-def visualizationFunction(models, selected_collection_key):
+def visualizationFunction(models, selected_collection_key, previous_selected_collection_key=None):
     # print(Fore.RED + 'Visualization function called.' + Style.RESET_ALL)
     # Get the data from the meshes
     dataset = models['dataset']
@@ -580,7 +616,7 @@ def visualizationFunction(models, selected_collection_key):
         marker.header.stamp = now
 
     # Publish the meshes
-  #  graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
+    #  graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
     # Publish patterns
     for marker in graphics['ros']['MarkersPattern'].markers:
@@ -594,12 +630,14 @@ def visualizationFunction(models, selected_collection_key):
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
         marker.header.stamp = now
 
+    # Update timestamp for pointcloud2 message
+    for pointcloud_msg in graphics['ros']['PointClouds']:
+        pointcloud_msg.header.stamp = now
 
     # Create a new marker array which contains only the marker related to the selected collection
     # for the Labeled data
     marker_array = MarkerArray()
     for marker in graphics['ros']['MarkersLabeled'].markers:
-        print(marker.header.frame_id)
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array.markers.append(marker)
@@ -607,13 +645,35 @@ def visualizationFunction(models, selected_collection_key):
     graphics['ros']['PubLabeled'].publish(marker_array)
 
     # Create a new marker array which contains only the marker related to the selected collection
+    # for the Unlabeled data
+    # marker_array_unlabeled = MarkerArray()
+    # for marker in graphics['ros']['MarkersUnlabeled'].markers:
+    #     print(marker.header.frame_id)
+    #     prefix = marker.header.frame_id[:3]
+    #     if prefix == 'c' + str(selected_collection_key) + '_':
+    #         marker_array_unlabeled.markers.append(marker)
+
+    # graphics['ros']['PubUnlabeled'].publish(marker_array_unlabeled)
+
+    # Create a new pointcloud which contains only the points related to the selected collection
+    for pointcloud_msg in graphics['ros']['PointClouds']:
+        prefix = pointcloud_msg.header.frame_id[:3]
+        sensor = pointcloud_msg.header.frame_id[3:]
+        if prefix == 'c' + str(selected_collection_key) + '_':
+            print(graphics['ros']['PubPointCloud'])
+            graphics['ros']['PubPointCloud'][selected_collection_key][sensor].publish(pointcloud_msg)
+
+    # Create a new marker array which contains only the marker related to the selected collection
     # Publish the pattern data
     marker_array_1 = MarkerArray()
     for marker in graphics['ros']['MarkersPattern'].markers:
-        print(marker.header.frame_id)
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+            marker_array_1.markers.append(marker)
+            marker_array_1.markers[-1].action = Marker.DELETE
+
 
     graphics['ros']['PubPattern'].publish(marker_array_1)
 
@@ -621,7 +681,6 @@ def visualizationFunction(models, selected_collection_key):
     # Publish the robot_mesh_
     marker_array_1 = MarkerArray()
     for marker in graphics['ros']['robot_mesh_markers'].markers:
-        print(marker.header.frame_id)
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
@@ -631,13 +690,11 @@ def visualizationFunction(models, selected_collection_key):
     # Publish the robot_mesh_
     marker_array_2 = MarkerArray()
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
-        print(marker.header.frame_id)
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_2.markers.append(marker)
 
     graphics['ros']['PubLaserBeams'].publish(graphics['ros']['MarkersLaserBeams'])
-
 
     # Publish Annotated images
     for collection_key, collection in collections.items():
@@ -647,7 +704,7 @@ def visualizationFunction(models, selected_collection_key):
                 continue
 
             # if sensor['msg_type'] == 'Image':
-            if sensor['modality']=='rgb':
+            if sensor['modality'] == 'rgb':
                 if args['show_images']:
                     image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
                     width = collection['data'][sensor_key]['width']
