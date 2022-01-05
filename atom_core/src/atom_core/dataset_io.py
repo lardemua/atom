@@ -23,10 +23,16 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
 import imageio
 
-
+def printImageInfo(image, text=None):
+    if not text is None:
+        print(text +
+              '\n\tshape = ' + str(image.shape) +
+              '\n\tdtype = ' + str(image.dtype) +
+              '\n\tmax value = ' + str(np.nanmax(image)) +
+              '\n\tmin value = ' + str(np.nanmin(image)))
 
 def loadResultsJSON(json_file, collection_selection_function):
     # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
@@ -74,11 +80,32 @@ def loadResultsJSON(json_file, collection_selection_function):
             else:
                 raise ValueError('Dataset does not contain data nor data_file folders.')
 
-            if load_file and (sensor['modality'] == 'rgb' or sensor[
-                'modality'] == 'depth'):  # Load image.
+            if load_file and (sensor['modality'] == 'rgb'):  # Load image.
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                 cv_image = cv2.imread(filename)
                 collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
+
+            elif load_file and sensor['modality'] == 'depth':
+                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+
+                print(collection['data'][sensor_key]['header']['frame_id'])
+                cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+                cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters, scale=10000.0)
+
+                printImageInfo(cv_image_int16_tenths_of_millimeters, text='cv_image_int16_tenths_of_millimeters')
+                printImageInfo(cv_image_float32_meters, text='cv_image_float32_meters')
+
+                # collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image_float32_meters))
+
+                msg = getDictionaryFromDepthImage(cv_image_float32_meters)
+                collection['data'][sensor_key]['data'] = msg['data']
+                # TODO eliminate data_file
+                # TODO Why this is not needed for rgb? Should be done as well
+
+                print(collection['data'][sensor_key]['header']['frame_id'])
+                # print(collection['data'][sensor_key].keys())
+                # TODO verify if values in the dataset or ok
+                # exit(0)
 
             elif load_file and (
                     sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
@@ -180,7 +207,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
     elif create_data_file and sensor['modality'] == 'depth':
-        print('i dont know what im doing')
+        # print('i dont know what im doing')
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.png'
         # filename_np=output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.npy'
@@ -188,7 +215,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             cv_image = getCvImageFromDictionaryDepth(dataset['collections'][collection_key][data_type][sensor_key])
             print("image from getimage")
             print(cv_image.dtype)
-            cv_image = convertDepthImage32FC1to16UC1(cv_image)
+            cv_image = convertDepthImage32FC1to16UC1(cv_image, scale=10000) # Better to use tenths of milimeters
             # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
             # cv2.imwrite(filename, cv_image)
             imageio.imwrite(filename, cv_image)
@@ -210,6 +237,16 @@ def getDictionaryFromCvImage(cv_image):
     """
     bridge = CvBridge()
     msg = bridge.cv2_to_imgmsg(cv_image, "bgr8")
+    return message_converter.convert_ros_message_to_dictionary(msg)
+
+def getDictionaryFromDepthImage(cv_image):
+    """
+    Creates a dictionary from the opencv image, going from cvimage -> ros_message -> dictionary.
+    :param cv_image:  the image in opencv format.
+    :return: A dictionary converted from the ros message.
+    """
+    bridge = CvBridge()
+    msg = bridge.cv2_to_imgmsg(cv_image, "passthrough")
     return message_converter.convert_ros_message_to_dictionary(msg)
 
 
@@ -251,8 +288,8 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    print("image inside get image: ")
-    print(image.dtype)
+    # print("image inside get image: ")
+    # print(image.dtype)
     return image
 
 

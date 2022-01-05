@@ -1,7 +1,7 @@
 # stdlib
 import atom_core.atom
 import math
-from copy import deepcopy
+import copy
 
 import chardet
 import numpy as np
@@ -13,9 +13,10 @@ import OptimizationUtils.utilities as opt_utilities
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
+from cv_bridge import CvBridge
 
 # Own modules
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, getCvImageFromDictionaryDepth
+from atom_core.dataset_io import getPointCloudMessageFromDictionary
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
 from atom_calibration.collect.label_messages import pixToWorld, worldToPix
@@ -60,39 +61,132 @@ def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _datase
     return points
 
 
-@Cache(args_to_ignore=['_dataset'])
-def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset, w):
-    img = getCvImageFromDictionaryDepth(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']
-    pinhole_camera_model = image_geometry.PinholeCameraModel()
+def getDepthImageFromDictionary(dictionary_in, safe=False):
+    """
+    Converts a dictionary (read from a json file) into an opencv image.
+    To do so it goes from dictionary -> ros_message -> cv_image
+    :param dictionary_in: the dictionary read from the json file.
+    :return: an opencv image.
+    """
+    if safe:
+        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
+    else:
+        d = dictionary_in
+
+    if 'data_file' in d:  # Delete data field from dictionary
+        del d['data_file']  # will disrupt the dictionary to ros message
+
+    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    bridge = CvBridge()
+    image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    # print("image inside get image: ")
+    # print(image.dtype)
+    return image
+
+
+# @Cache(args_to_ignore=['_dataset'])
+def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
+    img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key][0:10]
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                            _dataset['data'][_sensor_key]['camera_info']))
+                                                            _dataset['sensors'][_sensor_key]['camera_info']))
     f_x = pinhole_camera_model.fx()
     f_y = pinhole_camera_model.fy()
     c_x = pinhole_camera_model.cx()
     c_y = pinhole_camera_model.cy()
-    y_pix=int(idxs / w)
-    x_pix=int(idxs - y_pix * w)
-    Z=img[y_pix[1, :], x_pix[0, :]]/10000
-    X,Y,_=pixToWorld(f_x, f_y, c_x, c_y,x_pix, y_pix,)
+    size = pinhole_camera_model.fullResolution()
+    w = size[0]
+    h = size[1]
+    print('w=' + str(w))
+    print('h=' + str(h))
+    idxs = np.array(idxs)
+
+    x_pix, y_pix = np.unravel_index(idxs, (h, w))
+    printImageInfo(img, "calibration")
+    # X = np.zeros((1, len(x_pix)))
+    # Y = np.zeros((1, len(x_pix)))
+    # Z = np.zeros((1, len(x_pix)))
     points = np.zeros((4, len(idxs)))
-    points[1, :] = X
-    points[0, :] = Y
-    points[2, :] = Z
+
+    for i in range(len(x_pix)):
+        value = img[x_pix[i], y_pix[i]]
+        # value = img[y_pix[i], x_pix[i]]
+        if np.isnan(value):
+            print("image size: ", w, h, " x: ", x_pix[i], " ,y: ", y_pix[i], " nan")
+        points[1, i], points[0, i], points[2, i] = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix[i], y_pix[i], value)
     points[3, :] = 1
+
+    print('done')
+    # exit(0)
     print(points)
-    return points
-    #
-    # cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
-    # pc = ros_numpy.numpify(cloud_msg)[idxs]
-    # points = np.zeros((4, pc.shape[0]))
-    # points[0, :] = pc['x']
-    # points[1, :] = pc['y']
-    # points[2, :] = pc['z']
-    # points[3, :] = 1
     # return points
+
+    # New attempt from Miguel using lists  (I am never sure if the np arrays are actually working)
+    # the fact that lists are slow is unimportant because the result will be cached
+    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key][0:10]
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    xs = []
+    ys = []
+    zs = []
+    for idx in idxs: # iterate all points
+
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+
+        # get distance value for this pixel coordinate
+        distance = img[y_pix, x_pix]
+
+        # compute 3D point and add to list of coordinates xs, ys, zs
+        x,y,z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+        print('\nidx=' + str(idx))
+
+        print('c_x=' + str(c_x))
+        print('c_y=' + str(c_y))
+        print('f_x=' + str(f_x))
+        print('f_y=' + str(f_y))
+        print('x_pix=' + str(x_pix))
+        print('y_pix=' + str(y_pix))
+
+    homogeneous = np.ones((len(xs)))
+    points_mike = np.array((xs, ys, zs, homogeneous), dtype=float)
+    print(points_mike)
+    return points_mike
+
+
+def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
+    # You were using this
+    # from https://medium.com/yodayoda/from-depth-map-to-point-cloud-7473721d3f
+    # I tried this http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
+    # Not sure why it works, but my guess is that the values that we have in the image are not the distance but the z value already
+    
+    # d *= self.pxToMetre
+    # x_over_z = (cx - xpix) / fx
+    x_over_z = (xpix - cx) / fx
+    # y_over_z = (cy - ypix) / fy
+    y_over_z = (ypix - cy) / fy
+    # z = d / np.sqrt(1. + x_over_z ** 2 + y_over_z ** 2)
+    z = d
+    x = x_over_z * z
+    y = y_over_z * z
+    # print(x,y,z)
+    return x, y, z
+
+
+def printImageInfo(image, text=None):
+    if not text is None:
+        print(text +
+              '\n\tshape = ' + str(image.shape) +
+              '\n\tdtype = ' + str(image.dtype) +
+              '\n\tmax value = ' + str(np.nanmax(image)) +
+              '\n\tmin value = ' + str(np.nanmin(image)))
 
 
 # @Cache(args_to_ignore=['residuals', 'dataset'])
@@ -196,7 +290,7 @@ def objectiveFunction(data):
                 collection['labels'][sensor_key]['idxs_projected'] = idxs_projected  # store projections
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
-                    collection['labels'][sensor_key]['idxs_initial'] = deepcopy(idxs_projected)
+                    collection['labels'][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
 
 
 
@@ -326,7 +420,7 @@ def objectiveFunction(data):
                     r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho) / normalizer['lidar2d']
 
                     if args['ros_visualization']:
-                        marker.points.append(deepcopy(rviz_p0_in_laser))
+                        marker.points.append(copy.deepcopy(rviz_p0_in_laser))
                         marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
 
             # elif sensor['msg_type'] == 'PointCloud2':
@@ -381,11 +475,55 @@ def objectiveFunction(data):
                 # ------------------------------------------------------------------------------------------------
 
             elif sensor['modality'] == 'depth':
-                print("Depth calibration under construction")
+                # print("Depth calibration under construction")
+                points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+
+                from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                to_frame = sensor['parent']
+                depth_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+
+                # TODO we could also use the middle points ...
+                # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
+                points_in_pattern = np.dot(depth_to_pattern, points_in_sensor)
+
+                rname_pre = 'c' + collection_key + '_' + sensor_key + '_oe_'
+                for idx in collection['labels'][sensor_key]['samples']:
+                    # Compute the residual: absolute of z component
+                    rname = rname_pre + str(idx)
+                    r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['depth']
+
+                # ------------------------------------------------------------------------------------------------
+                # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
+                # ------------------------------------------------------------------------------------------------
+                detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key,
+                                                                                  'idxs_limit_points', dataset)
+                print(detected_limit_points_in_sensor.shape)
+
+                from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                to_frame = sensor['parent']
+                pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
+
+                pts = []
+                pts.extend(patterns['frame']['lines_sampled']['left'])
+                pts.extend(patterns['frame']['lines_sampled']['right'])
+                pts.extend(patterns['frame']['lines_sampled']['top'])
+                pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
+                                                                np.float)
+
+                print("objective function: ", detected_limit_points_in_pattern.shape[1])
+                # Compute and save residuals
+                for idx in range(detected_limit_points_in_pattern.shape[1]):
+                    m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
+                    rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
+                    r[rname] = np.min(distance.cdist(m_pt,
+                                                     ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
+                               normalizer['depth']
 
                 # TODO ortogonal e longitudinal
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
-
+                # print(r.keys())
             else:
                 raise ValueError("Unknown sensor msg_type or modality")
 

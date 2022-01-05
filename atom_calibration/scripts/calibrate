@@ -91,10 +91,13 @@ def main():
     ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
                                                           "after calling the optimization. Good for debugging.",
                     action='store_true', default=False)
-    ap.add_argument("-ipg", "--initial_pose_ghost", help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
+    ap.add_argument("-ipg", "--initial_pose_ghost",
+                    help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
                     action='store_true', default=False)
-    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False, default=None)
-    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False, default=None)
+    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False,
+                    default=None)
+    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False,
+                    default=None)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -111,8 +114,6 @@ def main():
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
 
-
-
     # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
     # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
     # related to the pattern pose (we use solve PNP for a camera).
@@ -122,7 +123,6 @@ def main():
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
-
 
     # ---------------------------------------
     # --- Store initial values for transformations to be optimized
@@ -169,15 +169,12 @@ def main():
                     edges.pop()  # if the index is not given, then the last element is popped out and removed.
                 collection['labels'][sensor_key]['edge_idxs'] = edges
 
-
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
     opt = OptimizationUtils.Optimizer()
     opt.addDataModel('args', args)
     opt.addDataModel('dataset', dataset)
-
-
 
     # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
@@ -276,8 +273,6 @@ def main():
                     not child == initial_estimate['child']:
                 raise ValueError('Cannot set initial estimate for pattern at collection ' + collection_key)
 
-
-
             collection['transforms'][transform_key] = {'parent': parent, 'child': child,
                                                        'trans': initial_estimate['trans'],
                                                        'quat': initial_estimate['quat']}
@@ -338,7 +333,6 @@ def main():
     # Each residual is computed after the sensor and the pattern of a collection. Thus, each error will be affected
     # by the parameters tx,ty,tz,r1,r2,r3 of the sensor and the pattern
 
-
     print("Creating residuals ... ")
 
     if args['sample_seed'] is None:
@@ -364,7 +358,6 @@ def main():
             if sensor['modality'] == 'rgb' and args['optimize_intrinsics']:
                 params.extend(opt.getParamsContainingPattern(sensor_key + '_intrinsics'))
 
-
             # Pattern related parameters
             if dataset['calibration_config']['calibration_pattern']['fixed']:
                 pattern_transform_key = atom_core.naming.generateKey(
@@ -385,7 +378,7 @@ def main():
                     opt.pushResidual(name=rname, params=params)
 
             # elif sensor['msg_type'] == 'LaserScan':  # if sensor is a 2D lidar add two residuals
-            elif sensor['modality']=='lidar2d':
+            elif sensor['modality'] == 'lidar2d':
                 # TODO Implement sampling here if relevant
                 # Extrema points (longitudinal error)
                 opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_eleft', params=params)
@@ -400,7 +393,7 @@ def main():
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_beam_' + str(idx), params=params)
 
             # elif sensor['msg_type'] == 'PointCloud2':  # if sensor is a 3D lidar add two types of residuals
-            elif sensor['modality']=='lidar3d':
+            elif sensor['modality'] == 'lidar3d':
 
                 # Laser beam error (or orthogonal error) ==
 
@@ -421,9 +414,29 @@ def main():
                 for idx in range(0, len(collection['labels'][sensor_key]['idxs_limit_points'])):
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
 
-            elif sensor['modality']=='depth':
-                print('Depth calibration under construction.')
+            elif sensor['modality'] == 'depth':
+                # print('Depth calibration under construction - calibrate.')
 
+                population = range(0, len(collection['labels'][sensor_key]['idxs']))
+                nsamples = int(max(0.1, min(args['sample_residuals'], 1.0)) * len(population))
+                samples = rng.sample(population, nsamples)
+
+                # Save it to be used in the objective function.
+                collection['labels'][sensor_key]['samples'] = samples
+                # print(samples)
+
+                for idx in samples:
+                    opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_oe_' + str(idx), params=params)
+                    # print("in sample")
+
+                # Extrema displacement error
+                print("length is: " , len(collection['labels'][sensor_key]['idxs_limit_points']) )
+                for idx in range(0, len(collection['labels'][sensor_key]['idxs_limit_points'])):
+                    opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
+                    # print(idx)
+                    # print("extrema displacement error")
+
+            # print(opt.residuals.keys())
             # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
             #       ' affected by parameters:\n' + str(params))
 
@@ -503,10 +516,9 @@ def main():
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
-
     if args['phased_execution']:
         waitForKeyPress2(opt.callObjectiveFunction, timeout=0.1, message=Fore.RED + 'Optimization finished' +
-                                                                        Style.RESET_ALL)
+                                                                         Style.RESET_ALL)
     # Error Report
     print('\nFinal errors:')
     r = objectiveFunction(opt.data_models)
@@ -568,7 +580,8 @@ def main():
     with open(filename_results_xacro, 'w') as out:
         out.write(URDF.to_xml_string(xml_robot))
 
-    print('Optimized xacro file saved to ' + str(filename_results_xacro) + ' . You can use it as a ROS robot_description.')
+    print('Optimized xacro file saved to ' + str(
+        filename_results_xacro) + ' . You can use it as a ROS robot_description.')
 
 
 if __name__ == "__main__":

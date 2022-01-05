@@ -216,33 +216,35 @@ def imageShowUInt16OrFloat32OrBool(image, window_name, max_value=5000.0):
     cv2.imshow(window_name, image_scaled)
 
 
-def convertDepthImage32FC1to16UC1(image_in):
+def convertDepthImage32FC1to16UC1(image_in, scale=1000.0):
     """
     The assumption is that the image_in is a float 32 bit np array, which contains the range values in meters.
     The image_out will be a 16 bit unsigned int  [0, 65536] which will store the range in millimeters.
     As a convetion, nans will be set to the maximum number available for uint16
     :param image_in: np array with dtype float32
+    :param scale: convertion from meters to milimieter if 1000
     :return: np array with dtype uint16
     """
 
     # mask_nans = np.isnan(image_in)
-    image_mm_float = image_in * 10000  # convert meters to millimeters
+    image_mm_float = image_in * scale  # convert meters to millimeters
     image_mm_float = np.round(image_mm_float)  # round the millimeters
     image_out = image_mm_float.astype(np.uint16)  # side effect: nans become 0s
     return image_out
 
 
-def convertDepthImage16UC1to32FC1(image_in):
+def convertDepthImage16UC1to32FC1(image_in, scale=1000.0):
     """
     The assumption is that the image_in is a uint16 bit np array, which contains the range values in millimeters.
     The image_out will be a float32 which will store the range in meters.
     As a convention, nans will be set from all pixels with the maximum number available for uint16
     :param image_in: np array with dtype  uint16
+    :param scale: convertion from millimieters to meters if 1000
     :return: np array with dtype float32
     """
     iinfo = np.iinfo(np.uint16)
     mask_nans = image_in == 0
-    image_out = image_in.astype(np.float32) * 0.001  # convert millimeters to meters
+    image_out = image_in.astype(np.float32) / scale  # convert millimeters to meters
     image_out[mask_nans] = np.nan
     return image_out
 
@@ -479,6 +481,13 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         sampled = np.zeros(image.shape, dtype=bool)
         sampled[::subsample_solid_points, ::subsample_solid_points] = True
         idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
+        # if not np.isnan(sampled[idxs_rows][idxs_cols]):
+        for i in range(len(idxs_rows)):
+            if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
+                print("I'm NaN - idxs ")
+                np.delete(idxs_cols, i)
+                np.delete(idxs_rows, i)
+
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
@@ -487,6 +496,12 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
 
         # Edges mask coordinates
         idxs_rows, idxs_cols = np.where(pattern_edges_mask)
+        for i in range(len(idxs_rows)):
+            if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
+                print("I'm NaN - idxs limits ")
+                np.delete(idxs_cols, i)
+                np.delete(idxs_rows, i)
+        # if not np.isnan(pattern_edges_mask[idxs_rows][idxs_cols]):
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
