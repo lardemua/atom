@@ -82,7 +82,6 @@ if __name__ == "__main__":
     print('Loading config file ' + config_file)
     config = atom_core.config_io.loadConfig(config_file)
 
-
     # Sensors colormap. Access with:  color_map_sensors[idx, :]
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
     # --------------------------------------------------------------------------
@@ -125,7 +124,6 @@ if __name__ == "__main__":
         atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file,
                                     verbose=True)  # print xacro parsing
         raise ValueError('Could not parse description file ' + description_file)
-
 
     print('Description is')
     print(description.name)
@@ -377,12 +375,10 @@ if __name__ == "__main__":
                                     })
         f.write(output.encode('utf-8'))
 
-
-
     # --------------------------------------------------------------------------
     # Check if modalities are properly created
     # --------------------------------------------------------------------------
-    #TODO change lidar to lidar3d and lidar2d to lidar2d; change modality to modality
+    # TODO change lidar to lidar3d and lidar2d to lidar2d; change modality to modality
     for sensor_key in config['sensors']:
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
@@ -509,6 +505,7 @@ if __name__ == "__main__":
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
     # TODO this will be the menu (only one)
 
+    depth = 0
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
         color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
@@ -524,7 +521,7 @@ if __name__ == "__main__":
 
         # if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # displays for camera sensor
         # TODO check if depth should be here or separated
-        if modality == 'rgb' or modality == 'depth':
+        if modality == 'rgb':
             # Image
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
                                                                       'Image_Topic': topic + '/labeled'})
@@ -534,6 +531,25 @@ if __name__ == "__main__":
             rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Camera',
                                                                        'Image_Topic': topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+
+        elif modality == 'depth':
+            depth += 1
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
+                                                                      'Image_Topic': topic + '/labeled'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+            # Camera
+            rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Camera',
+                                                                       'Image_Topic': topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+            rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
+                c={'Name': sensor_key + '-ManualDataLabeler-InteractiveMarkers',
+                   'Update_Topic': sensor_key + '/data_labeler/update'}
+            )
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
 
         # elif msg_type == 'sensor_msgs/LaserScan':
         elif modality == 'lidar2d':
@@ -596,6 +612,12 @@ if __name__ == "__main__":
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + modality + ')' + Style.RESET_ALL)
 
+    if depth != 0:
+        rendered = env.get_template('/rviz/MarkerArray.rviz').render(
+            c={'Name': 'FrustumVisualizationDepthSensors',
+               'Marker_Topic': '/sensor_frustum'})
+        displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_collect_data, 'w'))
 
@@ -657,11 +679,17 @@ if __name__ == "__main__":
 
         print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + modality + ')')
         # TODO check if depth should be here or separated
-        if modality == 'rgb' or modality == 'depth':  # displays for camera sensor
+        if modality == 'rgb':  # displays for camera sensor
 
             # Image
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
                                                                       'Image_Topic': 'calibrate/c0' + topic + '/labeled'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+        elif modality == "depth":
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
+                                                                            'Marker_Topic': 'calibrate/labeled_data'}
+                                                                         )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'lidar2d':
