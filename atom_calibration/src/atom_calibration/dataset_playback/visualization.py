@@ -199,24 +199,18 @@ def setupVisualization(dataset, args, selected_collection_key):
 
     # Create image publishers ----------------------------------------------------------
     # We need to republish a new image at every visualization
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            # print(sensor_key)
-            if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
-                continue
-
-            # if sensor['msg_type'] == 'Image':
-            if sensor['modality'] == 'rgb':
-                msg_type = sensor_msgs.msg.Image
-                topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
-                topic_name = '~c' + str(collection_key) + topic + '/labeled'
-                graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
-                    topic_name, msg_type, queue_size=0, latch=True)}
-                print('Created image publisher')
-                msg_type = sensor_msgs.msg.CameraInfo
-                topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
-                graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
-                    rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
+    for sensor_key, sensor in dataset['sensors'].items():
+       if sensor['modality'] == 'rgb':
+            msg_type = sensor_msgs.msg.Image
+            topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
+            topic_name = topic + '/labeled'
+            graphics['collections'][str(sensor_key)] = {'publisher': rospy.Publisher(
+                topic_name, msg_type, queue_size=0, latch=True)}
+            print('Created image publisher')
+            msg_type = sensor_msgs.msg.CameraInfo
+            topic_name = str(sensor_key) + '/camera_info'
+            graphics['collections'][str(sensor_key)]['publisher_camera_info'] = \
+                rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
 
     # Create Labeled and Unlabeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
@@ -705,13 +699,13 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 
                     msg.header.frame_id = 'c' + collection_key + '_' + sensor['parent']
-                    graphics['collections'][collection_key][sensor_key]['publisher'].publish(msg)
+                    graphics['collections'][sensor_key]['publisher'].publish(msg)
 
                     # Publish camera info message
                     camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
                                                                                           sensor['camera_info'])
                     camera_info_msg.header.frame_id = msg.header.frame_id
-                    graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
+                    graphics['collections'][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
 
 
