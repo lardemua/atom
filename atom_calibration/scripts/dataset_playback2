@@ -38,7 +38,7 @@ from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, \
 
 # var to select the index of the collection we want to see
 global idx_collection
-
+previous_selected_collection_key = None
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -50,15 +50,18 @@ def signal_handler(sig, frame):
 # function to enable change collection in RViz through the keys
 def key_pressed(key, idx_max_collection, collections_list):
     global idx_collection
+    global previous_selected_collection_key
 
     if key == keyboard.Key.right:
         if idx_collection < idx_max_collection:
+            previous_selected_collection_key = collections_list[idx_collection]
             idx_collection += 1
             print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
     if key == keyboard.Key.left:
         if idx_collection > 0:
+            previous_selected_collection_key = collections_list[idx_collection]
             idx_collection -= 1
             print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
         else:
@@ -73,6 +76,7 @@ def main():
 
     # var to select the index of the collection we want to see
     global idx_collection
+    global previous_selected_collection_key
 
     # ---------------------------------------
     # --- Parse command line argument
@@ -250,8 +254,8 @@ def main():
 
     rate = rospy.Rate(1)  # 10hz
     while not rospy.is_shutdown():
-        selected_collection_key =collections_list[idx_collection]
-        visualizationFunction(opt.data_models, selected_collection_key)
+        selected_collection_key = collections_list[idx_collection]
+        visualizationFunction(opt.data_models, selected_collection_key, previous_selected_collection_key)
         rate.sleep()
 
 
