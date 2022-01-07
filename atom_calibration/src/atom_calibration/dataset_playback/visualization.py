@@ -297,6 +297,8 @@ def setupVisualization(dataset, args, selected_collection_key):
                 for idx in range(0, points.shape[1]):
                     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
+                markers.markers.append(copy.deepcopy(marker))
+
                 # Add limit points to the marker, this time with larger spheres
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
@@ -616,6 +618,10 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array.markers.append(marker)
+            marker_array.markers[-1].action = Marker.ADD
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+            marker_array.markers.append(marker)
+            marker_array.markers[-1].action = Marker.DELETE
 
     graphics['ros']['PubLabeled'].publish(marker_array)
 
@@ -633,80 +639,83 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
+            marker_array_1.markers[-1].action = Marker.ADD
         elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
             marker_array_1.markers[-1].action = Marker.DELETE
-
-
     graphics['ros']['PubPattern'].publish(marker_array_1)
 
     # Create a new marker array which contains only the marker related to the selected collection
     # Publish the robot_mesh_
-    marker_array_1 = MarkerArray()
+    marker_array_2 = MarkerArray()
     for marker in graphics['ros']['robot_mesh_markers'].markers:
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
-            marker_array_1.markers.append(marker)
+            marker_array_2.markers.append(marker)
+            marker_array_2.markers[-1].action = Marker.ADD
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+            marker_array_2.markers.append(marker)
+            marker_array_2.markers[-1].action = Marker.DELETE
     graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
 
     # Create a new marker array which contains only the marker related to the selected collection
     # Publish the robot_mesh_
-    marker_array_2 = MarkerArray()
+    marker_array_3 = MarkerArray()
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
         prefix = marker.header.frame_id[:3]
         if prefix == 'c' + str(selected_collection_key) + '_':
-            marker_array_2.markers.append(marker)
+            marker_array_3.markers.append(marker)
+            marker_array_3.markers[-1].action = Marker.ADD
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+            marker_array_3.markers.append(marker)
+            marker_array_3.markers[-1].action = Marker.DELETE
 
     graphics['ros']['PubLaserBeams'].publish(graphics['ros']['MarkersLaserBeams'])
 
     # Publish Annotated images
-    for collection_key, collection in collections.items():
-        for sensor_key, sensor in sensors.items():
+    for sensor_key, sensor in sensors.items():
+        # if sensor['msg_type'] == 'Image':
+        if sensor['modality'] == 'rgb':
+            if args['show_images']:
+                collection = collections[selected_collection_key]
+                image = copy.deepcopy(getCvImageFromCollectionSensor(selected_collection_key, sensor_key, dataset))
+                width = collection['data'][sensor_key]['width']
+                height = collection['data'][sensor_key]['height']
+                diagonal = math.sqrt(width ** 2 + height ** 2)
+                cm = graphics['pattern']['colormap']
 
-            if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
-                continue
+                # Draw projected points (as dots)
+                # for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
+                #     x = int(round(point['x']))
+                #     y = int(round(point['y']))
+                #     color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                #     cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
 
-            # if sensor['msg_type'] == 'Image':
-            if sensor['modality'] == 'rgb':
-                if args['show_images']:
-                    image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
-                    width = collection['data'][sensor_key]['width']
-                    height = collection['data'][sensor_key]['height']
-                    diagonal = math.sqrt(width ** 2 + height ** 2)
-                    cm = graphics['pattern']['colormap']
+                # Draw ground truth points (as squares)
+                for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
+                    x = int(round(point['x']))
+                    y = int(round(point['y']))
+                    color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                    drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
 
-                    # Draw projected points (as dots)
-                    # for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
-                    #     x = int(round(point['x']))
-                    #     y = int(round(point['y']))
-                    #     color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                    #     cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
+                # Draw initial projected points (as crosses)
+                # for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
+                #     x = int(round(point['x']))
+                #     y = int(round(point['y']))
+                #     color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                #     drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
-                    # Draw ground truth points (as squares)
-                    for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
-                        x = int(round(point['x']))
-                        y = int(round(point['y']))
-                        color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
+                msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 
-                    # Draw initial projected points (as crosses)
-                    # for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
-                    #     x = int(round(point['x']))
-                    #     y = int(round(point['y']))
-                    #     color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                    #     drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                msg.header.frame_id = 'c' + selected_collection_key + '_' + sensor['parent']
+                graphics['collections'][sensor_key]['publisher'].publish(msg)
 
-                    msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
-
-                    msg.header.frame_id = 'c' + collection_key + '_' + sensor['parent']
-                    graphics['collections'][sensor_key]['publisher'].publish(msg)
-
-                    # Publish camera info message
-                    camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                                                          sensor['camera_info'])
-                    camera_info_msg.header.frame_id = msg.header.frame_id
-                    graphics['collections'][sensor_key]['publisher_camera_info'].publish(
-                        camera_info_msg)
+                # Publish camera info message
+                camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                                                      sensor['camera_info'])
+                camera_info_msg.header.frame_id = msg.header.frame_id
+                graphics['collections'][sensor_key]['publisher_camera_info'].publish(
+                    camera_info_msg)
 
 
 
