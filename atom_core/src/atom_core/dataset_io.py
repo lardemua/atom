@@ -26,6 +26,7 @@ from std_msgs.msg import Header
 from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
 import imageio
 
+
 def printImageInfo(image, text=None):
     if not text is None:
         print(text +
@@ -33,6 +34,7 @@ def printImageInfo(image, text=None):
               '\n\tdtype = ' + str(image.dtype) +
               '\n\tmax value = ' + str(np.nanmax(image)) +
               '\n\tmin value = ' + str(np.nanmin(image)))
+
 
 def loadResultsJSON(json_file, collection_selection_function):
     # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
@@ -81,16 +83,27 @@ def loadResultsJSON(json_file, collection_selection_function):
                 raise ValueError('Dataset does not contain data nor data_file folders.')
 
             if load_file and (sensor['modality'] == 'rgb'):  # Load image.
+
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
-                cv_image = cv2.imread(filename)
-                collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
+                cv_image = cv2.imread(filename)  # Load image from file
+                dict_image = getDictionaryFromCvImage(cv_image)  # from opencv image to dictionary
+
+                # Check if loaded image has the same properties as the dataset in collection['data'][sensor_key]
+                assert collection['data'][sensor_key]['height'] == dict_image['height'], 'Image height must be the same'
+                assert collection['data'][sensor_key]['width'] == dict_image['width'], 'Image width must be the same'
+
+                collection['data'][sensor_key]['data'] = dict_image['data']  # set data field of collection
+
+                # Previous code, did not preserve frame_id and other properties
+                # collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
 
             elif load_file and sensor['modality'] == 'depth':
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
 
                 print(collection['data'][sensor_key]['header']['frame_id'])
                 cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-                cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters, scale=10000.0)
+                cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
+                                                                        scale=10000.0)
 
                 printImageInfo(cv_image_int16_tenths_of_millimeters, text='cv_image_int16_tenths_of_millimeters')
                 printImageInfo(cv_image_float32_meters, text='cv_image_float32_meters')
@@ -215,7 +228,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             cv_image = getCvImageFromDictionaryDepth(dataset['collections'][collection_key][data_type][sensor_key])
             print("image from getimage")
             print(cv_image.dtype)
-            cv_image = convertDepthImage32FC1to16UC1(cv_image, scale=10000) # Better to use tenths of milimeters
+            cv_image = convertDepthImage32FC1to16UC1(cv_image, scale=10000)  # Better to use tenths of milimeters
             # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
             # cv2.imwrite(filename, cv_image)
             imageio.imwrite(filename, cv_image)
@@ -238,6 +251,7 @@ def getDictionaryFromCvImage(cv_image):
     bridge = CvBridge()
     msg = bridge.cv2_to_imgmsg(cv_image, "bgr8")
     return message_converter.convert_ros_message_to_dictionary(msg)
+
 
 def getDictionaryFromDepthImage(cv_image):
     """
