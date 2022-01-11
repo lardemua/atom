@@ -699,8 +699,9 @@ def worldToPix(fx, fy, cx, cy, X, Y, Z):
     return x_pix, y_pix
 
 
-def pixToWorld(fx, fy, cx, cy, x_pix, y_pix, Z):
-    X = (fx * Z - cx * Z) / fx
-    Y = (fy * Z - cy * Z) / fy
-
-    return X, Y, Z
+def pixToWorld(fx, fy, cx, cy, x_pix, y_pix, z):
+    x_over_z = (x_pix - cx) / fx
+    y_over_z = (y_pix - cy) / fy
+    x = x_over_z * z
+    y = y_over_z * z
+    return x, y, z

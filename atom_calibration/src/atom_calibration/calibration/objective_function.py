@@ -7,6 +7,8 @@ import chardet
 import numpy as np
 import ros_numpy
 from scipy.spatial import distance
+from datetime import datetime
+
 
 # 3rd-party
 import OptimizationUtils.utilities as opt_utilities
@@ -84,11 +86,13 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
     return image
 
 
-# @Cache(args_to_ignore=['_dataset'])
+@Cache(args_to_ignore=['_dataset'])
 def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
+    # getting image and detected idxs
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key][0:10]
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+
+    # getting information from camera info
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
@@ -97,41 +101,14 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
     f_y = pinhole_camera_model.fy()
     c_x = pinhole_camera_model.cx()
     c_y = pinhole_camera_model.cy()
-    size = pinhole_camera_model.fullResolution()
-    w = size[0]
-    h = size[1]
-    print('w=' + str(w))
-    print('h=' + str(h))
-    idxs = np.array(idxs)
+    w = pinhole_camera_model.fullResolution()[0]
+    # w = size[0]
 
-    x_pix, y_pix = np.unravel_index(idxs, (h, w))
-    printImageInfo(img, "calibration")
-    # X = np.zeros((1, len(x_pix)))
-    # Y = np.zeros((1, len(x_pix)))
-    # Z = np.zeros((1, len(x_pix)))
-    points = np.zeros((4, len(idxs)))
-
-    for i in range(len(x_pix)):
-        value = img[x_pix[i], y_pix[i]]
-        # value = img[y_pix[i], x_pix[i]]
-        if np.isnan(value):
-            print("image size: ", w, h, " x: ", x_pix[i], " ,y: ", y_pix[i], " nan")
-        points[1, i], points[0, i], points[2, i] = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix[i], y_pix[i], value)
-    points[3, :] = 1
-
-    print('done')
-    # exit(0)
-    print(points)
-    # return points
-
-    # New attempt from Miguel using lists  (I am never sure if the np arrays are actually working)
-    # the fact that lists are slow is unimportant because the result will be cached
-    # idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key][0:10]
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    # initialize lists
     xs = []
     ys = []
     zs = []
-    for idx in idxs: # iterate all points
+    for idx in idxs:  # iterate all points
 
         # convert from linear idx to x_pix and y_pix indices.
         y_pix = int(idx / w)
@@ -141,42 +118,34 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
         distance = img[y_pix, x_pix]
 
         # compute 3D point and add to list of coordinates xs, ys, zs
-        x,y,z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
         xs.append(x)
         ys.append(y)
         zs.append(z)
 
-        print('\nidx=' + str(idx))
-
-        print('c_x=' + str(c_x))
-        print('c_y=' + str(c_y))
-        print('f_x=' + str(f_x))
-        print('f_y=' + str(f_y))
-        print('x_pix=' + str(x_pix))
-        print('y_pix=' + str(y_pix))
+        # print('\nidx=' + str(idx))
+        #
+        # print('c_x=' + str(c_x))
+        # print('c_y=' + str(c_y))
+        # print('f_x=' + str(f_x))
+        # print('f_y=' + str(f_y))
+        # print('x_pix=' + str(x_pix))
+        # print('y_pix=' + str(y_pix))
 
     homogeneous = np.ones((len(xs)))
     points_mike = np.array((xs, ys, zs, homogeneous), dtype=float)
-    print(points_mike)
+    # print(points_mike)
     return points_mike
 
 
 def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
-    # You were using this
-    # from https://medium.com/yodayoda/from-depth-map-to-point-cloud-7473721d3f
-    # I tried this http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
-    # Not sure why it works, but my guess is that the values that we have in the image are not the distance but the z value already
-    
-    # d *= self.pxToMetre
-    # x_over_z = (cx - xpix) / fx
+    # From http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
+
     x_over_z = (xpix - cx) / fx
-    # y_over_z = (cy - ypix) / fy
     y_over_z = (ypix - cy) / fy
-    # z = d / np.sqrt(1. + x_over_z ** 2 + y_over_z ** 2)
     z = d
     x = x_over_z * z
     y = y_over_z * z
-    # print(x,y,z)
     return x, y, z
 
 
@@ -425,6 +394,8 @@ def objectiveFunction(data):
 
             # elif sensor['msg_type'] == 'PointCloud2':
             elif sensor['modality'] == 'lidar3d':
+
+                now = datetime.now()
                 # Get the 3D LiDAR labelled points for the given collection
                 points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
@@ -473,37 +444,54 @@ def objectiveFunction(data):
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                                normalizer['lidar3d']
                 # ------------------------------------------------------------------------------------------------
+                print('Objective function for ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
 
             elif sensor['modality'] == 'depth':
+                now_i = datetime.now()
+
                 # print("Depth calibration under construction")
                 points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
+                print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
+                now = datetime.now()
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
                 depth_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
 
                 # TODO we could also use the middle points ...
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
+
                 points_in_pattern = np.dot(depth_to_pattern, points_in_sensor)
+                print('POINTS IN PATTERN ' + sensor_key + ' took ' + str(
+                    (datetime.now() - now).total_seconds()) + ' secs.')
+
+                now = datetime.now()
 
                 rname_pre = 'c' + collection_key + '_' + sensor_key + '_oe_'
                 for idx in collection['labels'][sensor_key]['samples']:
                     # Compute the residual: absolute of z component
                     rname = rname_pre + str(idx)
                     r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['depth']
-
+                print('ORTOGONAL RESIDUALS ' + sensor_key + ' took ' + str(
+                    (datetime.now() - now).total_seconds()) + ' secs.')
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
+                now = datetime.now()
                 detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key,
                                                                                   'idxs_limit_points', dataset)
-                print(detected_limit_points_in_sensor.shape)
+                # print(detected_limit_points_in_sensor.shape)
+                print('POINTS IN SENSOR LIMITS' + sensor_key + ' took ' + str(
+                    (datetime.now() - now).total_seconds()) + ' secs.')
+                now = datetime.now()
+
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
                 pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
-
+                print('POINTS IN PATTERN LIMITS' + sensor_key + ' took ' + str(
+                    (datetime.now() - now).total_seconds()) + ' secs.')
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
                 pts.extend(patterns['frame']['lines_sampled']['right'])
@@ -511,8 +499,8 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                 np.float)
-
-                print("objective function: ", detected_limit_points_in_pattern.shape[1])
+                now = datetime.now()
+                # print("objective function: ", detected_limit_points_in_pattern.shape[1])
                 # Compute and save residuals
                 for idx in range(detected_limit_points_in_pattern.shape[1]):
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
@@ -520,7 +508,9 @@ def objectiveFunction(data):
                     r[rname] = np.min(distance.cdist(m_pt,
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                                normalizer['depth']
-
+                print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
+                print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
+                    (datetime.now() - now_i).total_seconds()) + ' secs.')
                 # TODO ortogonal e longitudinal
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
                 # print(r.keys())

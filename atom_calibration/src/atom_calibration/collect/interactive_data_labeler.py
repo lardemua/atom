@@ -505,11 +505,11 @@ class InteractiveDataLabeler:
             self.publisher_labelled_depth.publish(msg_out)
 
             # update interactive marker
-            # X, Y, Z = pixToWorld(f_x, f_y, c_x, c_y, self.seed['x'], self.seed['y'], z_marker)
-            #
-            # self.marker.pose.position.x = X
-            # self.marker.pose.position.y = Y
-            # self.marker.pose.position.z = Z
+            X, Y, Z = pixToWorld(f_x, f_y, c_x, c_y, self.seed['x'], self.seed['y'], z_marker)
+
+            self.marker.pose.position.x = X
+            self.marker.pose.position.y = Y
+            self.marker.pose.position.z = Z
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 

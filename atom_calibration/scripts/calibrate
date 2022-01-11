@@ -430,7 +430,7 @@ def main():
                     # print("in sample")
 
                 # Extrema displacement error
-                print("length is: " , len(collection['labels'][sensor_key]['idxs_limit_points']) )
+                # print("length is: " , len(collection['labels'][sensor_key]['idxs_limit_points']) )
                 for idx in range(0, len(collection['labels'][sensor_key]['idxs_limit_points'])):
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
                     # print(idx)
