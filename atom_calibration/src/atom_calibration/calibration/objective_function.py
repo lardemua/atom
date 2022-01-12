@@ -444,7 +444,7 @@ def objectiveFunction(data):
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                                normalizer['lidar3d']
                 # ------------------------------------------------------------------------------------------------
-                print('Objective function for ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
+                # print('Objective function for ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
 
             elif sensor['modality'] == 'depth':
                 now_i = datetime.now()
@@ -452,7 +452,7 @@ def objectiveFunction(data):
                 # print("Depth calibration under construction")
                 points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
 
-                print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
+                # print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
                 now = datetime.now()
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
@@ -462,8 +462,8 @@ def objectiveFunction(data):
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
 
                 points_in_pattern = np.dot(depth_to_pattern, points_in_sensor)
-                print('POINTS IN PATTERN ' + sensor_key + ' took ' + str(
-                    (datetime.now() - now).total_seconds()) + ' secs.')
+                # print('POINTS IN PATTERN ' + sensor_key + ' took ' + str(
+                #     (datetime.now() - now).total_seconds()) + ' secs.')
 
                 now = datetime.now()
 
@@ -472,8 +472,8 @@ def objectiveFunction(data):
                     # Compute the residual: absolute of z component
                     rname = rname_pre + str(idx)
                     r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['depth']
-                print('ORTOGONAL RESIDUALS ' + sensor_key + ' took ' + str(
-                    (datetime.now() - now).total_seconds()) + ' secs.')
+                # print('ORTOGONAL RESIDUALS ' + sensor_key + ' took ' + str(
+                #     (datetime.now() - now).total_seconds()) + ' secs.')
                 # ------------------------------------------------------------------------------------------------
                 # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                 # ------------------------------------------------------------------------------------------------
@@ -481,8 +481,8 @@ def objectiveFunction(data):
                 detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key,
                                                                                   'idxs_limit_points', dataset)
                 # print(detected_limit_points_in_sensor.shape)
-                print('POINTS IN SENSOR LIMITS' + sensor_key + ' took ' + str(
-                    (datetime.now() - now).total_seconds()) + ' secs.')
+                # print('POINTS IN SENSOR LIMITS ' + sensor_key + ' took ' + str(
+                #     (datetime.now() - now).total_seconds()) + ' secs.')
                 now = datetime.now()
 
 
@@ -490,8 +490,8 @@ def objectiveFunction(data):
                 to_frame = sensor['parent']
                 pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
-                print('POINTS IN PATTERN LIMITS' + sensor_key + ' took ' + str(
-                    (datetime.now() - now).total_seconds()) + ' secs.')
+                # print('POINTS IN PATTERN LIMITS ' + sensor_key + ' took ' + str(
+                #     (datetime.now() - now).total_seconds()) + ' secs.')
                 pts = []
                 pts.extend(patterns['frame']['lines_sampled']['left'])
                 pts.extend(patterns['frame']['lines_sampled']['right'])
@@ -502,13 +502,14 @@ def objectiveFunction(data):
                 now = datetime.now()
                 # print("objective function: ", detected_limit_points_in_pattern.shape[1])
                 # Compute and save residuals
-                for idx in range(detected_limit_points_in_pattern.shape[1]):
+                # for idx in range(detected_limit_points_in_pattern.shape[1]):
+                for idx in collection['labels'][sensor_key]['samples_longitudinal']:
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(distance.cdist(m_pt,
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                                normalizer['depth']
-                print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
+                # print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
                 print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
                     (datetime.now() - now_i).total_seconds()) + ' secs.')
                 # TODO ortogonal e longitudinal

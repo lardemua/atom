@@ -64,6 +64,7 @@ def main():
                     action='store_true', default=False)
     ap.add_argument("-sr", "--sample_residuals", help="Samples residuals", type=float, default=1)
     ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
+    ap.add_argument("-slr", "--sample_longitudinal_residuals", help="Samples residuals", type=float, default=1)
     ap.add_argument("-ajf", "--all_joints_fixed",
                     help="Assume all joints are fixed and because of that draw a single robot mesh. Overrides "
                          "automatic detection of static robot.",
@@ -429,9 +430,17 @@ def main():
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_oe_' + str(idx), params=params)
                     # print("in sample")
 
+                population_longitudinal = range(0, len(collection['labels'][sensor_key]['idxs_limit_points']))
+                nsamples_longitudinal = int(max(0.1, min(args['sample_longitudinal_residuals'], 1.0)) * len(population_longitudinal))
+                samples_longitudinal = rng.sample(population_longitudinal, nsamples_longitudinal)
+
+                # Save it to be used in the objective function.
+                collection['labels'][sensor_key]['samples_longitudinal'] = samples_longitudinal
+
                 # Extrema displacement error
                 # print("length is: " , len(collection['labels'][sensor_key]['idxs_limit_points']) )
-                for idx in range(0, len(collection['labels'][sensor_key]['idxs_limit_points'])):
+                # for idx in range(0, len(collection['labels'][sensor_key]['idxs_limit_points'])):
+                for idx in samples_longitudinal:
                     opt.pushResidual(name='c' + collection_key + '_' + sensor_key + '_ld_' + str(idx), params=params)
                     # print(idx)
                     # print("extrema displacement error")
