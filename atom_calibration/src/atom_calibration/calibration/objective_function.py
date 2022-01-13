@@ -510,8 +510,8 @@ def objectiveFunction(data):
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                                normalizer['depth']
                 # print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
-                print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
-                    (datetime.now() - now_i).total_seconds()) + ' secs.')
+                # print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
+                #     (datetime.now() - now_i).total_seconds()) + ' secs.')
                 # TODO ortogonal e longitudinal
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
                 # print(r.keys())
