@@ -254,8 +254,8 @@ def getLinearIndexWidth(x, y, width):
     return x + y * width
 
 
-def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
-                   scatter_seed=False, subsample_solid_points=1, debug=False, limit_sample_step=5):
+def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
+                  scatter_seed=False, subsample_solid_points=1, debug=False, limit_sample_step=5):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -438,7 +438,6 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
     pattern_edges_mask2 = pattern_edges_mask.copy()
     contours, hierarchy = cv2.findContours(pattern_edges_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    print(contours)
 
 
     # cv2.imshow('Canny', pattern_edges_mask)

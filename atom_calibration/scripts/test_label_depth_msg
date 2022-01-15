@@ -13,7 +13,7 @@ import rospy
 from sensor_msgs.msg import Image
 
 # local packages
-from atom_calibration.collect.label_messages import labelDepthMsg2
+from atom_calibration.collect.label_messages import labelDepthMsg
 from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
 from atom_calibration.initial_estimate.sensor import Sensor
@@ -39,9 +39,9 @@ def callbackMessageReceived(msg, seed):
 
     # seed_x, seed_y = 800, 220
     # TODO add one seed point as dict for consistency
-    labels, result_image, new_seed_point = labelDepthMsg2(msg, seed=seed, bridge=bridge,
-                                                          pyrdown=0, scatter_seed=True, debug=False,
-                                                          subsample_solid_points=6, limit_sample_step=25)
+    labels, result_image, new_seed_point = labelDepthMsg(msg, seed=seed, bridge=bridge,
+                                                         pyrdown=0, scatter_seed=True, debug=False,
+                                                         subsample_solid_points=6, limit_sample_step=25)
     rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
 
     seed['x'] = new_seed_point['x']

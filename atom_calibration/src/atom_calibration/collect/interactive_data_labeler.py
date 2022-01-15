@@ -48,7 +48,7 @@ import image_geometry
 # local packages
 from atom_calibration.collect import patterns
 import atom_core.utilities
-from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg2, calculateFrustrum, \
+from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg, calculateFrustrum, \
     pixToWorld, worldToPix
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
@@ -479,10 +479,10 @@ class InteractiveDataLabeler:
                 self.seed['y'] = y_pix
 
             # actual labelling
-            self.labels, result_image, new_seed_point = labelDepthMsg2(self.msg, seed=self.seed,
-                                                                       bridge=self.bridge,
-                                                                       pyrdown=1, scatter_seed=True, debug=False,
-                                                                       subsample_solid_points=6)
+            self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed,
+                                                                      bridge=self.bridge,
+                                                                      pyrdown=1, scatter_seed=True, debug=False,
+                                                                      subsample_solid_points=6)
 
             w = self.pinhole_camera_model.fullResolution()[0]
             h = self.pinhole_camera_model.fullResolution()[1]
