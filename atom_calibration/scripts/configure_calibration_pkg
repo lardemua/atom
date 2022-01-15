@@ -550,6 +550,10 @@ if __name__ == "__main__":
             )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
+            # Frustum
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
+                                                                           'Marker_Topic': sensor_key + '/frustum'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
         elif modality == 'lidar2d':
@@ -613,10 +617,11 @@ if __name__ == "__main__":
                   + topic + ' (' + modality + ')' + Style.RESET_ALL)
 
     if depth != 0:
-        rendered = env.get_template('/rviz/MarkerArray.rviz').render(
-            c={'Name': 'FrustumVisualizationDepthSensors',
-               'Marker_Topic': '/sensor_frustum'})
-        displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+        # rendered = env.get_template('/rviz/MarkerArray.rviz').render(
+        #     c={'Name': 'FrustumVisualizationDepthSensors',
+        #        'Marker_Topic': '/sensor_frustum'})
+        # displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+        pass
 
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_collect_data, 'w'))
