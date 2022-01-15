@@ -255,7 +255,7 @@ def getLinearIndexWidth(x, y, width):
 
 
 def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
-                   scatter_seed=False, subsample_solid_points=1, debug=False):
+                   scatter_seed=False, subsample_solid_points=1, debug=False, limit_sample_step=5):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -307,8 +307,6 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
 
     if debug:
         print('Image size is ' + str(height) + ', ' + str(width))
-    # TODO remove this. Just to be able to use the real data bag files we have right now
-    # cv2.line(image, (int(width * 0.3), 0), (int(width * 0.3), height), 0, 3)
 
     # Setup the difference images in all four directions
     # erode to avoid problem discussed in https://github.com/lardemua/atom/issues/323
@@ -438,7 +436,21 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
     pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
-    # TODO we could do the convex hull here tp avoid concavities ...
+    pattern_edges_mask2 = pattern_edges_mask.copy()
+    contours, hierarchy = cv2.findContours(pattern_edges_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    print(contours)
+
+
+    # cv2.imshow('Canny', pattern_edges_mask)
+    # cv2.imshow('Canny Edges After Contouring', pattern_edges_mask2)
+    # print(image.dtype)
+    # # image2 = np.zeros(image.shape, dtype=np.float)
+    # image2 = image.copy()
+    # cv2.drawContours(image2, contours, -1, (0, 255, 0), 3)
+    # cv2.imshow('Contours', image2)
+    # cv2.waitKey(10)
+
+    # TODO we could do the convex hull here to avoid concavities ...
 
     if debug:
         cv2.namedWindow('pattern_solid_mask', cv2.WINDOW_NORMAL)
@@ -470,7 +482,7 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     # -------------------------------------
     labels = {'detected': True, 'idxs': [], 'idxs_limit_points': []}
 
-    if m0 == 0:  # if no detection occurred
+    if m0 == 0 or not contours:  # if no detection occurred
         labels['detected'] = False
     else:
         # The coordinates in the labels must be given as linear indices of the image in the original size. Because of
@@ -484,7 +496,6 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         # if not np.isnan(sampled[idxs_rows][idxs_cols]):
         for i in range(len(idxs_rows)):
             if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
-                print("I'm NaN - idxs ")
                 np.delete(idxs_cols, i)
                 np.delete(idxs_rows, i)
 
@@ -495,18 +506,35 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         labels['idxs'] = idxs_solid.tolist()
 
         # Edges mask coordinates
-        idxs_rows, idxs_cols = np.where(pattern_edges_mask)
-        for i in range(len(idxs_rows)):
-            if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
-                print("I'm NaN - idxs limits ")
-                np.delete(idxs_cols, i)
-                np.delete(idxs_rows, i)
+        # idxs_rows, idxs_cols = np.where(pattern_edges_mask)
+        # for i in range(len(idxs_rows)):
+        #     if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
+        #         np.delete(idxs_cols, i)
+        #         np.delete(idxs_rows, i)
         # if not np.isnan(pattern_edges_mask[idxs_rows][idxs_cols]):
+
+        # Edges mask coordinates computed from the contours
+        idxs_rows = []
+        idxs_cols = []
+        external_contour = contours[0]
+        for value in external_contour:
+            x = value[0][0]
+            y = value[0][1]
+
+            if not np.isnan(pattern_solid_mask[y, x]):
+                idxs_rows.append(y)
+                idxs_cols.append(x)
+
+        idxs_rows = np.array(idxs_rows)
+        idxs_cols = np.array(idxs_cols)
+
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
         idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
-        labels['idxs_limit_points'] = idxs.tolist()
+        idxs = idxs.tolist()
+        idxs = idxs[::limit_sample_step]  # subsample the limit points
+        labels['idxs_limit_points'] = idxs
 
     # -------------------------------------
     # Step 7: Creating the output image
@@ -539,11 +567,23 @@ def labelDepthMsg2(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
             gui_image[y, x, 1] = 200
             gui_image[y, x, 2] = 255
 
-        # Draw the Canny boundary
-        mask_canny = pattern_edges_mask.astype(bool)
-        gui_image[mask_canny, 0] = 25
-        gui_image[mask_canny, 1] = 255
-        gui_image[mask_canny, 2] = 25
+        # # Draw the Canny boundary
+        # mask_canny = pattern_edges_mask.astype(bool)
+        # gui_image[mask_canny, 0] = 25
+        # gui_image[mask_canny, 1] = 255
+        # gui_image[mask_canny, 2] = 25
+
+        # Draw the subsampled limit points
+        for idx in labels['idxs_limit_points']:
+            y = int(idx / original_width)
+            x = int(idx - y * original_width)
+
+            if pyrdown > 0:
+                y = int(y / (2 * pyrdown))
+                x = int(x / (2 * pyrdown))
+
+            cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
+
 
     # Initial seed point as red dot
     cv2.line(gui_image, (seed_x, seed_y), (seed_x, seed_y), (0, 0, 255), 3)
