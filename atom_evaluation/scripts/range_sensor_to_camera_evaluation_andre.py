@@ -139,18 +139,18 @@ if __name__ == "__main__":
     ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
-    # ap.add_argument("-ef", "--eval_file", help="Path to file to read and/or write the evalutation data.", type=str,
-    #                 required=True)
-    # ap.add_argument("-ua", "--use_annotation", help="If true, the limit points will be manually annotated.",
-    #                 action='store_true', default=False)
+    ap.add_argument("-ef", "--eval_file", help="Path to file to read and/or write the evalutation data.", type=str,
+                    required=True)
+    ap.add_argument("-ua", "--use_annotation", help="If true, the limit points will be manually annotated.",
+                    action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
     source_sensor = args['source_sensor']
     target_sensor = args['target_sensor']
     show_images = args['show_images']
-    # eval_file = args['eval_file']
-    # use_annotation = args['use_annotation']
+    eval_file = args['eval_file']
+    use_annotation = args['use_annotation']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
@@ -163,10 +163,6 @@ if __name__ == "__main__":
     f = open(test_json_file, 'r')
     test_dataset = json.load(f)
 
-    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + target_sensor + ".json"
-    if os.path.exists(annotation_file) is False:
-        raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
-        exit(0)
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
@@ -201,8 +197,17 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
-    f = open(annotation_file, 'r')
-    eval_data = json.load(f)
+    if use_annotation is False:
+        # Loads a json file containing the evaluation data
+        f = open(eval_file, 'r')
+        eval_data = json.load(f)
+    else:
+        print(Fore.BLUE + "  Annotation tool intructions:")
+        print(Fore.GREEN + "   - To add a point to a class: click + 's'")
+        print(Fore.GREEN + "   - To change class: 'p'")
+        print(Fore.GREEN + "   - To stop the annotation anytime: 'c'")
+        print(Fore.GREEN + "   - It ends when you end annotating the fourth class (four times 'p')")
+        print(Fore.WHITE)
 
     print(Fore.BLUE + '\nStarting evalutation...')
     print(Fore.WHITE)
@@ -236,7 +241,15 @@ if __name__ == "__main__":
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
         print (filename)
         image = cv2.imread(filename)
-        limits_on_image = eval_data['ground_truth_pts'][collection_key]
+        if use_annotation is False:
+            limits_on_image = eval_data['ground_truth_pts'][collection_key]
+        else:
+            success = False
+            while not success:
+                limits_on_image, success = annotateLimits(image)
+                if not success:
+                    limits_on_image = []
+                    image = cv2.imread(filename)
 
         # Clear image annotations
         image = cv2.imread(filename)
@@ -336,5 +349,5 @@ if __name__ == "__main__":
         '------------------------------------------------------------------------------------------------------------------------------------------------------------')
 
     # Save evaluation data
-    # if use_annotation is True:
-    #     createJSONFile(eval_file, output_dict)
+    if use_annotation is True:
+        createJSONFile(eval_file, output_dict)
