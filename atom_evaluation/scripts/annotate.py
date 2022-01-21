@@ -127,7 +127,6 @@ if __name__ == "__main__":
     test_dataset = json.load(f)
 
     annotation_file = os.path.dirname(test_json_file) + "/annotation_" + camera_sensor + ".json"
-    print(annotation_file)
 
     print(Fore.BLUE + "  Annotation tool intructions:")
     print(Fore.GREEN + "   - To add a point to a class: click")

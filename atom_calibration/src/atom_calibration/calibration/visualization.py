@@ -353,7 +353,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
                                 frame_locked=True,
-                                type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0),
                                           orientation=Quaternion(x=0, y=0, z=0, w=1)),
                                 scale=Vector3(x=0.07, y=0.07, z=0.07),
