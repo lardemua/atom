@@ -53,13 +53,14 @@ def createJSONFile(output_file, input):
     print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print (json.dumps(D, indent=2, sort_keys=True), file=f)
+    print(json.dumps(D, indent=2, sort_keys=True), file=f)
     f.close()
     print("Completed.")
 
 
-
 mouseX, mouseY = 0, 0
+
+
 def click(event, x, y, flags, param):
     global mouseX, mouseY
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -108,29 +109,25 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-cs", "--camera_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=True)
-    ap.add_argument("-ef", "--eval_file", help="Path to file to read and/or write the evalutation data.", type=str,
-                    required=True)
-
+    # ap.add_argument("-af", "--annotation_file", help="Path to file write the annotation data.", type=str,
+    #                 required=True)
 
     # - Save args
     args = vars(ap.parse_args())
-    # source_sensor = args['source_sensor']
     camera_sensor = args['camera_sensor']
     show_images = args['show_images']
-    eval_file = args['eval_file']
-    # use_annotation = args['use_annotation']
+    # annotation_file=os.path.dirname(test_json_file)
+    # eval_file = args['eval_file']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
-    # Loads a json file containing the calibration
-    # train_json_file = args['train_json_file']
-    # f = open(train_json_file, 'r')
-    # train_dataset = json.load(f)
     test_json_file = args['test_json_file']
     f = open(test_json_file, 'r')
     test_dataset = json.load(f)
 
+    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + camera_sensor + ".json"
+    print(annotation_file)
 
     print(Fore.BLUE + "  Annotation tool intructions:")
     print(Fore.GREEN + "   - To add a point to a class: click")
@@ -152,7 +149,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
-        print (filename)
+        print(filename)
         image = cv2.imread(filename)
 
         success = False
@@ -186,6 +183,5 @@ if __name__ == "__main__":
             for idx in range(0, len(new_x)):
                 output_dict['ground_truth_pts'][collection_key][i].append([new_x[idx], new_y[idx]])
 
-
-    createJSONFile(eval_file, output_dict)
+    createJSONFile(annotation_file, output_dict)
     print('Anotated json file created.')
