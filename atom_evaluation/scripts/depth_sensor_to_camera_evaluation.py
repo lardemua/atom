@@ -46,13 +46,13 @@ def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
 
 
 def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
-    filename = os.path.dirname(json_file) + '/' + collection['data'][ts]['data_file']
+    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
 
     cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
                                                             scale=10000.0)
 
-    idxs = collection['labels'][ts]['idxs_limit_points']
+    idxs = collection['labels'][ss]['idxs_limit_points']
 
     f_x = pinhole_camera_model.fx()
     f_y = pinhole_camera_model.fy()
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     f = open(test_json_file, 'r')
     test_dataset = json.load(f)
 
-    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + source_sensor + ".json"
+    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + target_sensor + ".json"
     if os.path.exists(annotation_file) is False:
         raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
         exit(0)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                            train_dataset['sensors'][target_sensor]['camera_info']))
+                                                            train_dataset['sensors'][source_sensor]['camera_info']))
 
 
     print(Fore.BLUE + '\nStarting evalutation...')
