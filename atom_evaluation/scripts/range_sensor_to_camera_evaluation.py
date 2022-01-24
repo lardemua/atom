@@ -32,32 +32,6 @@ from atom_core.naming import generateKey
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-def walk(node):
-    for key, item in node.items():
-        if isinstance(item, dict):
-            walk(item)
-        else:
-            if isinstance(item, np.ndarray) and key == 'data':  # to avoid saving images in the json
-                del node[key]
-
-            elif isinstance(item, np.ndarray):
-                node[key] = item.tolist()
-            pass
-
-
-# Save to json file
-def createJSONFile(output_file, input):
-    D = deepcopy(input)
-    walk(D)
-
-    print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
-    f = open(output_file, 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print (json.dumps(D, indent=2, sort_keys=True), file=f)
-    f.close()
-    print("Completed.")
-
-
 def rangeToImage(collection, json_file, ss, ts, tf):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
     msg = read_pcd(filename)
@@ -84,48 +58,6 @@ def rangeToImage(collection, json_file, ss, ts, tf):
 
     return pts_in_image
 
-
-mouseX, mouseY = 0, 0
-
-
-def click(event, x, y, flags, param):
-    global mouseX, mouseY
-    if event == cv2.EVENT_LBUTTONDOWN:
-        mouseX, mouseY = x, y
-    else:
-        mouseX, mouseY = 0, 0
-
-
-def annotateLimits(image):
-    cv2.namedWindow('image')
-    cv2.setMouseCallback('image', click)
-
-    extremas = {}
-    [extremas.setdefault(x, []) for x in range(4)]
-    colors = [(125, 125, 125), (0, 255, 0), (0, 0, 255), (125, 0, 125)]
-    annotating = True
-    i = 0
-    p_mouseX, p_mouseY = 0, 0
-    while i < 4:
-        cv2.imshow('image', image)
-        k = cv2.waitKey(20) & 0xFF
-        if k == ord('d'):
-            cv2.destroyWindow('image')
-            return [], False
-        elif k == ord('c'):
-            i += 1
-        else:
-            if (mouseX != 0 and mouseY != 0) and (p_mouseX != mouseX and p_mouseY != mouseY):
-                image = cv2.circle(image, (mouseX, mouseY), 5, colors[i], -1)
-                extremas[i].append([mouseX, mouseY])
-
-        p_mouseX = mouseX
-        p_mouseY = mouseY
-
-    cv2.destroyWindow('image')
-    return extremas, True
-
-
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
@@ -136,8 +68,8 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-rs", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-cs", "--camera_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     # ap.add_argument("-ef", "--eval_file", help="Path to file to read and/or write the evalutation data.", type=str,
     #                 required=True)
@@ -146,8 +78,8 @@ if __name__ == "__main__":
 
     # - Save args
     args = vars(ap.parse_args())
-    source_sensor = args['source_sensor']
-    target_sensor = args['target_sensor']
+    range_sensor = args['range_sensor']
+    camera_sensor = args['camera_sensor']
     show_images = args['show_images']
     # eval_file = args['eval_file']
     # use_annotation = args['use_annotation']
@@ -163,7 +95,7 @@ if __name__ == "__main__":
     f = open(test_json_file, 'r')
     test_dataset = json.load(f)
 
-    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + target_sensor + ".json"
+    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + camera_sensor + ".json"
     if os.path.exists(annotation_file) is False:
         raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
         exit(0)
@@ -219,8 +151,8 @@ if __name__ == "__main__":
 
     delta_total = []
 
-    from_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
-    to_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
+    from_frame = test_dataset['calibration_config']['sensors'][camera_sensor]['link']
+    to_frame = test_dataset['calibration_config']['sensors'][range_sensor]['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         # ---------------------------------------
@@ -228,12 +160,12 @@ if __name__ == "__main__":
         # ---------------------------------------
         vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
                                               test_dataset['collections'][collection_key]['transforms'])
-        pts_in_image = rangeToImage(collection, test_json_file, source_sensor, target_sensor, vel2cam)
+        pts_in_image = rangeToImage(collection, test_json_file, range_sensor, camera_sensor, vel2cam)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
-        filename = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
+        filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
         print (filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
