@@ -197,15 +197,15 @@ if __name__ == "__main__":
 
     depth_frame = test_dataset['calibration_config']['sensors'][depth_sensor]['link']
     lidar_frame = test_dataset['calibration_config']['sensors'][range_sensor]['link']
-    pattern_frame = test_dataset['calibration_config']['sensors'][range_sensor]['link']
+    pattern_frame = test_dataset['calibration_config']['calibration_pattern']['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2pattern = atom_core.atom.getTransform(depth_frame, lidar_frame,
+        vel2pattern = atom_core.atom.getTransform( pattern_frame,lidar_frame,
                                                   test_dataset['collections'][collection_key]['transforms'])
-        depth2pattern = atom_core.atom.getTransform(depth_frame, lidar_frame,
+        depth2pattern = atom_core.atom.getTransform( pattern_frame,depth_frame,
                                                     test_dataset['collections'][collection_key]['transforms'])
 
         lidar_points_in_pattern = rangeToImage(collection, test_json_file, range_sensor, vel2pattern)
