@@ -312,3 +312,10 @@ if __name__ == "__main__":
     print(
         '------------------------------------------------------------------------------------------------------------------------------------------------------------')
 
+    print("Press ESC to quit and close all open windows.")
+
+    while True:
+        k = cv2.waitKey(0) & 0xFF
+        if k == 27:
+            cv2.destroyAllWindows()
+            break

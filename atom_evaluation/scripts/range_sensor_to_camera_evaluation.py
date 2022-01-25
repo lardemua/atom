@@ -169,6 +169,7 @@ if __name__ == "__main__":
         print (filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
+        # print(limits_on_image)
 
         # Clear image annotations
         image = cv2.imread(filename)
@@ -266,7 +267,13 @@ if __name__ == "__main__":
         'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1]))
     print(
         '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print("Press ESC to quit and close all open windows.")
 
+    while True:
+        k = cv2.waitKey(0) & 0xFF
+        if k == 27:
+            cv2.destroyAllWindows()
+            break
     # Save evaluation data
     # if use_annotation is True:
     #     createJSONFile(eval_file, output_dict)
