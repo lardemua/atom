@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Reads the calibration results from a json file and computes the evaluation metrics
@@ -87,8 +87,8 @@ def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
 
     # -- Project them to the image
     w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
-    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
+    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
     pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
@@ -299,8 +299,8 @@ if __name__ == "__main__":
             cv2.waitKey()
 
     total_pts = len(delta_total)
-    delta_total = np.array(delta_total, np.float)
-    avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
+    delta_total = np.array(delta_total, float)
+    avg_error_x = np.sum(np.abs(delta_to[:, 0])) / total_pts
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
     rms = np.sqrt((delta_total ** 2).mean())

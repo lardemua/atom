@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Reads the calibration results from a json file and computes the evaluation metrics
@@ -53,8 +53,8 @@ def rangeToImage(collection, json_file, ss, ts, tf):
 
     # -- Project them to the image
     w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
-    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
+    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
     lidar_pts_in_img, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
