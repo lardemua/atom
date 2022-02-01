@@ -255,7 +255,8 @@ def getLinearIndexWidth(x, y, width):
 
 
 def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
-                  scatter_seed=False, subsample_solid_points=1, debug=False, limit_sample_step=5):
+                  scatter_seed=False, scatter_seed_radius=8, subsample_solid_points=1, debug=False,
+                  limit_sample_step=5):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -266,6 +267,7 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     :param pyrdown: The ammount of times the image must be downscaled using pyrdown.
     :param scatter_seed: To scatter the given seed in a circle of seed points. Useful because the given seed coordinate
                          may fall under a black rectangle of the pattern.
+    :param scatter_seed: The radius of the scatter points
     :param subsample_solid_points: Subsample factor of solid pattern points to go into the output labels.
     :param debug: Debug prints and shows images.
     :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
@@ -337,7 +339,7 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     if scatter_seed:
         n = 10
         thetas = np.linspace(0, 2 * math.pi, n)
-        r = 8
+        r = scatter_seed_radius
         initial_seeds = np.zeros((2, n), dtype=np.int)
         for col in range(0, n):
             x = seed_x + r * math.cos(thetas[col])
@@ -437,19 +439,48 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
     pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
     pattern_edges_mask2 = pattern_edges_mask.copy()
+
+    # contours using cv2.findContours
     contours, hierarchy = cv2.findContours(pattern_edges_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
+    # contours using cv2.minAreaRect
+    # https://theailearner.com/2020/11/03/opencv-minimum-area-rectangle/
+    point_coordinates = np.argwhere(pattern_edges_mask == 255)
+    convex_hull_points = cv2.convexHull(point_coordinates)
+
+    if not convex_hull_points is None:
+        contours = [[]]  # stupid data strucutre just to be the same as in contours ...
+        convex_hull_points = convex_hull_points.tolist()
+        convex_hull_points.append(convex_hull_points[0])
+        print('convex_hull_points = ' + str(convex_hull_points))
+        for idx, (corner_1, corner_2) in enumerate(zip(convex_hull_points, convex_hull_points[1:])):
+            print('corner_1 ' + str(corner_1))
+            print('line ' + str(idx))
+            x1, y1 = corner_1[0]
+            x2, y2 = corner_2[0]
+            vector_x = x2 - x1
+            vector_y = y2 - y1
+
+            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            print('distance ' + str(distance))
+            number_of_samples_in_line = int(distance / limit_sample_step)
+            print('number_of_samples_in_line ' + str(number_of_samples_in_line))
+
+            sampled_values = np.linspace(0, 1, number_of_samples_in_line).astype(float).tolist()
+            print('sampled_values ' + str(sampled_values))
+            for sampled_value in sampled_values:
+                x = int(x1 + sampled_value * vector_x)
+                y = int(y1 + sampled_value * vector_y)
+                contours[0].append([[y, x]])
 
     # cv2.imshow('Canny', pattern_edges_mask)
-    # cv2.imshow('Canny Edges After Contouring', pattern_edges_mask2)
+    cv2.imshow('Canny Edges After Contouring', pattern_edges_mask)
     # print(image.dtype)
     # # image2 = np.zeros(image.shape, dtype=np.float)
     # image2 = image.copy()
     # cv2.drawContours(image2, contours, -1, (0, 255, 0), 3)
     # cv2.imshow('Contours', image2)
     # cv2.waitKey(10)
-
-    # TODO we could do the convex hull here to avoid concavities ...
 
     if debug:
         cv2.namedWindow('pattern_solid_mask', cv2.WINDOW_NORMAL)
@@ -520,7 +551,8 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
             x = value[0][0]
             y = value[0][1]
 
-            if not np.isnan(pattern_solid_mask[y, x]):
+            # TODO Why not test if the original image is nan?
+            if not np.isnan(image[y, x]):
                 idxs_rows.append(y)
                 idxs_cols.append(x)
 
@@ -582,7 +614,6 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
                 x = int(x / (2 * pyrdown))
 
             cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
-
 
     # Initial seed point as red dot
     cv2.line(gui_image, (seed_x, seed_y), (seed_x, seed_y), (0, 0, 255), 3)

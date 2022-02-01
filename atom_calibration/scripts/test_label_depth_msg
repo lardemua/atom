@@ -40,27 +40,26 @@ def callbackMessageReceived(msg, seed):
     # seed_x, seed_y = 800, 220
     # TODO add one seed point as dict for consistency
     labels, result_image, new_seed_point = labelDepthMsg(msg, seed=seed, bridge=bridge,
-                                                         pyrdown=0, scatter_seed=True, debug=False,
-                                                         subsample_solid_points=6, limit_sample_step=25)
+                                                         pyrdown=0, scatter_seed=True, scatter_seed_radius=36,
+                                                         debug=True,
+                                                         subsample_solid_points=6, limit_sample_step=3)
     rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
 
     seed['x'] = new_seed_point['x']
     seed['y'] = new_seed_point['y']
 
-
-    cv2.namedWindow('labeled image', cv2.WINDOW_NORMAL)
-    cv2.imshow('labeled image', result_image)
-    cv2.waitKey(20)
+    # cv2.namedWindow('labeled image', cv2.WINDOW_NORMAL)
+    # cv2.imshow('labeled image', result_image)
+    # cv2.waitKey(0)
 
 
 def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
 
     # seed = {'x':300, 'y':200}
-    seed = {'x':510, 'y':180}
+    seed = {'x': 510, 'y': 180}
 
     rospy.Subscriber('depth_image_topic', Image, functools.partial(callbackMessageReceived, seed=seed), queue_size=1)
-
 
     rospy.spin()
 
