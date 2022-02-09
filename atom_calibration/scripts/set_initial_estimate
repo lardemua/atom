@@ -11,8 +11,14 @@ import rospy
 from colorama import Fore, Style
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
-from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
+from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker, MarkerArray
 from urdf_parser_py.urdf import URDF
+from atom_calibration.collect.label_messages import calculateFrustrum
+from rospy_message_converter import message_converter
+from image_geometry import PinholeCameraModel
+import image_geometry
+from sensor_msgs.msg import CameraInfo
+
 
 # local packages
 from atom_core.ros_utils import filterLaunchArguments
@@ -32,6 +38,9 @@ class InteractiveFirstGuess(object):
         self.menu = None
 
     def init(self):
+        self.frustum_marker_array = MarkerArray()
+        self.publisher_frustrum = rospy.Publisher('/frustum', MarkerArray, queue_size=1)
+
         # The parameter /robot_description must exist
         if not rospy.has_param('/robot_description'):
             rospy.logerr("Parameter '/robot_description' must exist to continue")
@@ -59,6 +68,7 @@ class InteractiveFirstGuess(object):
         self.menu.insert("Reset all sensors to initial configuration", callback=self.onResetAll)
         self.menu.reApply(self.server)
 
+
         # For each node generate an interactive marker.
         for name, sensor in self.config['sensors'].items():
             print(Fore.BLUE + '\nSensor name is ' + name + Style.RESET_ALL)
@@ -71,6 +81,28 @@ class InteractiveFirstGuess(object):
             # Append to the list of sensors
             self.sensors.append(Sensor(name, self.server, self.menu, **params))
             print('... done')
+
+            if sensor['modality']=='depth':
+                print('depth modality')
+                pinhole_camera_model = image_geometry.PinholeCameraModel()
+                camera_info=rospy.wait_for_message(sensor['topic_name']+'/CameraInfo', CameraInfo)
+                pinhole_camera_model.fromCameraInfo(
+                    message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                                        camera_info))
+
+
+                width = pinhole_camera_model.fullResolution()[0]
+                height = pinhole_camera_model.fullResolution()[1]
+                f_x = pinhole_camera_model.fx()
+                f_y = pinhole_camera_model.fy()
+
+                frame_id = sensor['link']
+
+                marker_frustrum = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=5, frame_id=frame_id,
+                                                    ns=sensor['topic_name'])
+                # print(marker_frustrum)
+                self.frustum_marker_array.markers.append(marker_frustrum)
+                self.publisher_frustrum.publish(self.frustum_marker_array)
 
         self.server.applyChanges()
 
