@@ -77,8 +77,8 @@ def selected_points_callback(selected_point_cloud, listener1, models):
     prefix='c' + selected_collection_key + '_'
     while not rospy.is_shutdown():
         try:
-            listener1.waitForTransform(selected_point_cloud.header.frame_id, prefix + original_point_cloud.header.frame_id,rospy.Time(), rospy.Duration(1.0))
-            (trans, quat) = listener1.lookupTransform(selected_point_cloud.header.frame_id, prefix + original_point_cloud.header.frame_id, rospy.Time())
+            listener1.waitForTransform(prefix + original_point_cloud.header.frame_id, prefix + selected_point_cloud.header.frame_id,rospy.Time(), rospy.Duration(1.0))
+            (trans, quat) = listener1.lookupTransform(prefix + original_point_cloud.header.frame_id, prefix + selected_point_cloud.header.frame_id, rospy.Time())
             break
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
