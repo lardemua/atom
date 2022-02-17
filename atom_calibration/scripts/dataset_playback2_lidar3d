@@ -51,111 +51,59 @@ previous_selected_collection_key = None
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-def selected_points_callback(selected_point_cloud, listener1, models):
+def selected_points_callback(selected_point_cloud, models):
+    global idx_collection
+    selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
+        
+    # Extract xyz coordinates from the selected points
+    selected_idxs = []
+    points_selected = pc2.read_points(selected_point_cloud)
+    gen_selected_points = list(points_selected)
+    
+    for point in gen_selected_points:
+        selected_idxs.append(int(point[3]))
+            
+    # update dataset with new indexs!
+    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs'].extend(selected_idxs)
+
+def selected_points_border_callback(selected_point_cloud, models):
+    global idx_collection
+    selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
+        
+    # Extract xyz coordinates from the selected points
+    selected_idxs = []
+    points_selected = pc2.read_points(selected_point_cloud)
+    gen_selected_points = list(points_selected)
+    
+    for point in gen_selected_points:
+        selected_idxs.append(int(point[3]))
+            
+    # update dataset with new indexs!
+    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points'].extend(selected_idxs)
+
+def selected_points_remove_callback(selected_point_cloud, models):
     global idx_collection
     selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
     
     # Extract xyz coordinates from the selected points
-    xyz_selected = []
-    points_selected = pc2.read_points(selected_point_cloud, skip_nans=True)
-    gen_points = list(points_selected)
-    print('point_in', selected_collection_key)
-    for point in gen_points:
-        xyz_selected.append([point[0],point[1],point[2], 1])
-        
-    # Extract xyz coordinates from the original point cloud
-    original_point_cloud = getPointCloudMessageFromDictionary(models['dataset']['collections'][selected_collection_key]['data']['lidar3d'])
-    xyz_original = []
-    points_original = pc2.read_points(original_point_cloud, skip_nans=True)
-    gen_points = list(points_original)
-    for point in gen_points:
-        xyz_original.append([point[0],point[1],point[2], 1])
-        
+    selected_idxs = []
+    points_selected = pc2.read_points(selected_point_cloud)
+    gen_selected_points = list(points_selected)
     
-    # Get transformation to transform the frame of the original pointcloud (lidar3d) into the frame of the selected points (base_footprint)
-    
-    prefix='c' + selected_collection_key + '_'
-    while not rospy.is_shutdown():
-        try:
-            listener1.waitForTransform(prefix + original_point_cloud.header.frame_id, prefix + selected_point_cloud.header.frame_id,rospy.Time(), rospy.Duration(1.0))
-            (trans, quat) = listener1.lookupTransform(prefix + original_point_cloud.header.frame_id, prefix + selected_point_cloud.header.frame_id, rospy.Time())
-            break
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            continue
-    # Compute 3D tranlaction matrix (ignoring quat beacuse we are dealing with points)
-    trans_matrix = np.zeros((4,4))
-    trans_matrix[:3,3] = trans
-    trans_matrix[0,0] = 1
-    trans_matrix[1,1] = 1
-    trans_matrix[2,2] = 1
-    trans_matrix[3,3] = 1
-    
-    
-    xyz_original_corrected = []
-    for point in xyz_original:
-        xyz_original_corrected.append(np.dot(trans_matrix, np.array(point).reshape((4,1))).reshape(1,4)[0].tolist())
-                    
-    # Find idxs of the selected points!
-    idxs = []
-    for selected_point in xyz_selected:
-        idxs_distance = []
-        for original_corrected in xyz_original_corrected:
-            idxs_distance.append(np.linalg.norm(np.subtract(selected_point, original_corrected)))
-        idxs.append(idxs_distance.index(min(idxs_distance)))
-        
+    for point in gen_selected_points:
+        selected_idxs.append(int(point[3]))
             
-    # update dataset with new indexs!
-    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs'] = idxs
+    # remove these points from the idx and idxs_limit_points
     
+    old_idxs = models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs']
+    old_idxs_limit_points = models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points']
     
+    new_idxs = [i for i in old_idxs if i not in selected_idxs]
+    new_idxs_limit_points = [i for i in old_idxs_limit_points if i not in selected_idxs]
     
-    # # add only the other collections!!
+    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs'] = new_idxs
+    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points'] = new_idxs_limit_points
     
-    
-    # marker_array = MarkerArray()
-    # marker_array_new = MarkerArray()
-    
-    # for marker in models['graphics']['ros']['MarkersLabeled'].markers:
-    #     prefix = marker.header.frame_id[:3]
-    #     if prefix == 'c' + str(selected_collection_key) + '_':
-    #         marker_array.markers.append(marker)
-    #         marker_array.markers[-1].action = Marker.DELETE
-    #     else:
-    #         marker_array_new.markers.append(marker)
-    #         marker_array_new.markers[-1].action = Marker.ADD
-            
-            
-    # models['graphics']['ros']['PubLabeled'].publish(marker_array)
-    # models['graphics']['ros']['PubLabeled'].publish(marker_array_new)
-            
-            
-               
-    # frame_id = genCollectionPrefix(selected_collection_key, models['dataset']['collections'][selected_collection_key]['data']['lidar3d']['header']['frame_id'])
-    # marker = Marker(header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
-    #                 ns=str(selected_collection_key) + '-' + str('lidar3d'), id=0, frame_locked=True,
-    #                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-    #                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-    #                 scale=Vector3(x=0.05, y=0.05, z=0.05),
-    #                 color=ColorRGBA(r=models['graphics']['collections'][selected_collection_key]['color'][0],
-    #                                 g=models['graphics']['collections'][selected_collection_key]['color'][1],
-    #                                 b=models['graphics']['collections'][selected_collection_key]['color'][2], a=0.5)
-    #                 )
-
-    # points = getPointsInSensorAsNPArray(selected_collection_key, 'lidar3d', 'idxs', models['dataset'])
-
-    # for idx in range(0, points.shape[1]):
-    #     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
-
-    # marker_array_new.markers.append(copy.deepcopy(marker))
-
-    
-            
-    # # append new markers (related with the current collection)
-    # models['graphics']['ros']['MarkersLabeled'] = marker_array_new
-            
-    
-
-
 
 def signal_handler(sig, frame, dataset, args):
     print('Stopping optimization (Ctrl+C pressed)')
@@ -378,9 +326,12 @@ def main():
     
     
     # Define subscriber to receive the selected points
-    listener1 = tf.TransformListener()
-    selected_points_callback_partial = partial(selected_points_callback, listener1=listener1, models= opt.data_models)
+    selected_points_callback_partial = partial(selected_points_callback, models= opt.data_models)
+    selected_points_border_callback_partial = partial(selected_points_border_callback, models= opt.data_models)
+    selected_points_remove_callback_partial = partial(selected_points_remove_callback, models= opt.data_models)
     rospy.Subscriber("/rviz_selected_points", PointCloud2, selected_points_callback_partial, queue_size=1, buff_size=52428800) 
+    rospy.Subscriber("/rviz_selected_border_points", PointCloud2, selected_points_border_callback_partial, queue_size=1, buff_size=52428800) 
+    rospy.Subscriber("/rviz_selected_remove_points", PointCloud2, selected_points_remove_callback_partial, queue_size=1, buff_size=52428800) 
     
     rate = rospy.Rate(1)  # 10hz
     while not rospy.is_shutdown():
