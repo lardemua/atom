@@ -1,0 +1,18 @@
+<library path="libselected_points_publisher">
+  <class name="rviz_plugin_selected_points_publisher/SelectedPointsPublisher"
+         type="rviz_plugin_selected_points_publisher::SelectedPointsPublisher"
+         base_class_type="rviz::Tool">
+    <description>
+      Drag with the left button to select objects in the 3D scene.
+      Hold the Alt key to change viewpoint as in the Move tool.
+      Holding the Shift key will allow adding to the current selection.
+      Holding the Ctrl key will allow subtraction from the current selection.
+      The following keys are also available:
+
+      'p' - Publish selected points to /rviz_selected_points
+      'b' - Publish selected points to /rviz_selected_border_points
+      'r' - Publish selected points to /rviz_selected_remove_points
+      'c' - Publish selected points to /rviz_selected_clear_all_points
+    </description>
+  </class>
+</library>
