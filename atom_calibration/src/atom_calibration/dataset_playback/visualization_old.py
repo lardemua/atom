@@ -9,7 +9,6 @@ import os
 import pprint
 import networkx as nx
 import matplotlib.pyplot as plt
-import struct
 
 # 3rd-party
 import colorama
@@ -27,12 +26,11 @@ from rospy_message_converter import message_converter
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from std_msgs.msg import Header, ColorRGBA, UInt8MultiArray
 from urdf_parser_py.urdf import URDF
-from sensor_msgs.msg import Image, sensor_msgs, CameraInfo, geometry_msgs, PointCloud2, PointField
+from sensor_msgs.msg import Image, sensor_msgs, CameraInfo, geometry_msgs, PointCloud2
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion, Transform, TransformStamped
 from cv_bridge import CvBridge
 from colorama import Style, Fore
-import sensor_msgs.point_cloud2 as pc2
 
 from matplotlib import cm
 
@@ -49,18 +47,7 @@ from atom_calibration.calibration.objective_function import *
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-# although this function is somewhere else, in the other place it uses the dataset as cache...
-def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _dataset):
-    cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
-    points = np.zeros((4, pc.shape[0]))
-    points[0, :] = pc['x']
-    points[1, :] = pc['y']
-    points[2, :] = pc['z']
-    points[3, :] = 1
-    return points
-
+@Cache(args_to_ignore=['dataset'])
 def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
     dictionary = dataset['collections'][collection_key]['data'][sensor_key]
     return getCvImageFromDictionary(dictionary)
@@ -526,7 +513,6 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     config = models['dataset']['calibration_config']
     graphics = models['graphics']
 
-    collection = dataset['collections'][selected_collection_key]
     # print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
 
     now = rospy.Time.now()  # time used to publish all visualization messages
@@ -624,47 +610,27 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     # Update timestamp for pointcloud2 message
     for pointcloud_msg in graphics['ros']['PointClouds']:
         pointcloud_msg.header.stamp = now
-    
+
+    # Create a new marker array which contains only the marker related to the selected collection
+    # for the Labeled data
+    marker_array = MarkerArray()
+    for marker in graphics['ros']['MarkersLabeled'].markers:
+        prefix = marker.header.frame_id[:3]
+        if prefix == 'c' + str(selected_collection_key) + '_':
+            marker_array.markers.append(marker)
+            marker_array.markers[-1].action = Marker.ADD
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+            marker_array.markers.append(marker)
+            marker_array.markers[-1].action = Marker.DELETE
+
+    graphics['ros']['PubLabeled'].publish(marker_array)
+
     # Create a new pointcloud which contains only the points related to the selected collection
     for pointcloud_msg in graphics['ros']['PointClouds']:
         prefix = pointcloud_msg.header.frame_id[:3]
         sensor = pointcloud_msg.header.frame_id[3:]
         if prefix == 'c' + str(selected_collection_key) + '_':
-            # change intensity channel according to the idxs
-            points_collection = pc2.read_points(pointcloud_msg)
-            gen_points = list(points_collection)
-            final_points = []
-            
-            idxs = dataset['collections'][selected_collection_key]['labels'][sensor]['idxs']
-            idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
-            sensor_idx = list(dataset['collections'][selected_collection_key]['labels'].keys()).index(sensor)
-            
-            for idx, point in enumerate(gen_points):
-                if idx in idxs_limit_points:
-                    r,g,b = 50 * sensor_idx,70,20
-                elif idx in idxs:
-                    r,g,b = 100 * sensor_idx,220,20
-                else:
-                    r,g,b = 186, 189, 182
-                    
-                point_color = [point[0], point[1], point[2], idx, 0, sensor_idx]
-                rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, 255))[0]
-                point_color[4] = rgb
-                    
-                final_points.append(point_color)
-                
-            fields = [PointField('x', 0, PointField.FLOAT32, 1),
-            PointField('y', 4, PointField.FLOAT32, 1),
-            PointField('z', 8, PointField.FLOAT32, 1),
-            PointField('idx', 12, PointField.FLOAT32, 1),
-            PointField('rgb', 20, PointField.UINT32, 1),
-            PointField('sensor_idx', 24, PointField.FLOAT32, 1)
-            ]
-            pointcloud_msg_final = pc2.create_cloud(pointcloud_msg.header, fields, final_points)
-                        
-            # create a new point cloud2, and change a value related to the idx
-            graphics['ros']['PubPointCloud'][sensor].publish(pointcloud_msg_final)
-    
+            graphics['ros']['PubPointCloud'][sensor].publish(pointcloud_msg)
 
     # Create a new marker array which contains only the marker related to the selected collection
     # Publish the pattern data
@@ -760,6 +726,6 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
             elif sensor['modality'] == 'lidar3d':
                 pass
             else:
-                pass
+                raise ValueError("Unknown sensor msg_type or modality")
 
     graphics['ros']['Rate'].sleep()
