@@ -537,8 +537,10 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     
 
     collection = dataset['collections'][selected_collection_key]
-    idxs = dataset['collections'][selected_collection_key]['labels']['lidar3d']['idxs']
-    idxs_limit_points = dataset['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points']
+    
+    
+    # idxs = dataset['collections'][selected_collection_key]['labels']['lidar3d']['idxs']
+    # idxs_limit_points = dataset['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points']
     
 
     transfoms = []
@@ -645,15 +647,20 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
             points_collection = pc2.read_points(pointcloud_msg)
             gen_points = list(points_collection)
             final_points = []
+            
+            idxs = dataset['collections'][selected_collection_key]['labels'][sensor]['idxs']
+            idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
+            sensor_idx = list(dataset['collections'][selected_collection_key]['labels'].keys()).index(sensor)
+            
             for idx, point in enumerate(gen_points):
                 if idx in idxs_limit_points:
-                    r,g,b = 20,70,20
+                    r,g,b = 50 * sensor_idx,70,20
                 elif idx in idxs:
-                    r,g,b = 20,220,20
+                    r,g,b = 100 * sensor_idx,220,20
                 else:
                     r,g,b = 186, 189, 182
                     
-                point_color = [point[0], point[1], point[2], idx, 0]
+                point_color = [point[0], point[1], point[2], idx, 0, sensor_idx]
                 rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, 255))[0]
                 point_color[4] = rgb
                     
@@ -663,12 +670,12 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
             PointField('y', 4, PointField.FLOAT32, 1),
             PointField('z', 8, PointField.FLOAT32, 1),
             PointField('idx', 12, PointField.FLOAT32, 1),
-            PointField('rgb', 20, PointField.UINT32, 1)
+            PointField('rgb', 20, PointField.UINT32, 1),
+            PointField('sensor_idx', 24, PointField.FLOAT32, 1)
             ]
             pointcloud_msg_final = pc2.create_cloud(pointcloud_msg.header, fields, final_points)
                         
             # create a new point cloud2, and change a value related to the idx
-                
             graphics['ros']['PubPointCloud'][sensor].publish(pointcloud_msg_final)
         
 
@@ -714,6 +721,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
 
     # Publish Annotated images
     for sensor_key, sensor in sensors.items():
+        print(sensor['modality'])
         # if sensor['msg_type'] == 'Image':
         if sensor['modality'] == 'rgb':
             if args['show_images']:
@@ -758,15 +766,14 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     camera_info_msg)
 
 
-
+            
             # elif sensor['msg_type'] == 'LaserScan':
             elif sensor['modality'] == 'lidar2d':
                 pass
             # elif sensor['msg_type'] == 'PointCloud2':
             elif sensor['modality'] == 'lidar3d':
                 pass
-            else:
-                raise ValueError("Unknown sensor msg_type or modality")
+
 
     
     graphics['ros']['Rate'].sleep()

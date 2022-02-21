@@ -8,6 +8,7 @@ import os, math, signal, sys
 import argparse, random
 from functools import partial
 import numpy as np
+
 import ros_numpy
 from pynput import keyboard
 from sensor_msgs.msg import PointCloud2
@@ -60,11 +61,14 @@ def selected_points_callback(selected_point_cloud, models):
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
     
+    # sensor from the point cloud
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
+    
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
             
     # update dataset with new indexs!
-    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs'].extend(selected_idxs)
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'].extend(selected_idxs)
 
 def selected_points_border_callback(selected_point_cloud, models):
     global idx_collection
@@ -75,11 +79,14 @@ def selected_points_border_callback(selected_point_cloud, models):
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
     
+    # sensor from the point cloud
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
+    
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
             
     # update dataset with new indexs!
-    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points'].extend(selected_idxs)
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'].extend(selected_idxs)
 
 def selected_points_remove_callback(selected_point_cloud, models):
     global idx_collection
@@ -90,35 +97,45 @@ def selected_points_remove_callback(selected_point_cloud, models):
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
     
+    # sensor from the point cloud
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
+    
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
             
     # remove these points from the idx and idxs_limit_points
     
-    old_idxs = models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs']
-    old_idxs_limit_points = models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points']
+    old_idxs = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
+    old_idxs_limit_points = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
     
     new_idxs = [i for i in old_idxs if i not in selected_idxs]
     new_idxs_limit_points = [i for i in old_idxs_limit_points if i not in selected_idxs]
     
-    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs'] = new_idxs
-    models['dataset']['collections'][selected_collection_key]['labels']['lidar3d']['idxs_limit_points'] = new_idxs_limit_points
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = new_idxs
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = new_idxs_limit_points
+    
+def selected_points_clear_all_callback(selected_point_cloud, models):
+    global idx_collection
+    selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
+    
+    # Extract xyz coordinates from the selected points
+    selected_idxs = []
+    points_selected = pc2.read_points(selected_point_cloud)
+    gen_selected_points = list(points_selected)
+    
+    # sensor from the point cloud
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
+
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = []
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = []
     
 
 def signal_handler(sig, frame, dataset, args):
-    print('Stopping optimization (Ctrl+C pressed)')
-    # Save new dataset to json file
-    
-    D = {'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
-            'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-    
-   
-    output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-    atom_core.dataset_io.saveResultsJSON(output_file, D)
+    print('end of dataset reviewer')
     sys.exit(0)
 
 # function to enable change collection in RViz through the keys
-def key_pressed(key, idx_max_collection, collections_list):
+def key_pressed(key, idx_max_collection, collections_list, dataset, args):
     global idx_collection
     global previous_selected_collection_key
 
@@ -129,15 +146,23 @@ def key_pressed(key, idx_max_collection, collections_list):
             print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
-    if key == keyboard.Key.left:
+    elif key == keyboard.Key.left:
         if idx_collection > 0:
             previous_selected_collection_key = collections_list[idx_collection]
             idx_collection -= 1
             print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
+    
+    elif key.char.lower() == 's':
+        D = {'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
+        'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
+        output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
+        atom_core.dataset_io.saveResultsJSON(output_file, D)
+        print(f'A new dataset was saved in {output_file}')
 
 
+    
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
@@ -258,10 +283,12 @@ def main():
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
-    key_pressed_partial = partial(key_pressed, idx_max_collection = len(collections_list) - 1, collections_list = collections_list)
+    key_pressed_partial = partial(key_pressed, idx_max_collection = len(collections_list) - 1, collections_list = collections_list, dataset = dataset, args=args)
     listener = keyboard.Listener(
     on_press=key_pressed_partial)
     listener.start()
+    
+
     
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -329,9 +356,11 @@ def main():
     selected_points_callback_partial = partial(selected_points_callback, models= opt.data_models)
     selected_points_border_callback_partial = partial(selected_points_border_callback, models= opt.data_models)
     selected_points_remove_callback_partial = partial(selected_points_remove_callback, models= opt.data_models)
+    selected_points_clear_all_callback_partial = partial(selected_points_clear_all_callback, models= opt.data_models)
     rospy.Subscriber("/rviz_selected_points", PointCloud2, selected_points_callback_partial, queue_size=1, buff_size=52428800) 
     rospy.Subscriber("/rviz_selected_border_points", PointCloud2, selected_points_border_callback_partial, queue_size=1, buff_size=52428800) 
     rospy.Subscriber("/rviz_selected_remove_points", PointCloud2, selected_points_remove_callback_partial, queue_size=1, buff_size=52428800) 
+    rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2, selected_points_clear_all_callback_partial, queue_size=1, buff_size=52428800) 
     
     rate = rospy.Rate(1)  # 10hz
     while not rospy.is_shutdown():
