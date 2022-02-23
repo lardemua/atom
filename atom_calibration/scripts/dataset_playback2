@@ -98,8 +98,12 @@ def selected_points_callback(selected_point_cloud, models):
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
             
-    # update dataset with new indexs!
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'].extend(selected_idxs)
+            
+    idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
+    
+    [idx_center.append(x) for x in selected_idxs if x not in idx_center]
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
+    
 
 def selected_points_border_callback(selected_point_cloud, models):
     global idx_collection
@@ -115,9 +119,17 @@ def selected_points_border_callback(selected_point_cloud, models):
     
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
-            
-    # update dataset with new indexs!
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'].extend(selected_idxs)
+
+    
+    idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
+    idx_border = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
+    
+    [idx_center.append(x) for x in selected_idxs if x not in idx_center]
+    [idx_border.append(x) for x in selected_idxs if x not in idx_border]
+    
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
+
 
 def selected_points_remove_callback(selected_point_cloud, models):
     global idx_collection
@@ -135,15 +147,14 @@ def selected_points_remove_callback(selected_point_cloud, models):
         selected_idxs.append(int(point[3]))
             
     # remove these points from the idx and idxs_limit_points
+    idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
+    idx_border = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
     
-    old_idxs = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
-    old_idxs_limit_points = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
+    idx_center_new = [x for x in idx_center if x not in selected_idxs]
+    idx_border_new = [x for x in idx_border if x not in selected_idxs]
     
-    new_idxs = [i for i in old_idxs if i not in selected_idxs]
-    new_idxs_limit_points = [i for i in old_idxs_limit_points if i not in selected_idxs]
-    
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = new_idxs
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = new_idxs_limit_points
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center_new
+    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
     
 def selected_points_clear_all_callback(selected_point_cloud, models):
     global idx_collection
