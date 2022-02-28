@@ -123,19 +123,9 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
         ys.append(y)
         zs.append(z)
 
-        # print('\nidx=' + str(idx))
-        #
-        # print('c_x=' + str(c_x))
-        # print('c_y=' + str(c_y))
-        # print('f_x=' + str(f_x))
-        # print('f_y=' + str(f_y))
-        # print('x_pix=' + str(x_pix))
-        # print('y_pix=' + str(y_pix))
-
     homogeneous = np.ones((len(xs)))
-    points_mike = np.array((xs, ys, zs, homogeneous), dtype=float)
-    # print(points_mike)
-    return points_mike
+    points = np.array((xs, ys, zs, homogeneous), dtype=float)
+    return points
 
 
 def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
