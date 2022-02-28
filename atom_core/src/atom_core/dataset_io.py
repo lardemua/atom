@@ -156,7 +156,7 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
     # Process the dataset to remove data from the data fields and, if needed, write the files.
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
-            createDataFile(dataset_in, collection_key, sensor, sensor_key, output_folder)
+            createDataFile(dataset, collection_key, sensor, sensor_key, output_folder)
 
         # Do the same for additional data topics ...
         # for description, sensor in dataset['additional_sensor_data'].items():
@@ -177,6 +177,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             create_data_file = False
             if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # remove the data field
                 del dataset['collections'][collection_key][data_type][sensor_key]['data']
+
         else:
             create_data_file = True
     else:
@@ -187,7 +188,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
             'Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key) + ' msg type ' +
             sensor[
                 'msg_type'])
-    # TODO add if for depth modality
+
     if create_data_file and sensor['modality'] == 'rgb':  # save image.
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
@@ -203,7 +204,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
-    elif create_data_file and sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d':  # save point cloud
+    elif create_data_file and sensor['modality'] == 'lidar3d': # save point cloud
+        # sensor['modality'] == 'lidar2d':  # TODO Add for lidar 2D
         # Save file if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
