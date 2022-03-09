@@ -96,18 +96,18 @@ class CharucoPattern(object):
         params = cv2.aruco.DetectorParameters_create()
 
         # setup initial data
-        # params.adaptiveThreshConstant = 2
-        # params.adaptiveThreshWinSizeMin = 41
-        # params.adaptiveThreshWinSizeMax = 3
+        params.adaptiveThreshConstant = 2
+        # params.adaptiveThreshWinSizeMin = 3
+        # params.adaptiveThreshWinSizeMax = 10
         # params.adaptiveThreshWinSizeStep = 5
-        # params.minMarkerPerimeterRate = 0.003
-        # params.maxMarkerPerimeterRate = 4
-        # params.minCornerDistanceRate = 0.1
-        # params.markerBorderBits = 1
-        # params.minOtsuStdDev = 15
-        # params.perspectiveRemoveIgnoredMarginPerCell = .1
-        # params.maxErroneousBitsInBorderRate = .15
-        # params.errorCorrectionRate = .6
+        params.minMarkerPerimeterRate = 0.003
+        params.maxMarkerPerimeterRate = 4
+        params.minCornerDistanceRate = 0.1
+        params.markerBorderBits = 1
+        params.minOtsuStdDev = 15
+        params.perspectiveRemoveIgnoredMarginPerCell = .1
+        params.maxErroneousBitsInBorderRate = .15
+        params.errorCorrectionRate = .6
 
         # param.doCornerRefinement = False
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
