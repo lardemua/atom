@@ -452,29 +452,29 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         contours = [[]]  # stupid data strucutre just to be the same as in contours ...
         convex_hull_points = convex_hull_points.tolist()
         convex_hull_points.append(convex_hull_points[0])
-        print('convex_hull_points = ' + str(convex_hull_points))
+        # print('convex_hull_points = ' + str(convex_hull_points))
         for idx, (corner_1, corner_2) in enumerate(zip(convex_hull_points, convex_hull_points[1:])):
-            print('corner_1 ' + str(corner_1))
-            print('line ' + str(idx))
+            # print('corner_1 ' + str(corner_1))
+            # print('line ' + str(idx))
             x1, y1 = corner_1[0]
             x2, y2 = corner_2[0]
             vector_x = x2 - x1
             vector_y = y2 - y1
 
             distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-            print('distance ' + str(distance))
+            # print('distance ' + str(distance))
             number_of_samples_in_line = int(distance / limit_sample_step)
-            print('number_of_samples_in_line ' + str(number_of_samples_in_line))
+            # print('number_of_samples_in_line ' + str(number_of_samples_in_line))
 
             sampled_values = np.linspace(0, 1, number_of_samples_in_line).astype(float).tolist()
-            print('sampled_values ' + str(sampled_values))
+            # print('sampled_values ' + str(sampled_values))
             for sampled_value in sampled_values:
                 x = int(x1 + sampled_value * vector_x)
                 y = int(y1 + sampled_value * vector_y)
                 contours[0].append([[y, x]])
 
     # cv2.imshow('Canny', pattern_edges_mask)
-    cv2.imshow('Canny Edges After Contouring', pattern_edges_mask)
+    # cv2.imshow('Canny Edges After Contouring', pattern_edges_mask)
     # print(image.dtype)
     # # image2 = np.zeros(image.shape, dtype=np.float)
     # image2 = image.copy()
