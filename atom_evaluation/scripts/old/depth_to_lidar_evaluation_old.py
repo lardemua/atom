@@ -28,7 +28,7 @@ from collections import OrderedDict
 from image_geometry import PinholeCameraModel
 
 from atom_core.naming import generateKey
-from atom_calibration.collect.label_messages_old import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
 
 
 # -------------------------------------------------------------------------------

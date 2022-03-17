@@ -23,7 +23,7 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
-from atom_calibration.collect.label_messages_old import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
 import imageio
 
 
