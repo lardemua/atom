@@ -3,6 +3,9 @@ import copy
 import json
 import os
 
+import tf2_ros
+import yaml
+
 import atom_core.config_io
 import atom_core.dataset_io
 import time
@@ -130,8 +133,14 @@ class DataCollectorAndLabeler:
             self.sensors[sensor_key] = sensor_dict
 
             print('config = ' + str(self.config))
+
+            label_data = True
+            if not args['skip_sensor_labelling'] is None:
+                if args['skip_sensor_labelling'](sensor_key):  # use the lambda expression csf
+                    label_data = False
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
-                                                    args['marker_size'], self.config['calibration_pattern'])
+                                                    args['marker_size'], self.config['calibration_pattern'],
+                                                    label_data=label_data)
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
@@ -401,6 +410,7 @@ class DataCollectorAndLabeler:
         transforms_list = []
 
         now = rospy.Time.now()
+
         all_frames = self.listener.getFrameStrings()
 
         for frame in all_frames:
