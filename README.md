@@ -65,7 +65,7 @@ roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets
 ```
 5. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
 ```
 
 # System calibration - Detailed Description
@@ -88,7 +88,7 @@ export ATOM_DATASETS="$HOME/datasets"
 And then you can refer to these environment variables when providing paths to atom scripts, e.g.
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS/<my_dataset>/data_collected.json
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json
 ```
 
 and you can also refer to them inside the [calibration configuration file](https://github.com/lardemua/atlascar2/blob/0c065508f325fb57e0439c1ba2e00f9468cd73e7/atlascar2_calibration/calibration/config.yml#L14)
@@ -145,13 +145,22 @@ Depending on the size and number of topics in the bag file, it may be necessary 
 roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder> bag_rate:=<playback_rate>
 ```
 
+You can use a couple of launch file arguments to configure the calibration procedure, namely
+
+* **overwrite** [false] - if the dataset folder is the same as one previously recorded, it overwrites the previous dataset
+* **ssl** [false] - **S**kip **S**ensor **L**abelling: A string to be evaluated into a lambda function that receives a sensor name as input and returns True or False to indicate if that sensor should be labelled. An example:
+   ```
+    roslaunch <your_robot_calibration> collect_data.launch 
+      output_folder:=$ATOM_DATASETS/<my_dataset>/
+      ssl:='lambda name: name in ["lidar_1", "lidar_2", "lidar_3"]'
+
 Here are some examples of the system collecting data:
 
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration) 
 ------------- | ------------- | -------------
 <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_data_collection.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
 
-A dataset is a folder which contains a set of collections. There, a _data_collected.json_ file stores all the information required for the calibration. There are also in the folder images and point clouds associated with each collection.
+A dataset is a folder which contains a set of collections. There, a _dataset.json_ file stores all the information required for the calibration. There are also in the folder images and point clouds associated with each collection.
 
 <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/viewing_data_collected_json.gif" width="600"/> 
 
@@ -160,7 +169,7 @@ A dataset is a folder which contains a set of collections. There, a _data_collec
 Finally, a system calibration is called through:
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
 ```
 
 
@@ -171,13 +180,13 @@ You can use a couple of launch file arguments to configure the calibration proce
 * **ssf** [false] - **S**ensor **S**election **F**unction: A string to be evaluated into a lambda function that receives a sensor name as input and returns True or False to indicate if the sensor should be loaded (and used in the optimization). An example:
     ```
     roslaunch <your_robot_calibration> calibrate.launch 
-      dataset_file:=$ATOM_DATASETS/<my_dataset>/data_collected.json  
+      dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json  
       ssf:='lambda name: name in ["camera1, "lidar2"]'
     ```
 * **csf** [false] - **C**ollection **S**election **F**unction: A string to be evaluated into a lambda function that receives a collection name as input and returns True or False to indicate if that collection should be loaded (and used in the optimization). An example:
    ```
     roslaunch <your_robot_calibration> calibrate.launch 
-      dataset_file:=$ATOM_DATASETS/<my_dataset>/data_collected.json  
+      dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json  
       csf:='lambda name: int(name) < 7'
     ```
 
@@ -186,13 +195,13 @@ You can use a couple of launch file arguments to configure the calibration proce
 Alternatively, for debugging the calibrate script it is better not to have it executed with a bunch of other scripts which is what happens when you call the launch file. You can run everything with the launch excluding without the calibrate script
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/data_collected.json run_calibration:=false 
+roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json run_calibration:=false 
 ```
 
 and then launch the script in standalone mode
 
 ```bash
-rosrun atom_calibration calibrate -json dataset_file:=~/datasets/<my_dataset>/data_collected.json 
+rosrun atom_calibration calibrate -json dataset_file:=~/datasets/<my_dataset>/dataset.json 
 ```
 
 There are several additional command line arguments to use with the **calibrate** script, here's an extensive list:
