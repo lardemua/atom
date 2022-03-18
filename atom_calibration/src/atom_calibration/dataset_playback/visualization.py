@@ -6,9 +6,8 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 import copy
 import math
 import os
-import pprint
-import networkx as nx
-import matplotlib.pyplot as plt
+
+
 import struct
 
 # 3rd-party
@@ -227,16 +226,22 @@ def setupVisualization(dataset, args, selected_collection_key):
 
     # Create Labeled and Unlabeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
+    
     lidar_data = []
     graphics['ros']['PubPointCloud'] = dict()
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['modality'] == 'lidar3d':
             graphics['ros']['PubPointCloud'][sensor_key] = \
                 rospy.Publisher(str(sensor_key) + '/points', PointCloud2, queue_size=0, latch=True)
+        
         for collection_key, collection in dataset['collections'].items():
-            if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
-                continue
-
+            # if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
+            #     continue
+            
+            # when the sensor has no label, the 'idxs_limit_points' does not exist!!!
+            if 'idxs_limit_points' not in collection['labels'][str(sensor_key)]:
+                collection['labels'][str(sensor_key)]['idxs_limit_points'] = []
+            
             # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
             if sensor['modality'] == 'lidar2d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
@@ -293,6 +298,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
             if sensor['modality'] == 'lidar3d':
+                
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -527,6 +533,12 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     graphics = models['graphics']
 
     collection = dataset['collections'][selected_collection_key]
+    
+    
+    
+    
+    
+    
     # print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
 
     now = rospy.Time.now()  # time used to publish all visualization messages
@@ -625,10 +637,13 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     for pointcloud_msg in graphics['ros']['PointClouds']:
         pointcloud_msg.header.stamp = now
     
+    #print(graphics['ros']['PointClouds'])
     # Create a new pointcloud which contains only the points related to the selected collection
     for pointcloud_msg in graphics['ros']['PointClouds']:
         prefix = pointcloud_msg.header.frame_id[:3]
         sensor = pointcloud_msg.header.frame_id[3:]
+        #print('-----------------------------------------------------------')
+        #print(sensor)
         if prefix == 'c' + str(selected_collection_key) + '_':
             # change intensity channel according to the idxs
             points_collection = pc2.read_points(pointcloud_msg)
@@ -641,11 +656,11 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
             
             for idx, point in enumerate(gen_points):
                 if idx in idxs_limit_points:
-                    r,g,b = 50 * sensor_idx,70,20
+                    r,g,b = 50,70,20
                 elif idx in idxs:
-                    r,g,b = 100 * sensor_idx,220,20
+                    r,g,b = 100,220,20
                 else:
-                    r,g,b = 186, 189, 182
+                    r,g,b = 186,189, 182
                     
                 point_color = [point[0], point[1], point[2], idx, 0, sensor_idx]
                 rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, 255))[0]
