@@ -63,9 +63,12 @@ if __name__ == "__main__":
     rviz_set_initial_estimate = 'set_initial_estimate.rviz'
     rviz_collect_data = 'collect_data.rviz'
     rviz_calibrate = 'calibrate.rviz'
+    rviz_dataset_playback = 'dataset_playback.rviz'
     set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
     data_collection_launch_file = package_path + '/launch/collect_data.launch'
     calibrate_launch_file = package_path + '/launch/calibrate.launch'
+    dataset_playback_launch_file = package_path + '/launch/dataset_playback.launch'
+
 
     # Template engine setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
@@ -374,7 +377,21 @@ if __name__ == "__main__":
                                     'rviz_calibrate': rviz_calibrate
                                     })
         f.write(output.encode('utf-8'))
+    # --------------------------------------------------------------------------
+    # Create the dataset playback launch file
+    # --------------------------------------------------------------------------
+    launch_file = dataset_playback_launch_file
+    print('Setting up ' + launch_file + ' ...')
 
+    template = env.get_template(os.path.basename(launch_file))
+    with open(launch_file, 'wb') as f:
+        output = template.render(c={'filename': os.path.basename(launch_file),
+                                    'date': dt_string,
+                                    'package_name': package_name,
+                                    'bag_file': bag_file_rel,
+                                    'rviz_set_initial_estimate': rviz_set_initial_estimate
+                                    })
+        f.write(output.encode('utf-8'))
     # --------------------------------------------------------------------------
     # Check if modalities are properly created
     # --------------------------------------------------------------------------
