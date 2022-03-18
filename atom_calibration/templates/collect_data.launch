@@ -32,43 +32,46 @@
 
 <launch>
 
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-<!-- Parameters-->
-<arg name="output_folder"/>
-<!-- folder of the output dataset -->
-<arg name="overwrite" default="false"/>
-<!-- overwrite output folder if it exists -->
-<arg name="marker_size" default="0.5"/>
-<arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
-<arg name="rviz_file"   default="$(find {{ c.package_name }})/rviz/{{ c.rviz_collect_data }}"/>
-<arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
-<!-- arguments to be passed onto playbag.launch  -->
-<arg name="bag_file"  default="{{ c.bag_file }}"/>
-<arg name="bag_start" default="0"/>
-<arg name="bag_rate"  default ="1" />
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Parameters-->
+    <arg name="output_folder"/>
+    <!-- folder of the output dataset -->
+    <arg name="overwrite" default="false"/>
+    <!-- overwrite output folder if it exists -->
+    <arg name="marker_size" default="0.5"/>
+    <arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
+    <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_collect_data }}"/>
+    <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
+    <!-- arguments to be passed onto playbag.launch  -->
+    <arg name="bag_file" default="{{ c.bag_file }}"/>
+    <arg name="bag_start" default="0"/>
+    <arg name="bag_rate" default="1"/>
+    <arg name="ssl" default="lambda sensor_name: False"/>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-<!-- Call play bag launch file -->
-<include file="$(find {{ c.package_name }})/launch/playbag.launch">
-   <arg name="rviz_file" value="$(arg rviz_file)"/>
-   <arg name="bag_file" value="$(arg bag_file)"/>
-   <arg name="bag_start" value="$(arg bag_start)"/>
-   <arg name="bag_rate" value="$(arg bag_rate)"/>
-</include>
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Call play bag launch file -->
+    <include file="$(find {{ c.package_name }})/launch/playbag.launch">
+        <arg name="rviz_file" value="$(arg rviz_file)"/>
+        <arg name="bag_file" value="$(arg bag_file)"/>
+        <arg name="bag_start" value="$(arg bag_start)"/>
+        <arg name="bag_rate" value="$(arg bag_rate)"/>
+    </include>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-<!-- Start data collector node -->
- <group if="$(arg overwrite)">
-     <node name="collect_data" pkg="atom_calibration" type="collect_data"
-         args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) --overwrite" required="true" output="screen"/>
- </group>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Start data collector node -->
+    <group if="$(arg overwrite)">
+        <node name="collect_data" pkg="atom_calibration" type="collect_data"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' --overwrite" required="true"
+              output="screen"/>
+    </group>
 
- <group unless="$(arg overwrite)">
-     <node name="collect_data" pkg="atom_calibration" type="collect_data"
-         args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file)" required="true" output="screen"/>
- </group>
-<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <group unless="$(arg overwrite)">
+        <node name="collect_data" pkg="atom_calibration" type="collect_data"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
+              output="screen"/>
+    </group>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 </launch>
