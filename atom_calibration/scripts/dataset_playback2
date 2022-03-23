@@ -281,6 +281,9 @@ def main():
     # transformation.
     idx_collection = 0
     collections_list = list(dataset['collections'].keys())
+    collections_list = sorted(collections_list, key=lambda x: int(x))
+
+    print(collections_list)
     selected_collection_key = collections_list[idx_collection]
     print('Selected collection key is ' + str(selected_collection_key))
 
