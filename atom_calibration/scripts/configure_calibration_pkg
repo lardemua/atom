@@ -549,7 +549,7 @@ if __name__ == "__main__":
         elif modality == 'lidar3d':
             # Raw data
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
-                                                                            'Topic': topic,
+                                                                            'Topic': sensor_key+'/points',
                                                                             'Color': color,
                                                                             'Color_Transformer': 'FlatColor',
                                                                             'Style': 'Spheres',
