@@ -30,7 +30,7 @@
 
 <launch>
 
-    <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
+    <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_dataset_playback }}"/>
 <!--    TODO check if this rviz configuration is ok-->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
