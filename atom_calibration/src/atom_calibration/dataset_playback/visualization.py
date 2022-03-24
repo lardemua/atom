@@ -241,6 +241,12 @@ def setupVisualization(dataset, args, selected_collection_key):
             # when the sensor has no label, the 'idxs_limit_points' does not exist!!!
             if 'idxs_limit_points' not in collection['labels'][str(sensor_key)]:
                 collection['labels'][str(sensor_key)]['idxs_limit_points'] = []
+                
+            if collection['labels'][str(sensor_key)]['idxs'] != []:
+                collection['labels'][str(sensor_key)]['detected'] = True
+                
+                
+                
             
             # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
             if sensor['modality'] == 'lidar2d':
@@ -345,6 +351,9 @@ def setupVisualization(dataset, args, selected_collection_key):
                                        point_step=original_pointcloud_msg.point_step, row_step=original_pointcloud_msg.row_step,
                                        data=original_pointcloud_msg.data, is_dense=original_pointcloud_msg.is_dense)
                 lidar_data.append(final_pointcloud_msg)
+                
+                
+                
 
 
     graphics['ros']['MarkersLabeled'] = markers
@@ -534,11 +543,6 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
 
     collection = dataset['collections'][selected_collection_key]
     
-    
-    
-    
-    
-    
     # print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
 
     now = rospy.Time.now()  # time used to publish all visualization messages
@@ -640,10 +644,15 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     #print(graphics['ros']['PointClouds'])
     # Create a new pointcloud which contains only the points related to the selected collection
     for pointcloud_msg in graphics['ros']['PointClouds']:
-        prefix = pointcloud_msg.header.frame_id[:3]
-        sensor = pointcloud_msg.header.frame_id[3:]
+        
+        prefix = pointcloud_msg.header.frame_id.split('_')[0] + '_'
+        sensor = pointcloud_msg.header.frame_id[len(prefix):]
+          
+        # prof. Miguel these two lines that you wrote wasted 2 hours of my life!
+        #prefix = pointcloud_msg.header.frame_id[:3]
+        #sensor = pointcloud_msg.header.frame_id[3:]
+                
         #print('-----------------------------------------------------------')
-        #print(sensor)
         if prefix == 'c' + str(selected_collection_key) + '_':
             # change intensity channel according to the idxs
             points_collection = pc2.read_points(pointcloud_msg)
