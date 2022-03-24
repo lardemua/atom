@@ -34,12 +34,12 @@ from atom_core.dataset_io import loadResultsJSON, \
     addNoiseToInitialGuess, NpEncoder, walk, createDataFile
 
 
-
 # global variavels
 
 # var to select the index of the collection we want to see
 global idx_collection
 previous_selected_collection_key = None
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -115,7 +115,7 @@ def key_pressed(key, idx_max_collection, collections_list):
             print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
-    
+
     # elif key.char.lower() == 's':
     #     D = {'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
     #     'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
@@ -128,7 +128,7 @@ def key_pressed(key, idx_max_collection, collections_list):
 def selected_points_callback(selected_point_cloud, models):
     global idx_collection
     selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
-        
+
     # Extract xyz coordinates from the selected points
     selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
@@ -141,10 +141,9 @@ def selected_points_callback(selected_point_cloud, models):
 
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
-            
-            
+
     idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
-    
+
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
     
@@ -155,25 +154,25 @@ def selected_points_callback(selected_point_cloud, models):
 def selected_points_border_callback(selected_point_cloud, models):
     global idx_collection
     selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
-        
+
     # Extract xyz coordinates from the selected points
     selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
-    
+
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
-    
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+        int(gen_selected_points[0][4])]
+
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
-    
     idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
     idx_border = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
-    
+
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
     [idx_border.append(x) for x in selected_idxs if x not in idx_border]
-    
+
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
 
@@ -181,50 +180,51 @@ def selected_points_border_callback(selected_point_cloud, models):
 def selected_points_remove_callback(selected_point_cloud, models):
     global idx_collection
     selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
-    
+
     # Extract xyz coordinates from the selected points
     selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
-    
+
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
-    
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+        int(gen_selected_points[0][4])]
+
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
-            
+
     # remove these points from the idx and idxs_limit_points
     idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
     idx_border = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
-    
+
     idx_center_new = [x for x in idx_center if x not in selected_idxs]
     idx_border_new = [x for x in idx_border if x not in selected_idxs]
-    
+
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center_new
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
-    
+
+
 def selected_points_clear_all_callback(selected_point_cloud, models):
     global idx_collection
     selected_collection_key = list(models['dataset']['collections'].keys())[idx_collection]
-    
+
     # Extract xyz coordinates from the selected points
     selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
-    
+
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[int(gen_selected_points[0][4])]
+    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+        int(gen_selected_points[0][4])]
 
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = []
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = []
-    
 
 
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
 def main():
-
     # var to select the index of the collection we want to see
     global idx_collection
     global previous_selected_collection_key
@@ -289,14 +289,12 @@ def main():
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
 
-
-
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
-    
+
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
@@ -401,33 +399,37 @@ def main():
     print("Configuring visualization ... ")
     graphics = setupVisualization(dataset, args, selected_collection_key)
     opt.addDataModel('graphics', graphics)
-    
+
     # ---------------------------------------------
     # --- SUBSCRIBERS TO THE SELECTED POINTS PLUGIN
     # ---------------------------------------------
-    
+
     # Define subscriber to receive the selected points
-    selected_points_callback_partial = partial(selected_points_callback, models= opt.data_models)
-    selected_points_border_callback_partial = partial(selected_points_border_callback, models= opt.data_models)
-    selected_points_remove_callback_partial = partial(selected_points_remove_callback, models= opt.data_models)
-    selected_points_clear_all_callback_partial = partial(selected_points_clear_all_callback, models= opt.data_models)
-    rospy.Subscriber("/rviz_selected_points", PointCloud2, selected_points_callback_partial, queue_size=1, buff_size=52428800) 
-    rospy.Subscriber("/rviz_selected_border_points", PointCloud2, selected_points_border_callback_partial, queue_size=1, buff_size=52428800) 
-    rospy.Subscriber("/rviz_selected_remove_points", PointCloud2, selected_points_remove_callback_partial, queue_size=1, buff_size=52428800) 
-    rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2, selected_points_clear_all_callback_partial, queue_size=1, buff_size=52428800) 
-    
-    
+    selected_points_callback_partial = partial(selected_points_callback, models=opt.data_models)
+    selected_points_border_callback_partial = partial(selected_points_border_callback, models=opt.data_models)
+    selected_points_remove_callback_partial = partial(selected_points_remove_callback, models=opt.data_models)
+    selected_points_clear_all_callback_partial = partial(selected_points_clear_all_callback, models=opt.data_models)
+    rospy.Subscriber("/rviz_selected_points", PointCloud2, selected_points_callback_partial, queue_size=1,
+                     buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_border_points", PointCloud2, selected_points_border_callback_partial, queue_size=1,
+                     buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_remove_points", PointCloud2, selected_points_remove_callback_partial, queue_size=1,
+                     buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2, selected_points_clear_all_callback_partial,
+                     queue_size=1, buff_size=52428800)
+
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
-    key_pressed_partial = partial(key_pressed, idx_max_collection = len(collections_list) - 1, collections_list = collections_list)
+    key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
+                                  collections_list=collections_list)
     listener = keyboard.Listener(
-    on_press=key_pressed_partial)
+        on_press=key_pressed_partial)
     listener.start()
-    
-    signal_handler_partial = partial(signal_handler, dataset=opt.data_models['dataset'], args = args)
+
+    signal_handler_partial = partial(signal_handler, dataset=opt.data_models['dataset'], args=args)
     signal.signal(signal.SIGINT, signal_handler_partial)
-    
+
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
         selected_collection_key = collections_list[idx_collection]
