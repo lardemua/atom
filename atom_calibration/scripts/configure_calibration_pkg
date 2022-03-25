@@ -534,7 +534,7 @@ if __name__ == "__main__":
 
             # Raw image
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Image',
-                                                                      'Image_Topic': topic})
+                                                                      'Image_Topic': topic+'/labeled'})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
@@ -551,7 +551,7 @@ if __name__ == "__main__":
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
                                                                             'Topic': sensor_key+'/points',
                                                                             'Color': color,
-                                                                            'Color_Transformer': 'FlatColor',
+                                                                            'Color_Transformer': 'RGB8',
                                                                             'Style': 'Spheres',
                                                                             'Size__m_': 0.02,
                                                                             'Alpha': 1})

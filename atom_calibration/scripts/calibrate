@@ -9,6 +9,8 @@ import argparse, random
 from functools import partial
 import numpy as np
 import ros_numpy
+import rospkg
+from datetime import datetime
 
 # 3rd-party
 import rospy, tf
@@ -431,7 +433,8 @@ def main():
                     # print("in sample")
 
                 population_longitudinal = range(0, len(collection['labels'][sensor_key]['idxs_limit_points']))
-                nsamples_longitudinal = int(max(0.1, min(args['sample_longitudinal_residuals'], 1.0)) * len(population_longitudinal))
+                nsamples_longitudinal = int(
+                    max(0.1, min(args['sample_longitudinal_residuals'], 1.0)) * len(population_longitudinal))
                 samples_longitudinal = rng.sample(population_longitudinal, nsamples_longitudinal)
 
                 # Save it to be used in the objective function.
@@ -581,10 +584,17 @@ def main():
         if not found:
             raise ValueError('Could not find transform ' + str(transform_key) + ' in ' + description_file)
 
-    if args['output_xacro'] is None:
-        filename_results_xacro = '/tmp/optimized.urdf.xacro'
+    time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+    file_name = 'optimized_' + time + '.urdf.xacro'
+
+    if "_metadata" not in dataset:
+        # if args['output_xacro'] is None:
+        filename_results_xacro = '/tmp/' + file_name
+        print("Saving optimized.urdf.xacro in tmp file. The dataset does not have the metadata field.")
     else:
-        filename_results_xacro = args['output_xacro']
+        rospack = rospkg.RosPack()
+        filename_results_xacro = rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration/') + file_name
+        print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
     with open(filename_results_xacro, 'w') as out:
         out.write(URDF.to_xml_string(xml_robot))
