@@ -51,7 +51,6 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
         dataset = copy.deepcopy(dataset_in)
     else:
         dataset = dataset_in
-
     output_folder = os.path.dirname(output_file)
     
     # Process the dataset to remove data from the data fields and, if needed, write the files.
@@ -87,9 +86,15 @@ def createJSONFile(output_file, input):
 def signal_handler(sig, frame, dataset, args):
     ans = input('do you want to save a new dataset? (y/n)')
     if ans.lower() == 'y':
-                
-        D = {'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
-        'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
+        if '_metadata' in dataset:
+            D = {'_metadata': dataset['_metadata'],'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
+            'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
+            print('Saving metadata in dataset.')
+        else:
+            D = { 'sensors': dataset['sensors'],
+                 'additional_sensor_data': dataset['additional_sensor_data'],
+                 'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
+            print('Not saving metadata in dataset.')
         output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
         saveResultsJSON(output_file, D, freeze_dataset = True)
         print(f'A new dataset was saved in {output_file}')
@@ -294,7 +299,7 @@ def main():
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
-
+    # exit(0)
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
