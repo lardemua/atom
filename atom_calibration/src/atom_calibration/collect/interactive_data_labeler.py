@@ -278,7 +278,6 @@ class InteractiveDataLabeler:
         self.lock.release()  # release lock
         # rospy.loginfo('(With Lock) Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
 
-    # @property
     def labelData(self):
         # print('Labelling data for sensor ' + self.name)
         # Reset detected and idxs values to make sure we are not using information from a previous labelling
