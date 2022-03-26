@@ -109,7 +109,7 @@ class LaserScanCluster:
         return "Cluster " + str(self.cluster_count) + " contains idxs = " + str(self.idxs)
 
 
-class InteractiveDataLabeler:
+class ClassDataLabeler:
     """
     Handles data labelling for a generic sensor:
         Cameras: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
@@ -118,11 +118,9 @@ class InteractiveDataLabeler:
         PointCloud2: #TODO Tiago Madeira can you complete?
     """
 
-    def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, label_data=True):
+    def __init__(self, sensor_dict, marker_scale, calib_pattern, label_data=True):
         """
         Class constructor. Initializes several variables and ros stuff.
-        :param server: an interactive marker server
-        :param menu_handler: an interactive MenuHandler
         :param sensor_dict: A dictionary that describes the sensor
         :param marker_scale: scale of the markers to be drawn
         :param chess_numx: chessboard size in x
@@ -132,7 +130,6 @@ class InteractiveDataLabeler:
 
         # Store variables to class attributes
         self.label_data = label_data
-        self.menu_handler = menu_handler
         self.name = sensor_dict['_name']
         self.parent = sensor_dict['parent']
         self.topic = sensor_dict['topic']
@@ -140,7 +137,6 @@ class InteractiveDataLabeler:
         self.marker_scale = marker_scale
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
-        # self.server = server
         self.server = InteractiveMarkerServer(self.name + "/data_labeler")
         self.lock = threading.Lock()
 
@@ -256,12 +252,12 @@ class InteractiveDataLabeler:
         # self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1)
 
     def sensorDataReceivedCallback(self, msg):
-        # rospy.loginfo(self.name + ' (Before lock) received msg which is ' + str((rospy.Time.now() - msg.header.stamp).to_sec()) + ' secs.')
+        rospy.loginfo(self.name + ' (Before lock) received msg which is ' + str((rospy.Time.now() - msg.header.stamp).to_sec()) + ' secs.')
 
         stamp_before_lock = rospy.Time.now()
         self.lock.acquire()  # use semaphores to make sure the data is not being written on two sides simultaneously
 
-        # print(self.name + ' lock acquired')
+        print(self.name + ' lock acquired')
 
         # self.lock.acquire(blocking=False)  # use semaphores to make sure the data is not being written on two sides simultaneously
         self.msg = msg  # make a local copy of sensor data
@@ -269,18 +265,18 @@ class InteractiveDataLabeler:
 
         # time.sleep(5)
 
-        # print(self.name + ' label data is ' + str(self.label_data))
+        print(self.name + ' label data is ' + str(self.label_data))
         if self.label_data:
-            # print(self.name + ' calling label data')
+            print(self.name + ' calling label data')
             self.labelData()  # label the data
-            # print('Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
+            print('Finished labeling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
 
         self.lock.release()  # release lock
-        # rospy.loginfo('(With Lock) Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
+        rospy.loginfo('(With Lock) Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
 
     # @property
     def labelData(self):
-        # print('Labelling data for sensor ' + self.name)
+        print('Labelling data for sensor ' + self.name)
         # Reset detected and idxs values to make sure we are not using information from a previous labelling
         self.labels['detected'] = False
         self.labels['idxs'] = []
@@ -342,7 +338,6 @@ class InteractiveDataLabeler:
             self.marker.pose.position.x = x_sum / float(len(closest_cluster.idxs))
             self.marker.pose.position.y = y_sum / float(len(closest_cluster.idxs))
             self.marker.pose.position.z = 0
-            self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
             # Update the dictionary with the labels
@@ -433,17 +428,19 @@ class InteractiveDataLabeler:
         # elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
         elif self.modality == 'lidar3d':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
 
-            # rospy.loginfo(
-            #     'Labelling PointCloud for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
+            rospy.loginfo(
+                'Labelling PointCloud for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
                                            self.marker.pose.position.z  # interactive marker pose
+            print('here1')
 
             # Extract 3D point from the ros msg
             self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
                                                                    self.tracker_threshold, self.number_iterations,
                                                                    self.ransac_threshold)
+            print('here2')
 
             # publish the points that belong to the cluster
             points = []
@@ -456,23 +453,26 @@ class InteractiveDataLabeler:
                 pt = [inliers[i, 0], inliers[i, 1], inliers[i, 2], rgb]
                 points.append(pt)
 
+            print('here3')
+
             fields = [PointField('x', 0, PointField.FLOAT32, 1), PointField('y', 4, PointField.FLOAT32, 1),
                       PointField('z', 8, PointField.FLOAT32, 1), PointField('rgba', 12, PointField.UINT32, 1)]
             header = Header()
             header.frame_id = self.parent
             header.stamp = self.msg.header.stamp
             pc_msg = point_cloud2.create_cloud(header, fields, points)
-            # print('Publishing labelled cloud with ' + str(len(points)) + ' points.')
+
+            print('here4')
+            print('Publishing labelled cloud with ' + str(len(points)) + ' points.')
             self.publisher_selected_points.publish(pc_msg)
 
             # Update the interactive marker pose
             self.marker.pose.position.x = seed_point[0]
             self.marker.pose.position.y = seed_point[1]
             self.marker.pose.position.z = seed_point[2]
-            self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
-            # print(colorama.Fore.RED + 'Labelled point cloud ' + colorama.Style.RESET_ALL)
+            print(colorama.Fore.RED + 'Labelled point cloud ' + colorama.Style.RESET_ALL)
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
         elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
@@ -502,7 +502,7 @@ class InteractiveDataLabeler:
                 self.seed['x'] = x_pix
                 self.seed['y'] = y_pix
 
-            # actual labelling
+            # actual labeling
             self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed,
                                                                       bridge=self.bridge,
                                                                       pyrdown=1, scatter_seed=True, debug=False,
@@ -534,7 +534,6 @@ class InteractiveDataLabeler:
             self.marker.pose.position.x = X
             self.marker.pose.position.y = Y
             self.marker.pose.position.z = Z
-            self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
             self.publisher_frustrum.publish(self.frustum_marker_array)
@@ -549,7 +548,6 @@ class InteractiveDataLabeler:
         # self.optT.setTranslationFromPosePosition(feedback.pose.position)
         # self.optT.setQuaternionFromPoseQuaternion(feedback.pose.orientation)
 
-        # self.menu_handler.reApply(self.server)
         self.server.applyChanges()
 
     def createInteractiveMarker(self):
@@ -617,7 +615,6 @@ class InteractiveDataLabeler:
         # self.marker.controls.append(control)
 
         self.server.insert(self.marker, self.markerFeedback)
-        self.menu_handler.apply(self.server, self.marker.name)
 
     def createInteractiveMarkerRGBD(self, x=0, y=0, z=0):
         self.marker = InteractiveMarker()
@@ -685,7 +682,6 @@ class InteractiveDataLabeler:
         self.marker.controls.append(control)
 
         self.server.insert(self.marker, self.markerFeedback)
-        self.menu_handler.apply(self.server, self.marker.name)
 
     # def createMarkerFrustum(self):
     #     marker = Marker()

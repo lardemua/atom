@@ -45,6 +45,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     pts = points[np.transpose(dist < threshold)[:, 0], :]
     idx = np.where(np.transpose(dist < threshold)[:, 0])[0]
 
+
     # Tracker - update seed point with the average of cluster to use in the next
     # iteration
     seed_point = []
@@ -58,15 +59,20 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
         seed_point.append(y_sum / len(pts))
         seed_point.append(z_sum / len(pts))
 
+
     # RANSAC - eliminate the tracker outliers
     number_points = pts.shape[0]
-    if number_points == 0:
+    if number_points < 10:
         labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
+
     # RANSAC iterations
     for i in range(0, ransac_iterations):
+
+        print('ransac iteration ' + str(i))
+        print('number of points ' + str(number_points))
         # Randomly select three points that cannot be coincident
         # nor collinear
         while True:
@@ -119,6 +125,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     for key in idx_map:
         if idx_map[key] < ransac_threshold:
             final_idx.append(key)
+
 
     # -------------------------------------- End of RANSAC ----------------------------------------- #
 
