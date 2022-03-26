@@ -564,21 +564,23 @@ class InteractiveDataLabeler:
         self.marker.scale = self.marker_scale
 
         self.marker.name = self.name
-        self.marker.description = self.name + '_labeler'
+        self.marker.description = 'Place marker on top of the calibration pattern'
 
         # insert a box
         control = InteractiveMarkerControl()
         control.always_visible = True
 
         marker_box = Marker()
-        marker_box.type = Marker.SPHERE
+        marker_box.type = Marker.CUBE
         marker_box.scale.x = self.marker.scale * 0.3
         marker_box.scale.y = self.marker.scale * 0.3
         marker_box.scale.z = self.marker.scale * 0.3
         marker_box.color.r = 0
         marker_box.color.g = 1
         marker_box.color.b = 0
-        marker_box.color.a = 0.2
+        marker_box.color.a = 1
+
+        marker_box.text = self.name + '_labeler'
 
         control.markers.append(marker_box)
         self.marker.controls.append(control)
@@ -631,7 +633,7 @@ class InteractiveDataLabeler:
         self.marker.scale = self.marker_scale
 
         self.marker.name = self.name
-        self.marker.description = self.name + '_labeler'
+        self.marker.description = 'Place marker on top of ' + self.name + '\'s data \nthat views the calibration pattern'
         print('Creating IM with name ' + self.marker.name)
 
         # insert a box
@@ -639,14 +641,15 @@ class InteractiveDataLabeler:
         control.always_visible = True
 
         marker_box = Marker()
-        marker_box.type = Marker.SPHERE
-        marker_box.scale.x = self.marker.scale * 0.3
-        marker_box.scale.y = self.marker.scale * 0.3
-        marker_box.scale.z = self.marker.scale * 0.3
-        marker_box.color.r = 1
-        marker_box.color.g = 0
+        marker_box.type = Marker.TEXT_VIEW_FACING
+        marker_box.scale.x = self.marker.scale * .3
+        marker_box.scale.y = self.marker.scale * .3
+        marker_box.scale.z = self.marker.scale * .3
+        marker_box.color.r = 0.7
+        marker_box.color.g = 0.7
         marker_box.color.b = 0
-        marker_box.color.a = 0.2
+        marker_box.color.a = 1
+        marker_box.text = self.name + '\nlabeler'
 
         control.markers.append(marker_box)
         self.marker.controls.append(control)
