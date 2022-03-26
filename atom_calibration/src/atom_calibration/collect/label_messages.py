@@ -71,8 +71,8 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # RANSAC iterations
     for i in range(0, ransac_iterations):
 
-        print('ransac iteration ' + str(i))
-        print('number of points ' + str(number_points))
+        # print('ransac iteration ' + str(i))
+        # print('number of points ' + str(number_points))
         # Randomly select three points that cannot be coincident
         # nor collinear
         while True:
