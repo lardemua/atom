@@ -40,6 +40,7 @@ if __name__ == "__main__":
     ap.add_argument("-utf", "--use_tfs", action="store_true",
                     help='Use transformations in the bag file instead of generating new tfs from the xacro, '
                          'joint_state_msgs and robot state publisher.')
+    ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configutation file. If this flag is not given, the standard config.yml ill be used.', type=str, required=False)
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
@@ -81,9 +82,20 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Read the config.yml file
     # --------------------------------------------------------------------------
-    config_file = package_path + '/calibration/config.yml'
+    print(args['config_file'])
+    # config_file = package_path + '/calibration/config.yml'
+
+    if not args['config_file']:
+        config_file = package_path + '/calibration/config.yml'
+    else:
+        config_file = package_path +'/calibration/' + args['config_file']
     print('Loading config file ' + config_file)
+
+    exit(0)
     config = atom_core.config_io.loadConfig(config_file)
+
+    # print('Loading config file ' + config_file)
+    # config = atom_core.config_io.loadConfig(config_file)
 
     # Sensors colormap. Access with:  color_map_sensors[idx, :]
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))

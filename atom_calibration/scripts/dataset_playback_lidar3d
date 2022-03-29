@@ -99,7 +99,7 @@ def signal_handler(sig, frame, dataset, args):
         output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
         saveResultsJSON(output_file, D, freeze_dataset = True)
         print(f'A new dataset was saved in {output_file}')
-        sys.exit(0)
+        # sys.exit(0)
     if ans.lower() == 'q':
         if '_metadata' in dataset:
             D = {'_metadata': dataset['_metadata'],'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
@@ -117,7 +117,8 @@ def signal_handler(sig, frame, dataset, args):
 
 
 # keyboard listener
-def key_pressed(key, idx_max_collection, collections_list, dataset, args):
+def key_pressed(key, idx_max_collection, collections_list):
+    # def key_pressed(key, idx_max_collection, collections_list, dataset, args):
     global idx_collection
     global previous_selected_collection_key
 
@@ -135,19 +136,19 @@ def key_pressed(key, idx_max_collection, collections_list, dataset, args):
             print('changed selected_collection_key to ' + str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
-    elif key.char.lower() == 's':
-        if '_metadata' in dataset:
-            D = {'_metadata': dataset['_metadata'],'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
-            'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-            print('Saving metadata in dataset.')
-        else:
-            D = { 'sensors': dataset['sensors'],
-                 'additional_sensor_data': dataset['additional_sensor_data'],
-                 'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-            print('Not saving metadata in dataset.')
-        output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-        saveResultsJSON(output_file, D, freeze_dataset = True)
-        print(f'A new dataset was saved in {output_file}')
+    # elif key.char.lower() == 's':
+    #     if '_metadata' in dataset:
+    #         D = {'_metadata': dataset['_metadata'],'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
+    #         'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
+    #         print('Saving metadata in dataset.')
+    #     else:
+    #         D = { 'sensors': dataset['sensors'],
+    #              'additional_sensor_data': dataset['additional_sensor_data'],
+    #              'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
+    #         print('Not saving metadata in dataset.')
+    #     output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
+    #     saveResultsJSON(output_file, D, freeze_dataset = True)
+    #     print(f'A new dataset was saved in {output_file}')
     #     D = {'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
     #     'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
     #     output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
@@ -460,8 +461,10 @@ def main():
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
+    # key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
+    #                               collections_list=collections_list, dataset=opt.data_models['dataset'], args=args)
     key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
-                                  collections_list=collections_list, dataset=opt.data_models['dataset'], args=args)
+                                  collections_list=collections_list)
     listener = keyboard.Listener(
         on_press=key_pressed_partial)
     listener.start()

@@ -52,6 +52,7 @@ if __name__ == "__main__":
     execute('mkdir ' + package_path + '/launch')
     execute('mkdir ' + package_path + '/rviz')
     execute('mkdir ' + package_path + '/urdf')
+    execute('mkdir ' + package_path + '/urdf/optimized')
     execute('mkdir ' + package_path + '/scripts')
 
     # Add configure.py script
