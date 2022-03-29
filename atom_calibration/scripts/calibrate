@@ -595,11 +595,11 @@ def main():
             out.write(URDF.to_xml_string(xml_robot))
     else:
         rospack = rospkg.RosPack()
-        filename_results_xacro = rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration/urdf/optimized/') + file_name
+        filename_results_xacro = rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration') + '/urdf/optimized/' + file_name
         with open(filename_results_xacro, 'w') as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-        with open('/tmp/optimized.urdf.xacro', 'w') as out:
+        with open(rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration')+'/urdf/optimized.urdf.xacro', 'w') as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 

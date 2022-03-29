@@ -36,7 +36,8 @@
     <arg name="use_tfs" default="{{ c.use_tfs }}"
          doc="If false ignore tfs in the bag file and use the xacro, joint_state_msgs and robot state publisher to generate new tfs."/>
     <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
-    <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
+    <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro" unless="$(arg optimized)"/>
+    <arg name="description_file" default="$(find {{ c.package_name }})/urdf/optimized.urdf.xacro" if="$(arg optimized)"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Throttle topics -->
