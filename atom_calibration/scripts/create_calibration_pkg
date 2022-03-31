@@ -82,13 +82,12 @@ if __name__ == "__main__":
         if not args['use_tfs']:
             f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name)
         else:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '--use_tfs')
-        f.write('\n')
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + ' --use_tfs')
         f.write('\nelse')
         if not args['use_tfs']:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '-cfg $configfile')
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + ' -cfg $configfile')
         else:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '--use_tfs -cfg $configfile')
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + ' --use_tfs -cfg $configfile')
         f.write('\nfi')
         f.close()
     execute('chmod +x ' + configure_file)  # make file executable
