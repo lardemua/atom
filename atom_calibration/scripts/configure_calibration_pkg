@@ -3,6 +3,8 @@
 # stdlib
 import matplotlib
 import os
+from os.path import exists
+
 
 import atom_core.config_io
 import atom_core.drawing
@@ -89,6 +91,8 @@ if __name__ == "__main__":
         config_file = package_path + '/calibration/config.yml'
     else:
         config_file = package_path +'/calibration/' + args['config_file']
+        if not exists(config_file):
+            config_file = package_path + '/calibration/config.yml'
     print('Loading config file ' + config_file)
 
     config = atom_core.config_io.loadConfig(config_file)

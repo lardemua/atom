@@ -61,10 +61,35 @@ if __name__ == "__main__":
         f.write('#!/bin/sh')  # shebang
         f.write('\n# Auto generated on ' + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         f.write('\n#      ATOMIC Framework')
+        f.write('\n')
+        f.write('\nhelpFunction()')
+        f.write('\n{')
+        f.write('\n   echo ""')
+        f.write('\n   echo "Usage: $0 -c config_file.yml"')
+        f.write('\n   echo -e "\t-c Name of specific configuration file that must be inside the package_calibration/calibration/ folder."')
+        f.write('\n   exit 1')
+        f.write('\n}')
+        f.write('\nwhile getopts "c:h" flag')
+        f.write('\ndo')
+        f.write('\n    case "${flag}" in')
+        f.write('\n        c ) configfile="$OPTARG" ;;')
+        f.write('\n        h ) helpFunction;;')
+        f.write('\n    esac')
+        f.write('\ndone')
+        f.write('\n')
+        f.write('\nif test -z "$configfile"')
+        f.write('\nthen')
         if not args['use_tfs']:
             f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name)
         else:
             f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '--use_tfs')
+        f.write('\n')
+        f.write('\nelse')
+        if not args['use_tfs']:
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '-cfg $configfile')
+        else:
+            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + '--use_tfs -cfg $configfile')
+        f.write('\nfi')
         f.close()
     execute('chmod +x ' + configure_file)  # make file executable
 
