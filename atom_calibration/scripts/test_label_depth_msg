@@ -57,7 +57,8 @@ def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
 
     # seed = {'x':300, 'y':200}
-    seed = {'x': 510, 'y': 180}
+    # seed = {'x': 510, 'y': 180}
+    seed = {'x': 600, 'y': 195}
 
     rospy.Subscriber('depth_image_topic', Image, functools.partial(callbackMessageReceived, seed=seed), queue_size=1)
 
