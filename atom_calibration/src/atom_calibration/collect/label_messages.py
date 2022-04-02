@@ -263,7 +263,7 @@ def getLinearIndexWidth(x, y, width):
 
 def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
                   scatter_seed=False, scatter_seed_radius=8, subsample_solid_points=1, debug=False,
-                  limit_sample_step=5):
+                  limit_sample_step=5, filter_border_edges=0.025):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -271,12 +271,14 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
     :param seed: dictionary containing coordinates of seed point
     :param propagation_threshold: maximum value of pixel difference under which propagation occurs.
     :param bridge: a cvbridge data structure to avoid having to constantly create one.
-    :param pyrdown: The ammount of times the image must be downscaled using pyrdown.
+    :param pyrdown: The ammount of times the image must be downscaled using pyrdown. 0 for no pyrdown
     :param scatter_seed: To scatter the given seed in a circle of seed points. Useful because the given seed coordinate
                          may fall under a black rectangle of the pattern.
     :param scatter_seed: The radius of the scatter points
     :param subsample_solid_points: Subsample factor of solid pattern points to go into the output labels.
     :param debug: Debug prints and shows images.
+    :param limit_sample_step
+    :param filter_border_edges: Percentage of border that is to be ignored if the chessboard touches that area
     :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
              gui_image, an image for visualization purposes which shows the result of the labelling.
              new_seed_point, pixels coordinates of centroid of the pattern area.
@@ -558,10 +560,15 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
             x = value[0][0]
             y = value[0][1]
 
+            # if x > (width - 1 - (width - 1) * filter_border_edges) or x < (width - 1) * filter_border_edges or y > (height - 1 - (height - 1) * filter_border_edges) and y < (height - 1) * filter_border_edges:
+            #     print("EDGES")
+
             # TODO Why not test if the original image is nan?
             if not np.isnan(image[y, x]):
-                idxs_rows.append(y)
-                idxs_cols.append(x)
+                if x < (width-1-(width-1)*filter_border_edges) and x >(width-1)*filter_border_edges:
+                    if y < (height-1-(height-1)*filter_border_edges) and y >(height-1)*filter_border_edges:
+                        idxs_rows.append(y)
+                        idxs_cols.append(x)
 
         idxs_rows = np.array(idxs_rows)
         idxs_cols = np.array(idxs_cols)
@@ -569,6 +576,8 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
+
+        #check if point is in the image's limits
         idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
         idxs = idxs.tolist()
         idxs = idxs[::limit_sample_step]  # subsample the limit points
