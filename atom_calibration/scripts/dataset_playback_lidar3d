@@ -320,6 +320,7 @@ def main():
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
+    args = vars(ap.parse_args(args=arglist))
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file

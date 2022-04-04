@@ -783,6 +783,10 @@ if __name__ == "__main__":
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
+                                                                      'Image_Topic': 'calibrate/c0' + topic + '/labeled'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
         elif modality == 'lidar2d':
             # Labelled data
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
