@@ -232,8 +232,8 @@ def main():
                                             collection_name=selected_collection_key)
 
         if transform_key == anchored_transform_key:
-            bound_max = [x + sys.float_info.epsilon for x in initial_transform]
-            bound_min = [x - sys.float_info.epsilon for x in initial_transform]
+            bound_max = [x + 2*sys.float_info.epsilon for x in initial_transform]
+            bound_min = [x - 2*sys.float_info.epsilon for x in initial_transform]
         else:
             bound_max = [+np.inf for x in initial_transform]
             bound_min = [-np.inf for x in initial_transform]
