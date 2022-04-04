@@ -49,7 +49,15 @@ bool MouseWatcher::eventFilter(QObject * obj, QEvent * event)
                 else // case where the window is wider than the image
                 {
                     cout << "black bars on side!" << endl;
-                    // TODO add the computation of pix_x and pix_y for this case
+                    pix_y = int(float(windowPos.y()) / float(win_height) * float(img_height));
+
+                    int resized_img_width = int(float(win_height) / float(img_height) * float(img_width));
+                    int bias = int( ( float(win_width) - float(resized_img_width) )/2.0);
+                    pix_x = (float(windowPos.x()) - bias) / float(resized_img_width) * float(img_width);
+                    cout << "pix_x = " << pix_x << endl;
+                    cout << "resized_img_width = " << resized_img_width << endl;
+                    cout << "bias = " << bias << endl;
+                    cout << "pix_y = " << pix_y << endl;
                 }
 
                 // Check if clicked point is inside the image, publish if so
