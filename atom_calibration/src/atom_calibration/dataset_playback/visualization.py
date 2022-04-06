@@ -7,7 +7,6 @@ import copy
 import math
 import os
 
-
 import struct
 
 # 3rd-party
@@ -59,6 +58,7 @@ def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _
     points[2, :] = pc['z']
     points[3, :] = 1
     return points
+
 
 def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
     dictionary = dataset['collections'][collection_key]['data'][sensor_key]
@@ -212,7 +212,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Create image publishers ----------------------------------------------------------
     # We need to republish a new image at every visualization
     for sensor_key, sensor in dataset['sensors'].items():
-       if sensor['modality'] == 'rgb':
+        if sensor['modality'] == 'rgb':
             msg_type = sensor_msgs.msg.Image
             topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
             topic_name = topic + '/labeled'
@@ -224,30 +224,38 @@ def setupVisualization(dataset, args, selected_collection_key):
             graphics['collections'][str(sensor_key)]['publisher_camera_info'] = \
                 rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
 
+        if sensor['modality'] == 'depth':
+            msg_type = sensor_msgs.msg.Image
+            topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
+            topic_name = topic + '/labeled'
+            graphics['collections'][str(sensor_key)] = {'publisher': rospy.Publisher(
+                topic_name, msg_type, queue_size=0, latch=True)}
+            print('Created image publisher')
+            msg_type = sensor_msgs.msg.CameraInfo
+            topic_name = str(sensor_key) + '/camera_info'
+            graphics['collections'][str(sensor_key)]['publisher_camera_info'] = \
+                rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
     # Create Labeled and Unlabeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
-    
+
     lidar_data = []
     graphics['ros']['PubPointCloud'] = dict()
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['modality'] == 'lidar3d':
             graphics['ros']['PubPointCloud'][sensor_key] = \
                 rospy.Publisher(str(sensor_key) + '/points', PointCloud2, queue_size=0, latch=True)
-        
+
         for collection_key, collection in dataset['collections'].items():
             # if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
             #     continue
-            
+
             # when the sensor has no label, the 'idxs_limit_points' does not exist!!!
             if 'idxs_limit_points' not in collection['labels'][str(sensor_key)]:
                 collection['labels'][str(sensor_key)]['idxs_limit_points'] = []
-                
+
             if collection['labels'][str(sensor_key)]['idxs'] != []:
                 collection['labels'][str(sensor_key)]['detected'] = True
-                
-                
-                
-            
+
             # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
             if sensor['modality'] == 'lidar2d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
@@ -304,7 +312,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
             if sensor['modality'] == 'lidar3d':
-                
+
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -344,17 +352,18 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
                 # Add 3D lidar data
-                original_pointcloud_msg = getPointCloudMessageFromDictionary(dataset['collections'][collection_key]['data'][sensor_key])
+                original_pointcloud_msg = getPointCloudMessageFromDictionary(
+                    dataset['collections'][collection_key]['data'][sensor_key])
                 final_pointcloud_msg = PointCloud2(header=Header(frame_id=frame_id, stamp=now),
-                                       height=original_pointcloud_msg.height, width=original_pointcloud_msg.width,
-                                       fields=original_pointcloud_msg.fields, is_bigendian=original_pointcloud_msg.is_bigendian,
-                                       point_step=original_pointcloud_msg.point_step, row_step=original_pointcloud_msg.row_step,
-                                       data=original_pointcloud_msg.data, is_dense=original_pointcloud_msg.is_dense)
+                                                   height=original_pointcloud_msg.height,
+                                                   width=original_pointcloud_msg.width,
+                                                   fields=original_pointcloud_msg.fields,
+                                                   is_bigendian=original_pointcloud_msg.is_bigendian,
+                                                   point_step=original_pointcloud_msg.point_step,
+                                                   row_step=original_pointcloud_msg.row_step,
+                                                   data=original_pointcloud_msg.data,
+                                                   is_dense=original_pointcloud_msg.is_dense)
                 lidar_data.append(final_pointcloud_msg)
-                
-                
-                
-
 
     graphics['ros']['MarkersLabeled'] = markers
     graphics['ros']['PointClouds'] = lidar_data
@@ -542,7 +551,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     graphics = models['graphics']
 
     collection = dataset['collections'][selected_collection_key]
-    
+
     # print("args['initial_pose_ghost'])" + str(args['initial_pose_ghost']))
 
     now = rospy.Time.now()  # time used to publish all visualization messages
@@ -640,55 +649,54 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
     # Update timestamp for pointcloud2 message
     for pointcloud_msg in graphics['ros']['PointClouds']:
         pointcloud_msg.header.stamp = now
-    
-    #print(graphics['ros']['PointClouds'])
+
+    # print(graphics['ros']['PointClouds'])
     # Create a new pointcloud which contains only the points related to the selected collection
     for pointcloud_msg in graphics['ros']['PointClouds']:
-        
+
         prefix = pointcloud_msg.header.frame_id.split('_')[0] + '_'
         sensor = pointcloud_msg.header.frame_id[len(prefix):]
-          
+
         # prof. Miguel these two lines that you wrote wasted 2 hours of my life!
-        #prefix = pointcloud_msg.header.frame_id[:3]
-        #sensor = pointcloud_msg.header.frame_id[3:]
-                
-        #print('-----------------------------------------------------------')
+        # prefix = pointcloud_msg.header.frame_id[:3]
+        # sensor = pointcloud_msg.header.frame_id[3:]
+
+        # print('-----------------------------------------------------------')
         if prefix == 'c' + str(selected_collection_key) + '_':
             # change intensity channel according to the idxs
             points_collection = pc2.read_points(pointcloud_msg)
             gen_points = list(points_collection)
             final_points = []
-            
+
             idxs = dataset['collections'][selected_collection_key]['labels'][sensor]['idxs']
             idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
             sensor_idx = list(dataset['collections'][selected_collection_key]['labels'].keys()).index(sensor)
-            
+
             for idx, point in enumerate(gen_points):
                 if idx in idxs_limit_points:
-                    r,g,b = 50,70,20
+                    r, g, b = 50, 70, 20
                 elif idx in idxs:
-                    r,g,b = 100,220,20
+                    r, g, b = 100, 220, 20
                 else:
-                    r,g,b = 186,189, 182
-                    
+                    r, g, b = 186, 189, 182
+
                 point_color = [point[0], point[1], point[2], idx, 0, sensor_idx]
                 rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, 255))[0]
                 point_color[4] = rgb
-                    
+
                 final_points.append(point_color)
-                
+
             fields = [PointField('x', 0, PointField.FLOAT32, 1),
-            PointField('y', 4, PointField.FLOAT32, 1),
-            PointField('z', 8, PointField.FLOAT32, 1),
-            PointField('idx', 12, PointField.FLOAT32, 1),
-            PointField('rgb', 20, PointField.UINT32, 1),
-            PointField('sensor_idx', 24, PointField.FLOAT32, 1)
-            ]
+                      PointField('y', 4, PointField.FLOAT32, 1),
+                      PointField('z', 8, PointField.FLOAT32, 1),
+                      PointField('idx', 12, PointField.FLOAT32, 1),
+                      PointField('rgb', 20, PointField.UINT32, 1),
+                      PointField('sensor_idx', 24, PointField.FLOAT32, 1)
+                      ]
             pointcloud_msg_final = pc2.create_cloud(pointcloud_msg.header, fields, final_points)
-                        
+
             # create a new point cloud2, and change a value related to the idx
             graphics['ros']['PubPointCloud'][sensor].publish(pointcloud_msg_final)
-    
 
     # Create a new marker array which contains only the marker related to the selected collection
     # Publish the pattern data
@@ -698,7 +706,8 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
             marker_array_1.markers[-1].action = Marker.ADD
-        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(
+                previous_selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
             marker_array_1.markers[-1].action = Marker.DELETE
     graphics['ros']['PubPattern'].publish(marker_array_1)
@@ -711,7 +720,8 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_2.markers.append(marker)
             marker_array_2.markers[-1].action = Marker.ADD
-        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(
+                previous_selected_collection_key) + '_':
             marker_array_2.markers.append(marker)
             marker_array_2.markers[-1].action = Marker.DELETE
     graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
@@ -724,7 +734,8 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_3.markers.append(marker)
             marker_array_3.markers[-1].action = Marker.ADD
-        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(previous_selected_collection_key) + '_':
+        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(
+                previous_selected_collection_key) + '_':
             marker_array_3.markers.append(marker)
             marker_array_3.markers[-1].action = Marker.DELETE
 
@@ -775,15 +786,52 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                 graphics['collections'][sensor_key]['publisher_camera_info'].publish(
                     camera_info_msg)
 
+        if sensor['modality'] == 'depth':
+            if args['show_images']:
+                collection = collections[selected_collection_key]
+                image = copy.deepcopy(getCvImageFromCollectionSensor(selected_collection_key, sensor_key, dataset))
+                width = collection['data'][sensor_key]['width']
+                height = collection['data'][sensor_key]['height']
+                idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']
+                idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor_key][
+                    'idxs_limit_points']
+                gui_image = np.zeros((height, width, 3), dtype=np.uint8)
+                max_value = 5
+                gui_image[:, :, 0] = image / max_value * 255
+                gui_image[:, :, 1] = image / max_value * 255
+                gui_image[:, :, 2] = image / max_value * 255
 
+                for idx in idxs:
+                    # convert from linear idx to x_pix and y_pix indices.
+                    y = int(idx / width)
+                    x = int(idx - y * width)
+                    cv2.line(gui_image, (x, y), (x, y), (0, 200, 255), 3)
+
+                for idx in idxs_limit_points:
+                    # convert from linear idx to x_pix and y_pix indices.
+                    y = int(idx / width)
+                    x = int(idx - y * width)
+                    cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
+
+                msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
+
+                msg.header.frame_id = 'c' + selected_collection_key + '_' + sensor['parent']
+                graphics['collections'][sensor_key]['publisher'].publish(msg)
+
+                # Publish camera info message
+                camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                                                      sensor['camera_info'])
+                camera_info_msg.header.frame_id = msg.header.frame_id
+                graphics['collections'][sensor_key]['publisher_camera_info'].publish(
+                    camera_info_msg)
 
             # elif sensor['msg_type'] == 'LaserScan':
-            elif sensor['modality'] == 'lidar2d':
-                pass
+        elif sensor['modality'] == 'lidar2d':
+            pass
             # elif sensor['msg_type'] == 'PointCloud2':
-            elif sensor['modality'] == 'lidar3d':
-                pass
-            else:
-                pass
+        elif sensor['modality'] == 'lidar3d':
+            pass
+        else:
+            pass
 
     graphics['ros']['Rate'].sleep()

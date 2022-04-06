@@ -228,12 +228,11 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         # filename_np=output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.npy'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
             cv_image = getCvImageFromDictionaryDepth(dataset['collections'][collection_key][data_type][sensor_key])
-            print("image from getimage")
-            print(cv_image.dtype)
+            # print("image from getimage")
+            # print(cv_image.dtype)
             cv_image = convertDepthImage32FC1to16UC1(cv_image, scale=10000)  # Better to use tenths of milimeters
             # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
-            # cv2.imwrite(filename, cv_image)
-            imageio.imwrite(filename, cv_image)
+            cv2.imwrite(filename, cv_image)
             print('Saved file ' + filename + '.')
 
         # Add data_file field, and remove data field
@@ -304,6 +303,8 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    if image.dtype==np.uint16:
+        image=convertDepthImage16UC1to32FC1(image)
     # print("image inside get image: ")
     # print(image.dtype)
     return image

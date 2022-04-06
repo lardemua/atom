@@ -45,7 +45,6 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     pts = points[np.transpose(dist < threshold)[:, 0], :]
     idx = np.where(np.transpose(dist < threshold)[:, 0])[0]
 
-
     # Tracker - update seed point with the average of cluster to use in the next
     # iteration
     seed_point = []
@@ -59,14 +58,12 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
         seed_point.append(y_sum / len(pts))
         seed_point.append(z_sum / len(pts))
 
-
     # RANSAC - eliminate the tracker outliers
     number_points = pts.shape[0]
     if number_points < 10:
         labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
-
 
     # RANSAC iterations
     for i in range(0, ransac_iterations):
@@ -125,7 +122,6 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     for key in idx_map:
         if idx_map[key] < ransac_threshold:
             final_idx.append(key)
-
 
     # -------------------------------------- End of RANSAC ----------------------------------------- #
 
@@ -233,6 +229,10 @@ def convertDepthImage32FC1to16UC1(image_in, scale=1000.0):
     :return: np array with dtype uint16
     """
 
+    if image_in.dtype == np.uint16:
+        raise ValueError("Cannot convert float32 to uint16 because image is already uint16.")
+        # return image_in
+    
     # mask_nans = np.isnan(image_in)
     image_mm_float = image_in * scale  # convert meters to millimeters
     image_mm_float = np.round(image_mm_float)  # round the millimeters
@@ -565,8 +565,8 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
 
             # TODO Why not test if the original image is nan?
             if not np.isnan(image[y, x]):
-                if x < (width-1-(width-1)*filter_border_edges) and x >(width-1)*filter_border_edges:
-                    if y < (height-1-(height-1)*filter_border_edges) and y >(height-1)*filter_border_edges:
+                if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
+                    if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
                         idxs_rows.append(y)
                         idxs_cols.append(x)
 
@@ -577,7 +577,7 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
 
-        #check if point is in the image's limits
+        # check if point is in the image's limits
         idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
         idxs = idxs.tolist()
         idxs = idxs[::limit_sample_step]  # subsample the limit points
