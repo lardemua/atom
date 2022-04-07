@@ -40,7 +40,8 @@ class SimplePatternDetector:
         image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
         self.image_pub.publish(image_msg_out)
 
-        cv2.imshow(self.options['topic'], image)
+        win=cv2.namedWindow(self.options['topic'], cv2.WINDOW_NORMAL)
+        cv2.imshow(win, image)
         key = cv2.waitKey(1)
         if key & 0xff == ord('q'):
             rospy.signal_shutdown(1)
