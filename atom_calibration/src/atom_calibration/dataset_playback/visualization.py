@@ -796,7 +796,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                 collection = collections[selected_collection_key]
                 image = copy.deepcopy(getCvDepthImageFromCollectionSensor(selected_collection_key, sensor_key, dataset, scale=10000.0))
                 # cv2.imshow(image)
-                print(image.dtype)
+                # print(image.dtype)
                 width = collection['data'][sensor_key]['width']
                 height = collection['data'][sensor_key]['height']
                 idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']

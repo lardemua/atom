@@ -345,20 +345,9 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    print("getCvImageFromDictionaryDepth:")
-    print(image.dtype)
-    # cv2.imshow("image", image)
-    # cv2.waitKey(0)
 
     if image.dtype==np.uint16:
         image=convertDepthImage16UC1to32FC1(image, scale=scale)
-    print(image.dtype)
-
-    # cv2.imshow("image",image)
-    # imageShowUInt16OrFloat32OrBool(image, "float32_get_cv_image")
-    # cv2.waitKey(0)
-    # print("image inside get image: ")
-    # print(image.dtype)
     return image
 
 
