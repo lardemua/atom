@@ -9,6 +9,7 @@ import os.path
 import argparse, random
 from functools import partial
 import numpy as np
+from geometry_msgs.msg import PointStamped
 from sqlalchemy import false
 import ros_numpy
 from pynput import keyboard
@@ -257,6 +258,11 @@ def selected_points_clear_all_callback(selected_point_cloud, models):
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = []
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = []
 
+def depth_clicked_points_callback(point_msg, sensor_name):
+    global points
+    point = {'x': int(point_msg.point.x), 'y': int(point_msg.point.y)}
+    points[sensor_name].append(point)
+
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -265,6 +271,7 @@ def main():
     # var to select the index of the collection we want to see
     global idx_collection
     global previous_selected_collection_key
+    global points
 
     # ---------------------------------------
     # --- Parse command line argument
@@ -325,18 +332,17 @@ def main():
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
-    args = vars(ap.parse_args(args=arglist))
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
-    d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
-    del d['data_file']
-    msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
-    bridge=CvBridge()
-    image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
+    # d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
+    # del d['data_file']
+    # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    # bridge=CvBridge()
+    # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
     # imageShowUInt16OrFloat32OrBool(image_33, "dataset_playback_load_results")
     # cv2.waitKey(5)
     # exit(0)
@@ -346,10 +352,9 @@ def main():
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
     if os.path.exists(output_file) and args['json_file']!=output_file:
-        ans = input('The file dataset_corrected.json already exists. Do you want to overwrite? (y/n)')
+        ans = input('The file dataset_corrected.json already exists. Do you want to overwrite? (Y/n)')
         if ans.lower() == 'n':
             sys.exit(0)
-
 
 
     # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
@@ -359,13 +364,6 @@ def main():
 
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
     
-    
-    
-    
-    
-    
-    
-
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
 
@@ -463,8 +461,15 @@ def main():
     opt.addDataModel('graphics', graphics)
 
     # ---------------------------------------------
-    # --- SUBSCRIBERS TO THE SELECTED POINTS PLUGIN
+    # --- SUBSCRIBERS TO PLUGINs
     # ---------------------------------------------
+
+    # Finding which sensors exist
+    sensors_by_modality = {}
+    modalities = ['depth', 'camera', 'lidar']
+
+    for modality in modalities:
+        sensors_by_modality[modality] = [sensor for sensor in dataset['sensors'].keys() if sensor.startswith(modality)]
 
     # Define subscriber to receive the selected points
     selected_points_callback_partial = partial(selected_points_callback, models=opt.data_models)
@@ -480,6 +485,16 @@ def main():
     rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2, selected_points_clear_all_callback_partial,
                      queue_size=1, buff_size=52428800)
 
+    # Subscriber for the image_click plugin
+    points = {}
+    depth_sensors = [sensor for sensor in dataset['sensors'].keys() if dataset['sensors'][sensor]['modality'] == 'depth']
+    for sensor in depth_sensors:
+        sensor_topic = dataset['sensors'][sensor]['topic']
+        points_topic = sensor_topic + '/labeled/click'
+        points[sensor] = []
+        depth_clicked_points_callback_partial = partial(depth_clicked_points_callback, sensor_name=sensor)
+        rospy.Subscriber(points_topic, PointStamped, depth_clicked_points_callback_partial)
+
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
@@ -494,10 +509,10 @@ def main():
     signal_handler_partial = partial(signal_handler, dataset=opt.data_models['dataset'], args=args)
     signal.signal(signal.SIGINT, signal_handler_partial)
 
-    rate = rospy.Rate(10)  # 10hz
+    rate = rospy.Rate(30)  # 30hz
     while not rospy.is_shutdown():
         selected_collection_key = collections_list[idx_collection]
-        visualizationFunction(opt.data_models, selected_collection_key, previous_selected_collection_key)
+        visualizationFunction(opt.data_models, selected_collection_key, previous_selected_collection_key, points)
         rate.sleep()
 
 

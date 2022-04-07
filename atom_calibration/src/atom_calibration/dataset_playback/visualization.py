@@ -23,6 +23,7 @@ from atom_core.cache import Cache
 
 from rospy_message_converter import message_converter
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
+from scipy.spatial import distance
 from std_msgs.msg import Header, ColorRGBA, UInt8MultiArray
 from urdf_parser_py.urdf import URDF
 from sensor_msgs.msg import Image, sensor_msgs, CameraInfo, geometry_msgs, PointCloud2, PointField
@@ -39,7 +40,7 @@ from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
 from atom_core.dataset_io import getCvImageFromDictionary, getCvImageFromDictionaryDepth, getPointCloudMessageFromDictionary, genCollectionPrefix
-
+from atom_calibration.collect.label_messages import *
 from atom_calibration.calibration.objective_function import *
 
 
@@ -544,7 +545,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     return graphics
 
 
-def visualizationFunction(models, selected_collection_key, previous_selected_collection_key=None):
+def visualizationFunction(models, selected_collection_key, previous_selected_collection_key=None, clicked_points=None):
     # print(Fore.RED + 'Visualization function called.' + Style.RESET_ALL)
     # Get the data from the meshes
     dataset = models['dataset']
@@ -807,6 +808,8 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                 gui_image[:, :, 0] = image / max_value * 255
                 gui_image[:, :, 1] = image / max_value * 255
                 gui_image[:, :, 2] = image / max_value * 255
+                start_to_end_distance = math.inf
+                tolerance_radius = 5
 
                 for idx in idxs:
                     # convert from linear idx to x_pix and y_pix indices.
@@ -819,6 +822,44 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     y = int(idx / width)
                     x = int(idx - y * width)
                     cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
+                
+                # Retrieving clicked points for the current sensor
+                clicked_sensor_points = clicked_points[sensor_key]
+
+                # Calculate the distance between the first and last placed points
+                if len(clicked_sensor_points) > 2:
+                    start_point = [clicked_sensor_points[0]['x'], clicked_sensor_points[0]['y']]
+                    end_point = [clicked_sensor_points[-1]['x'], clicked_sensor_points[-1]['y']]
+                    start_to_end_distance = distance.euclidean(start_point, end_point)
+                    rospy.loginfo(f'start [{start_point}] to end [{end_point}] distance - {start_to_end_distance}')
+
+                # If that distance is smaller then a threshold, draw a polygon
+                if start_to_end_distance < tolerance_radius:
+                    points_list = []
+                    for point in clicked_sensor_points[:-1]:
+                        point_tuple = (point['x'], point['y'])
+                        points_list.append(point_tuple)
+                    points_array = (np.array([points_list]))
+                    rospy.loginfo(f'Points_array: {points_array}')
+                    original_image = copy.deepcopy(gui_image)
+                    gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+                    # cv2.fillPoly(gui_image, pts=points_array, color=(255, 255, 0))
+                    # Draw a mask of the pattern
+                    pattern_mask_rgb = np.zeros((height, width, 3), dtype=np.uint8)
+                    cv2.fillPoly(pattern_mask_rgb, pts=points_array, color=(255, 255, 255))
+                    pattern_mask, _, _ = cv2.split(pattern_mask_rgb)
+                    labels, gui_image = labelDepthMsgFromMask(mask=pattern_mask, image=gray_image)
+                    print(labels)
+                else:
+                    # Draw a cross for each point
+                    for point in clicked_sensor_points:
+                        drawSquare2D(gui_image, point['x'], point['y'], size=5, color=(50, 190, 0))
+
+                    # Draw a line segment for each pair of consecutive points
+                    for point_start, point_end in zip(clicked_sensor_points[:-1], clicked_sensor_points[1:]):
+                        cv2.line(gui_image, pt1=(point_start['x'], point_start['y']), pt2=(point_end['x'], point_end['y']),
+                                 color=(0, 0, 255), thickness=1)
+
 
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 
