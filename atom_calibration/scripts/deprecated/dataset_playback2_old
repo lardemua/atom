@@ -92,7 +92,7 @@ def main():
     ap.add_argument("-v", "--verbose", help="Be verbose", action='store_true', default=False)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action='store_true')
     ap.add_argument("-si", "--show_images", help="shows images for each camera", action='store_true', default=False)
-    ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera instrinsics to the optimization",
+    ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera intrinsics to the optimization",
                     action='store_true', default=False)
     ap.add_argument("-pof", "--profile_objective_function",
                     help="Runs and prints a profile of the objective function, then exits.",
