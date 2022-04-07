@@ -61,6 +61,7 @@ link_directories(${catkin_LIBRARY_DIRS})
 # source codes #
 set(HEADERS
   include/image_display_with_click/image_display_with_click.h
+  include/image_display_with_click/image_display_with_click_base.h
   include/image_display_with_click/mouse_watcher.h
   )
 #qt5_wrap_ui(UIC_FILES
@@ -70,12 +71,15 @@ set(HEADERS
 set(SOURCE_FILES
         src/plugin_load.cpp
         src/image_display_with_click.cpp
+        src/image_display_with_click_base.cpp
         src/mouse_watcher.cpp
   )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${HEADERS} ${UIC_FILES})
+# add_library(${PROJECT_NAME} ${SOURCE_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${OGRE_PREFIX_DIR}/include")
+# target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 
 

@@ -51,7 +51,7 @@
 
   <depend>class_loader</depend>
   <depend>pluginlib</depend>
-  <depend>rviz</depend>
+<!--  <depend>rviz</depend>-->
   <depend>qtbase5-dev</depend>
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>atom_msgs</build_depend>
@@ -67,6 +67,8 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 
+  <build_depend>rviz</build_depend>
+  <exec_depend>rviz</exec_depend>
   <export>
     <rviz plugin="${prefix}/plugin_description.xml"/>
   </export>

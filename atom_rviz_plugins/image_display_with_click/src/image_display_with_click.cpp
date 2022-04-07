@@ -27,7 +27,7 @@ using namespace rviz;
 
 namespace atom_rviz
 {
-    ImageDisplayWithClick::ImageDisplayWithClick() : ImageDisplayBase(), texture_()
+    ImageDisplayWithClick::ImageDisplayWithClick() : ImageDisplayWithClickBase(), texture_()
     {
         cout << "Called ImageDisplay::ImageDisplay()" << endl;
         normalize_property_ = new BoolProperty(
@@ -56,9 +56,12 @@ namespace atom_rviz
     {
 
         cout << "Called ImageDisplay::onInitialize()" << endl;
-        ImageDisplayBase::onInitialize();
+        ImageDisplayWithClickBase::onInitialize();
         {
-            static uint32_t count = 0;
+            static uint32_t count = 10000; //NOTE this must start with a different number than 0, otherwise it will
+            // collide with the scene managers created by ImageDisplay
+            // https://github.com/lardemua/atom/issues/378#issuecomment-1091711581
+
             std::stringstream ss;
             ss << "ImageDisplay" << count++;
             img_scene_manager_ = Ogre::Root::getSingleton().createSceneManager(Ogre::ST_GENERIC, ss.str());
@@ -136,7 +139,7 @@ namespace atom_rviz
     void ImageDisplayWithClick::onDisable()
     {
         render_panel_->getRenderWindow()->setActive(false);
-        ImageDisplayBase::unsubscribe();
+        ImageDisplayWithClickBase::unsubscribe();
         reset();
     }
 
@@ -210,7 +213,7 @@ namespace atom_rviz
 
     void ImageDisplayWithClick::reset()
     {
-        ImageDisplayBase::reset();
+        ImageDisplayWithClickBase::reset();
         texture_.clear();
         render_panel_->getCamera()->setPosition(Ogre::Vector3(999999, 999999, 999999));
     }
