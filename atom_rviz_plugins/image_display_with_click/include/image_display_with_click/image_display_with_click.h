@@ -22,6 +22,7 @@
 #include "std_msgs/String.h"
 
 #include <image_display_with_click/mouse_watcher.h>
+#include <image_display_with_click/image_display_with_click_base.h>
 
 namespace Ogre
 {
@@ -30,10 +31,11 @@ namespace Ogre
 } // namespace Ogre
 
 using namespace std;
+using namespace rviz;
 
 namespace atom_rviz
 {
-    class ImageDisplayWithClick : public rviz::ImageDisplayBase
+    class ImageDisplayWithClick : public atom_rviz::ImageDisplayWithClickBase
     {
     Q_OBJECT
     public:
