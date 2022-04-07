@@ -38,7 +38,7 @@ from matplotlib import cm
 from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
-from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
+from atom_core.dataset_io import getCvImageFromDictionary, getCvImageFromDictionaryDepth, getPointCloudMessageFromDictionary, genCollectionPrefix
 
 from atom_calibration.calibration.objective_function import *
 
@@ -63,6 +63,11 @@ def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _
 def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
     dictionary = dataset['collections'][collection_key]['data'][sensor_key]
     return getCvImageFromDictionary(dictionary)
+
+
+def getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=1000.0):
+    dictionary = dataset['collections'][collection_key]['data'][sensor_key]
+    return getCvImageFromDictionaryDepth(dictionary, scale=scale)
 
 
 def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
@@ -789,7 +794,9 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         if sensor['modality'] == 'depth':
             if args['show_images']:
                 collection = collections[selected_collection_key]
-                image = copy.deepcopy(getCvImageFromCollectionSensor(selected_collection_key, sensor_key, dataset))
+                image = copy.deepcopy(getCvDepthImageFromCollectionSensor(selected_collection_key, sensor_key, dataset, scale=10000.0))
+                # cv2.imshow(image)
+                print(image.dtype)
                 width = collection['data'][sensor_key]['width']
                 height = collection['data'][sensor_key]['height']
                 idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']

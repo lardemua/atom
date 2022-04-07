@@ -249,7 +249,7 @@ def convertDepthImage16UC1to32FC1(image_in, scale=1000.0):
     :param scale: convertion from millimieters to meters if 1000
     :return: np array with dtype float32
     """
-    iinfo = np.iinfo(np.uint16)
+    # iinfo = np.iinfo(np.uint16)
     mask_nans = image_in == 0
     image_out = image_in.astype(np.float32) / scale  # convert millimeters to meters
     image_out[mask_nans] = np.nan

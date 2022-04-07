@@ -23,7 +23,7 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1, imageShowUInt16OrFloat32OrBool
 import imageio
 
 
@@ -93,7 +93,8 @@ def loadResultsJSON(json_file, collection_selection_function):
                 assert collection['data'][sensor_key]['width'] == dict_image['width'], 'Image width must be the same'
 
                 collection['data'][sensor_key]['data'] = dict_image['data']  # set data field of collection
-
+                collection['data'][sensor_key]['encoding'] = dict_image['encoding']
+                collection['data'][sensor_key]['step'] = dict_image['step']
                 # Previous code, did not preserve frame_id and other properties
                 # collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
 
@@ -104,14 +105,34 @@ def loadResultsJSON(json_file, collection_selection_function):
                 cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
                 cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
                                                                         scale=10000.0)
+                # collection['data'][sensor_key]['encoding']='32FC1'
+
+                # cv2.imshow("cv_image_float32_meters", cv_image_int16_tenths_of_millimeters)
+                # cv2.waitKey(0)
+                # imageShowUInt16OrFloat32OrBool(cv_image_float32_meters, "float32_load_file")
+                # cv2.waitKey(5)
 
                 printImageInfo(cv_image_int16_tenths_of_millimeters, text='cv_image_int16_tenths_of_millimeters')
                 printImageInfo(cv_image_float32_meters, text='cv_image_float32_meters')
 
                 # collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image_float32_meters))
 
-                msg = getDictionaryFromDepthImage(cv_image_float32_meters)
-                collection['data'][sensor_key]['data'] = msg['data']
+                dict = getDictionaryFromDepthImage(cv_image_float32_meters)
+
+
+                collection['data'][sensor_key]['data'] = dict['data']
+                collection['data'][sensor_key]['encoding'] = dict['encoding']
+                collection['data'][sensor_key]['step'] = dict['step']
+                # del dict['data']
+                # del collection['data'][sensor_key]['data']
+                # print(dict)
+                # print(collection['data'][sensor_key])
+                # exit(0)
+                # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', dict)
+                # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
+                # imageShowUInt16OrFloat32OrBool(image_33, "load_file_dic")
+                # cv2.waitKey(5)
+
                 # TODO eliminate data_file
                 # TODO Why this is not needed for rgb? Should be done as well
 
@@ -141,6 +162,15 @@ def loadResultsJSON(json_file, collection_selection_function):
                 collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
 
     print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
+
+    # d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
+    # del d['data_file']
+    # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    # bridge=CvBridge()
+    # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
+    # imageShowUInt16OrFloat32OrBool(image_33, "inside_load_results")
+    # cv2.waitKey(5)
+
     return dataset, json_file
 
 
@@ -260,8 +290,20 @@ def getDictionaryFromDepthImage(cv_image):
     :param cv_image:  the image in opencv format.
     :return: A dictionary converted from the ros message.
     """
+
+    # imageShowUInt16OrFloat32OrBool(cv_image, "float32_getdictionary_in")
+    # cv2.waitKey(5)
+
     bridge = CvBridge()
     msg = bridge.cv2_to_imgmsg(cv_image, "passthrough")
+
+    # d=message_converter.convert_ros_message_to_dictionary(msg)
+    # msg=message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image',d)
+    # image=bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    # imageShowUInt16OrFloat32OrBool(image, "float32_getdictionary_out")
+    # cv2.waitKey(5)
+
+
     return message_converter.convert_ros_message_to_dictionary(msg)
 
 
@@ -285,7 +327,7 @@ def getCvImageFromDictionary(dictionary_in, safe=False):
     return bridge.imgmsg_to_cv2(msg)
 
 
-def getCvImageFromDictionaryDepth(dictionary_in, safe=False):
+def getCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0):
     """
     Converts a dictionary (read from a json file) into an opencv image.
     To do so it goes from dictionary -> ros_message -> cv_image
@@ -303,8 +345,18 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False):
     msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    print("getCvImageFromDictionaryDepth:")
+    print(image.dtype)
+    # cv2.imshow("image", image)
+    # cv2.waitKey(0)
+
     if image.dtype==np.uint16:
-        image=convertDepthImage16UC1to32FC1(image)
+        image=convertDepthImage16UC1to32FC1(image, scale=scale)
+    print(image.dtype)
+
+    # cv2.imshow("image",image)
+    # imageShowUInt16OrFloat32OrBool(image, "float32_get_cv_image")
+    # cv2.waitKey(0)
     # print("image inside get image: ")
     # print(image.dtype)
     return image

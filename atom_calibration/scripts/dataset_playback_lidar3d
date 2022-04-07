@@ -18,6 +18,10 @@ import rospy, tf
 from colorama import Fore, Style, Back
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
+from rospy_message_converter import message_converter
+from cv_bridge import CvBridge
+import cv2
+
 
 # own packages
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
@@ -33,6 +37,7 @@ from atom_core.config_io import readXacroFile, uriReader
 from atom_core.dataset_io import loadResultsJSON, \
     getPointCloudMessageFromDictionary, filterCollectionsFromDataset, filterSensorsFromDataset, \
     addNoiseToInitialGuess, NpEncoder, walk, createDataFile
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1, imageShowUInt16OrFloat32OrBool
 
 
 # global variavels
@@ -327,7 +332,13 @@ def main():
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
-
+    d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
+    del d['data_file']
+    msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    bridge=CvBridge()
+    image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
+    # imageShowUInt16OrFloat32OrBool(image_33, "dataset_playback_load_results")
+    # cv2.waitKey(5)
     # exit(0)
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
@@ -436,6 +447,16 @@ def main():
     # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
     # ---------------------------------------
+    # d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
+    # del d['data_file']
+    # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    # bridge=CvBridge()
+    # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
+    # imageShowUInt16OrFloat32OrBool(image_33, "dataset_playback")
+    # cv2.waitKey(5)
+
+
+
 
     print("Configuring visualization ... ")
     graphics = setupVisualization(dataset, args, selected_collection_key)
