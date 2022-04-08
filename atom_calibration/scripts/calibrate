@@ -523,6 +523,8 @@ def main():
     if args['phased_execution']:
         waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
+    opt.printParameters()
+
     print('Initializing optimization ...')
     # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'}

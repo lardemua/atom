@@ -803,7 +803,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                 # msg = messcollection['data'][sensor_key]age_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', collection['data'][sensor_key])
                 # bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
                 # image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
-                imageShowUInt16OrFloat32OrBool(image, 'Original', max_value=5000.0)
+                # imageShowUInt16OrFloat32OrBool(image, 'Original', max_value=5000.0)
                 # print(image.dtype)
                 width = collection['data'][sensor_key]['width']
                 height = collection['data'][sensor_key]['height']
@@ -838,7 +838,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     start_point = [clicked_sensor_points[0]['x'], clicked_sensor_points[0]['y']]
                     end_point = [clicked_sensor_points[-1]['x'], clicked_sensor_points[-1]['y']]
                     start_to_end_distance = distance.euclidean(start_point, end_point)
-                    rospy.loginfo(f'start [{start_point}] to end [{end_point}] distance - {start_to_end_distance}')
+                    # rospy.loginfo(f'start [{start_point}] to end [{end_point}] distance - {start_to_end_distance}')
 
                 # If that distance is smaller then a threshold, draw a polygon
                 if start_to_end_distance < tolerance_radius:
@@ -847,7 +847,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                         point_tuple = (point['x'], point['y'])
                         points_list.append(point_tuple)
                     points_array = (np.array([points_list]))
-                    rospy.loginfo(f'Points_array: {points_array}')
+                    # rospy.loginfo(f'Points_array: {points_array}')
                     original_image = copy.deepcopy(gui_image)
                     gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
                     # cv2.fillPoly(gui_image, pts=points_array, color=(255, 255, 0))
@@ -858,8 +858,8 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     labels, gui_image, _ = labelDepthMsg(msg, seed=None, bridge=None,
                                                          pyrdown=0, scatter_seed=True,
                                                          scatter_seed_radius=8,
-                                                         debug=True,
-                                                         subsample_solid_points=3, limit_sample_step=1,
+                                                         debug=False,
+                                                         subsample_solid_points=1, limit_sample_step=1,
                                                          pattern_mask=pattern_mask)
                     # labels, gui_image = labelDepthMsgFromMask(mask=pattern_mask, image=gray_image)
                     idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']

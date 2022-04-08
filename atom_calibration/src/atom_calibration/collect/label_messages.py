@@ -26,6 +26,11 @@ def labelImageMsg():
     pass
     # TODO the stuff from patterns.py should be here
 
+def find_nearest_white(img, target):
+    nonzero = np.argwhere(img == 255)
+    distances = np.sqrt((nonzero[:, 0] - target[0]) ** 2 + (nonzero[:, 1] - target[1]) ** 2)
+    nearest_index = np.argmin(distances)
+    return nonzero[nearest_index]
 
 def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
                         ransac_threshold):
@@ -464,20 +469,15 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         mask_not_nan = np.logical_not(np.isnan(image))
         seeds_mask = np.logical_and(pattern_mask, mask_not_nan)
 
-    imageShowUInt16OrFloat32OrBool(seeds_mask, 'seeds_mask')
-    imageShowUInt16OrFloat32OrBool(mask_not_nan, 'mask_not_nan')
-
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
 
-    pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
-    pattern_edges_mask2 = pattern_edges_mask.copy()
-
     # contours using cv2.findContours
-    contours, hierarchy = cv2.findContours(pattern_edges_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(pattern_solid_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-    # contours using cv2.minAreaRect
+    # Create a convex hull of the contours
     # https://theailearner.com/2020/11/03/opencv-minimum-area-rectangle/
+    pattern_edges_mask = cv2.Sobel(src=pattern_solid_mask, ddepth=cv2.CV_8UC1, dx=1, dy=1, ksize=3)
     point_coordinates = np.argwhere(pattern_edges_mask == 255)
     convex_hull_points = cv2.convexHull(point_coordinates)
 
@@ -571,21 +571,20 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         # Edges mask coordinates computed from the contours
         idxs_rows = []
         idxs_cols = []
-        imageShowUInt16OrFloat32OrBool(np.logical_and(pattern_edges_mask2, mask_not_nan), 'mask edges and not_nan')
         external_contour = contours[0]
         for value in external_contour:
             x = value[0][0]
             y = value[0][1]
 
-            # if x > (width - 1 - (width - 1) * filter_border_edges) or x < (width - 1) * filter_border_edges or y > (height - 1 - (height - 1) * filter_border_edges) and y < (height - 1) * filter_border_edges:
-            #     print("EDGES")
+            if np.isnan(image[y, x]): # if x,y is nan in depth image, find nearest white pixel
+                closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y,x))
+                x = closest_not_nan_pixel[1]
+                y = closest_not_nan_pixel[0]
 
-            # TODO Why not test if the original image is nan?
-            if not np.isnan(image[y, x]):
-                if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
-                    if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
-                        idxs_rows.append(y)
-                        idxs_cols.append(x)
+            if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
+                if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
+                    idxs_rows.append(y)
+                    idxs_cols.append(x)
 
         idxs_rows = np.array(idxs_rows)
         idxs_cols = np.array(idxs_cols)
@@ -674,222 +673,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         print('Time taken preparing gui image ' + str((rospy.Time.now() - now).to_sec()))
 
     return labels, gui_image, new_seed_point
-
-
-# def labelDepthMsgFromMask(mask, image, pyrdown=0, subsample_solid_points=1, debug=False,
-#                           limit_sample_step=5, filter_border_edges=0.025):
-#     # Setting up variables
-#     for idx in range(0, pyrdown):  # Downsample
-#         image = cv2.pyrDown(image)
-#
-#     # TODO test for images that are uint16 (only float was tested)
-#     if not image.dtype == np.float32:  # Make sure it is float
-#         image = convertDepthImage16UC1to32FC1(image)
-#
-#     height, width = image.shape
-#     if pyrdown == 0:
-#         original_height = height
-#         original_width = width
-#     else:
-#         original_height = height * (2 * pyrdown)
-#         original_width = width * (2 * pyrdown)
-#
-#     # -------------------------------------
-#     # Step 4: Postprocess the filled image
-#     # -------------------------------------
-#     if debug:
-#         now = rospy.Time.now()
-#
-#     pattern_solid_mask = ndimage.morphology.binary_fill_holes(mask)  # close the holes
-#     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
-#     pattern_edges_mask = cv2.Canny(pattern_solid_mask, 100, 200)  # find the edges
-#     pattern_edges_mask2 = pattern_edges_mask.copy()
-#
-#     # contours using cv2.findContours
-#     contours, hierarchy = cv2.findContours(pattern_edges_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-#
-#     # contours using cv2.minAreaRect
-#     # https://theailearner.com/2020/11/03/opencv-minimum-area-rectangle/
-#     point_coordinates = np.argwhere(pattern_edges_mask == 255)
-#     convex_hull_points = cv2.convexHull(point_coordinates)
-#
-#     if not convex_hull_points is None:
-#         contours = [[]]  # stupid data strucutre just to be the same as in contours ...
-#         convex_hull_points = convex_hull_points.tolist()
-#         convex_hull_points.append(convex_hull_points[0])
-#         # print('convex_hull_points = ' + str(convex_hull_points))
-#         for idx, (corner_1, corner_2) in enumerate(zip(convex_hull_points, convex_hull_points[1:])):
-#             # print('corner_1 ' + str(corner_1))
-#             # print('line ' + str(idx))
-#             x1, y1 = corner_1[0]
-#             x2, y2 = corner_2[0]
-#             vector_x = x2 - x1
-#             vector_y = y2 - y1
-#
-#             distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-#             # print('distance ' + str(distance))
-#             number_of_samples_in_line = int(distance / limit_sample_step)
-#             # print('number_of_samples_in_line ' + str(number_of_samples_in_line))
-#
-#             sampled_values = np.linspace(0, 1, number_of_samples_in_line).astype(float).tolist()
-#             # print('sampled_values ' + str(sampled_values))
-#             for sampled_value in sampled_values:
-#                 x = int(x1 + sampled_value * vector_x)
-#                 y = int(y1 + sampled_value * vector_y)
-#                 contours[0].append([[y, x]])
-#
-#     # cv2.imshow('Canny', pattern_edges_mask)
-#     # cv2.imshow('Canny Edges After Contouring', pattern_edges_mask)
-#     # print(image.dtype)
-#     # # image2 = np.zeros(image.shape, dtype=np.float)
-#     # image2 = image.copy()
-#     # cv2.drawContours(image2, contours, -1, (0, 255, 0), 3)
-#     # cv2.imshow('Contours', image2)
-#     # cv2.waitKey(10)
-#
-#     if debug:
-#         cv2.namedWindow('pattern_solid_mask', cv2.WINDOW_NORMAL)
-#         cv2.imshow('pattern_solid_mask', pattern_solid_mask)
-#         cv2.namedWindow('pattern_edges_mask', cv2.WINDOW_NORMAL)
-#         cv2.imshow('pattern_edges_mask', pattern_edges_mask)
-#         print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
-#
-#     # -------------------------------------
-#     # Step 5: Compute next iteration's seed point as centroid of filled mask
-#     # -------------------------------------
-#     moments = cv2.moments(pattern_solid_mask)  # compute moments of binary image
-#     m0 = moments["m00"]
-#     if m0 == 0:  # use center of image as backup value
-#         cx = int(width / 2)
-#         cy = int(height / 2)
-#     else:
-#         cx = int(moments["m10"] / moments["m00"])
-#         cy = int(moments["m01"] / moments["m00"])
-#
-#     if pyrdown > 0:
-#         cx = cx * (2 * pyrdown)  # compensate the pyr down
-#         cy = cy * (2 * pyrdown)  # compensate the pyr down
-#
-#     new_seed_point = {'x': cx, 'y': cy}  # pythonic
-#
-#     # -------------------------------------
-#     # Step 6: Creating the output labels dictionary
-#     # -------------------------------------
-#     labels = {'detected': True, 'idxs': [], 'idxs_limit_points': []}
-#
-#     print(m0)
-#     print(contours)
-#     if m0 == 0 or not contours:  # if no detection occurred
-#         labels['detected'] = False
-#     else:
-#         # The coordinates in the labels must be given as linear indices of the image in the original size. Because of
-#         # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
-#         # Also, the solid mask coordinates may be subsampled because they contain a lot of points.
-#
-#         # Solid mask coordinates
-#         sampled = np.zeros(image.shape, dtype=bool)
-#         sampled[::subsample_solid_points, ::subsample_solid_points] = True
-#         idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
-#         # if not np.isnan(sampled[idxs_rows][idxs_cols]):
-#         for i in range(len(idxs_rows)):
-#             if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
-#                 np.delete(idxs_cols, i)
-#                 np.delete(idxs_rows, i)
-#
-#         if pyrdown > 0:
-#             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
-#             idxs_cols = idxs_cols * (2 * pyrdown)
-#         idxs_solid = idxs_cols + original_width * idxs_rows  # we will store the linear indices
-#         labels['idxs'] = idxs_solid.tolist()
-#
-#         # Edges mask coordinates
-#         # idxs_rows, idxs_cols = np.where(pattern_edges_mask)
-#         # for i in range(len(idxs_rows)):
-#         #     if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
-#         #         np.delete(idxs_cols, i)
-#         #         np.delete(idxs_rows, i)
-#         # if not np.isnan(pattern_edges_mask[idxs_rows][idxs_cols]):
-#
-#         # Edges mask coordinates computed from the contours
-#         idxs_rows = []
-#         idxs_cols = []
-#         external_contour = contours[0]
-#         for value in external_contour:
-#             x = value[0][0]
-#             y = value[0][1]
-#
-#             # if x > (width - 1 - (width - 1) * filter_border_edges) or x < (width - 1) * filter_border_edges or y > (height - 1 - (height - 1) * filter_border_edges) and y < (height - 1) * filter_border_edges:
-#             #     print("EDGES")
-#
-#             # TODO Why not test if the original image is nan?
-#             if not np.isnan(image[y, x]):
-#                 if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
-#                     if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
-#                         idxs_rows.append(y)
-#                         idxs_cols.append(x)
-#
-#         idxs_rows = np.array(idxs_rows)
-#         idxs_cols = np.array(idxs_cols)
-#
-#         if pyrdown > 0:
-#             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
-#             idxs_cols = idxs_cols * (2 * pyrdown)
-#
-#         # check if point is in the image's limits
-#         idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
-#         idxs = idxs.tolist()
-#         idxs = idxs[::limit_sample_step]  # subsample the limit points
-#         labels['idxs_limit_points'] = idxs
-#
-#     # -------------------------------------
-#     # Step 7: Creating the output image
-#     # -------------------------------------
-#     now = rospy.Time.now()
-#     # Create a nice color image as result
-#     gui_image = np.zeros((height, width, 3), dtype=np.uint8)
-#     max_value = 5
-#     gui_image[:, :, 0] = image / max_value * 255
-#     gui_image[:, :, 1] = image / max_value * 255
-#     gui_image[:, :, 2] = image / max_value * 255
-#
-#     if labels['detected']:
-#         # "greenify" the filled region
-#         gui_image[mask, 0] -= 10
-#         gui_image[mask, 1] += 10
-#         gui_image[mask, 2] -= 10
-#         gui_image = gui_image.astype(np.uint8)
-#
-#         # show subsampled points
-#         for idx in idxs_solid:
-#             y = int(idx / original_width)
-#             x = int(idx - y * original_width)
-#
-#             if pyrdown > 0:
-#                 y = int(y / (2 * pyrdown))
-#                 x = int(x / (2 * pyrdown))
-#
-#             gui_image[y, x, 0] = 0
-#             gui_image[y, x, 1] = 200
-#             gui_image[y, x, 2] = 255
-#
-#         # # Draw the Canny boundary
-#         # mask_canny = pattern_edges_mask.astype(bool)
-#         # gui_image[mask_canny, 0] = 25
-#         # gui_image[mask_canny, 1] = 255
-#         # gui_image[mask_canny, 2] = 25
-#
-#         # Draw the subsampled limit points
-#         for idx in labels['idxs_limit_points']:
-#             y = int(idx / original_width)
-#             x = int(idx - y * original_width)
-#
-#             if pyrdown > 0:
-#                 y = int(y / (2 * pyrdown))
-#                 x = int(x / (2 * pyrdown))
-#
-#             cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
-#     return labels, gui_image
-
 
 def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns):
     marker = Marker()

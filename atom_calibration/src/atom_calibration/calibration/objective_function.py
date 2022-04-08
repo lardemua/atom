@@ -9,7 +9,6 @@ import ros_numpy
 from scipy.spatial import distance
 from datetime import datetime
 
-
 # 3rd-party
 import OptimizationUtils.utilities as opt_utilities
 from geometry_msgs.msg import Point
@@ -116,6 +115,9 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
 
         # get distance value for this pixel coordinate
         distance = img[y_pix, x_pix]
+        if np.isnan(distance):  # Cannot use this point with distance nan
+            print('found nan distance for idx ' + str(idx))
+            continue
 
         # compute 3D point and add to list of coordinates xs, ys, zs
         x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
@@ -441,6 +443,10 @@ def objectiveFunction(data):
 
                 # print("Depth calibration under construction")
                 points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                # for point_in_sensor in points_in_sensor:
+                #     print(point_in_sensor)
+                #
+                #     exit(0)
 
                 # print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
                 now = datetime.now()
@@ -462,6 +468,15 @@ def objectiveFunction(data):
                     # Compute the residual: absolute of z component
                     rname = rname_pre + str(idx)
                     r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['depth']
+                    value = points_in_pattern[2, idx]
+                    if np.isnan(value):
+                        print('Sensor ' + sensor_key + ' residual ' + rname + ' is nan')
+                        print(value)
+
+                # print('Sensor ' + sensor_key)
+                # print(r)
+                exit(0)
+
                 # print('ORTOGONAL RESIDUALS ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now).total_seconds()) + ' secs.')
                 # ------------------------------------------------------------------------------------------------
@@ -474,7 +489,6 @@ def objectiveFunction(data):
                 # print('POINTS IN SENSOR LIMITS ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now).total_seconds()) + ' secs.')
                 now = datetime.now()
-
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
