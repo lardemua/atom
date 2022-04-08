@@ -12,6 +12,7 @@ import struct
 # 3rd-party
 import colorama
 import cv2
+import cv_bridge
 import ros_numpy
 # import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
@@ -39,7 +40,8 @@ from matplotlib import cm
 from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
-from atom_core.dataset_io import getCvImageFromDictionary, getCvImageFromDictionaryDepth, getPointCloudMessageFromDictionary, genCollectionPrefix
+from atom_core.dataset_io import getCvImageFromDictionary, getCvImageFromDictionaryDepth, \
+    getPointCloudMessageFromDictionary, genCollectionPrefix, getMsgAndCvImageFromDictionaryDepth
 from atom_calibration.collect.label_messages import *
 from atom_calibration.calibration.objective_function import *
 
@@ -49,6 +51,8 @@ from atom_calibration.calibration.objective_function import *
 # -------------------------------------------------------------------------------
 
 # although this function is somewhere else, in the other place it uses the dataset as cache...
+
+
 def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _dataset):
     cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
@@ -795,8 +799,11 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
         if sensor['modality'] == 'depth':
             if args['show_images']:
                 collection = collections[selected_collection_key]
-                image = copy.deepcopy(getCvDepthImageFromCollectionSensor(selected_collection_key, sensor_key, dataset, scale=10000.0))
-                # cv2.imshow(image)
+                msg, image = getMsgAndCvImageFromDictionaryDepth(collection['data'][sensor_key])
+                # msg = messcollection['data'][sensor_key]age_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', collection['data'][sensor_key])
+                # bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
+                # image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
+                imageShowUInt16OrFloat32OrBool(image, 'Original', max_value=5000.0)
                 # print(image.dtype)
                 width = collection['data'][sensor_key]['width']
                 height = collection['data'][sensor_key]['height']
@@ -822,7 +829,7 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     y = int(idx / width)
                     x = int(idx - y * width)
                     cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
-                
+
                 # Retrieving clicked points for the current sensor
                 clicked_sensor_points = clicked_points[sensor_key]
 
@@ -848,8 +855,17 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
                     pattern_mask_rgb = np.zeros((height, width, 3), dtype=np.uint8)
                     cv2.fillPoly(pattern_mask_rgb, pts=points_array, color=(255, 255, 255))
                     pattern_mask, _, _ = cv2.split(pattern_mask_rgb)
-                    labels, gui_image = labelDepthMsgFromMask(mask=pattern_mask, image=gray_image)
-                    print(labels)
+                    labels, gui_image, _ = labelDepthMsg(msg, seed=None, bridge=None,
+                                                         pyrdown=0, scatter_seed=True,
+                                                         scatter_seed_radius=8,
+                                                         debug=True,
+                                                         subsample_solid_points=3, limit_sample_step=1,
+                                                         pattern_mask=pattern_mask)
+                    # labels, gui_image = labelDepthMsgFromMask(mask=pattern_mask, image=gray_image)
+                    idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']
+                    idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor_key][
+                        'idxs_limit_points']
+
                 else:
                     # Draw a cross for each point
                     for point in clicked_sensor_points:
@@ -857,9 +873,9 @@ def visualizationFunction(models, selected_collection_key, previous_selected_col
 
                     # Draw a line segment for each pair of consecutive points
                     for point_start, point_end in zip(clicked_sensor_points[:-1], clicked_sensor_points[1:]):
-                        cv2.line(gui_image, pt1=(point_start['x'], point_start['y']), pt2=(point_end['x'], point_end['y']),
+                        cv2.line(gui_image, pt1=(point_start['x'], point_start['y']),
+                                 pt2=(point_end['x'], point_end['y']),
                                  color=(0, 0, 255), thickness=1)
-
 
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 

@@ -350,6 +350,28 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0):
         image=convertDepthImage16UC1to32FC1(image, scale=scale)
     return image
 
+def getMsgAndCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0):
+    """
+    Converts a dictionary (read from a json file) into an opencv image and a ros message.
+    To do so it goes from dictionary -> ros_message -> cv_image
+    :param dictionary_in: the dictionary read from the json file.
+    :return: an opencv image.
+    """
+    if safe:
+        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
+    else:
+        d = dictionary_in
+
+    if 'data_file' in d:  # Delete data field from dictionary
+        del d['data_file']  # will disrupt the dictionary to ros message
+
+    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
+    bridge = CvBridge()
+    image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+
+    if image.dtype==np.uint16:
+        image=convertDepthImage16UC1to32FC1(image, scale=scale)
+    return msg, image
 
 def getPointCloudMessageFromDictionary(dictionary_in):
     """
