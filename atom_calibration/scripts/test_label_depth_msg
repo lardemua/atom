@@ -8,12 +8,13 @@ import argparse
 # 3rd-party
 import cv2
 import cv_bridge
+import numpy as np
 import rospy
 
 from sensor_msgs.msg import Image
 
 # local packages
-from atom_calibration.collect.label_messages import labelDepthMsg
+from atom_calibration.collect.label_messages import labelDepthMsg, convertDepthImage16UC1to32FC1
 from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
 from atom_calibration.initial_estimate.sensor import Sensor
@@ -40,25 +41,44 @@ def callbackMessageReceived(msg, seed):
     # seed_x, seed_y = 800, 220
     # TODO add one seed point as dict for consistency
     labels, result_image, new_seed_point = labelDepthMsg(msg, seed=seed, bridge=bridge,
-                                                         pyrdown=0, scatter_seed=True, scatter_seed_radius=36,
+                                                         pyrdown=1, scatter_seed=True, scatter_seed_radius=8,
                                                          debug=True,
-                                                         subsample_solid_points=6, limit_sample_step=3)
+                                                         subsample_solid_points=3, limit_sample_step=1)
+
+
+    # bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
+    # image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
+    # idxs=labels['idxs']
+    # # print(image.dtype)
+    # if not image.dtype == np.float32:  # Make sure it is float
+    #     image = convertDepthImage16UC1to32FC1(image)
+    # width=640
+    # for idx in idxs:
+    #     y = int(idx / width)
+    #     x = int(idx - y * width)
+    #     distance=image[y,x]
+    #     if np.isnan(distance):
+    #         print("found nan in test_label")
+            # rospy.signal_shutdown("Found NaN")
+        # idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
+    # print(idxs)
+
     rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
 
     seed['x'] = new_seed_point['x']
     seed['y'] = new_seed_point['y']
 
-    # cv2.namedWindow('labeled image', cv2.WINDOW_NORMAL)
-    # cv2.imshow('labeled image', result_image)
-    # cv2.waitKey(0)
+    cv2.namedWindow('labeled image', cv2.WINDOW_NORMAL)
+    cv2.imshow('labeled image', result_image)
+    cv2.waitKey(0)
 
 
 def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
 
-    # seed = {'x':300, 'y':200}
+    seed = {'x':265*2, 'y':113*2}
     # seed = {'x': 510, 'y': 180}
-    seed = {'x': 600, 'y': 175}
+    # seed = {'x': 600, 'y': 175}
 
     rospy.Subscriber('depth_image_topic', Image, functools.partial(callbackMessageReceived, seed=seed), queue_size=1)
 

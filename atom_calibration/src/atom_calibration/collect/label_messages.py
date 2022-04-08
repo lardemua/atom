@@ -232,7 +232,7 @@ def convertDepthImage32FC1to16UC1(image_in, scale=1000.0):
     if image_in.dtype == np.uint16:
         raise ValueError("Cannot convert float32 to uint16 because image is already uint16.")
         # return image_in
-    
+
     # mask_nans = np.isnan(image_in)
     image_mm_float = image_in * scale  # convert meters to millimeters
     image_mm_float = np.round(image_mm_float)  # round the millimeters
@@ -290,6 +290,15 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
     image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
 
+    # TODO test for images that are uint16 (only float was tested)
+    if not image.dtype == np.float32:  # Make sure it is float
+        image = convertDepthImage16UC1to32FC1(image)
+        # print("Image converted to float 32\n")
+        # print(image.dtpye)
+        # raise ValueError('image must be float type, and it is ' + str(image.dtype))
+
+    original_image = copy.deepcopy(image)
+
     seed_x = seed['x']
     seed_y = seed['y']
 
@@ -297,13 +306,6 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         image = cv2.pyrDown(image)
         seed_x = int(seed_x / 2)
         seed_y = int(seed_y / 2)
-
-    # TODO test for images that are uint16 (only float was tested)
-    if not image.dtype == np.float32:  # Make sure it is float
-        image = convertDepthImage16UC1to32FC1(image)
-        # print("Image converted to float 32\n")
-        # print(image.dtpye)
-        # raise ValueError('image must be float type, and it is ' + str(image.dtype))
 
     # -------------------------------------
     # Step 2: Initialization
@@ -533,17 +535,28 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         sampled[::subsample_solid_points, ::subsample_solid_points] = True
         idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
         # if not np.isnan(sampled[idxs_rows][idxs_cols]):
-        for i in range(len(idxs_rows)):
-            if np.isnan(pattern_solid_mask[idxs_rows[i], idxs_cols[i]]):
-                np.delete(idxs_cols, i)
-                np.delete(idxs_rows, i)
+        # print(image.dtype)
+        # print(type(idxs_rows))
+        # for i in range(len(idxs_rows)):
+        #     if np.isnan(image[idxs_rows[i], idxs_cols[i]]):
+        #         np.delete(idxs_cols, i)
+        #         np.delete(idxs_rows, i)
+        #         print("deleting NaN")
+        #         # rospy.signal_shutdown("Found NaN")
+        # print(image.shape)
 
         if pyrdown > 0:
             idxs_rows = idxs_rows * (2 * pyrdown)  # compensate the pyr down
             idxs_cols = idxs_cols * (2 * pyrdown)
-        idxs_solid = idxs_cols + original_width * idxs_rows  # we will store the linear indices
-        labels['idxs'] = idxs_solid.tolist()
 
+        # Filter out NaN values in the original image
+        labels['idxs'] = []
+        for row, col in zip(list(idxs_rows), list(idxs_cols)):
+            if not np.isnan(original_image[row, col]):
+                # store linear index
+                labels['idxs'].append(col + original_width * row)
+
+        # idxs_solid = idxs_cols + original_width * idxs_rows  # we will store the linear indices
         # Edges mask coordinates
         # idxs_rows, idxs_cols = np.where(pattern_edges_mask)
         # for i in range(len(idxs_rows)):
@@ -602,7 +615,7 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
         gui_image = gui_image.astype(np.uint8)
 
         # show subsampled points
-        for idx in idxs_solid:
+        for idx in labels['idxs']:
             y = int(idx / original_width)
             x = int(idx - y * original_width)
 
@@ -657,9 +670,9 @@ def labelDepthMsg(msg, seed, propagation_threshold=0.2, bridge=None, pyrdown=0,
 
     return labels, gui_image, new_seed_point
 
-def labelDepthMsgFromMask(mask, image, pyrdown=0, subsample_solid_points=1, debug=False,
-                  limit_sample_step=5, filter_border_edges=0.025):
 
+def labelDepthMsgFromMask(mask, image, pyrdown=0, subsample_solid_points=1, debug=False,
+                          limit_sample_step=5, filter_border_edges=0.025):
     # Setting up variables
     for idx in range(0, pyrdown):  # Downsample
         image = cv2.pyrDown(image)
@@ -871,7 +884,6 @@ def labelDepthMsgFromMask(mask, image, pyrdown=0, subsample_solid_points=1, debu
 
             cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
     return labels, gui_image
-
 
 
 def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns):
