@@ -142,28 +142,31 @@ def signal_handler(sig, frame, dataset, args):
 
 
 # keyboard listener
-def key_pressed(key, idx_max_collection, collections_list, selection, dataset, args):
+def key_pressed(key, selection, dataset, args):
+    # Shortcut variables
     idx_collection = int(selection['collection_key'])
+    idx_max_collection = len(dataset['collections'].keys()) - 1
 
-    if key == keyboard.Key.right:
+    # Convert from type to string to keep uniform.
+    key = str(key)
+
+    if key == 'Key.right':  # Move to collection + 1.
         if idx_collection < idx_max_collection:
             selection['previous_collection_key'] = selection['collection_key']
-            # print("Before: "+idx_collection)
             selection['collection_key'] = str(idx_collection + 1)
-            # print("After: "  + collections_list[idx_collection])
             print('Changed selected_collection_key to ' +
-                  str(collections_list[idx_collection]))
+                  selection['collection_key'])
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
-    elif key == keyboard.Key.left:
+    elif key == 'Key.left':  # Move to collection - 1.
         if idx_collection > 0:
             selection['previous_collection_key'] = selection['collection_key']
             selection['collection_key'] = str(idx_collection - 1)
             print('Changed selected_collection_key to ' +
-                  str(collections_list[idx_collection]))
+                  selection['collection_key'])
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
-    elif key.char.lower() == 's':
+    elif key == "'s'":  # Saves dataset.
         output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
 
         # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
@@ -171,8 +174,7 @@ def key_pressed(key, idx_max_collection, collections_list, selection, dataset, a
         # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
 
         print('A new dataset was saved in ' + output_file)
-
-    elif key.char.lower() == 'q':
+    elif key == "'q'":  # Saves dataset and quits.
         output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
 
         # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
@@ -183,6 +185,7 @@ def key_pressed(key, idx_max_collection, collections_list, selection, dataset, a
 
         print('Exiting ...')
         selection['exit'] = True
+
 
 def selected_points_callback(selected_point_cloud, models):
     global idx_collection
@@ -540,11 +543,7 @@ def main():
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
-    # key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
-    #                               collections_list=collections_list, dataset=opt.data_models['dataset'], args=args)
-    key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
-                                  collections_list=collections_list, selection=selection,
-                                  dataset=opt.data_models['dataset'], args=args)
+    key_pressed_partial = partial(key_pressed, selection=selection, dataset=opt.data_models['dataset'], args=args)
     listener = keyboard.Listener(
         on_press=key_pressed_partial)
     listener.start()
