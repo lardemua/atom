@@ -32,6 +32,8 @@ from atom_calibration.calibration.objective_function import (
 from atom_calibration.collect.label_messages import (
     convertDepthImage16UC1to32FC1, convertDepthImage32FC1to16UC1,
     imageShowUInt16OrFloat32OrBool)
+from atom_calibration.dataset_playback.depth_manual_labeling import (
+    clickedPointsCallback, clickedPointsReset)
 from atom_calibration.dataset_playback.visualization import (
     setupVisualization, visualizationFunction)
 from atom_core.config_io import readXacroFile, uriReader
@@ -107,7 +109,8 @@ def signal_handler(sig, frame, dataset, args):
     ans = input('Press S to save and Q to quit')
     if ans.lower() == 's':
         if '_metadata' in dataset:
-            D = {'_metadata': dataset['_metadata'], 'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
+            D = {'_metadata': dataset['_metadata'], 'sensors': dataset['sensors'],
+                 'additional_sensor_data': dataset['additional_sensor_data'],
                  'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
             print('Saving metadata in dataset.')
         else:
@@ -122,7 +125,8 @@ def signal_handler(sig, frame, dataset, args):
         # sys.exit(0)
     if ans.lower() == 'q':
         if '_metadata' in dataset:
-            D = {'_metadata': dataset['_metadata'], 'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
+            D = {'_metadata': dataset['_metadata'], 'sensors': dataset['sensors'],
+                 'additional_sensor_data': dataset['additional_sensor_data'],
                  'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
             print('Saving metadata in dataset.')
         else:
@@ -134,51 +138,49 @@ def signal_handler(sig, frame, dataset, args):
                                [:-1]) + '/dataset_corrected.json'
         saveResultsJSON(output_file, D, freeze_dataset=True)
         print(f'A new dataset was saved in {output_file}')
-        sys.exit(0)
+        sys.quit(0)
 
 
 # keyboard listener
-def key_pressed(key, idx_max_collection, collections_list):
-    # def key_pressed(key, idx_max_collection, collections_list, dataset, args):
-    global idx_collection
-    global previous_selected_collection_key
+def key_pressed(key, idx_max_collection, collections_list, selection, dataset, args):
+    idx_collection = int(selection['collection_key'])
 
     if key == keyboard.Key.right:
         if idx_collection < idx_max_collection:
-            previous_selected_collection_key = collections_list[idx_collection]
-            idx_collection += 1
+            selection['previous_collection_key'] = selection['collection_key']
+            selection['collection_key'] = str(idx_collection + 1)
             print('changed selected_collection_key to ' +
                   str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
     elif key == keyboard.Key.left:
         if idx_collection > 0:
-            previous_selected_collection_key = collections_list[idx_collection]
-            idx_collection -= 1
+            selection['previous_collection_key'] = selection['collection_key']
+            selection['collection_key'] = str(idx_collection - 1)
             print('changed selected_collection_key to ' +
                   str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
-    # elif key.char.lower() == 's':
-    #     if '_metadata' in dataset:
-    #         D = {'_metadata': dataset['_metadata'],'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
-    #         'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-    #         print('Saving metadata in dataset.')
-    #     else:
-    #         D = { 'sensors': dataset['sensors'],
-    #              'additional_sensor_data': dataset['additional_sensor_data'],
-    #              'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-    #         print('Not saving metadata in dataset.')
-    #     output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-    #     saveResultsJSON(output_file, D, freeze_dataset = True)
-    #     print(f'A new dataset was saved in {output_file}')
-    #     D = {'sensors': dataset['sensors'], 'additional_sensor_data': dataset['additional_sensor_data'],
-    #     'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-    #     output_file =  '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-    #     atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
-    #     print(f'A new dataset was saved in {output_file}')
-    #     return False
+    elif key.char.lower() == 's':
+        output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
 
+        # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
+        saveResultsJSON(output_file, dataset, freeze_dataset=True)
+        # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
+
+        print('A new dataset was saved in ' + output_file)
+
+    elif key.char.lower() == 'q':
+        output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
+
+        # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
+        saveResultsJSON(output_file, dataset, freeze_dataset=True)
+        # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
+
+        print('A new dataset was saved in ' + output_file)
+
+        print('Exiting ...')
+        selection['exit'] = True
 
 def selected_points_callback(selected_point_cloud, models):
     global idx_collection
@@ -202,7 +204,8 @@ def selected_points_callback(selected_point_cloud, models):
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
 
-    if models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] != [] and models['dataset']['collections'][selected_collection_key]['labels'][sensor]['detected'] == False:
+    if models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] != [] and \
+            models['dataset']['collections'][selected_collection_key]['labels'][sensor]['detected'] == False:
         models['dataset']['collections'][selected_collection_key]['labels'][sensor]['detected'] = True
 
 
@@ -279,12 +282,6 @@ def selected_points_clear_all_callback(selected_point_cloud, models):
     models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = []
 
 
-def depth_clicked_points_callback(point_msg, sensor_name):
-    global points
-    point = {'x': int(point_msg.point.x), 'y': int(point_msg.point.y)}
-    points[sensor_name].append(point)
-
-
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
@@ -298,7 +295,7 @@ def main():
     # --- Parse command line argument
     # ---------------------------------------
 
-    signal.signal(signal.SIGINT, signal_handler)
+    # signal.signal(signal.SIGINT, signal_handler)
     # print('Press Ctrl+C')
     # signal.pause()
 
@@ -354,6 +351,8 @@ def main():
                     default=None)
     ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False,
                     default=None)
+    ap.add_argument("-ow", "--overwrite",
+                    help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -379,7 +378,7 @@ def main():
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     output_file = '/'.join(args['json_file'].split('/')
                            [:-1]) + '/dataset_corrected.json'
-    if os.path.exists(output_file) and args['json_file'] != output_file:
+    if os.path.exists(output_file) and args['json_file'] != output_file and not args['overwrite']:
         ans = input(
             'The file dataset_corrected.json already exists. Do you want to overwrite? (Y/n)')
         if ans.lower() == 'n':
@@ -493,47 +492,48 @@ def main():
     opt.addDataModel('graphics', graphics)
 
     # ---------------------------------------------
-    # --- SUBSCRIBERS TO PLUGINs
+    # --- SUBSCRIBERS TO PLUGINS
     # ---------------------------------------------
 
-    # Finding which sensors exist
-    sensors_by_modality = {}
-    modalities = ['depth', 'camera', 'lidar']
-
-    for modality in modalities:
-        sensors_by_modality[modality] = [
-            sensor for sensor in dataset['sensors'].keys() if sensor.startswith(modality)]
+    # ---------------------------------------
+    # --- lidar3d modality
+    # ---------------------------------------
 
     # Define subscriber to receive the selected points
-    selected_points_callback_partial = partial(
-        selected_points_callback, models=opt.data_models)
-    selected_points_border_callback_partial = partial(
-        selected_points_border_callback, models=opt.data_models)
-    selected_points_remove_callback_partial = partial(
-        selected_points_remove_callback, models=opt.data_models)
-    selected_points_clear_all_callback_partial = partial(
-        selected_points_clear_all_callback, models=opt.data_models)
-    rospy.Subscriber("/rviz_selected_points", PointCloud2, selected_points_callback_partial, queue_size=1,
+    rospy.Subscriber("/rviz_selected_points", PointCloud2,
+                     partial(selected_points_callback, models=opt.data_models), queue_size=1, buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
+                     partial(selected_points_border_callback, models=opt.data_models), queue_size=1, buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
+                     partial(selected_points_remove_callback, models=opt.data_models), queue_size=1, buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2,
+                     partial(selected_points_clear_all_callback, models=opt.data_models), queue_size=1,
                      buff_size=52428800)
-    rospy.Subscriber("/rviz_selected_border_points", PointCloud2, selected_points_border_callback_partial, queue_size=1,
-                     buff_size=52428800)
-    rospy.Subscriber("/rviz_selected_remove_points", PointCloud2, selected_points_remove_callback_partial, queue_size=1,
-                     buff_size=52428800)
-    rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2, selected_points_clear_all_callback_partial,
-                     queue_size=1, buff_size=52428800)
+
+    # ---------------------------------------
+    # --- Depth modality
+    # ---------------------------------------
 
     # Subscriber for the image_click plugin
-    points = {}
-    depth_sensors = [sensor for sensor in dataset['sensors'].keys(
-    ) if dataset['sensors'][sensor]['modality'] == 'depth']
-    for sensor in depth_sensors:
-        sensor_topic = dataset['sensors'][sensor]['topic']
-        points_topic = sensor_topic + '/labeled/mouse_click'
-        points[sensor] = []
-        depth_clicked_points_callback_partial = partial(
-            depth_clicked_points_callback, sensor_name=sensor)
-        rospy.Subscriber(points_topic, PointStamped,
-                         depth_clicked_points_callback_partial)
+    # this stores the pixel coordinates of clicked points per collection, and per sensor key
+    clicked_points = {
+        collection_key: {} for collection_key in dataset['collections']}
+
+    # Initialize clicked points for all collections and sensors
+    for collection_key in dataset['collections']:
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor['modality'] == 'depth':
+                clickedPointsReset(clicked_points, collection_key, sensor_key)
+
+    # Create a subscriber for each depth sensor
+    selection = {'collection_key': selected_collection_key, 'previous_collection_key': previous_selected_collection_key,
+                 'exit': False}
+    for sensor_key, sensor in dataset['sensors'].items():
+        if sensor['modality'] == 'depth':
+            points_topic = dataset['sensors'][sensor_key]['topic'] + '/labeled/mouse_click'
+            rospy.Subscriber(points_topic, PointStamped,
+                             partial(clickedPointsCallback, clicked_points=clicked_points,
+                                     dataset=dataset, sensor_key=sensor_key, selection=selection))
 
     # ---------------------------------------
     # --- Define callback to change idx_collection
@@ -541,20 +541,23 @@ def main():
     # key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
     #                               collections_list=collections_list, dataset=opt.data_models['dataset'], args=args)
     key_pressed_partial = partial(key_pressed, idx_max_collection=len(collections_list) - 1,
-                                  collections_list=collections_list)
+                                  collections_list=collections_list, selection=selection,
+                                  dataset=opt.data_models['dataset'], args=args)
     listener = keyboard.Listener(
         on_press=key_pressed_partial)
     listener.start()
 
-    signal_handler_partial = partial(
-        signal_handler, dataset=opt.data_models['dataset'], args=args)
-    signal.signal(signal.SIGINT, signal_handler_partial)
+    # signal_handler_partial = partial(
+    #     signal_handler, dataset=opt.data_models['dataset'], args=args)
+    # signal.signal(signal.SIGINT, signal_handler_partial)
 
     rate = rospy.Rate(30)  # 30hz
-    while not rospy.is_shutdown():
-        selected_collection_key = collections_list[idx_collection]
-        visualizationFunction(opt.data_models, selected_collection_key,
-                              previous_selected_collection_key, points)
+    while not rospy.is_shutdown() and not selection['exit']:
+        # selected_collection_key = collections_list[idx_collection]
+        # selection['collection_key'] = selected_collection_key
+
+        print('Selected collection key is ' + selection['collection_key'])
+        visualizationFunction(opt.data_models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
 

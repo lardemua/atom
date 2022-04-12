@@ -23,7 +23,8 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1, imageShowUInt16OrFloat32OrBool
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1, \
+    imageShowUInt16OrFloat32OrBool
 import imageio
 
 
@@ -118,7 +119,6 @@ def loadResultsJSON(json_file, collection_selection_function):
                 # collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image_float32_meters))
 
                 dict = getDictionaryFromDepthImage(cv_image_float32_meters)
-
 
                 collection['data'][sensor_key]['data'] = dict['data']
                 collection['data'][sensor_key]['encoding'] = dict['encoding']
@@ -234,7 +234,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
-    elif create_data_file and sensor['modality'] == 'lidar3d': # save point cloud
+    elif create_data_file and sensor['modality'] == 'lidar3d':  # save point cloud
         # sensor['modality'] == 'lidar2d':  # TODO Add for lidar 2D
         # Save file if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
@@ -303,7 +303,6 @@ def getDictionaryFromDepthImage(cv_image):
     # imageShowUInt16OrFloat32OrBool(image, "float32_getdictionary_out")
     # cv2.waitKey(5)
 
-
     return message_converter.convert_ros_message_to_dictionary(msg)
 
 
@@ -334,21 +333,10 @@ def getCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0):
     :param dictionary_in: the dictionary read from the json file.
     :return: an opencv image.
     """
-    if safe:
-        d = copy.deepcopy(dictionary_in)  # to make sure we don't touch the dictionary
-    else:
-        d = dictionary_in
 
-    if 'data_file' in d:  # Delete data field from dictionary
-        del d['data_file']  # will disrupt the dictionary to ros message
-
-    msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
-    bridge = CvBridge()
-    image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-
-    if image.dtype==np.uint16:
-        image=convertDepthImage16UC1to32FC1(image, scale=scale)
+    _, image = getMsgAndCvImageFromDictionaryDepth(dictionary_in, safe=safe, scale=scale)
     return image
+
 
 def getMsgAndCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0):
     """
@@ -369,9 +357,10 @@ def getMsgAndCvImageFromDictionaryDepth(dictionary_in, safe=False, scale=1000.0)
     bridge = CvBridge()
     image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
 
-    if image.dtype==np.uint16:
-        image=convertDepthImage16UC1to32FC1(image, scale=scale)
+    if image.dtype == np.uint16:
+        image = convertDepthImage16UC1to32FC1(image, scale=scale)
     return msg, image
+
 
 def getPointCloudMessageFromDictionary(dictionary_in):
     """
