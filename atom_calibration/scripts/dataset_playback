@@ -137,14 +137,17 @@ def selected_points_callback(selected_point_cloud, selection, dataset):
     collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
-    selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
+
+    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
+        return
 
     # sensor from the point cloud
     sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
+    selected_idxs = []
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
@@ -163,14 +166,17 @@ def selected_points_border_callback(selected_point_cloud, selection, dataset):
     collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
-    selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
+
+    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
+        return
 
     # sensor from the point cloud
     sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
+    selected_idxs = []
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
@@ -189,14 +195,17 @@ def selected_points_remove_callback(selected_point_cloud, selection, dataset):
     collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
-    selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
+
+    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
+        return
 
     # sensor from the point cloud
     sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
+    selected_idxs = []
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
@@ -212,13 +221,14 @@ def selected_points_remove_callback(selected_point_cloud, selection, dataset):
 
 
 def selected_points_clear_all_callback(selected_point_cloud, selection, dataset):
-    print('clear all')
 
     collection_key = selection['collection_key']
     # Extract xyz coordinates from the selected points
-    selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
+
+    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
+        return
 
     # sensor from the point cloud
     sensor = list(dataset['collections'][collection_key]['labels'].keys())[
