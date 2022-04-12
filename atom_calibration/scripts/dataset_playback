@@ -148,8 +148,10 @@ def key_pressed(key, idx_max_collection, collections_list, selection, dataset, a
     if key == keyboard.Key.right:
         if idx_collection < idx_max_collection:
             selection['previous_collection_key'] = selection['collection_key']
+            # print("Before: "+idx_collection)
             selection['collection_key'] = str(idx_collection + 1)
-            print('changed selected_collection_key to ' +
+            # print("After: "  + collections_list[idx_collection])
+            print('Changed selected_collection_key to ' +
                   str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
@@ -157,7 +159,7 @@ def key_pressed(key, idx_max_collection, collections_list, selection, dataset, a
         if idx_collection > 0:
             selection['previous_collection_key'] = selection['collection_key']
             selection['collection_key'] = str(idx_collection - 1)
-            print('changed selected_collection_key to ' +
+            print('Changed selected_collection_key to ' +
                   str(collections_list[idx_collection]))
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
@@ -417,7 +419,7 @@ def main():
 
     print(collections_list)
     selected_collection_key = collections_list[idx_collection]
-    print('Selected collection key is ' + str(selected_collection_key))
+    # print('Selected collection key is ' + str(selected_collection_key))
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -556,7 +558,7 @@ def main():
         # selected_collection_key = collections_list[idx_collection]
         # selection['collection_key'] = selected_collection_key
 
-        print('Selected collection key is ' + selection['collection_key'])
+        # print('Selected collection key is ' + selection['collection_key'])
         visualizationFunction(opt.data_models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
