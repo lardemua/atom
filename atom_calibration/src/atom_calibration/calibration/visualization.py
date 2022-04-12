@@ -382,12 +382,12 @@ def setupVisualization(dataset, args, selected_collection_key):
     movable_links = []
     for link in xml_robot.links:  # cycle all links
 
-        print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
+        # print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
         first_time = True
         for collection_key, collection in dataset['collections'].items():
             transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name,
                                                     collection['transforms'])
-            print('Collection ' + collection_key + ': ')
+            # print('Collection ' + collection_key + ': ')
             if first_time:
                 first_time = False
                 transform_first_time = transform

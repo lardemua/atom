@@ -102,7 +102,7 @@ def loadResultsJSON(json_file, collection_selection_function):
             elif load_file and sensor['modality'] == 'depth':
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
 
-                print(collection['data'][sensor_key]['header']['frame_id'])
+                # print(collection['data'][sensor_key]['header']['frame_id'])
                 cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
                 cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
                                                                         scale=10000.0)
@@ -113,8 +113,8 @@ def loadResultsJSON(json_file, collection_selection_function):
                 # imageShowUInt16OrFloat32OrBool(cv_image_float32_meters, "float32_load_file")
                 # cv2.waitKey(5)
 
-                printImageInfo(cv_image_int16_tenths_of_millimeters, text='cv_image_int16_tenths_of_millimeters')
-                printImageInfo(cv_image_float32_meters, text='cv_image_float32_meters')
+                # printImageInfo(cv_image_int16_tenths_of_millimeters, text='cv_image_int16_tenths_of_millimeters')
+                # printImageInfo(cv_image_float32_meters, text='cv_image_float32_meters')
 
                 # collection['data'][sensor_key].update(getDictionaryFromDepthImage(cv_image_float32_meters))
 
@@ -136,7 +136,7 @@ def loadResultsJSON(json_file, collection_selection_function):
                 # TODO eliminate data_file
                 # TODO Why this is not needed for rgb? Should be done as well
 
-                print(collection['data'][sensor_key]['header']['frame_id'])
+                # print(collection['data'][sensor_key]['header']['frame_id'])
                 # print(collection['data'][sensor_key].keys())
                 # TODO verify if values in the dataset or ok
                 # exit(0)

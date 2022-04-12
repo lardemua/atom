@@ -232,8 +232,8 @@ def main():
                                             collection_name=selected_collection_key)
 
         if transform_key == anchored_transform_key:
-            bound_max = [x + 2*sys.float_info.epsilon for x in initial_transform]
-            bound_min = [x - 2*sys.float_info.epsilon for x in initial_transform]
+            bound_max = [x + 2 * sys.float_info.epsilon for x in initial_transform]
+            bound_min = [x - 2 * sys.float_info.epsilon for x in initial_transform]
         else:
             bound_max = [+np.inf for x in initial_transform]
             bound_min = [-np.inf for x in initial_transform]
@@ -523,8 +523,6 @@ def main():
     if args['phased_execution']:
         waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
-    opt.printParameters()
-
     print('Initializing optimization ...')
     # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'}
@@ -599,18 +597,17 @@ def main():
             out.write(URDF.to_xml_string(xml_robot))
     else:
         rospack = rospkg.RosPack()
-        path_to_file=rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration') + '/urdf/optimized/'
+        path_to_file = rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration') + '/urdf/optimized/'
         if not path.exists(path_to_file):
             os.mkdir(path_to_file)
         filename_results_xacro = path_to_file + file_name
         with open(filename_results_xacro, 'w') as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-        with open(rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration')+'/urdf/optimized.urdf.xacro', 'w') as out:
+        with open(rospack.get_path(dataset['_metadata']['robot_name'] + '_calibration') + '/urdf/optimized.urdf.xacro',
+                  'w') as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
-
-
 
     print('Optimized xacro file saved to ' + str(
         filename_results_xacro) + ' . You can use it as a ROS robot_description.')

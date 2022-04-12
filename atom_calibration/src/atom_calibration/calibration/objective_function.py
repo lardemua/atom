@@ -443,10 +443,6 @@ def objectiveFunction(data):
 
                 # print("Depth calibration under construction")
                 points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
-                # for point_in_sensor in points_in_sensor:
-                #     print(point_in_sensor)
-                #
-                #     exit(0)
 
                 # print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
                 now = datetime.now()
@@ -473,9 +469,6 @@ def objectiveFunction(data):
                         print('Sensor ' + sensor_key + ' residual ' + rname + ' is nan')
                         print(value)
 
-                # print('Sensor ' + sensor_key)
-                # print(r)
-                exit(0)
 
                 # print('ORTOGONAL RESIDUALS ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now).total_seconds()) + ' secs.')
