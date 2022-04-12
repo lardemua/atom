@@ -80,6 +80,7 @@ int SelectedPointsPublisher::processKeyEvent(QKeyEvent* event, rviz::RenderPanel
       ROS_INFO_STREAM_NAMED("SelectedPointsPublisher.updateTopic",
                             "Publishing " << num_selected_points_ << " selected points to topic "
                                           << node_handle_.resolveName(rviz_cloud_topic_));
+      std::cout << "HEEEELLLLLOOOO" << std::endl;
       rviz_selected_publisher_.publish(selected_points_);
     }
 

@@ -24,24 +24,16 @@ import ros_numpy
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 import tf
-from atom_calibration.calibration.getters_and_setters import (
-    getterCameraIntrinsics, getterTransform, setterCameraIntrinsics,
-    setterTransform)
-from atom_calibration.calibration.objective_function import (
-    getPointsInSensorAsNPArray, objectiveFunction)
-from atom_calibration.collect.label_messages import (
-    convertDepthImage16UC1to32FC1, convertDepthImage32FC1to16UC1,
-    imageShowUInt16OrFloat32OrBool)
-from atom_calibration.dataset_playback.depth_manual_labeling import (
-    clickedPointsCallback, clickedPointsReset)
-from atom_calibration.dataset_playback.visualization import (
-    setupVisualization, visualizationFunction)
+from atom_calibration.calibration.getters_and_setters import getterCameraIntrinsics, getterTransform, \
+    setterCameraIntrinsics, setterTransform
+from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
+from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1, convertDepthImage32FC1to16UC1, \
+    imageShowUInt16OrFloat32OrBool
+from atom_calibration.dataset_playback.depth_manual_labeling import clickedPointsCallback, clickedPointsReset
+from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
-from atom_core.dataset_io import (NpEncoder, addNoiseToInitialGuess,
-                                  createDataFile, filterCollectionsFromDataset,
-                                  filterSensorsFromDataset,
-                                  getPointCloudMessageFromDictionary,
-                                  loadResultsJSON, walk)
+from atom_core.dataset_io import NpEncoder, addNoiseToInitialGuess, createDataFile, filterCollectionsFromDataset, \
+    filterSensorsFromDataset, getPointCloudMessageFromDictionary, loadResultsJSON, walk
 from atom_core.naming import generateKey, generateName
 from atom_core.utilities import waitForKeyPress, waitForKeyPress2
 from colorama import Back, Fore, Style
@@ -52,12 +44,7 @@ from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2
 from sqlalchemy import false
 
-# global variavels
-
-# var to select the index of the collection we want to see
-global idx_collection
-previous_selected_collection_key = None
-
+# global variables  ... are forbidden
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -104,93 +91,50 @@ def createJSONFile(output_file, input):
     f.close()
     print("Completed.")
 
-
-def signal_handler(sig, frame, dataset, args):
-    ans = input('Press S to save and Q to quit')
-    if ans.lower() == 's':
-        if '_metadata' in dataset:
-            D = {'_metadata': dataset['_metadata'], 'sensors': dataset['sensors'],
-                 'additional_sensor_data': dataset['additional_sensor_data'],
-                 'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-            print('Saving metadata in dataset.')
-        else:
-            D = {'sensors': dataset['sensors'],
-                 'additional_sensor_data': dataset['additional_sensor_data'],
-                 'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-            print('Not saving metadata in dataset.')
-        output_file = '/'.join(args['json_file'].split('/')
-                               [:-1]) + '/dataset_corrected.json'
-        saveResultsJSON(output_file, D, freeze_dataset=True)
-        print(f'A new dataset was saved in {output_file}')
-        # sys.exit(0)
-    if ans.lower() == 'q':
-        if '_metadata' in dataset:
-            D = {'_metadata': dataset['_metadata'], 'sensors': dataset['sensors'],
-                 'additional_sensor_data': dataset['additional_sensor_data'],
-                 'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-            print('Saving metadata in dataset.')
-        else:
-            D = {'sensors': dataset['sensors'],
-                 'additional_sensor_data': dataset['additional_sensor_data'],
-                 'collections': dataset['collections'], 'calibration_config': dataset['calibration_config']}
-            print('Not saving metadata in dataset.')
-        output_file = '/'.join(args['json_file'].split('/')
-                               [:-1]) + '/dataset_corrected.json'
-        saveResultsJSON(output_file, D, freeze_dataset=True)
-        print(f'A new dataset was saved in {output_file}')
-        sys.quit(0)
-
-
 # keyboard listener
 def key_pressed(key, selection, dataset, args):
+
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
     idx_max_collection = len(dataset['collections'].keys()) - 1
+    output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
 
     # Convert from type to string to keep uniform.
     key = str(key)
-
-    if key == 'Key.right':  # Move to collection + 1.
+    if key == 'Key.right':  # Save and move to collection + 1.
         if idx_collection < idx_max_collection:
             selection['previous_collection_key'] = selection['collection_key']
             selection['collection_key'] = str(idx_collection + 1)
-            print('Changed selected_collection_key to ' +
-                  selection['collection_key'])
+            print('Changed selected_collection_key to ' + selection['collection_key'])
+            saveResultsJSON(output_file, dataset, freeze_dataset=True)
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
-    elif key == 'Key.left':  # Move to collection - 1.
+    elif key == 'Key.left':  # Save and move to collection - 1.
         if idx_collection > 0:
             selection['previous_collection_key'] = selection['collection_key']
             selection['collection_key'] = str(idx_collection - 1)
-            print('Changed selected_collection_key to ' +
-                  selection['collection_key'])
+            print('Changed selected_collection_key to ' + selection['collection_key'])
+            saveResultsJSON(output_file, dataset, freeze_dataset=True)
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
     elif key == "'s'":  # Saves dataset.
-        output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-
         # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
         saveResultsJSON(output_file, dataset, freeze_dataset=True)
         # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
-
         print('A new dataset was saved in ' + output_file)
     elif key == "'q'":  # Saves dataset and quits.
-        output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-
         # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
         saveResultsJSON(output_file, dataset, freeze_dataset=True)
         # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
-
         print('A new dataset was saved in ' + output_file)
 
         print('Exiting ...')
         selection['exit'] = True
 
 
-def selected_points_callback(selected_point_cloud, models):
-    global idx_collection
-    selected_collection_key = list(models['dataset']['collections'].keys())[
-        idx_collection]
+def selected_points_callback(selected_point_cloud, selection, dataset):
+
+    collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
     selected_idxs = []
@@ -198,26 +142,25 @@ def selected_points_callback(selected_point_cloud, models):
     gen_selected_points = list(points_selected)
 
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
-    idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
+    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
 
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
+    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center
 
-    if models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] != [] and \
-            models['dataset']['collections'][selected_collection_key]['labels'][sensor]['detected'] == False:
-        models['dataset']['collections'][selected_collection_key]['labels'][sensor]['detected'] = True
+    if dataset['collections'][collection_key]['labels'][sensor]['idxs'] != [] and \
+            dataset['collections'][collection_key]['labels'][sensor]['detected'] == False:
+        dataset['collections'][collection_key]['labels'][sensor]['detected'] = True
 
 
-def selected_points_border_callback(selected_point_cloud, models):
-    global idx_collection
-    selected_collection_key = list(models['dataset']['collections'].keys())[
-        idx_collection]
+def selected_points_border_callback(selected_point_cloud, selection, dataset):
+
+    collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
     selected_idxs = []
@@ -225,26 +168,25 @@ def selected_points_border_callback(selected_point_cloud, models):
     gen_selected_points = list(points_selected)
 
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
-    idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
-    idx_border = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
+    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
+    idx_border = dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points']
 
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
     [idx_border.append(x) for x in selected_idxs if x not in idx_border]
 
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
+    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center
+    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
 
 
-def selected_points_remove_callback(selected_point_cloud, models):
-    global idx_collection
-    selected_collection_key = list(models['dataset']['collections'].keys())[
-        idx_collection]
+def selected_points_remove_callback(selected_point_cloud, selection, dataset):
+
+    collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
     selected_idxs = []
@@ -252,39 +194,39 @@ def selected_points_remove_callback(selected_point_cloud, models):
     gen_selected_points = list(points_selected)
 
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
     # remove these points from the idx and idxs_limit_points
-    idx_center = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs']
-    idx_border = models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points']
+    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
+    idx_border = dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points']
 
     idx_center_new = [x for x in idx_center if x not in selected_idxs]
     idx_border_new = [x for x in idx_border if x not in selected_idxs]
 
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = idx_center_new
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
+    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center_new
+    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
 
 
-def selected_points_clear_all_callback(selected_point_cloud, models):
-    global idx_collection
-    selected_collection_key = list(models['dataset']['collections'].keys())[
-        idx_collection]
+def selected_points_clear_all_callback(selected_point_cloud, selection, dataset):
+    print('clear all')
 
+    collection_key = selection['collection_key']
     # Extract xyz coordinates from the selected points
     selected_idxs = []
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
 
     # sensor from the point cloud
-    sensor = list(models['dataset']['collections'][selected_collection_key]['labels'].keys())[
+    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
         int(gen_selected_points[0][4])]
 
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs'] = []
-    models['dataset']['collections'][selected_collection_key]['labels'][sensor]['idxs_limit_points'] = []
+    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = []
+    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = []
+
 
 
 # -------------------------------------------------------------------------------
@@ -415,21 +357,17 @@ def main():
     # ---------------------------------------
     # --- Define selected collection key.
     # ---------------------------------------
-    # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
-    # transformation.
-    idx_collection = 0
-    collections_list = list(dataset['collections'].keys())
-
-    print(collections_list)
-    selected_collection_key = collections_list[idx_collection]
-    # print('Selected collection key is ' + str(selected_collection_key))
+    # Lets start with the first key on the collections dictionary.
+    # Data structure used to save the state of navigation throughout the collections in the dataset.
+    selection = {'collection_key': list(dataset['collections'].keys())[0], 'previous_collection_key': None,
+                 'exit': False}
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
-    opt = OptimizationUtils.Optimizer()
-    opt.addDataModel('args', args)
-    opt.addDataModel('dataset', dataset)
+    # opt = OptimizationUtils.Optimizer()
+    # opt.addDataModel('args', args)
+    # opt.addDataModel('dataset', dataset)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add pattern(s) parameters
@@ -437,49 +375,49 @@ def main():
     # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
 
     # Pattern not fixed -------------------------
-    if not dataset['calibration_config']['calibration_pattern']['fixed']:
-        # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
-        # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
-        # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
-        # publishing ROS, but we must add this to the parameter name.
-        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-        child = dataset['calibration_config']['calibration_pattern']['link']
-        transform_key = atom_core.naming.generateKey(parent, child)
-
-        # iterate all collections
-        for collection_key, collection in dataset['collections'].items():
-
-            # Set transform using the initial estimate of the transformations.
-            initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
-            if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
-                    not child == initial_estimate['child']:
-                raise ValueError(
-                    'Cannot set initial estimate for pattern at collection ' + collection_key)
-
-            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
-                                                       'trans': initial_estimate['trans'],
-                                                       'quat': initial_estimate['quat']}
-
-    else:  # fixed pattern ---------------------------------------------------------------------------------------------
-        # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
-        # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
-        # 'link']
-        parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-        child = dataset['calibration_config']['calibration_pattern']['link']
-        transform_key = atom_core.naming.generateKey(parent, child)
-
-        # Set transform using the initial estimate of the transformations.
-        initial_estimate = dataset['patterns']['transforms_initial'][selected_collection_key]
-        if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
-                not child == initial_estimate['child']:
-            raise ValueError(
-                'Cannot set initial estimate for pattern at collection ' + collection_key)
-
-        # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
-        for collection_key, collection in dataset['collections'].items():
-            collection['transforms'][transform_key] = {'parent': parent, 'child': child,
-                                                       'trans': initial_estimate['trans'],
-                                                       'quat': initial_estimate['quat']}
+    # if not dataset['calibration_config']['calibration_pattern']['fixed']:
+    #     # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
+    #     # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
+    #     # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
+    #     # publishing ROS, but we must add this to the parameter name.
+    #     parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+    #     child = dataset['calibration_config']['calibration_pattern']['link']
+    #     transform_key = atom_core.naming.generateKey(parent, child)
+    #
+    #     # iterate all collections
+    #     for collection_key, collection in dataset['collections'].items():
+    #
+    #         # Set transform using the initial estimate of the transformations.
+    #         initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
+    #         if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
+    #                 not child == initial_estimate['child']:
+    #             raise ValueError(
+    #                 'Cannot set initial estimate for pattern at collection ' + collection_key)
+    #
+    #         collection['transforms'][transform_key] = {'parent': parent, 'child': child,
+    #                                                    'trans': initial_estimate['trans'],
+    #                                                    'quat': initial_estimate['quat']}
+    #
+    # else:  # fixed pattern ---------------------------------------------------------------------------------------------
+    #     # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
+    #     # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
+    #     # 'link']
+    #     parent = dataset['calibration_config']['calibration_pattern']['parent_link']
+    #     child = dataset['calibration_config']['calibration_pattern']['link']
+    #     transform_key = atom_core.naming.generateKey(parent, child)
+    #
+    #     # Set transform using the initial estimate of the transformations.
+    #     initial_estimate = dataset['patterns']['transforms_initial'][selected_collection_key]
+    #     if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
+    #             not child == initial_estimate['child']:
+    #         raise ValueError(
+    #             'Cannot set initial estimate for pattern at collection ' + collection_key)
+    #
+    #     # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
+    #     for collection_key, collection in dataset['collections'].items():
+    #         collection['transforms'][transform_key] = {'parent': parent, 'child': child,
+    #                                                    'trans': initial_estimate['trans'],
+    #                                                    'quat': initial_estimate['quat']}
 
     # ---------------------------------------
     # --- DEFINE THE VISUALIZATION FUNCTION
@@ -493,12 +431,12 @@ def main():
     # cv2.waitKey(5)
 
     print("Configuring visualization ... ")
-    graphics = setupVisualization(dataset, args, selected_collection_key)
-    opt.addDataModel('graphics', graphics)
+    graphics = setupVisualization(dataset, args, selection['collection_key'])
 
     # ---------------------------------------------
     # --- SUBSCRIBERS TO PLUGINS
     # ---------------------------------------------
+
 
     # ---------------------------------------
     # --- lidar3d modality
@@ -506,13 +444,14 @@ def main():
 
     # Define subscriber to receive the selected points
     rospy.Subscriber("/rviz_selected_points", PointCloud2,
-                     partial(selected_points_callback, models=opt.data_models), queue_size=1, buff_size=52428800)
+                     partial(selected_points_callback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
     rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
-                     partial(selected_points_border_callback, models=opt.data_models), queue_size=1, buff_size=52428800)
+                     partial(selected_points_border_callback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
     rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
-                     partial(selected_points_remove_callback, models=opt.data_models), queue_size=1, buff_size=52428800)
+                     partial(selected_points_remove_callback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
+
     rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2,
-                     partial(selected_points_clear_all_callback, models=opt.data_models), queue_size=1,
+                     partial(selected_points_clear_all_callback, selection=selection, dataset=dataset), queue_size=1,
                      buff_size=52428800)
 
     # ---------------------------------------
@@ -531,8 +470,6 @@ def main():
                 clickedPointsReset(clicked_points, collection_key, sensor_key)
 
     # Create a subscriber for each depth sensor
-    selection = {'collection_key': selected_collection_key, 'previous_collection_key': previous_selected_collection_key,
-                 'exit': False}
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['modality'] == 'depth':
             points_topic = dataset['sensors'][sensor_key]['topic'] + '/labeled/mouse_click'
@@ -543,7 +480,7 @@ def main():
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
-    key_pressed_partial = partial(key_pressed, selection=selection, dataset=opt.data_models['dataset'], args=args)
+    key_pressed_partial = partial(key_pressed, selection=selection, dataset=dataset, args=args)
     listener = keyboard.Listener(
         on_press=key_pressed_partial)
     listener.start()
@@ -558,7 +495,8 @@ def main():
         # selection['collection_key'] = selected_collection_key
 
         # print('Selected collection key is ' + selection['collection_key'])
-        visualizationFunction(opt.data_models, selection=selection, clicked_points=clicked_points)
+        models = {'dataset': dataset, 'args':args, 'graphics':graphics }
+        visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
 
