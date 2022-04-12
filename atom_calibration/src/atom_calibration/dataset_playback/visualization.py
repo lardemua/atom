@@ -895,68 +895,6 @@ def visualizationFunction(models, selection, clicked_points=None):
                                  pt2=(point_end['x'], point_end['y']),
                                  color=(0, 0, 255), thickness=1)
 
-
-
-                # start_to_end_distance = math.inf
-                # tolerance_radius = 5
-                #
-                # # Retrieving clicked points for the current sensor
-                # clicked_sensor_points = clicked_points[selected_collection_key][sensor_key]
-                #
-                # # Calculate the distance between the first and last placed points
-                # # TODO move to function
-                # if len(clicked_sensor_points) > 2:
-                #     start_point = [clicked_sensor_points[0]
-                #                    ['x'], clicked_sensor_points[0]['y']]
-                #     end_point = [clicked_sensor_points[-1]
-                #                  ['x'], clicked_sensor_points[-1]['y']]
-                #     start_to_end_distance = distance.euclidean(
-                #         start_point, end_point)
-                #     # rospy.loginfo(f'start [{start_point}] to end [{end_point}] distance - {start_to_end_distance}')
-                #
-                # # If that distance is smaller then a threshold, draw a polygon
-                # if start_to_end_distance < tolerance_radius:
-                #     points_list = []
-                #     for point in clicked_sensor_points[:-1]:
-                #         point_tuple = (point['x'], point['y'])
-                #         points_list.append(point_tuple)
-                #     points_array = (np.array([points_list]))
-                #     # rospy.loginfo(f'Points_array: {points_array}')
-                #     original_image = copy.deepcopy(gui_image)
-                #     gray_image = cv2.cvtColor(
-                #         original_image, cv2.COLOR_BGR2GRAY)
-                #     # cv2.fillPoly(gui_image, pts=points_array, color=(255, 255, 0))
-                #     # Draw a mask of the pattern
-                #
-                #     height, width = image.shape
-                #     pattern_mask_rgb = np.zeros(
-                #         (height, width, 3), dtype=np.uint8)
-                #     cv2.fillPoly(pattern_mask_rgb, pts=points_array,
-                #                  color=(255, 255, 255))
-                #     pattern_mask, _, _ = cv2.split(pattern_mask_rgb)
-                #     labels, gui_image, _ = labelDepthMsg(msg, seed=None, bridge=None,
-                #                                          pyrdown=0, scatter_seed=True,
-                #                                          scatter_seed_radius=8,
-                #                                          debug=False,
-                #                                          subsample_solid_points=1, limit_sample_step=1,
-                #                                          pattern_mask=pattern_mask)
-                #     # labels, gui_image = labelDepthMsgFromMask(mask=pattern_mask, image=gray_image)
-                #     idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']
-                #     idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor_key][
-                #         'idxs_limit_points']
-
-                # else:
-                #     # Draw a cross for each point
-                #     for point in clicked_sensor_points:
-                #         drawSquare2D(
-                #             gui_image, point['x'], point['y'], size=5, color=(50, 190, 0))
-                #
-                #     # Draw a line segment for each pair of consecutive points
-                #     for point_start, point_end in zip(clicked_sensor_points[:-1], clicked_sensor_points[1:]):
-                #         cv2.line(gui_image, pt1=(point_start['x'], point_start['y']),
-                #                  pt2=(point_end['x'], point_end['y']),
-                #                  color=(0, 0, 255), thickness=1)
-
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 
                 msg.header.frame_id = 'c' + selected_collection_key + '_' + sensor['parent']
