@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-casts an optimization problem using an atom dataset file as input. Then calibrates by running the optimization.
-"""
 import argparse
 import copy
 import json
@@ -30,12 +27,12 @@ from atom_calibration.calibration.objective_function import getPointsInSensorAsN
 from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1, convertDepthImage32FC1to16UC1, \
     imageShowUInt16OrFloat32OrBool
 from atom_calibration.dataset_playback.depth_manual_labeling import clickedPointsCallback, clickedPointsReset
+from atom_calibration.dataset_playback.lidar3d_manual_labelling import *
 from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
 from atom_core.dataset_io import NpEncoder, addNoiseToInitialGuess, createDataFile, filterCollectionsFromDataset, \
-    filterSensorsFromDataset, getPointCloudMessageFromDictionary, loadResultsJSON, walk
+    filterSensorsFromDataset, getPointCloudMessageFromDictionary, loadResultsJSON, walk, saveResultsJSON
 from atom_core.naming import generateKey, generateName
-from atom_core.utilities import waitForKeyPress, waitForKeyPress2
 from colorama import Back, Fore, Style
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PointStamped
@@ -44,56 +41,56 @@ from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2
 from sqlalchemy import false
 
+
 # global variables  ... are forbidden
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-# Daniel: I had to copy this functions because in the atom_core.dataset_io we are sorting the keys! We should not sort the keys!!!
-def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
-    if freeze_dataset:  # to make sure our changes only affect the dictionary to save
-        dataset = copy.deepcopy(dataset_in)
-    else:
-        dataset = dataset_in
-    output_folder = os.path.dirname(output_file)
-
-    # Process the dataset to remove data from the data fields and, if needed, write the files.
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            createDataFile(dataset, collection_key, sensor,
-                           sensor_key, output_folder)
-
-        # Do the same for additional data topics ...
-        # for description, sensor in dataset['additional_sensor_data'].items():
-        #     createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
-
-    createJSONFile(output_file, dataset)  # write dictionary to json
-
-
-def createJSONFile(output_file, input):
-    """
-    Creates the json file containing the results data.
-    :param output_file: output file.
-    :param input: input dictionary containing the data.
-    """
-    D = copy.deepcopy(input)
-    walk(D)
-
-    print("Saving the json output file to " + str(output_file) +
-          ", please wait, it could take a while ...")
-    f = open(output_file, 'w')
-    # to get only four decimal places on the json file
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)
-    # print >> f, json.dumps(D, indent=2, sort_keys=True)
-    f.write(json.dumps(D, indent=2, cls=NpEncoder))
-
-    f.close()
-    print("Completed.")
+# Daniel: I had to copy this functions because in the atomv_core.dataset_io we are sorting the keys! We should not sort the keys!!!
+# def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
+#     if freeze_dataset:  # to make sure our changes only affect the dictionary to save
+#         dataset = copy.deepcopy(dataset_in)
+#     else:
+#         dataset = dataset_in
+#     output_folder = os.path.dirname(output_file)
+#
+#     # Process the dataset to remove data from the data fields and, if needed, write the files.
+#     for collection_key, collection in dataset['collections'].items():
+#         for sensor_key, sensor in dataset['sensors'].items():
+#             createDataFile(dataset, collection_key, sensor,
+#                            sensor_key, output_folder)
+#
+#         # Do the same for additional data topics ...
+#         # for description, sensor in dataset['additional_sensor_data'].items():
+#         #     createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
+#
+#     createJSONFile(output_file, dataset)  # write dictionary to json
+#
+#
+# def createJSONFile(output_file, input):
+#     """
+#     Creates the json file containing the results data.
+#     :param output_file: output file.
+#     :param input: input dictionary containing the data.
+#     """
+#     D = copy.deepcopy(input)
+#     walk(D)
+#
+#     print("Saving the json output file to " + str(output_file) +
+#           ", please wait, it could take a while ...")
+#     f = open(output_file, 'w')
+#     # to get only four decimal places on the json file
+#     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)
+#     # print >> f, json.dumps(D, indent=2, sort_keys=True)
+#     f.write(json.dumps(D, indent=2, cls=NpEncoder))
+#
+#     f.close()
+#     print("Completed.")
 
 # keyboard listener
 def key_pressed(key, selection, dataset, args):
-
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
     idx_max_collection = len(dataset['collections'].keys()) - 1
@@ -118,144 +115,20 @@ def key_pressed(key, selection, dataset, args):
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
     elif key == "'s'":  # Saves dataset.
-        # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
         saveResultsJSON(output_file, dataset, freeze_dataset=True)
-        # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
         print('A new dataset was saved in ' + output_file)
     elif key == "'q'":  # Saves dataset and quits.
-        # TODO why not use the standard in  atom_core.dataset_io.saveResultsJSON
         saveResultsJSON(output_file, dataset, freeze_dataset=True)
-        # atom_core.dataset_io.saveResultsJSON(output_file, D, freeze_dataset = True)
         print('A new dataset was saved in ' + output_file)
 
         print('Exiting ...')
         selection['exit'] = True
 
 
-def selected_points_callback(selected_point_cloud, selection, dataset):
-
-    collection_key = selection['collection_key']
-
-    # Extract xyz coordinates from the selected points
-    points_selected = pc2.read_points(selected_point_cloud)
-    gen_selected_points = list(points_selected)
-
-    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
-        return
-
-    # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
-        int(gen_selected_points[0][4])]
-
-    selected_idxs = []
-    for point in gen_selected_points:
-        selected_idxs.append(int(point[3]))
-
-    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
-
-    [idx_center.append(x) for x in selected_idxs if x not in idx_center]
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center
-
-    if dataset['collections'][collection_key]['labels'][sensor]['idxs'] != [] and \
-            dataset['collections'][collection_key]['labels'][sensor]['detected'] == False:
-        dataset['collections'][collection_key]['labels'][sensor]['detected'] = True
-
-
-def selected_points_border_callback(selected_point_cloud, selection, dataset):
-
-    collection_key = selection['collection_key']
-
-    # Extract xyz coordinates from the selected points
-    points_selected = pc2.read_points(selected_point_cloud)
-    gen_selected_points = list(points_selected)
-
-    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
-        return
-
-    # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
-        int(gen_selected_points[0][4])]
-
-    selected_idxs = []
-    for point in gen_selected_points:
-        selected_idxs.append(int(point[3]))
-
-    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
-    idx_border = dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points']
-
-    [idx_center.append(x) for x in selected_idxs if x not in idx_center]
-    [idx_border.append(x) for x in selected_idxs if x not in idx_border]
-
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center
-    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
-
-
-def selected_points_remove_callback(selected_point_cloud, selection, dataset):
-
-    collection_key = selection['collection_key']
-
-    # Extract xyz coordinates from the selected points
-    points_selected = pc2.read_points(selected_point_cloud)
-    gen_selected_points = list(points_selected)
-
-    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
-        return
-
-    # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
-        int(gen_selected_points[0][4])]
-
-    selected_idxs = []
-    for point in gen_selected_points:
-        selected_idxs.append(int(point[3]))
-
-    # remove these points from the idx and idxs_limit_points
-    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
-    idx_border = dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points']
-
-    idx_center_new = [x for x in idx_center if x not in selected_idxs]
-    idx_border_new = [x for x in idx_border if x not in selected_idxs]
-
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center_new
-    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
-
-
-def selected_points_clear_all_callback(selected_point_cloud, selection, dataset):
-
-    collection_key = selection['collection_key']
-    # Extract xyz coordinates from the selected points
-    points_selected = pc2.read_points(selected_point_cloud)
-    gen_selected_points = list(points_selected)
-
-    if len(gen_selected_points) == 0:  # To prevent unnecessary operations
-        return
-
-    # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
-        int(gen_selected_points[0][4])]
-
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = []
-    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = []
-
-
-
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
 def main():
-    # var to select the index of the collection we want to see
-    global idx_collection
-    global previous_selected_collection_key
-    global points
-
-    # ---------------------------------------
-    # --- Parse command line argument
-    # ---------------------------------------
-
-    # signal.signal(signal.SIGINT, signal_handler)
-    # print('Press Ctrl+C')
-    # signal.pause()
-
     ap = argparse.ArgumentParser()
     ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
     ap.add_argument("-json", "--json_file",
@@ -321,14 +194,7 @@ def main():
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(
         args['json_file'], args['collection_selection_function'])
-    # d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
-    # del d['data_file']
-    # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
-    # bridge=CvBridge()
-    # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
-    # imageShowUInt16OrFloat32OrBool(image_33, "dataset_playback_load_results")
-    # cv2.waitKey(5)
-    # exit(0)
+
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
@@ -372,93 +238,26 @@ def main():
     selection = {'collection_key': list(dataset['collections'].keys())[0], 'previous_collection_key': None,
                  'exit': False}
 
-    # ---------------------------------------
-    # --- SETUP OPTIMIZER: Create data models
-    # ---------------------------------------
-    # opt = OptimizationUtils.Optimizer()
-    # opt.addDataModel('args', args)
-    # opt.addDataModel('dataset', dataset)
-
-    # ---------------------------------------
-    # --- SETUP OPTIMIZER: Add pattern(s) parameters
-    # ---------------------------------------
-    # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
-
-    # Pattern not fixed -------------------------
-    # if not dataset['calibration_config']['calibration_pattern']['fixed']:
-    #     # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
-    #     # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
-    #     # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
-    #     # publishing ROS, but we must add this to the parameter name.
-    #     parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-    #     child = dataset['calibration_config']['calibration_pattern']['link']
-    #     transform_key = atom_core.naming.generateKey(parent, child)
-    #
-    #     # iterate all collections
-    #     for collection_key, collection in dataset['collections'].items():
-    #
-    #         # Set transform using the initial estimate of the transformations.
-    #         initial_estimate = dataset['patterns']['transforms_initial'][collection_key]
-    #         if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
-    #                 not child == initial_estimate['child']:
-    #             raise ValueError(
-    #                 'Cannot set initial estimate for pattern at collection ' + collection_key)
-    #
-    #         collection['transforms'][transform_key] = {'parent': parent, 'child': child,
-    #                                                    'trans': initial_estimate['trans'],
-    #                                                    'quat': initial_estimate['quat']}
-    #
-    # else:  # fixed pattern ---------------------------------------------------------------------------------------------
-    #     # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
-    #     # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
-    #     # 'link']
-    #     parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-    #     child = dataset['calibration_config']['calibration_pattern']['link']
-    #     transform_key = atom_core.naming.generateKey(parent, child)
-    #
-    #     # Set transform using the initial estimate of the transformations.
-    #     initial_estimate = dataset['patterns']['transforms_initial'][selected_collection_key]
-    #     if not initial_estimate['detected'] or not parent == initial_estimate['parent'] or \
-    #             not child == initial_estimate['child']:
-    #         raise ValueError(
-    #             'Cannot set initial estimate for pattern at collection ' + collection_key)
-    #
-    #     # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
-    #     for collection_key, collection in dataset['collections'].items():
-    #         collection['transforms'][transform_key] = {'parent': parent, 'child': child,
-    #                                                    'trans': initial_estimate['trans'],
-    #                                                    'quat': initial_estimate['quat']}
-
-    # ---------------------------------------
-    # --- DEFINE THE VISUALIZATION FUNCTION
-    # ---------------------------------------
-    # d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
-    # del d['data_file']
-    # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
-    # bridge=CvBridge()
-    # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
-    # imageShowUInt16OrFloat32OrBool(image_33, "dataset_playback")
-    # cv2.waitKey(5)
-
     print("Configuring visualization ... ")
     graphics = setupVisualization(dataset, args, selection['collection_key'])
 
     # ---------------------------------------------
     # --- SUBSCRIBERS TO PLUGINS
     # ---------------------------------------------
-
-
     # ---------------------------------------
     # --- lidar3d modality
     # ---------------------------------------
 
     # Define subscriber to receive the selected points
     rospy.Subscriber("/rviz_selected_points", PointCloud2,
-                     partial(selected_points_callback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
+                     partial(selected_points_callback, selection=selection, dataset=dataset), queue_size=1,
+                     buff_size=52428800)
     rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
-                     partial(selected_points_border_callback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
+                     partial(selected_points_border_callback, selection=selection, dataset=dataset), queue_size=1,
+                     buff_size=52428800)
     rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
-                     partial(selected_points_remove_callback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
+                     partial(selected_points_remove_callback, selection=selection, dataset=dataset), queue_size=1,
+                     buff_size=52428800)
 
     rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2,
                      partial(selected_points_clear_all_callback, selection=selection, dataset=dataset), queue_size=1,
@@ -495,17 +294,9 @@ def main():
         on_press=key_pressed_partial)
     listener.start()
 
-    # signal_handler_partial = partial(
-    #     signal_handler, dataset=opt.data_models['dataset'], args=args)
-    # signal.signal(signal.SIGINT, signal_handler_partial)
-
     rate = rospy.Rate(30)  # 30hz
     while not rospy.is_shutdown() and not selection['exit']:
-        # selected_collection_key = collections_list[idx_collection]
-        # selection['collection_key'] = selected_collection_key
-
-        # print('Selected collection key is ' + selection['collection_key'])
-        models = {'dataset': dataset, 'args':args, 'graphics':graphics }
+        models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
