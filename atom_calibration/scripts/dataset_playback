@@ -100,7 +100,7 @@ from sqlalchemy import false
 # keyboard listener
 
 
-def key_pressed(key, selection, dataset, args):
+def keyPressed(key, selection, dataset, args):
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
     idx_max_collection = len(dataset['collections'].keys()) - 1
@@ -152,14 +152,6 @@ def main():
                     help="Publish ros visualization markers.", action='store_true')
     ap.add_argument("-si", "--show_images", help="shows images for each camera",
                     action='store_true', default=False)
-    ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera instrinsics to the optimization",
-                    action='store_true', default=False)
-    ap.add_argument("-pof", "--profile_objective_function",
-                    help="Runs and prints a profile of the objective function, then exits.",
-                    action='store_true', default=False)
-    ap.add_argument("-sr", "--sample_residuals",
-                    help="Samples residuals", type=float, default=1)
-    ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
     ap.add_argument("-ajf", "--all_joints_fixed",
                     help="Assume all joints are fixed and because of that draw a single robot mesh. Overrides "
                          "automatic detection of static robot.",
@@ -170,9 +162,6 @@ def main():
     ap.add_argument("-rpd", "--remove_partial_detections",
                     help="Remove detected labels which are only partial. Used or the Charuco.",
                     action='store_true', default=False)
-    ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=('translation', 'rotation'),
-                    help="Percentage of noise to add to the initial guess atomic transformations set before.",
-                    type=float, default=[0.0, 0.0]),
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help='A string to be evaluated into a lambda function that receives a sensor name as input and '
                          'returns True or False to indicate if the sensor should be loaded (and used in the '
@@ -184,15 +173,7 @@ def main():
                          'returns True or False to indicate if the collection should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
-    ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
-                                                          "after calling the optimization. Good for debugging.",
-                    action='store_true', default=False)
-    ap.add_argument("-ipg", "--initial_pose_ghost",
-                    help="Draw a ghost mesh with the systems initial pose. Good for debugging.",
-                    action='store_true', default=False)
     ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False,
-                    default=None)
-    ap.add_argument('-ox', '--output_xacro', help='Full path to output xacro file.', type=str, required=False,
                     default=None)
     ap.add_argument("-ow", "--overwrite",
                     help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
@@ -304,7 +285,7 @@ def main():
     # --- Define callback to change idx_collection
     # ---------------------------------------
     key_pressed_partial = partial(
-        key_pressed, selection=selection, dataset=dataset, args=args)
+        keyPressed, selection=selection, dataset=dataset, args=args)
     listener = keyboard.Listener(
         on_press=key_pressed_partial)
     listener.start()

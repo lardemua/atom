@@ -467,17 +467,6 @@ def setupVisualization(dataset, args, selected_collection_key):
                               rgba=rgba)
         markers.markers.extend(m.markers)
 
-        # add a ghost (low alpha) robot marker at the initial pose
-        if args['initial_pose_ghost']:
-            rgba = [.1, .1, .8, 0.1]  # best color we could find
-            m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
-                                  frame_id_suffix=generateName(
-                                      '', suffix='ini'),
-                                  namespace=generateName(
-                                      'immovable', suffix='ini'),
-                                  rgba=rgba)
-            markers.markers.extend(m.markers)
-
     else:  # render robot meshes for all collections
         print('Robot has some dynamic joints. Will use advanced rendering ...')
 
@@ -642,16 +631,6 @@ def visualizationFunction(models, selection, clicked_points=None):
                                                          rotation=Quaternion(x=0, y=0, z=0, w=1)))
         transfoms.append(transform)
 
-        if args['initial_pose_ghost']:
-            parent = config['world_link']
-            child = generateName(
-                config['world_link'], prefix='c' + collection_key, suffix='ini')
-            transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
-                                         child_frame_id=child,
-                                         transform=Transform(translation=Vector3(x=0, y=0, z=0),
-                                                             rotation=Quaternion(x=0, y=0, z=0, w=1)))
-            transfoms.append(transform)
-
         for transform_key, transform in collection['transforms'].items():
             parent = generateName(
                 transform['parent'], prefix='c' + collection_key)
@@ -664,35 +643,6 @@ def visualizationFunction(models, selection, clicked_points=None):
                                          transform=Transform(translation=Vector3(x=x, y=y, z=z),
                                                              rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
             transfoms.append(transform)
-
-        if args['initial_pose_ghost']:  # Publish robot meshes at initial pose.
-            for transform_key, transform in collection[generateName('transforms', suffix='ini')].items():
-                parent = generateName(
-                    transform['parent'], prefix='c' + collection_key)
-                child = generateName(
-                    transform['child'], prefix='c' + collection_key)
-                x, y, z = transform['trans']
-                qx, qy, qz, qw = transform['quat']
-                transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
-                                             child_frame_id=child,
-                                             transform=Transform(translation=Vector3(x=x, y=y, z=z),
-                                                                 rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
-                transfoms.append(transform)
-
-        # TODO Andre, remove this When you are finished. Just a hack for being able to visualize the wheels
-        # parent = 'c' + collection_key + '_' + 'base_link'
-        # child = 'c' + collection_key + '_' + 'front_left_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        #
-        # child = 'c' + collection_key + '_' + 'front_right_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        #
-        # child = 'c' + collection_key + '_' + 'rear_left_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([-0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        #
-        # child = 'c' + collection_key + '_' + 'rear_right_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([-0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        # Remove until this point
 
     graphics['ros']['tf_broadcaster'].sendTransform(transfoms)
 
