@@ -1,12 +1,12 @@
 import math
-from copy import deepcopy, copy
+from copy import copy, deepcopy
 
 import cv2
 import numpy as np
 import scipy.spatial.distance
-
 from atom_calibration.collect.label_messages import *
 from atom_core.dataset_io import getMsgAndCvImageFromDictionaryDepth
+from sqlalchemy import true
 
 
 def normalizeDepthImage(image, max_value=5):
@@ -37,7 +37,7 @@ def drawLabelsOnImage(labels, image, color_idxs=(0, 200, 255), color_idxs_limits
 
 
 def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, selection,
-                          tolerance_radius=5):
+                          tolerance_radius=20):
 
     collection_key = selection['collection_key']
 
@@ -62,6 +62,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
 
     # polygon closed, compute new labels
     if start_to_end_distance < tolerance_radius:
+        print('Labeling pattern from user defined polygon')
         height = dataset['sensors'][sensor_key]['camera_info']['height']
         width = dataset['sensors'][sensor_key]['camera_info']['width']
         pattern_mask = getMaskFromPoints(clicked_points[collection_key][sensor_key]['points'], height, width)
@@ -71,7 +72,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
                                              pyrdown=0, scatter_seed=True,
                                              scatter_seed_radius=8,
                                              debug=False,
-                                             subsample_solid_points=1, limit_sample_step=1,
+                                             subsample_solid_points=7, limit_sample_step=1,
                                              pattern_mask=pattern_mask)
 
         # Update the idxs and idxs_limit labels

@@ -1,7 +1,7 @@
 import sensor_msgs.point_cloud2 as pc2
 
 
-def selected_points_callback(selected_point_cloud, selection, dataset):
+def selectedPointsCallback(selected_point_cloud, selection, dataset):
     """
     Callback function to add selected points to the dataset as idxs.
     """
@@ -32,7 +32,7 @@ def selected_points_callback(selected_point_cloud, selection, dataset):
         dataset['collections'][collection_key]['labels'][sensor]['detected'] = True
 
 
-def selected_points_border_callback(selected_point_cloud, selection, dataset):
+def selectedPointsBorderCallback(selected_point_cloud, selection, dataset):
     """
     Callback function to add selected points to the dataset as idxs_limit_points.
     """
@@ -63,7 +63,7 @@ def selected_points_border_callback(selected_point_cloud, selection, dataset):
     dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
 
 
-def selected_points_remove_callback(selected_point_cloud, selection, dataset):
+def selectedPointsRemoveCallback(selected_point_cloud, selection, dataset):
     """
     Callback function to remove selected points from the dataset.
     """
@@ -95,7 +95,7 @@ def selected_points_remove_callback(selected_point_cloud, selection, dataset):
     dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
 
 
-def selected_points_clear_all_callback(selected_point_cloud, selection, dataset):
+def selectedPointsClearAllCallback(selected_point_cloud, selection, dataset):
     """
     Callback function to remove all points of the selected sensor from the dataset.
     """

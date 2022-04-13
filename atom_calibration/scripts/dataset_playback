@@ -31,7 +31,7 @@ from atom_calibration.collect.label_messages import (
     imageShowUInt16OrFloat32OrBool)
 from atom_calibration.dataset_playback.depth_manual_labeling import (
     clickedPointsCallback, clickedPointsReset)
-from atom_calibration.dataset_playback.lidar3d_manual_labelling import *
+from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
 from atom_calibration.dataset_playback.visualization import (
     setupVisualization, visualizationFunction)
 from atom_core.config_io import readXacroFile, uriReader
@@ -186,18 +186,17 @@ def main():
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
-    dataset, json_file = loadResultsJSON(
-        args['json_file'], args['collection_selection_function'])
+    dataset, json_file = loadResultsJSON(args['json_file'],
+                                         args['collection_selection_function'])
 
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
-    output_file = '/'.join(args['json_file'].split('/')
-                           [:-1]) + '/dataset_corrected.json'
+    output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
     if os.path.exists(output_file) and args['json_file'] != output_file and not args['overwrite']:
-        ans = input(
-            'The file dataset_corrected.json already exists. Do you want to overwrite? (Y/n)')
+        ans = input('The file dataset_corrected.json already exists.'
+                    ' Do you want to overwrite? (Y/n)')
         if ans.lower() == 'n':
             sys.exit(0)
 
@@ -213,19 +212,7 @@ def main():
         len(dataset['collections'].keys())) + ' collections.')
 
     # ---------------------------------------
-    # --- Store initial values for transformations to be optimized
-    # ---------------------------------------
-    for collection_key, collection in dataset['collections'].items():
-        initial_transform_key = generateName('transforms', suffix='ini')
-        collection[initial_transform_key] = copy.deepcopy(
-            collection['transforms'])
-        for transform_key, transform in collection[initial_transform_key].items():
-            transform['parent'] = generateName(
-                transform['parent'], suffix='ini')
-            transform['child'] = generateName(transform['child'], suffix='ini')
-
-    # ---------------------------------------
-    # --- Define selected collection key.
+    # --- Define selection
     # ---------------------------------------
     # Lets start with the first key on the collections dictionary.
     # Data structure used to save the state of navigation throughout the collections in the dataset.
@@ -235,36 +222,33 @@ def main():
     print("Configuring visualization ... ")
     graphics = setupVisualization(dataset, args, selection['collection_key'])
 
-    # ---------------------------------------------
-    # --- SUBSCRIBERS TO PLUGINS
-    # ---------------------------------------------
     # ---------------------------------------
-    # --- lidar3d modality
+    # --- lidar3d modality subscribers
     # ---------------------------------------
 
     # Define subscriber to receive the selected points
-    rospy.Subscriber("/rviz_selected_points", PointCloud2,
-                     partial(selected_points_callback, selection=selection, dataset=dataset), queue_size=1,
-                     buff_size=52428800)
+    rospy.Subscriber("/rviz_selected_points", PointCloud2, partial(
+        selectedPointsCallback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
+
     rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
-                     partial(selected_points_border_callback, selection=selection, dataset=dataset), queue_size=1,
-                     buff_size=52428800)
+                     partial(selectedPointsBorderCallback, selection=selection, dataset=dataset), queue_size=1,
+                     buff_size=52428800)  # TODO #393 Is it really necessary to define the buff_size?
+
     rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
-                     partial(selected_points_remove_callback, selection=selection, dataset=dataset), queue_size=1,
+                     partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset), queue_size=1,
                      buff_size=52428800)
 
     rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2,
-                     partial(selected_points_clear_all_callback, selection=selection, dataset=dataset), queue_size=1,
+                     partial(selectedPointsClearAllCallback, selection=selection, dataset=dataset), queue_size=1,
                      buff_size=52428800)
 
     # ---------------------------------------
-    # --- Depth modality
+    # --- Depth modality subscribers
     # ---------------------------------------
 
     # Subscriber for the image_click plugin
     # this stores the pixel coordinates of clicked points per collection, and per sensor key
-    clicked_points = {
-        collection_key: {} for collection_key in dataset['collections']}
+    clicked_points = {collection_key: {} for collection_key in dataset['collections']}
 
     # Initialize clicked points for all collections and sensors
     for collection_key in dataset['collections']:
@@ -284,17 +268,13 @@ def main():
     # ---------------------------------------
     # --- Define callback to change idx_collection
     # ---------------------------------------
-    key_pressed_partial = partial(
-        keyPressed, selection=selection, dataset=dataset, args=args)
-    listener = keyboard.Listener(
-        on_press=key_pressed_partial)
+    listener = keyboard.Listener(on_press=partial(keyPressed, selection=selection, dataset=dataset, args=args))
     listener.start()
 
     rate = rospy.Rate(30)  # 30hz
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
-        visualizationFunction(
-            models=models, selection=selection, clicked_points=clicked_points)
+        visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
 
