@@ -222,15 +222,20 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
     if create_data_file and sensor['modality'] == 'rgb':  # save image.
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
-        if not os.path.isfile(filename):  # Write pointcloud to pcd file
+        if not os.path.isfile(filename):  # Write rgb image file
             cv_image = getCvImageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
+
+            # flip color channels if needed
+            if dataset['collections'][collection_key][data_type][sensor_key]['encoding'] == 'rgb8':
+                cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
+                dataset['collections'][collection_key][data_type][sensor_key]['encoding'] = 'bgr8'
+
             cv2.imwrite(filename, cv_image)
             print('Saved file ' + filename + '.')
 
         # Add data_file field, and remove data field
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
-        dataset['collections'][collection_key][data_type][sensor_key][
-            'data_file'] = filename_relative  # add data_file field
+        dataset['collections'][collection_key][data_type][sensor_key]['data_file'] = filename_relative  # add data_file
         if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
