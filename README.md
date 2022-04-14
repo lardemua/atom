@@ -406,5 +406,6 @@ sudo pip3 install -r requirements.txt
 # Maintainers
 
  * Miguel Riem Oliveira - University of Aveiro
- * Eurico Pedrosa - University of Aveiro
+ * Daniela Rato - University of Aveiro
+ * Manuel Gomes - University of Aveiro
 
