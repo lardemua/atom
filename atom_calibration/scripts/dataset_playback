@@ -9,11 +9,7 @@ from functools import partial
 
 # ros imports
 import rospy
-import tf
-import sensor_msgs.point_cloud2 as pc2
-from cv_bridge import CvBridge
 from geometry_msgs.msg import PointStamped
-from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2
 
 # 3rd-party imports
@@ -24,20 +20,12 @@ from pynput import keyboard
 from OptimizationUtils import OptimizationUtils
 
 # Atom imports
-from atom_core.naming import generateKey, generateName
 from atom_calibration.dataset_playback.depth_manual_labeling import clickedPointsCallback, clickedPointsReset
 from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
 from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
-from atom_core.config_io import readXacroFile, uriReader
-from atom_core.dataset_io import (NpEncoder, addNoiseToInitialGuess, createDataFile, filterCollectionsFromDataset,
-                                  filterSensorsFromDataset, getPointCloudMessageFromDictionary, loadResultsJSON,
-                                  saveResultsJSON, walk)
+from atom_core.dataset_io import (filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
+                                  saveResultsJSON)
 from atom_calibration.calibration.patterns_config import createPatternLabels
-from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
-                                                              setterCameraIntrinsics, setterTransform)
-from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
-from atom_calibration.collect.label_messages import (convertDepthImage16UC1to32FC1, convertDepthImage32FC1to16UC1,
-                                                     imageShowUInt16OrFloat32OrBool)
 
 # global variables  ... are forbidden
 
@@ -45,55 +33,12 @@ from atom_calibration.collect.label_messages import (convertDepthImage16UC1to32F
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-# TODO #390 We should talk to Daniel to understand why sorting was a problem.
-# Daniel: I had to copy this functions because in the atomv_core.dataset_io we are sorting the keys! We should not sort the keys!!!
-# def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
-#     if freeze_dataset:  # to make sure our changes only affect the dictionary to save
-#         dataset = copy.deepcopy(dataset_in)
-#     else:
-#         dataset = dataset_in
-#     output_folder = os.path.dirname(output_file)
-#
-#     # Process the dataset to remove data from the data fields and, if needed, write the files.
-#     for collection_key, collection in dataset['collections'].items():
-#         for sensor_key, sensor in dataset['sensors'].items():
-#             createDataFile(dataset, collection_key, sensor,
-#                            sensor_key, output_folder)
-#
-#         # Do the same for additional data topics ...
-#         # for description, sensor in dataset['additional_sensor_data'].items():
-#         #     createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
-#
-#     createJSONFile(output_file, dataset)  # write dictionary to json
-#
-#
-# def createJSONFile(output_file, input):
-#     """
-#     Creates the json file containing the results data.
-#     :param output_file: output file.
-#     :param input: input dictionary containing the data.
-#     """
-#     D = copy.deepcopy(input)
-#     walk(D)
-#
-#     print("Saving the json output file to " + str(output_file) +
-#           ", please wait, it could take a while ...")
-#     f = open(output_file, 'w')
-#     # to get only four decimal places on the json file
-#     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)
-#     # print >> f, json.dumps(D, indent=2, sort_keys=True)
-#     f.write(json.dumps(D, indent=2, cls=NpEncoder))
-#
-#     f.close()
-#     print("Completed.")
 
-# keyboard listener
-
-
-def keyPressed(key, selection, dataset, args):
+def keyPressedCallback(key, selection, dataset, args):
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
     idx_max_collection = len(dataset['collections'].keys()) - 1
+
     output_file = '/'.join(args['json_file'].split('/')
                            [:-1]) + '/dataset_corrected.json'
 
@@ -256,12 +201,20 @@ def main():
                                      dataset=dataset, sensor_key=sensor_key, selection=selection))
 
     # ---------------------------------------
-    # --- Define callback to change idx_collection
+    # --- RGB modality subscribers
     # ---------------------------------------
-    listener = keyboard.Listener(on_press=partial(keyPressed, selection=selection, dataset=dataset, args=args))
+    # TODO #394 To implement in the future.
+
+    # ---------------------------------------
+    # --- Define callback to navigate through collections
+    # ---------------------------------------
+    listener = keyboard.Listener(on_press=partial(keyPressedCallback, selection=selection, dataset=dataset, args=args))
     listener.start()
 
-    rate = rospy.Rate(30)  # 30hz
+    # ---------------------------------------
+    # --- Loop while displaying selected collection
+    # ---------------------------------------
+    rate = rospy.Rate(30)  # in hertz.
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)

@@ -4,47 +4,39 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 
 import copy
 import math
-import os
 import struct
 from re import I
 
 # 3rd-party
-import colorama
 import cv2
 import cv_bridge
 import numpy as np
 import ros_numpy
+
 # import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 import tf
 import tf2_ros
-import visualization_msgs.msg
 from atom_calibration.calibration.objective_function import *
 from atom_calibration.collect.label_messages import *
-from atom_calibration.dataset_playback.depth_manual_labeling import (
-    drawLabelsOnImage, normalizeDepthImage)
+from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from atom_core.cache import Cache
 from atom_core.config_io import execute, readXacroFile, uriReader
-from atom_core.dataset_io import (genCollectionPrefix,
-                                  getCvImageFromDictionary,
-                                  getCvImageFromDictionaryDepth,
-                                  getMsgAndCvImageFromDictionaryDepth,
+from atom_core.dataset_io import (genCollectionPrefix, getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary)
 from atom_core.drawing import drawCross2D, drawSquare2D
 from atom_core.naming import generateName
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from colorama import Fore, Style
 from cv_bridge import CvBridge
-from geometry_msgs.msg import (Point, Pose, Quaternion, Transform,
-                               TransformStamped, Vector3)
+from geometry_msgs.msg import Point, Pose, Quaternion, Transform, TransformStamped, Vector3
 from matplotlib import cm
 from rospy_message_converter import message_converter
-from scipy.spatial import distance
-from sensor_msgs.msg import (CameraInfo, Image, PointCloud2, PointField,
-                             geometry_msgs, sensor_msgs)
+from sensor_msgs.msg import PointCloud2, PointField, sensor_msgs
 from std_msgs.msg import ColorRGBA, Header, UInt8MultiArray
 from urdf_parser_py.urdf import URDF
+
 # stdlib
 from visualization_msgs.msg import Marker, MarkerArray
 
@@ -54,10 +46,9 @@ from visualization_msgs.msg import Marker, MarkerArray
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-# although this function is somewhere else, in the other place it uses the dataset as cache...
-
 
 def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _dataset):
+    # TODO: #395 Daniel, we should you told me about this one but I would like to talk to you again ... although this function is somewhere else, in the other place it uses the dataset as cache...
     cloud_msg = getPointCloudMessageFromDictionary(
         _dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
@@ -245,7 +236,6 @@ def setupVisualization(dataset, args, selected_collection_key):
             topic_name = topic + '/labeled'
             graphics['collections'][str(sensor_key)] = {'publisher': rospy.Publisher(
                 topic_name, msg_type, queue_size=0, latch=True)}
-            print('Created image publisher')
             msg_type = sensor_msgs.msg.CameraInfo
             topic_name = str(sensor_key) + '/camera_info'
             graphics['collections'][str(sensor_key)]['publisher_camera_info'] = \
@@ -257,7 +247,6 @@ def setupVisualization(dataset, args, selected_collection_key):
             topic_name = topic + '/labeled'
             graphics['collections'][str(sensor_key)] = {'publisher': rospy.Publisher(
                 topic_name, msg_type, queue_size=0, latch=True)}
-            print('Created image publisher')
             msg_type = sensor_msgs.msg.CameraInfo
             topic_name = str(sensor_key) + '/camera_info'
             graphics['collections'][str(sensor_key)]['publisher_camera_info'] = \
@@ -423,13 +412,12 @@ def setupVisualization(dataset, args, selected_collection_key):
     movable_links = []
     for link in xml_robot.links:  # cycle all links
 
-        print(dataset['calibration_config']
-              ['world_link'] + ' to ' + link.name + ':')
+        # print(dataset['calibration_config']
+        #       ['world_link'] + ' to ' + link.name + ':')
         first_time = True
         for collection_key, collection in dataset['collections'].items():
             transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name,
                                                     collection['transforms'])
-            print('Collection ' + collection_key + ': ')
             if first_time:
                 first_time = False
                 transform_first_time = transform
@@ -440,8 +428,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         if link.name not in movable_links:
             immovable_links.append(link.name)
 
-    print('immovable links are: ' + str(immovable_links))
-    print('movable links are: ' + str(movable_links))
+    # print('immovable links are: ' + str(immovable_links))
+    # print('movable links are: ' + str(movable_links))
 
     # Check whether the robot is static, in the sense that all of its joints are fixed. If so, for efficiency purposes,
     # only one robot mesh (from the selected collection) is published.
