@@ -1,21 +1,23 @@
 import copy
+
 # stdlib
 import functools
 import json
+import os
+import random
+
 # 3rd-party
 import numpy as np
-import os
-
-# 3rd-party
-# import pypcd
-from colorama import Fore, Style
-
 import cv2
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 import tf
-import random
 import atom_core.pypcd as pypcd
+import imageio
+
+# 3rd-party
+# import pypcd
+from colorama import Fore, Style
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
 from cv_bridge import CvBridge
@@ -23,9 +25,8 @@ from geometry_msgs.msg import Transform
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField
 from std_msgs.msg import Header
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1, \
-    imageShowUInt16OrFloat32OrBool
-import imageio
+from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
+                                                     imageShowUInt16OrFloat32OrBool)
 
 
 def printImageInfo(image, text=None):
@@ -197,7 +198,7 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
 
 def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):
     if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d' or sensor[
-        'modality'] == 'depth'):
+            'modality'] == 'depth'):
         return
 
     # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
@@ -214,10 +215,9 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         create_data_file = True
 
     if create_data_file:
-        print(
-            'Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key) + ' msg type ' +
-            sensor[
-                'msg_type'])
+        # print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key)
+        #   + ' msg type ' + sensor['msg_type'])
+        pass
 
     if create_data_file and sensor['modality'] == 'rgb':  # save image.
         # Save image to disk if it does not exist
@@ -534,7 +534,7 @@ def filterCollectionsFromDataset(dataset, args):
 
     if args['remove_partial_detections']:
         number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-                            int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+            int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
         # Deleting labels in which not all corners are found:
         for collection_key, collection in dataset['collections'].items():
             for sensor_key, sensor in dataset['sensors'].items():

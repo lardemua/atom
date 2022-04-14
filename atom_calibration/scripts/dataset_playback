@@ -219,6 +219,7 @@ def main():
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
+        # TODO #396 Print a list of keys than the user can use
 
 
 if __name__ == "__main__":
