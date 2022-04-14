@@ -505,7 +505,7 @@ class InteractiveDataLabeler:
             self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed,
                                                                       bridge=self.bridge,
                                                                       pyrdown=1, scatter_seed=True, debug=False,
-                                                                      subsample_solid_points=1, limit_sample_step=1)
+                                                                      subsample_solid_points=3, limit_sample_step=1)
 
             w = self.pinhole_camera_model.fullResolution()[0]
             h = self.pinhole_camera_model.fullResolution()[1]

@@ -46,7 +46,7 @@ def input_with_timeout(prompt, timeout):
         setitimer(ITIMER_REAL, 0)
 
 
-def waitForKeyPress44(function=None, timeout=5, message='Waiting ... '):
+def waitForKeyPress2(function=None, timeout=5, message='Waiting ... '):
     message = message + '\npress ' + Fore.BLUE + Style.BRIGHT + '"c"' + Style.RESET_ALL + ' to continue or ' + Fore.BLUE + Style.BRIGHT + '"q"' + Style.RESET_ALL + ' to abort.'
 
     while True:

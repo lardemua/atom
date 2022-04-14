@@ -487,7 +487,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         convex_hull_points.append(convex_hull_points[0])
         # print('convex_hull_points = ' + str(convex_hull_points))
         for idx, (corner_1, corner_2) in enumerate(zip(convex_hull_points, convex_hull_points[1:])):
-            # print('corner_1 ' + str(corner_1))
+            # print('corner_1 ' + str(corner_1))z
             # print('line ' + str(idx))
             x1, y1 = corner_1[0]
             x2, y2 = corner_2[0]
