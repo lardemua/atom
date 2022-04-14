@@ -2,21 +2,18 @@
 import copy
 import json
 import os
+import time
+import getpass
+from datetime import datetime, date
 
 import tf2_ros
 import yaml
-
 import atom_core.config_io
 import atom_core.dataset_io
-import time
-from datetime import datetime
-from datetime import date
-import getpass
 
 # 3rd-party
 import atom_msgs.srv
 import tf
-
 from cv_bridge import CvBridge
 from colorama import Style, Fore
 from interactive_markers.menu_handler import *
@@ -24,7 +21,6 @@ from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
 from urdf_parser_py.urdf import URDF
-
 
 # local packages
 from atom_core.naming import generateKey
@@ -106,7 +102,7 @@ class DataCollectorAndLabeler:
             modality = value['modality']
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
-            if modality == 'rgb' or modality=='depth':  # if it is an image must get camera_info
+            if modality == 'rgb' or modality == 'depth':  # if it is an image must get camera_info
                 sensor_dict['camera_info_topic'] = os.path.dirname(sensor_dict['topic']) + '/camera_info'
                 from sensor_msgs.msg import CameraInfo
                 print('Waiting for camera_info message on topic ' + sensor_dict['camera_info_topic'] + ' ...')
@@ -168,9 +164,6 @@ class DataCollectorAndLabeler:
 
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
-
-        # print('sensor_labelers:')
-        # print(self.sensor_labelers)
 
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
@@ -333,42 +326,8 @@ class DataCollectorAndLabeler:
             msg = copy.deepcopy(self.sensor_labelers[sensor_key].msg)
             labels = copy.deepcopy(self.sensor_labelers[sensor_key].labels)
 
-            print('sensor' + sensor_key)
-            # TODO add exception also for point cloud and depth image
-            # Update sensor data ---------------------------------------------
-            # if sensor['msg_type'] == 'Image':  # Special case of requires saving image data as png separate files
-            #     cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")  # Convert to opencv image and save image to disk
-            #     filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
-            #     filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.jpg'
-            #     cv2.imwrite(filename, cv_image)
-            #
-            #     image_dict = message_converter.convert_ros_message_to_dictionary(
-            #         msg)  # Convert sensor data to dictionary
-            #     del image_dict['data']  # Remove data field (which contains the image), and replace by "data_file"
-            #     image_dict['data_file'] = filename_relative  # Contains full path to where the image was saved
-            #
-            #     # Update the data dictionary for this data stamp
-            #     all_sensor_data_dict[sensor['_name']] = image_dict
-            #
-            # elif sensor['msg_type'] == 'PointCloud2':
-            #     filename = self.output_folder + '/' + sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
-            #     filename_relative = sensor['_name'] + '_' + str(self.data_stamp) + '.pcd'
-            #
-            #     # write pointcloud to pcd file
-            #     write_pcd(filename, msg)
-            #
-            #     scan_dict = message_converter.convert_ros_message_to_dictionary(
-            #         msg)  # Convert sensor data to dictionary
-            #     del scan_dict['data']
-            #     scan_dict['data_file'] = filename_relative # Contains full path to where the image was saved
-            #
-            #     # Update the data dictionary for this data stamp
-            #     all_sensor_data_dict[sensor['_name']] = scan_dict
-            if False:
-                pass
-            else:
-                # Update the data dictionary for this data stamp
-                all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
+            # Update the data dictionary for this data stamp
+            all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
             # Update sensor labels ---------------------------------------------
             # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
@@ -387,16 +346,16 @@ class DataCollectorAndLabeler:
         self.collections[self.data_stamp] = collection_dict
         self.data_stamp += 1
 
-        dataset_name= self.output_folder.split('/')[-1]
+        dataset_name = self.output_folder.split('/')[-1]
         description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
         description = URDF.from_xml_file(description_file)
 
-        # # create metadata
+        # Create metadata.
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
                          'version': self.dataset_version, 'robot_name': description.name,
                          'dataset_name': dataset_name}
 
-        # Save to json file
+        # Save to json file.
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,
              'calibration_config': self.config, '_metadata': self.metadata}
         output_file = self.output_folder + '/dataset.json'

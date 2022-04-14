@@ -34,13 +34,27 @@ from atom_calibration.calibration.patterns_config import createPatternLabels
 # -------------------------------------------------------------------------------
 
 
+def printHelp():
+
+    s = 'Drag with the left button to select objects in the 3D scene.\n' \
+        ' Hold the Alt key to change viewpoint as in the Move tool.'\
+        ' Holding the Shift key will allow adding to the current selection.\n'\
+        ' Holding the Ctrl key will allow subtraction from the current selection.\n'\
+        ' The following keys are also available:\n'\
+        ' p - Publish selected points to /rviz_selected_points\n'\
+        ' b - Publish selected points to /rviz_selected_border_points\n'\
+        ' r - Publish selected points to /rviz_selected_remove_points\n'\
+        ' c - Publish selected points to /rviz_selected_clear_all_points\n'
+
+    print(s)
+
+
 def keyPressedCallback(key, selection, dataset, args):
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
     idx_max_collection = len(dataset['collections'].keys()) - 1
 
-    output_file = '/'.join(args['json_file'].split('/')
-                           [:-1]) + '/dataset_corrected.json'
+    output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
 
     # Convert from type to string to keep uniform.
     key = str(key)
@@ -166,16 +180,16 @@ def main():
         selectedPointsCallback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
 
     rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
-                     partial(selectedPointsBorderCallback, selection=selection, dataset=dataset), queue_size=1,
-                     buff_size=52428800)  # TODO #393 Is it really necessary to define the buff_size?
+                     partial(selectedPointsBorderCallback, selection=selection, dataset=dataset),
+                     queue_size=1)  # TODO #393 Is it really necessary to define the buff_size?
 
     rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
-                     partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset), queue_size=1,
-                     buff_size=52428800)
+                     partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset),
+                     queue_size=1)
 
     rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2,
-                     partial(selectedPointsClearAllCallback, selection=selection, dataset=dataset), queue_size=1,
-                     buff_size=52428800)
+                     partial(selectedPointsClearAllCallback, selection=selection, dataset=dataset),
+                     queue_size=1)
 
     # ---------------------------------------
     # --- Depth modality subscribers
@@ -215,11 +229,15 @@ def main():
     # --- Loop while displaying selected collection
     # ---------------------------------------
     rate = rospy.Rate(30)  # in hertz.
+    tic = rospy.Time.now()
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
-        # TODO #396 Print a list of keys than the user can use
+
+        if (rospy.Time.now() - tic).to_sec() > 3:
+            printHelp()
+            tic = rospy.Time.now()
 
 
 if __name__ == "__main__":
