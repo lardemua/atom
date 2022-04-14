@@ -34,6 +34,21 @@ from atom_calibration.calibration.patterns_config import createPatternLabels
 # -------------------------------------------------------------------------------
 
 
+def printHelp():
+
+    s = 'Drag with the left button to select objects in the 3D scene.\n' \
+        ' Hold the Alt key to change viewpoint as in the Move tool.'\
+        ' Holding the Shift key will allow adding to the current selection.\n'\
+        ' Holding the Ctrl key will allow subtraction from the current selection.\n'\
+        ' The following keys are also available:\n'\
+        ' p - Publish selected points to /rviz_selected_points\n'\
+        ' b - Publish selected points to /rviz_selected_border_points\n'\
+        ' r - Publish selected points to /rviz_selected_remove_points\n'\
+        ' c - Publish selected points to /rviz_selected_clear_all_points\n'
+
+    print(s)
+
+
 def keyPressedCallback(key, selection, dataset, args):
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
@@ -214,11 +229,15 @@ def main():
     # --- Loop while displaying selected collection
     # ---------------------------------------
     rate = rospy.Rate(30)  # in hertz.
+    tic = rospy.Time.now()
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
-        # TODO #396 Print a list of keys than the user can use
+
+        if (rospy.Time.now() - tic).to_sec() > 3:
+            printHelp()
+            tic = rospy.Time.now()
 
 
 if __name__ == "__main__":
