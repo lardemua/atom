@@ -181,7 +181,7 @@ def main():
 
     rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
                      partial(selectedPointsBorderCallback, selection=selection, dataset=dataset),
-                     queue_size=1)  # TODO #393 Is it really necessary to define the buff_size?
+                     queue_size=1)
 
     rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
                      partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset),
