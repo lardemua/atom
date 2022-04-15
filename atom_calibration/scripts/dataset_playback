@@ -50,6 +50,8 @@ def printHelp():
 
 
 def keyPressedCallback(key, selection, dataset, args):
+    # TODO #402 does not work if some of the collections in the middles, e.g. '1' are removed. An easy test is to run a -csf "lambda x: x in ['0', '2']"
+
     # Shortcut variables
     idx_collection = int(selection['collection_key'])
     idx_max_collection = len(dataset['collections'].keys()) - 1

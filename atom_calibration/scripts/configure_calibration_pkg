@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 
 # stdlib
-import matplotlib
 import os
-from os.path import exists
-
-
-import atom_core.config_io
-import atom_core.drawing
 import sys
 import argparse
 import subprocess
-
+from os.path import exists
 from copy import deepcopy
 from datetime import date, datetime
+
+import matplotlib
+import atom_core.config_io
+import atom_core.drawing
 
 # 3rd-party
 import yaml
@@ -25,15 +23,13 @@ import jinja2
 import matplotlib.pyplot as plt
 import networkx as nx
 
+# local packages
+import atom_core.utilities as utilities
 from colorama import Style, Fore
-
 from graphviz import Digraph
 from urdf_parser_py.urdf import URDF
 from matplotlib import cm
 from jinja2 import Environment, FileSystemLoader
-
-# local packages
-import atom_core.utilities as utilities
 
 if __name__ == "__main__":
     # Parse command line arguments
@@ -42,7 +38,10 @@ if __name__ == "__main__":
     ap.add_argument("-utf", "--use_tfs", action="store_true",
                     help='Use transformations in the bag file instead of generating new tfs from the xacro, '
                          'joint_state_msgs and robot state publisher.')
-    ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configutation file. If this flag is not given, the standard config.yml ill be used.', type=str, required=False)
+    ap.add_argument(
+        "-cfg", "--config_file",
+        help='Specify if you want to configure the calibration package with a specific configutation file. If this flag is not given, the standard config.yml ill be used.',
+        type=str, required=False)
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
@@ -67,11 +66,11 @@ if __name__ == "__main__":
     rviz_collect_data = 'collect_data.rviz'
     rviz_calibrate = 'calibrate.rviz'
     rviz_dataset_playback = 'dataset_playback.rviz'
+    playbag_launch_file = package_path + '/launch/playbag.launch'
     set_initial_estimate_launch_file = package_path + '/launch/set_initial_estimate.launch'
     data_collection_launch_file = package_path + '/launch/collect_data.launch'
     calibrate_launch_file = package_path + '/launch/calibrate.launch'
     dataset_playback_launch_file = package_path + '/launch/dataset_playback.launch'
-
 
     # Template engine1 setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
@@ -90,7 +89,7 @@ if __name__ == "__main__":
     if not args['config_file']:
         config_file = package_path + '/calibration/config.yml'
     else:
-        config_file = package_path +'/calibration/' + args['config_file']
+        config_file = package_path + '/calibration/' + args['config_file']
         if not exists(config_file):
             config_file = package_path + '/calibration/config.yml'
     print('Loading config file ' + config_file)
@@ -183,6 +182,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
     # --------------------------------------------------------------------------
+    # TODO #401 Verify if the standard folders of a calibration package exist
     print('Running verifications ... please wait ...')
 
     compressed_topics = {}  # a list of compressed topics to decompress in the launch file
@@ -324,12 +324,12 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the playback launch file
     # --------------------------------------------------------------------------
-    playbag_launch_file = package_path + '/launch/playbag.launch'
+    launch_file = playbag_launch_file
     print('Setting up ' + playbag_launch_file + ' ...')
 
     template = env.get_template('playbag.launch')
-    with open(playbag_launch_file, 'wb') as f:
-        output = template.render(c={'filename': os.path.basename(playbag_launch_file),
+    with open(launch_file, 'wb') as f:
+        output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'bag_file': bag_file_rel,
                                     'use_tfs': args['use_tfs'],
@@ -619,7 +619,6 @@ if __name__ == "__main__":
                                                                        'Image_Topic': topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-
         elif modality == 'depth':
             depth += 1
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
@@ -639,7 +638,7 @@ if __name__ == "__main__":
 
             # Frustum
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
-                                                                           'Marker_Topic': sensor_key + '/frustum'})
+                                                                            'Marker_Topic': sensor_key + '/frustum'})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
@@ -666,8 +665,6 @@ if __name__ == "__main__":
                    'Update_Topic': sensor_key + '/data_labeler/update'}
             )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
-
-
 
         # elif msg_type == 'sensor_msgs/PointCloud2':
         elif modality == 'lidar3d':
