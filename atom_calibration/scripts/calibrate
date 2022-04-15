@@ -26,29 +26,13 @@ import rospkg
 # 3rd-party
 import rospy
 import tf
-from atom_calibration.calibration.getters_and_setters import (
-    getterCameraIntrinsics,
-    getterTransform,
-    setterCameraIntrinsics,
-    setterTransform,
-)
-from atom_calibration.calibration.objective_function import (
-    getPointsInSensorAsNPArray,
-    objectiveFunction,
-)
-from atom_calibration.calibration.visualization import (
-    setupVisualization,
-    visualizationFunction,
-)
+from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
+                                                              setterCameraIntrinsics, setterTransform)
+from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
+from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
-from atom_core.dataset_io import (
-    addNoiseToInitialGuess,
-    filterCollectionsFromDataset,
-    filterSensorsFromDataset,
-    getPointCloudMessageFromDictionary,
-    loadResultsJSON,
-    saveResultsJSON,
-)
+from atom_core.dataset_io import (addNoiseToInitialGuess, filterCollectionsFromDataset, filterSensorsFromDataset,
+                                  getPointCloudMessageFromDictionary, loadResultsJSON, saveResultsJSON)
 from atom_core.naming import generateKey, generateName
 from atom_core.utilities import waitForKeyPress, waitForKeyPress2
 from colorama import Back, Fore, Style
@@ -828,13 +812,7 @@ def main():
     print("Initializing optimization ...")
     # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'}
-    options = {
-        "ftol": 1e-6,
-        "xtol": 1e-6,
-        "gtol": 1e-6,
-        "diff_step": None,
-        "x_scale": "jac",
-    }
+    options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
