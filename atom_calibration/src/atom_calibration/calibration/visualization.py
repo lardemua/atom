@@ -8,6 +8,7 @@ import copy
 import math
 import os
 import pprint
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -15,13 +16,14 @@ import matplotlib.pyplot as plt
 import colorama
 import cv2
 import ros_numpy
+
 # import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
 import numpy as np
 import tf
 import tf2_ros
+from cv2 import STEREO_BM_PREFILTER_NORMALIZED_RESPONSE
 from atom_core.cache import Cache
-
 from rospy_message_converter import message_converter
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from std_msgs.msg import Header, ColorRGBA
@@ -31,7 +33,6 @@ from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion, Transform, TransformStamped
 from cv_bridge import CvBridge
 from colorama import Style, Fore
-
 from matplotlib import cm
 
 # own packages
@@ -39,13 +40,12 @@ from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
 from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
-
 from atom_calibration.calibration.objective_function import *
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 @Cache(args_to_ignore=['dataset'])
 def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
@@ -141,7 +141,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     """
 
     # Create a python dictionary that will contain all the visualization related information
-    graphics = {'collections': {}, 'sensors': {}, 'pattern': {}, 'ros': {}, 'args': args}
+    graphics = {'collections': {}, 'pattern': {}, 'ros': {'sensors': {}}, 'args': args}
 
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
@@ -230,9 +230,9 @@ def setupVisualization(dataset, args, selected_collection_key):
             #         rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
 
     # Create Labeled Data publishers ----------------------------------------------------------
-    markers = MarkerArray()
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
+    for sensor_key, sensor in dataset['sensors'].items():
+        markers = MarkerArray()
+        for collection_key, collection in dataset['collections'].items():
             if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
                 continue
 
@@ -330,14 +330,14 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
             # Setup visualization for depth
-            if sensor['modality'] == 'depth': # -------- Publish the depth  ----------------------------
+            if sensor['modality'] == 'depth':  # -------- Publish the depth  ----------------------------
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.02, y=0.02, z=0.02),
+                                scale=Vector3(x=0.01, y=0.01, z=0.01),
                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                                 g=graphics['collections'][collection_key]['color'][1],
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
@@ -356,7 +356,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                 type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
                                 pose=Pose(position=Point(x=0, y=0, z=0),
                                           orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.07, y=0.07, z=0.07),
+                                scale=Vector3(x=0.05, y=0.05, z=0.05),
                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
                                                 g=graphics['collections'][collection_key]['color'][1],
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
@@ -368,8 +368,11 @@ def setupVisualization(dataset, args, selected_collection_key):
 
                 markers.markers.append(copy.deepcopy(marker))
 
-    graphics['ros']['MarkersLabeled'] = markers
-    graphics['ros']['PubLabeled'] = rospy.Publisher('~labeled_data', MarkerArray, queue_size=0, latch=True)
+            graphics['ros']['sensors'][sensor_key] = {}
+            graphics['ros']['sensors'][sensor_key]['MarkersLabeled'] = markers
+            topic = dataset['sensors'][sensor_key]['topic'] + '/labeled_data'
+            graphics['ros']['sensors'][sensor_key]['PubLabeled'] = rospy.Publisher(
+                topic, MarkerArray, queue_size=0, latch=True)
 
     # -----------------------------------------------------------------------------------------------------
     # -------- Robot meshes
@@ -467,7 +470,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                           rgba=rgba, skip_links=immovable_links)
                     markers.markers.extend(m.markers)
 
-    graphics['ros']['robot_mesh_markers'] = markers
+    graphics['ros']['RobotMeshMarkers'] = markers
 
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
@@ -604,36 +607,21 @@ def visualizationFunction(models):
                                                                  rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
                 transfoms.append(transform)
 
-        # TODO Andre, remove this When you are finished. Just a hack for being able to visualize the wheels
-        # parent = 'c' + collection_key + '_' + 'base_link'
-        # child = 'c' + collection_key + '_' + 'front_left_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        #
-        # child = 'c' + collection_key + '_' + 'front_right_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        #
-        # child = 'c' + collection_key + '_' + 'rear_left_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([-0.256, 0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        #
-        # child = 'c' + collection_key + '_' + 'rear_right_wheel_link'
-        # graphics['ros']['tf_broadcaster'].sendTransform([-0.256, -0.285, 0.033], [0, 0, 0, 1], now, child, parent)
-        # Remove until this point
-
     graphics['ros']['tf_broadcaster'].sendTransform(transfoms)
 
     # print("graphics['ros']['Counter'] = " + str(graphics['ros']['Counter']))
-    if graphics['ros']['Counter'] < 5:
+    if graphics['ros']['Counter'] < 1:
         graphics['ros']['Counter'] += 1
         return None
     else:
         graphics['ros']['Counter'] = 0
 
     # Update markers stamp, so that rviz uses newer transforms to compute their poses.
-    for marker in graphics['ros']['robot_mesh_markers'].markers:
+    for marker in graphics['ros']['RobotMeshMarkers'].markers:
         marker.header.stamp = now
 
     # Publish the meshes
-    graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
+    graphics['ros']['publisher_models'].publish(graphics['ros']['RobotMeshMarkers'])
 
     # Publish patterns
     for marker in graphics['ros']['MarkersPattern'].markers:
@@ -642,9 +630,11 @@ def visualizationFunction(models):
 
     # TODO update markers
     # Publish Labelled Data
-    for marker in graphics['ros']['MarkersLabeled'].markers:
-        marker.header.stamp = now
-    graphics['ros']['PubLabeled'].publish(graphics['ros']['MarkersLabeled'])
+    for sensor_key, sensor in sensors.items():
+        for marker in graphics['ros']['sensors'][sensor_key]['MarkersLabeled'].markers:
+            marker.header.stamp = now
+        graphics['ros']['sensors'][sensor_key]['PubLabeled'].publish(
+            graphics['ros']['sensors'][sensor_key]['MarkersLabeled'])
 
     # Publish Laser Beams
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
