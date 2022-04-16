@@ -767,12 +767,12 @@ if __name__ == "__main__":
 
             # Image
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
-                                                                      'Image_Topic': 'calibrate/c0' + topic + '/labeled'})
+                                                                      'Image_Topic': 'calibrate/c0' + topic + '/labeled_data'})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == "depth":
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                            'Marker_Topic': 'calibrate/labeled_data'}
+                                                                            'Marker_Topic': topic + '/labeled_data'}
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
@@ -783,14 +783,14 @@ if __name__ == "__main__":
         elif modality == 'lidar2d':
             # Labelled data
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                            'Marker_Topic': 'calibrate/labeled_data'}
+                                                                            'Marker_Topic': topic + '/labeled_data'}
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'lidar3d':
             # Labelled data
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                            'Marker_Topic': 'calibrate/labeled_data'}
+                                                                            'Marker_Topic': topic + '/labeled_data'}
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
