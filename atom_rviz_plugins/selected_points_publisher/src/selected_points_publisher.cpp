@@ -187,8 +187,15 @@ namespace rviz_plugin_selected_points_publisher
       QModelIndex child_index = model->index(i, 0);
       rviz::Property *child = model->getProp(child_index);
 
-      // cout << "numchildren = " << child->numChildren() << endl;
-      if (child->numChildren() < 5) // if true will crash on subchild->getVector() further ahead
+      // Using the name of the child to figure out if the type is Point, if not continue to the next child.
+      // The names are like this:
+      // Point 26803 [cloud 0x94484268385696]
+      // Marker immovable/13
+      // Frame c0_lidar_1_base_link
+
+      string child_name = child->getNameStd();
+      string child_type = child_name.substr(0, child_name.find(" ")); // get the first word, e.g. Point, Marker, Frame
+      if (child_type.compare("Point") != 0)
       {
         i++;
         continue;
