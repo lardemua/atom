@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 # local packages
-import atom_core.utilities as utilities
+from atom_core.utilities import checkDirectoryExistence
 from atom_core.naming import generateLabeledTopic
 from colorama import Style, Fore
 from graphviz import Digraph
@@ -185,6 +185,13 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # TODO #401 Verify if the standard folders of a calibration package exist
     print('Running verifications ... please wait ...')
+
+    # verify if the standard atom_calibration directories exist, if not create them
+    checkDirectoryExistence('calibration', package_name)
+    checkDirectoryExistence('launch', package_name)
+    checkDirectoryExistence('rviz', package_name)
+    checkDirectoryExistence('scripts', package_name)
+    checkDirectoryExistence('urdf', package_name)
 
     compressed_topics = {}  # a list of compressed topics to decompress in the launch file
     # Check if config sensor topics exist in the bag file

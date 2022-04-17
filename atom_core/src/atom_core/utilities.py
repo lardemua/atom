@@ -7,15 +7,17 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 
 # 3rd-party
 import math
+import os
 import subprocess
+from signal import setitimer, signal, SIGALRM, ITIMER_REAL
 
 import readchar
+import rospkg
 from colorama import Fore, Style
 
 # 3rd-party
 from rospy_message_converter import message_converter
 from pynput import keyboard
-from signal import setitimer, signal, SIGALRM, ITIMER_REAL
 
 # from open3d import * # This cannot be used. It itereferes with the Image for getMessageTypeFromTopic(topic):
 
@@ -47,7 +49,8 @@ def input_with_timeout(prompt, timeout):
 
 
 def waitForKeyPress2(function=None, timeout=5, message='Waiting ... '):
-    message = message + '\npress ' + Fore.BLUE + Style.BRIGHT + '"c"' + Style.RESET_ALL + ' to continue or ' + Fore.BLUE + Style.BRIGHT + '"q"' + Style.RESET_ALL + ' to abort.'
+    message = message + '\npress ' + Fore.BLUE + Style.BRIGHT + '"c"' + Style.RESET_ALL + \
+        ' to continue or ' + Fore.BLUE + Style.BRIGHT + '"q"' + Style.RESET_ALL + ' to abort.'
 
     while True:
         if not function is None:
@@ -66,7 +69,8 @@ def waitForKeyPress2(function=None, timeout=5, message='Waiting ... '):
 
 
 def waitForKeyPress(function=None, timeout=5, message='Waiting ... '):
-    message = message + '\npress ' + Fore.BLUE + Style.BRIGHT + '"c"' + Style.RESET_ALL + ' to continue or ' + Fore.BLUE + Style.BRIGHT + '"q"' + Style.RESET_ALL + ' to abort.'
+    message = message + '\npress ' + Fore.BLUE + Style.BRIGHT + '"c"' + Style.RESET_ALL + \
+        ' to continue or ' + Fore.BLUE + Style.BRIGHT + '"q"' + Style.RESET_ALL + ' to abort.'
 
     while True:
         with keyboard.Events() as events:
@@ -109,3 +113,11 @@ def laser_scan_data_to_xy(data):
         y.append(r * math.sin(theta))
 
     return x, y
+
+
+def checkDirectoryExistence(directory, package_name):
+    package_path = rospkg.RosPack().get_path(package_name)  # full path to the package, including its name.
+
+    if not os.path.exists(package_path + '/' + directory):
+        print(Fore.RED + directory + Style.RESET_ALL + ' directory does not exist. Package ' + Fore.BLUE + package_name +
+              Style.RESET_ALL + ' may be corrupted. You should create a new calibration package')
