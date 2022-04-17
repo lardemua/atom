@@ -22,6 +22,7 @@ import rospy
 import numpy as np
 import tf
 import tf2_ros
+from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from cv2 import STEREO_BM_PREFILTER_NORMALIZED_RESPONSE
 from atom_core.cache import Cache
 from rospy_message_converter import message_converter
@@ -37,9 +38,10 @@ from matplotlib import cm
 
 # own packages
 from atom_core.drawing import drawSquare2D, drawCross2D
-from atom_core.naming import generateName
+from atom_core.naming import generateLabeledTopic, generateName
 from atom_core.config_io import readXacroFile, execute, uriReader
-from atom_core.dataset_io import getCvImageFromDictionary, getPointCloudMessageFromDictionary, genCollectionPrefix
+from atom_core.dataset_io import (getCvImageFromDictionary, getCvImageFromDictionaryDepth,
+                                  getPointCloudMessageFromDictionary, genCollectionPrefix)
 from atom_calibration.calibration.objective_function import *
 
 # -------------------------------------------------------------------------------
@@ -197,8 +199,10 @@ def setupVisualization(dataset, args, selected_collection_key):
     # for idx, sensor_key in enumerate(sorted(dataset['sensors'].keys())):
     #     dataset['sensors'][str(sensor_key)]['color'] = color_map_sensors[idx, :]
 
-    # Create image publishers ----------------------------------------------------------
-    # We need to republish a new image at every visualization
+    # ----------------------------------------------------------------------------------------
+    # Create 3D Labels  (only for rgb and depth)
+    # Note: Republish a new image at every visualization, because the labels must redrawn as they change position
+    # ----------------------------------------------------------------------------------------
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             # print(sensor_key)
@@ -207,29 +211,24 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             # if sensor['msg_type'] == 'Image':
             if sensor['modality'] == 'rgb' or sensor['modality'] == 'depth':
-                msg_type = sensor_msgs.msg.Image
-                topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
-                topic_name = '~c' + str(collection_key) + topic + '/labeled'
+                # msg_type =
+                # topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
+                # topic_name = '~c' + str(collection_key) + topic + '/labeled'
+                labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
+                                                     collection_key=collection_key, type='2d')
                 graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
-                    topic_name, msg_type, queue_size=0, latch=True)}
+                    labeled_topic, sensor_msgs.msg.Image, queue_size=0, latch=True)}
 
                 msg_type = sensor_msgs.msg.CameraInfo
-                topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
-                graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
-                    rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
-            # if sensor['modality']=='depth':
-            #     msg_type = sensor_msgs.msg.Image
-            #     topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
-            #     topic_name = '~c' + str(collection_key) + topic + '/labeled'
-            #     graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
-            #         topic_name, msg_type, queue_size=0, latch=True)}
-            #
-            #     msg_type = sensor_msgs.msg.CameraInfo
-            #     topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
-            #     graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = \
-            #         rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
+                labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
+                                                     collection_key=collection_key, type='2d', suffix='/camera_info')
+                # topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
+                graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = rospy.Publisher(
+                    labeled_topic, msg_type, queue_size=0, latch=True)
 
-    # Create Labeled Data publishers ----------------------------------------------------------
+    # ----------------------------------------------------------------------------------------
+    # Create 3D Labels  (only for lidar2d, lidar3d and depth)
+    # ----------------------------------------------------------------------------------------
     for sensor_key, sensor in dataset['sensors'].items():
         markers = MarkerArray()
         for collection_key, collection in dataset['collections'].items():
@@ -370,9 +369,9 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             graphics['ros']['sensors'][sensor_key] = {}
             graphics['ros']['sensors'][sensor_key]['MarkersLabeled'] = markers
-            topic = dataset['sensors'][sensor_key]['topic'] + '/labeled_data'
+            labeled_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='3d')
             graphics['ros']['sensors'][sensor_key]['PubLabeled'] = rospy.Publisher(
-                topic, MarkerArray, queue_size=0, latch=True)
+                labeled_topic, MarkerArray, queue_size=0, latch=True)
 
     # -----------------------------------------------------------------------------------------------------
     # -------- Robot meshes
@@ -641,10 +640,11 @@ def visualizationFunction(models):
         marker.header.stamp = now
     graphics['ros']['PubLaserBeams'].publish(graphics['ros']['MarkersLaserBeams'])
 
-    # Publish Annotated images
+    # ---------------------------------------------------------------------------------
+    # Publish 2D labels
+    # ---------------------------------------------------------------------------------
     for collection_key, collection in collections.items():
         for sensor_key, sensor in sensors.items():
-
             if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
                 continue
 
@@ -690,16 +690,25 @@ def visualizationFunction(models):
                     graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
 
-            # elif sensor['msg_type'] == 'LaserScan':
-            elif sensor['modality'] == 'lidar2d':
-                pass
-            # elif sensor['msg_type'] == 'PointCloud2':
-            elif sensor['modality'] == 'lidar3d':
-                pass
             elif sensor['modality'] == 'depth':
-                # TODO check what to do here
-                pass
-            else:
-                raise ValueError("Unknown sensor msg_type or modality")
+                # Shortcut variables
+                collection = collections[collection_key]
+
+                # Create image to draw on top
+                image = getCvImageFromDictionaryDepth(collection['data'][sensor_key])
+                gui_image = normalizeDepthImage(image, max_value=5)
+                gui_image = drawLabelsOnImage(collection['labels'][sensor_key], gui_image)
+
+                msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
+
+                msg.header.frame_id = 'c' + collection_key + '_' + sensor['parent']
+                graphics['collections'][collection_key][sensor_key]['publisher'].publish(msg)
+
+                # Publish camera info message
+                camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                                                      sensor['camera_info'])
+                camera_info_msg.header.frame_id = msg.header.frame_id
+                graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
+                    camera_info_msg)
 
     graphics['ros']['Rate'].sleep()
