@@ -251,6 +251,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             topic_name = str(sensor_key) + '/camera_info'
             graphics['collections'][str(sensor_key)]['publisher_camera_info'] = \
                 rospy.Publisher(topic_name, msg_type, queue_size=0, latch=True)
+
     # Create Labeled and Unlabeled Data publishers ----------------------------------------------------------
     markers = MarkerArray()
 
@@ -258,15 +259,15 @@ def setupVisualization(dataset, args, selected_collection_key):
     graphics['ros']['PubPointCloud'] = dict()
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['modality'] == 'lidar3d':
-            graphics['ros']['PubPointCloud'][sensor_key] = \
-                rospy.Publisher(str(sensor_key) + '/points',
-                                PointCloud2, queue_size=0, latch=True)
+            graphics['ros']['PubPointCloud'][sensor_key] = rospy.Publisher('~' + str(sensor_key) + '/points_labeled',
+                                                                           PointCloud2, queue_size=0, latch=True)
 
         for collection_key, collection in dataset['collections'].items():
             # if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
             #     continue
 
             # when the sensor has no label, the 'idxs_limit_points' does not exist!!!
+            # TODO this is not correct I think ...
             if 'idxs_limit_points' not in collection['labels'][str(sensor_key)]:
                 collection['labels'][str(sensor_key)]['idxs_limit_points'] = []
 
