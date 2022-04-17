@@ -25,6 +25,7 @@ import networkx as nx
 
 # local packages
 import atom_core.utilities as utilities
+from atom_core.naming import generateLabeledTopic
 from colorama import Style, Fore
 from graphviz import Digraph
 from urdf_parser_py.urdf import URDF
@@ -766,31 +767,39 @@ if __name__ == "__main__":
         if modality == 'rgb':  # displays for camera sensor
 
             # Image
+            # one image per collection will be published by calibrate, but we only create one Image Display listening to the collection 0 image topic. The user can then change to other collections.
+            labeled_topic = generateLabeledTopic(topic, collection_key='0', type='2d')
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
-                                                                      'Image_Topic': 'calibrate/c0' + topic + '/labeled_data'})
+                                                                      'Image_Topic': labeled_topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == "depth":
-            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                            'Marker_Topic': topic + '/labeled_data'}
+
+            # Depth Image with pattern idxs and idxs_limit overlayed
+            labeled_topic = generateLabeledTopic(topic, collection_key='0', type='2d')
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
+                                                                      'Image_Topic': labeled_topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+            # 3D Rviz markers of Depth image 3D points corresponding to idxs and idxs_limit
+            labeled_topic = generateLabeledTopic(topic, type='3d')
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Labels-3D',
+                                                                            'Marker_Topic': labeled_topic}
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
-                                                                      'Image_Topic': 'calibrate/c0' + topic + '/labeled'})
-            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
-
         elif modality == 'lidar2d':
-            # Labelled data
-            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                            'Marker_Topic': topic + '/labeled_data'}
+            labeled_topic = generateLabeledTopic(topic, type='2d')
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Labels3D',
+                                                                            'Marker_Topic': labeled_topic}
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'lidar3d':
-            # Labelled data
+            # 3D Rviz markers of lidar 3D points corresponding to idxs and idxs_limit
+            labeled_topic = generateLabeledTopic(topic, type='3d')
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-LabeledData',
-                                                                            'Marker_Topic': topic + '/labeled_data'}
+                                                                            'Marker_Topic': labeled_topic}
                                                                          )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
