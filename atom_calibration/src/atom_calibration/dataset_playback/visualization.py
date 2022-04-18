@@ -475,27 +475,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                   rgba=rgba, skip_links=immovable_links)
             markers.markers.extend(m.markers)
 
-            # add a ghost (low alpha) robot marker at the initial pose
-            if args['initial_pose_ghost']:
-                rgba = [.1, .1, .8, 0.1]  # best color we could find
-                # Draw immovable links
-                m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                      frame_id_suffix=generateName(
-                    '', suffix='ini'),
-                    namespace=generateName(
-                    'immovabl', suffix='ini'),
-                    rgba=rgba, skip_links=movable_links)
-                markers.markers.extend(m.markers)
-
-                # Draw movable links
-                for collection_key, collection in dataset['collections'].items():
-                    m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                          frame_id_suffix=generateName(
-                        '', suffix='ini'),
-                        namespace=generateName(
-                        collection_key, suffix='ini'),
-                        rgba=rgba, skip_links=immovable_links)
-                    markers.markers.extend(m.markers)
+           
 
     graphics['ros']['robot_mesh_markers'] = markers
 
