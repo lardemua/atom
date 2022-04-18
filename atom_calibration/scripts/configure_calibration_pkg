@@ -649,7 +649,7 @@ if __name__ == "__main__":
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + modality + ')' + Style.RESET_ALL)
 
-    if depth != 0:
+    if depth != 0:  # TODO this is strange here ...
         # rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         #     c={'Name': 'FrustumVisualizationDepthSensors',
         #        'Marker_Topic': '/sensor_frustum'})
