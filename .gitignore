@@ -213,3 +213,4 @@ snaps/
 
 # Built Visual Studio Code Extensions
 *.vsix
+.vscode/settings.json
