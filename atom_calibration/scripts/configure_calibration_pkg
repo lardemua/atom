@@ -471,7 +471,8 @@ if __name__ == "__main__":
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Generate rviz displays according to the sensor types
-    for idx, sensor_key in enumerate(config['sensors']):
+    # Iterate alphabetically through the sensors dict keys https://github.com/lardemua/atom/issues/409
+    for idx, sensor_key in enumerate(sorted(list(config['sensors'].keys()))):
         color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
@@ -544,7 +545,8 @@ if __name__ == "__main__":
 
     depth = 0
     # Generate rviz displays according to the sensor types
-    for idx, sensor_key in enumerate(config['sensors']):
+    # Iterate alphabetically through the sensors dict keys https://github.com/lardemua/atom/issues/409
+    for idx, sensor_key in enumerate(sorted(list(config['sensors'].keys()))):
         color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
@@ -649,7 +651,7 @@ if __name__ == "__main__":
             print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + modality + ')' + Style.RESET_ALL)
 
-    if depth != 0:  # TODO this is strange here ...
+    if depth != 0:  # TODO #411 this is strange here ...
         # rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         #     c={'Name': 'FrustumVisualizationDepthSensors',
         #        'Marker_Topic': '/sensor_frustum'})
@@ -667,14 +669,14 @@ if __name__ == "__main__":
     rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
         'world_link']  # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
+    displays.pop()  # remove last core display which is robot model
 
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': 'Robot Meshes',
                                                                     'Marker_Topic': '/dataset_playback/robot_meshes'})
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-    # TODO #409 Generate rviz config for sensors using alphabetic order
-    # Generate rviz displays according to the sensor types
-    for idx, sensor_key in enumerate(config['sensors']):
+    # Iterate alphabetically through the sensors dict keys https://github.com/lardemua/atom/issues/409
+    for idx, sensor_key in enumerate(sorted(list(config['sensors'].keys()))):
         color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         modality = config['sensors'][sensor_key]['modality']
@@ -763,7 +765,8 @@ if __name__ == "__main__":
         displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Generate rviz displays according to the sensor types
-    for idx, sensor_key in enumerate(config['sensors']):
+    # Iterate alphabetically through the sensors dict keys https://github.com/lardemua/atom/issues/409
+    for idx, sensor_key in enumerate(sorted(list(config['sensors'].keys()))):
         color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
         topic = config['sensors'][sensor_key]['topic_name']
         topic_compressed = topic + '/compressed'
