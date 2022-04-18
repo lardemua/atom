@@ -53,8 +53,14 @@ def printHelp():
 def keyPressedCallback(key, selection, dataset, args):
     # TODO #402 does not work if some of the collections in the middles, e.g. '1' are removed. An easy test is to run a -csf "lambda x: x in ['0', '2']"
 
+    # print("collection_key = " + str(selection['collection_key']))
+    # print("previous_collection_key = " + str(selection['previous_collection_key']))
+
     # Shortcut variables
-    idx_collection = int(selection['collection_key'])
+    # print('getting idx')
+    # print(list(dataset['collections'].keys()))
+    idx_collection = list(dataset['collections'].keys()).index(selection['collection_key'])
+    # print("idx_collection = " + str(idx_collection))
     idx_max_collection = len(dataset['collections'].keys()) - 1
 
     output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
@@ -64,18 +70,16 @@ def keyPressedCallback(key, selection, dataset, args):
     if key == 'Key.right':  # Save and move to collection + 1.
         if idx_collection < idx_max_collection:
             selection['previous_collection_key'] = selection['collection_key']
-            selection['collection_key'] = str(idx_collection + 1)
-            print('Changed selected_collection_key to ' +
-                  selection['collection_key'])
+            selection['collection_key'] = list(dataset['collections'].keys())[idx_collection+1]
+            print('Changed selected_collection_key to ' + str(selection['collection_key']))
             saveResultsJSON(output_file, dataset, freeze_dataset=True)
         else:
             print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
     elif key == 'Key.left':  # Save and move to collection - 1.
         if idx_collection > 0:
             selection['previous_collection_key'] = selection['collection_key']
-            selection['collection_key'] = str(idx_collection - 1)
-            print('Changed selected_collection_key to ' +
-                  selection['collection_key'])
+            selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
+            print('Changed selected_collection_key to ' + str(selection['collection_key']))
             saveResultsJSON(output_file, dataset, freeze_dataset=True)
         else:
             print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
@@ -89,10 +93,14 @@ def keyPressedCallback(key, selection, dataset, args):
         print('Exiting ...')
         selection['exit'] = True
 
+    elif key == "'h'":  # Prints help.
+        printHelp()
 
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
@@ -179,20 +187,17 @@ def main():
     # ---------------------------------------
 
     # Define subscriber to receive the selected points
-    rospy.Subscriber("/rviz_selected_points", PointCloud2, partial(
-        selectedPointsCallback, selection=selection, dataset=dataset), queue_size=1, buff_size=52428800)
+    rospy.Subscriber("/rviz/selected_points", PointCloud2,
+                     partial(selectedPointsCallback, selection=selection, dataset=dataset))
 
-    rospy.Subscriber("/rviz_selected_border_points", PointCloud2,
-                     partial(selectedPointsBorderCallback, selection=selection, dataset=dataset),
-                     queue_size=1)
+    rospy.Subscriber("/rviz/selected_border_points", PointCloud2,
+                     partial(selectedPointsBorderCallback, selection=selection, dataset=dataset))
 
-    rospy.Subscriber("/rviz_selected_remove_points", PointCloud2,
-                     partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset),
-                     queue_size=1)
+    rospy.Subscriber("/rviz/selected_remove_points", PointCloud2,
+                     partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset))
 
-    rospy.Subscriber("/rviz_selected_clear_all_points", PointCloud2,
-                     partial(selectedPointsClearAllCallback, selection=selection, dataset=dataset),
-                     queue_size=1)
+    rospy.Subscriber("/rviz/selected_clear_all_points", PointCloud2,
+                     partial(selectedPointsClearAllCallback, selection=selection, dataset=dataset))
 
     # ---------------------------------------
     # --- Depth modality subscribers
@@ -231,6 +236,8 @@ def main():
     # ---------------------------------------
     # --- Loop while displaying selected collection
     # ---------------------------------------
+    print('\nPress ' + Fore.BLUE + '"h"' + Style.RESET_ALL + ' for instructions.\n')
+
     rate = rospy.Rate(30)  # in hertz.
     tic = rospy.Time.now()
     while not rospy.is_shutdown() and not selection['exit']:
@@ -238,9 +245,8 @@ def main():
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
-        if (rospy.Time.now() - tic).to_sec() > 3:
-            printHelp()
-            tic = rospy.Time.now()
+        # if (rospy.Time.now() - tic).to_sec() > 3:
+        # tic = rospy.Time.now()
 
 
 if __name__ == "__main__":
