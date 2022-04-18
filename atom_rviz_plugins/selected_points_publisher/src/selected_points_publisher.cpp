@@ -60,10 +60,10 @@ namespace rviz_plugin_selected_points_publisher
   void SelectedPointsPublisher::updateTopic()
   {
     node_handle_.param("frame_id", tf_frame_, std::string("/base_link"));
-    rviz_cloud_topic_ = std::string("/rviz_selected_points");
-    rviz_cloud_border_topic_ = std::string("/rviz_selected_border_points");
-    rviz_cloud_remove_topic_ = std::string("/rviz_selected_remove_points");
-    rviz_cloud_clear_all_topic_ = std::string("/rviz_selected_clear_all_points");
+    rviz_cloud_topic_ = std::string("/rviz/selected_points");
+    rviz_cloud_border_topic_ = std::string("/rviz/selected_border_points");
+    rviz_cloud_remove_topic_ = std::string("/rviz/selected_remove_points");
+    rviz_cloud_clear_all_topic_ = std::string("/rviz/selected_clear_all_points");
 
     rviz_selected_publisher_ = node_handle_.advertise<sensor_msgs::PointCloud2>(rviz_cloud_topic_.c_str(), 1);
     rviz_selected_border_publisher_ = node_handle_.advertise<sensor_msgs::PointCloud2>(rviz_cloud_border_topic_.c_str(), 1);

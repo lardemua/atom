@@ -5,6 +5,7 @@ def selectedPointsCallback(selected_point_cloud, selection, dataset):
     """
     Callback function to add selected points to the dataset as idxs.
     """
+
     collection_key = selection['collection_key']
 
     # Extract xyz coordinates from the selected points
