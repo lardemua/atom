@@ -9,6 +9,7 @@ from functools import partial
 
 # ros imports
 import rospy
+from atom_core.naming import generateLabeledTopic
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import PointCloud2
 
@@ -210,8 +211,8 @@ def main():
     # Create a subscriber for each depth sensor
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['modality'] == 'depth':
-            points_topic = dataset['sensors'][sensor_key]['topic'] + \
-                '/labeled/mouse_click'
+
+            points_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='2d') + '/mouse_click'
             rospy.Subscriber(points_topic, PointStamped,
                              partial(clickedPointsCallback, clicked_points=clicked_points,
                                      dataset=dataset, sensor_key=sensor_key, selection=selection))

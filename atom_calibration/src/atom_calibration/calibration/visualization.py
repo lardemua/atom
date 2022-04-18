@@ -200,7 +200,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     #     dataset['sensors'][str(sensor_key)]['color'] = color_map_sensors[idx, :]
 
     # ----------------------------------------------------------------------------------------
-    # Create 3D Labels  (only for rgb and depth)
+    # Create 2D Labels  (only for rgb and depth)
     # Note: Republish a new image at every visualization, because the labels must redrawn as they change position
     # ----------------------------------------------------------------------------------------
     for collection_key, collection in dataset['collections'].items():
@@ -210,21 +210,21 @@ def setupVisualization(dataset, args, selected_collection_key):
                 continue
 
             # if sensor['msg_type'] == 'Image':
-            if sensor['modality'] == 'rgb' or sensor['modality'] == 'depth':
-                # msg_type =
-                # topic = dataset['calibration_config']['sensors'][sensor_key]['topic_name']
-                # topic_name = '~c' + str(collection_key) + topic + '/labeled'
+            if sensor['modality'] in ['rgb', 'depth']:
+                graphics['collections'][collection_key][str(sensor_key)] = {}
+
+                # Image msg setup.
                 labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
                                                      collection_key=collection_key, type='2d')
-                graphics['collections'][collection_key][str(sensor_key)] = {'publisher': rospy.Publisher(
-                    labeled_topic, sensor_msgs.msg.Image, queue_size=0, latch=True)}
+                graphics['collections'][collection_key][str(sensor_key)]['publisher'] = rospy.Publisher(
+                    labeled_topic, sensor_msgs.msg.Image, queue_size=0, latch=True)
 
-                msg_type = sensor_msgs.msg.CameraInfo
+                # Camera info msg setup.
                 labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
                                                      collection_key=collection_key, type='2d', suffix='/camera_info')
                 # topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
                 graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = rospy.Publisher(
-                    labeled_topic, msg_type, queue_size=0, latch=True)
+                    labeled_topic, sensor_msgs.msg.CameraInfo, queue_size=0, latch=True)
 
     # ----------------------------------------------------------------------------------------
     # Create 3D Labels  (only for lidar2d, lidar3d and depth)

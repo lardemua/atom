@@ -672,6 +672,7 @@ if __name__ == "__main__":
                                                                     'Marker_Topic': '/dataset_playback/robot_meshes'})
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
+    # TODO #409 Generate rviz config for sensors using alphabetic order
     # Generate rviz displays according to the sensor types
     for idx, sensor_key in enumerate(config['sensors']):
         color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
@@ -686,24 +687,27 @@ if __name__ == "__main__":
         if modality == 'rgb' or modality == 'depth':
 
             # Raw image
-            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Image',
-                                                                      'Image_Topic': topic+'/labeled'})
+            labeled_topic = generateLabeledTopic(topic, type='2d')
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels-Image',
+                                                                      'Image_Topic': labeled_topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
         elif modality == 'lidar2d':
             # Raw data
-            rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-LaserScan',
-                                                                          'Topic': topic,
+            labeled_topic = generateLabeledTopic(topic, type='3d')
+            rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-Labels-LaserScan',
+                                                                          'Topic': labeled_topic,
                                                                           'Color': color})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/PointCloud2':
         elif modality == 'lidar3d':
             # Raw data
+            labeled_topic = generateLabeledTopic(topic, type='3d')
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(
-                c={'Name': sensor_key + '-PointCloud2', 'Topic': 'dataset_playback/' + sensor_key + '/points_labeled',
-                   'Color': color, 'Color_Transformer': 'RGB8', 'Style': 'Spheres', 'Size__m_': 0.02, 'Alpha': 1})
+                c={'Name': sensor_key + '-Labels3d-PointCloud2', 'Topic': labeled_topic, 'Color': color,
+                   'Color_Transformer': 'RGB8', 'Style': 'Spheres', 'Size__m_': 0.02, 'Alpha': 1})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         else:
