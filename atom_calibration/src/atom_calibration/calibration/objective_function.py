@@ -42,6 +42,32 @@ def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
 
 
 @Cache(args_to_ignore=['_dataset'])
+def getDepthPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
+    pts_in_pattern_list = []  # collect the points
+
+    # print(_dataset['patterns']['frame']['lines_sampled'].keys())
+    # exit(0)
+    for type in _dataset['patterns']['frame']['lines_sampled'].keys():
+        for point in _dataset['patterns']['frame']['lines_sampled'][type]:
+            # print(point)
+            # point = [item for item in _dataset['patterns']['corners']][0]
+            pts_in_pattern_list.append(point)
+
+    # for point in _dataset['patterns']['transitions']['horizontal']:
+    #     # point = [item for item in _dataset['patterns']['corners']][0]
+    #     pts_in_pattern_list.append(point)
+    #
+    # for point in _dataset['patterns']['transitions']['vertical']:
+    #     # point = [item for item in _dataset['patterns']['corners']][0]
+    #     pts_in_pattern_list.append(point)
+
+    return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
+                     [item['y'] for item in pts_in_pattern_list],
+                     [0 for _ in pts_in_pattern_list],
+                     [1 for _ in pts_in_pattern_list]], np.float)
+
+
+@Cache(args_to_ignore=['_dataset'])
 def getPointsDetectedInImageAsNPArray(_collection_key, _sensor_key, _dataset):
     return np.array(
         [[item['x'] for item in _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']],
@@ -512,6 +538,11 @@ def objectiveFunction(data):
                 # TODO ortogonal e longitudinal
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
                 # print(r.keys())
+
+
+                #PROJECT CORNER POINTS TO SENSOR
+                pts_in_pattern = getDepthPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
+
                 w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
                 K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
                 D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
@@ -519,7 +550,7 @@ def objectiveFunction(data):
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
                 sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
-                pts_in_sensor = np.dot(sensor_to_pattern, points_in_pattern)
+                pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
                 pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 

@@ -46,6 +46,7 @@ from atom_core.dataset_io import (getCvImageFromDictionary, getCvImageFromDictio
                                   getPointCloudMessageFromDictionary, genCollectionPrefix)
 from atom_calibration.calibration.objective_function import *
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -695,10 +696,12 @@ def visualizationFunction(models):
             elif sensor['modality'] == 'depth':
                 # Shortcut variables
                 collection = collections[collection_key]
-                image = copy.deepcopy(getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=10000.0))
+                image = copy.deepcopy(
+                    getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=10000.0))
 
                 width = collection['data'][sensor_key]['width']
                 height = collection['data'][sensor_key]['height']
+                diagonal = math.sqrt(width ** 2 + height ** 2)/2
                 # print(width, height)
                 idxs = dataset['collections'][collection_key]['labels'][sensor_key]['idxs']
                 idxs_limit_points = dataset['collections'][collection_key]['labels'][sensor_key][
@@ -718,15 +721,19 @@ def visualizationFunction(models):
                     # convert from linear idx to x_pix and y_pix indices.
                     y = int(idx / width)
                     x = int(idx - y * width)
-                    cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
+                    drawSquare2D(gui_image, x, y, int(8E-3 * diagonal), (255, 0, 200), thickness=1)
+                    # drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
+
                 # Draw projected points (as dots)
                 for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
                     # print("found idxs_projected")
                     x = int(round(point['x']))
                     y = int(round(point['y']))
+
                     # print(x,y)
                     # color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                    cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
+                    if x < width - 1 and y < height - 1:
+                        cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
 
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 
