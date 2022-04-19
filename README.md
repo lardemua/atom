@@ -118,6 +118,14 @@ rosrun <your_robot_calibration> configure
 
 This will create a set of files for launching the system, configuring rviz, etc.
 
+It is also possible to configure your calibration package with a different configuration file, in the case you have multiple configurations with multiple config.yml files.
+To do this, you can use:
+
+```bash
+rosrun <your_robot_calibration> configure -c new_config_file.yml
+```
+
+
 ## Set initial estimate
 
 Iterative optimization methods are often sensitive to the initial parameter configuration. Here, the optimization parameters represent the poses of each sensor. **ATOM** provides an interactive framework based on rviz which allows the user to set the pose of the sensors while having immediate visual feedback.
