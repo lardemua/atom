@@ -512,6 +512,26 @@ def objectiveFunction(data):
                 # TODO ortogonal e longitudinal
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
                 # print(r.keys())
+                w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
+                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
+                D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
+
+                from_frame = sensor['parent']
+                to_frame = dataset['calibration_config']['calibration_pattern']['link']
+                sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                pts_in_sensor = np.dot(sensor_to_pattern, points_in_pattern)
+
+                pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+
+
+                # Required by the visualization function to publish annotated images
+                idxs_projected = []
+                for idx in range(0, pts_in_image.shape[1]):
+                    idxs_projected.append({'x': pts_in_image[0][idx], 'y': pts_in_image[1][idx]})
+                collection['labels'][sensor_key]['idxs_projected'] = idxs_projected  # store projections
+
+                if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
+                    collection['labels'][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
             else:
                 raise ValueError("Unknown sensor msg_type or modality")
 

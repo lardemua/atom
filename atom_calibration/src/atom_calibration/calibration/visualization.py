@@ -24,6 +24,8 @@ import tf
 import tf2_ros
 from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from cv2 import STEREO_BM_PREFILTER_NORMALIZED_RESPONSE
+
+from atom_calibration.dataset_playback.visualization import getCvDepthImageFromCollectionSensor
 from atom_core.cache import Cache
 from rospy_message_converter import message_converter
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
@@ -693,11 +695,38 @@ def visualizationFunction(models):
             elif sensor['modality'] == 'depth':
                 # Shortcut variables
                 collection = collections[collection_key]
+                image = copy.deepcopy(getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=10000.0))
 
-                # Create image to draw on top
-                image = getCvImageFromDictionaryDepth(collection['data'][sensor_key])
-                gui_image = normalizeDepthImage(image, max_value=5)
-                gui_image = drawLabelsOnImage(collection['labels'][sensor_key], gui_image)
+                width = collection['data'][sensor_key]['width']
+                height = collection['data'][sensor_key]['height']
+                # print(width, height)
+                idxs = dataset['collections'][collection_key]['labels'][sensor_key]['idxs']
+                idxs_limit_points = dataset['collections'][collection_key]['labels'][sensor_key][
+                    'idxs_limit_points']
+                gui_image = np.zeros((height, width, 3), dtype=np.uint8)
+                max_value = 5
+                gui_image[:, :, 0] = image / max_value * 255
+                gui_image[:, :, 1] = image / max_value * 255
+                gui_image[:, :, 2] = image / max_value * 255
+
+                for idx in idxs:
+                    # convert from linear idx to x_pix and y_pix indices.
+                    y = int(idx / width)
+                    x = int(idx - y * width)
+                    cv2.line(gui_image, (x, y), (x, y), (0, 200, 255), 3)
+                for idx in idxs_limit_points:
+                    # convert from linear idx to x_pix and y_pix indices.
+                    y = int(idx / width)
+                    x = int(idx - y * width)
+                    cv2.line(gui_image, (x, y), (x, y), (255, 0, 200), 3)
+                # Draw projected points (as dots)
+                for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
+                    # print("found idxs_projected")
+                    x = int(round(point['x']))
+                    y = int(round(point['y']))
+                    # print(x,y)
+                    # color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                    cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
 
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 
