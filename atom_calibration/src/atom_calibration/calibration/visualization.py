@@ -722,16 +722,11 @@ def visualizationFunction(models):
                     y = int(idx / width)
                     x = int(idx - y * width)
                     drawSquare2D(gui_image, x, y, int(8E-3 * diagonal), (255, 0, 200), thickness=1)
-                    # drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
 
                 # Draw projected points (as dots)
                 for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
-                    # print("found idxs_projected")
                     x = int(round(point['x']))
                     y = int(round(point['y']))
-
-                    # print(x,y)
-                    # color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
                     if x < width - 1 and y < height - 1:
                         cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
 

@@ -45,21 +45,9 @@ def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
 def getDepthPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
     pts_in_pattern_list = []  # collect the points
 
-    # print(_dataset['patterns']['frame']['lines_sampled'].keys())
-    # exit(0)
     for type in _dataset['patterns']['frame']['lines_sampled'].keys():
         for point in _dataset['patterns']['frame']['lines_sampled'][type]:
-            # print(point)
-            # point = [item for item in _dataset['patterns']['corners']][0]
             pts_in_pattern_list.append(point)
-
-    # for point in _dataset['patterns']['transitions']['horizontal']:
-    #     # point = [item for item in _dataset['patterns']['corners']][0]
-    #     pts_in_pattern_list.append(point)
-    #
-    # for point in _dataset['patterns']['transitions']['vertical']:
-    #     # point = [item for item in _dataset['patterns']['corners']][0]
-    #     pts_in_pattern_list.append(point)
 
     return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
                      [item['y'] for item in pts_in_pattern_list],
