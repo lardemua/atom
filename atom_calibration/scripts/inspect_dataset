@@ -154,7 +154,7 @@ def main():
     for sensor_key, sensor in dataset['sensors'].items():
         complete_detections = []
         partial_detections = []
-        if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
+        if sensor['modality'] == 'rgb': # and collection['labels'][sensor_key]['detected']:
             for collection_key, collection in dataset['collections'].items():
                 if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                     partial_detections.append(collection_key)
@@ -224,17 +224,42 @@ def main():
         row = [collection_key, '---']
         is_complete = True
         for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
-                if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
-                    row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
+            # print(sensor_key)
+            # if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
+            #     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
+            #         row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
+            #     else:
+            #         row.append(Fore.BLUE + 'partial' + Style.RESET_ALL)
+            #
+            # elif collection['labels'][sensor_key]['detected']:
+            #     row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
+            # else:
+            #     row.append(Fore.RED + 'not detected' + Style.RESET_ALL)
+            #     is_complete = False
+            if sensor['modality'] == 'rgb':
+                if not collection['labels'][sensor_key]['detected']:
+                    row.append(Fore.RED + 'not detected' + Style.RESET_ALL)
+                    is_complete = False
                 else:
-                    row.append(Fore.BLUE + 'partial' + Style.RESET_ALL)
+                    if len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
+                        row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
+                    else:
+                        row.append(Fore.BLUE + 'partial' + Style.RESET_ALL)
 
-            elif collection['labels'][sensor_key]['detected']:
-                row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
             else:
-                row.append(Fore.RED + 'not detected' + Style.RESET_ALL)
-                is_complete = False
+                if not collection['labels'][sensor_key]['detected']:
+                    row.append(Fore.RED + 'not detected' + Style.RESET_ALL)
+                    is_complete = False
+                else:
+                    row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
+
+            # print(row)
+            #
+            # elif collection['labels'][sensor_key]['detected']:
+            #     row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
+            # else:
+
+
 
         if is_complete:
             row[1] = Fore.GREEN + 'yes' + Style.RESET_ALL
