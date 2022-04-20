@@ -31,7 +31,8 @@ from atom_calibration.calibration.getters_and_setters import (getterCameraIntrin
 from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
-from atom_core.dataset_io import (addNoiseToInitialGuess, filterCollectionsFromDataset, filterSensorsFromDataset,
+from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
+                                  filterCollectionsFromDataset, filterSensorsFromDataset,
                                   getPointCloudMessageFromDictionary, loadResultsJSON, saveResultsJSON)
 from atom_core.naming import generateKey, generateName
 from atom_core.utilities import waitForKeyPress, waitForKeyPress2
@@ -124,19 +125,17 @@ def main():
     # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
     # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
     # related to the pattern pose (we use solve PNP for a camera).
-    dataset["patterns"] = patterns.createPatternLabels(
-        args, dataset
-    )  # TODO: Solve this strange dependency.
+    dataset["patterns"] = patterns.createPatternLabels(args, dataset)  # TODO: Solve this strange dependency.
 
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
 
-    print(
-        "Loaded dataset containing "
-        + str(len(dataset["sensors"].keys()))
-        + " sensors and "
-        + str(len(dataset["collections"].keys()))
-        + " collections."
-    )
+    print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
+          " sensors and " + str(len(dataset["collections"].keys())) + " collections.")
+
+    # ---------------------------------------
+    # --- Verifications
+    # ---------------------------------------
+    checkIfAtLeastOneLabeledCollectionPerSensor(dataset)
 
     # ---------------------------------------
     # --- Store initial values for transformations to be optimized
@@ -151,7 +150,7 @@ def main():
     # ---------------------------------------
     # --- Define selected collection key.
     # ---------------------------------------
-    # For the getters we only need to get one collection. Lets take the first key on the dictionary and always get that
+    # For the getters we only need to get one collection. Lets take the first key in the dictionary and always get that
     # transformation.
     selected_collection_key = list(dataset["collections"].keys())[0]
     print("Selected collection key is " + str(selected_collection_key))
