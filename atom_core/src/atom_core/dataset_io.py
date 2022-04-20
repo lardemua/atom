@@ -480,6 +480,26 @@ def genCollectionPrefix(collection_key, string):
     # return 'c' + str(collection_key) + '_' + str(string)
 
 
+def checkIfAtLeastOneLabeledCollectionPerSensor(dataset):
+    """
+    Verifies if there is at least one collection for each sensor in which the sensor labeled the pattern.
+    Without this the calibration cannot carry on.
+    :param dataset: the dataset
+    """
+
+    for sensor_key in dataset['sensors']:
+        one_detection = False
+        for collection_key in dataset['collections'].keys():
+            if dataset['collections'][collection_key]['labels'][sensor_key]['detected']:
+                one_detection = True
+
+        if one_detection is False:
+            raise ValueError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL +
+                             ' does not have a single collection in which the pattern is labeled.' +
+                             Fore.RED + ' Cannot calibrate this sensor.' + Style.RESET_ALL +
+                             ' Add more collections or remove this sensor.')
+
+
 def filterSensorsFromDataset(dataset, args):
     """
     Filters some sensors from the dataset, using a couple of arguments in arg
