@@ -16,34 +16,36 @@ vehicles: A multi-sensor, multi-modal approach, Robotics and Autonomous Systems 
 3. Aguiar, A., M. Oliveira, E. Pedrosa, and F. Santos, A Camera to LiDAR calibration approach through the Optimization of Atomic
 Transformations, Expert Systems with Applications (2021) p. 114894, ISSN: 0957-4174, DOI: https://doi.org/10.1016/j.eswa.2021.114894, 2021. [Bibtex](docs/bibtexs/Aguiar2021ESWA.bib)
 
-# Table of Contents
+## Table of Contents
 
-- [How to Use - Quick Start](#how-to-use---quick-start)
-- [System calibration - Detailed Description](#system-calibration---detailed-description)
-  * [Setup you environment](#setup-you-environment)
-  * [Creating a calibration package](#creating-a-calibration-package)
-  * [Configuring a calibration package](#configuring-a-calibration-package)
-  * [Set initial estimate](#set-initial-estimate)
-  * [Collect data](#collect-data)
-  * [Calibrate sensors](#calibrate-sensors)
-          + [Advanced usage / debug](#advanced-usage---debug)
-- [Examples](#examples)
-    + [Atlascar2](https://github.com/lardemua/atlascar2)
-    + [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)
-    + [AgrobV2](https://github.com/aaguiar96/agrob)
-- [Evaluating your calibration](#evaluating-your-calibration)
-  + [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
-  + [LiDAR-to-Camera evaluation](#lidar-to-camera-evaluation)
-  + [Point cloud image projection](#point-cloud-image-projection)
-- [Contributors](#contributors)
-- [Maintainers](#maintainers)
+- [<img align="left" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215"> ATOM Calibration](#-atom-calibration)
+          - [A Calibration Framework using **A**tomic **T**ransformations **O**ptimization **M**ethod](#a-calibration-framework-using-atomic-transformations-optimization-method)
+  - [Table of Contents](#table-of-contents)
+  - [How to Use - Quick Start](#how-to-use---quick-start)
+  - [System calibration - Detailed Description](#system-calibration---detailed-description)
+    - [Setup you environment](#setup-you-environment)
+    - [Creating a calibration package](#creating-a-calibration-package)
+    - [Configuring a calibration package](#configuring-a-calibration-package)
+    - [Set initial estimate](#set-initial-estimate)
+    - [Collect data](#collect-data)
+  - [Examples](#examples)
+    - [Atlascar2](#atlascar2)
+    - [IrisUA - ur10e](#irisua---ur10e)
+    - [AgrobV2](#agrobv2)
+  - [Evaluating your calibration](#evaluating-your-calibration)
+      - [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
+      - [LiDAR-to-Camera evaluation](#lidar-to-camera-evaluation)
+      - [Point cloud image projection](#point-cloud-image-projection)
+  - [Installation](#installation)
+  - [Contributors](#contributors)
+  - [Maintainers](#maintainers)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 
-# How to Use - Quick Start
+## How to Use - Quick Start
 
-Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline:
+Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline. These are instructions for quick starting your robotic system calibration. If you need more details read through the [detailed description](#System-calibration---Detailed-Description) below.
 
 
 1. **Create a calibration package** for you robotic system
@@ -55,20 +57,26 @@ _<your_robot_calibration>/calibration/config.yml_ with your system information.
 ```bash
 rosrun <your_robot_calibration> configure 
 ```
-3. **Set initial estimate** - deployment of interactive tools based on rviz that allow the user to set the pose of the sensors to be calibrated, while receiving visual feedback;
+3. **Set initial estimate** [_optional_] - deployment of interactive tools based on rviz that allow the user to set the pose of the sensors to be calibrated, while receiving visual feedback;
 ```bash
 roslaunch <your_robot_calibration> set_initial_estimate.launch 
 ```
-4. **Collect Data** - Extraction of snapshots of data (a.k.a., collections)
+4. **Collect Data** - Extraction of snapshots of data (a.k.a., collections) which constitute an ATOM dataset:
 ```bash
 roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
 ```
-5. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
+5. **Dataset Review & Manual Annotation** [_optional_] - it is possible to visualize the labels automatically produced during the collection stage
+   
+   ```bash
+roslaunch <your_robot_calibration> set_initial_estimate.launch 
+`
+1. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
 ```
 
-# System calibration - Detailed Description
+
+## System calibration - Detailed Description
 
 To calibrate your robot you must define your robotic system, (e.g. <your_robot>). You should also have a **system description** in the form of an urdf or a xacro file(s). This is normally stored in a ros package named **<your_robot>_description**. 
 
@@ -76,16 +84,16 @@ Finally, **ATOM** requires a bagfile with a recording of the data from the senso
 
 It is also possible to record compressed images, since **ATOM** can decompress them while playing back the bagfile. Here is a [launch file example](https://github.com/lardemua/atlascar2/blob/master/atlascar2_bringup/launch/record_sensor_data.launch) which records compressed images.
 
-## Setup you environment 
+### Setup you environment 
 
-We often use two enviroment variables to allow for easy cross machine access to bagfiles and datasets. If you want to use these (it is optional) you can also add these lines to your _.bashrc_
+We often use two enviroment variables to allow for easy cross machine access to bagfiles and datasets. If you want to use these (it is optional) you can also add these lines to your _.bashrc_:
 
 ```bash
 export ROS_BAGS="$HOME/bagfiles"
 export ATOM_DATASETS="$HOME/datasets"
 ```
 
-And then you can refer to these environment variables when providing paths to atom scripts, e.g.
+and then you can refer to these environment variables when providing paths to atom scripts, e.g.:
 
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json
@@ -93,7 +101,7 @@ roslaunch <your_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS
 
 and you can also refer to them inside the [calibration configuration file](https://github.com/lardemua/atlascar2/blob/0c065508f325fb57e0439c1ba2e00f9468cd73e7/atlascar2_calibration/calibration/config.yml#L14)
 
-## Creating a calibration package
+### Creating a calibration package
 
 To start you should create a calibration ros package specific for your robot. **ATOM** provides a script for this:
 ```bash
@@ -105,10 +113,12 @@ This will create the ros package <your_robot_calibration> in the current folder,
 rosrun atom_calibration create_calibration_pkg --name ~/my/path/<your_robot_calibration>
 ```
 
-## Configuring a calibration package
+### Configuring a calibration package
 
 Once your calibration package is created you will have to configure the calibration procedure by editing the 
-_<your_robot_calibration>/calibration/config.yml_ file with your system information. Here is an example of a [config.yml](templates/config.yml) file.
+_<your_robot_calibration>/calibration/config.yml_ file with your system information. 
+
+Here are examples of calibration **config.yml** files for an [autonomous vehicle](https://github.com/lardemua/atlascar2/blob/master/atlascar2_calibration/calibration/config.yml) and for a [simulated hand eye system](https://github.com/miguelriemoliveira/mmtbot/blob/main/mmtbot_calibration/calibration/config.yml)
 
 After filling the config.yml file, you can run the package configuration:
 
@@ -116,17 +126,35 @@ After filling the config.yml file, you can run the package configuration:
 rosrun <your_robot_calibration> configure 
 ```
 
-This will create a set of files for launching the system, configuring rviz, etc.
+This will go through a series of varifications, and create a set of files for launching the system, configuring rviz, etc.
 
-It is also possible to configure your calibration package with a different configuration file, in the case you have multiple configurations with multiple config.yml files.
-To do this, you can use:
+It is also possible to configure your calibration package with a different configuration file, in the case you have multiple configurations with multiple config.yml files. To do this, you can use:
 
 ```bash
 rosrun <your_robot_calibration> configure -c new_config_file.yml
 ```
 
+If you want to use other arguments of the calibration package configuration you may run:
 
-## Set initial estimate
+```bash
+rosrun atom_calibration configure_calibration_package  --name <your_robot_calibration> <other options>
+```
+
+```bash
+usage: configure_calibration_pkg [-h] -n NAME [-utf] [-cfg CONFIG_FILE]
+
+-h, --help            show this help message and exit
+-n NAME, --name NAME  package name
+-utf, --use_tfs       Use transformations in the bag file instead of generating new tfs from the xacro,
+                      joint_state_msgs and robot state publisher.
+-cfg CONFIG_FILE, --config_file CONFIG_FILE
+                      Specify if you want to configure the calibration package with a specific configutation file.
+                      If this flag is not given, the standard config.yml ill be used.
+```
+
+
+
+### Set initial estimate
 
 Iterative optimization methods are often sensitive to the initial parameter configuration. Here, the optimization parameters represent the poses of each sensor. **ATOM** provides an interactive framework based on rviz which allows the user to set the pose of the sensors while having immediate visual feedback.
 
@@ -139,11 +167,13 @@ Here are a couple of examples:
 
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)
 ------------- | ------------- | -------------
-<img align="center" src="docs/set_initial_estimate_atlascar2.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_initial_estimate.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/>
+<img align="center" src="docs/set_initial_estimate_atlascar2.gif" width="450"/> | <img align="center" src="docs/agrob_initial_estimate.gif" width="450"/> | <img align="center" src="docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/>
 
-## Collect data 
 
-To run a system calibration, one requires sensor data collected at different time instants. We refer to these as **data collections**. To collect data, the user should launch:
+
+### Collect data 
+
+To run a system calibration, one requires sensor data collected at different time instants. We refer to these as **data collections** or simply **collections**. To collect data, the user should launch:
 ```bash
 roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder>
 ```
@@ -166,13 +196,13 @@ Here are some examples of the system collecting data:
 
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration) 
 ------------- | ------------- | -------------
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_data_collection.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
+<img align="center" src="docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="docs/agrob_data_collection.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
 
 A dataset is a folder which contains a set of collections. There, a _dataset.json_ file stores all the information required for the calibration. There are also in the folder images and point clouds associated with each collection.
 
 <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/viewing_data_collected_json.gif" width="600"/> 
 
-## Calibrate sensors
+### Calibrate sensors
 
 Finally, a system calibration is called through:
 
@@ -198,7 +228,7 @@ You can use a couple of launch file arguments to configure the calibration proce
       csf:='lambda name: int(name) < 7'
     ```
 
-###### Advanced usage / debug
+##### Advanced usage / debug
 
 Alternatively, for debugging the calibrate script it is better not to have it executed with a bunch of other scripts which is what happens when you call the launch file. You can run everything with the launch excluding without the calibrate script
 
@@ -274,7 +304,7 @@ Here is an example of how the calibration procedure should look like.
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/1NOEBKDMIpk/0.jpg)](https://www.youtube.com/watch?v=1NOEBKDMIpk)
 
 
-# Examples
+## Examples
 
 So far, we have used **ATOM** to successfully calibrate several robotic platforms:
 
@@ -289,9 +319,9 @@ This includes several variants of the hand-eye calibration problem.
 ### [AgrobV2](https://github.com/aaguiar96/agrob)
  Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
 
-#  Evaluating your calibration
+##  Evaluating your calibration
 
-### Camera-to-Camera evaluation
+#### Camera-to-Camera evaluation
 
 Evaluates de camera-to-camera reprojection error with the following metrics:
 - X and Y errors
@@ -322,7 +352,7 @@ How to run:
 rosrun atom_evaluation camera_to_camera_evalutation.py -train_json <path_to_train_file> -test_json <path_to_test_file> -ss <source_sensor_name> -ts <target_sensor_name>
 ```
 
-### LiDAR-to-Camera evaluation
+#### LiDAR-to-Camera evaluation
 
 Evaluates the LiDAR-to-Camera calibration through the reprojection of the pattern limit 3D points into the image using the following metrics:
 - X and Y errors
@@ -375,7 +405,7 @@ The result should be someting like this (for each image):
 
 <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/lidar2cam_evaluation.png" width="450"/>
 
-### Point cloud image projection
+#### Point cloud image projection
 `atom_evaluation` also allows the user to visualize the point cloud projected into an image to check the calibration.
 ``` bash
 usage: point_cloud_to_image.py [-h] -json JSON_FILE -ls LIDAR_SENSOR -cs CAMERA_SENSOR
@@ -393,16 +423,12 @@ How to run:
 rosrun atom_evaluation point_cloud_to_image.py -json <path_to_test_json> -ls <lidar_sensor_name> -cs <camera_sensor_name>
 ```
 
-# Installation 
+## Installation 
 
-Install pip3
-
-sudo apt-get install python3-pip
-
-sudo pip3 install -r requirements.txt
+    sudo pip3 install -r requirements.txt
 
 
-# Contributors
+## Contributors
 
  * Miguel Riem Oliveira - University of Aveiro
  * Afonso Castro - University of Aveiro
@@ -411,7 +437,7 @@ sudo pip3 install -r requirements.txt
  * André Aguiar - INESC TEC
  * Daniela Rato - University of Aveiro
 
-# Maintainers
+## Maintainers
 
  * Miguel Riem Oliveira - University of Aveiro
  * Daniela Rato - University of Aveiro
