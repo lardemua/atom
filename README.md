@@ -32,6 +32,7 @@ Transformations, Expert Systems with Applications (2021) p. 114894, ISSN: 0957-4
     - [Atlascar2](#atlascar2)
     - [IrisUA - ur10e](#irisua---ur10e)
     - [AgrobV2](#agrobv2)
+    - [MMTBot](#mmtbot)
   - [Evaluating your calibration](#evaluating-your-calibration)
       - [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
       - [LiDAR-to-Camera evaluation](#lidar-to-camera-evaluation)
@@ -47,6 +48,7 @@ Transformations, Expert Systems with Applications (2021) p. 114894, ISSN: 0957-4
 
 Unlike most other calibration approaches, **ATOM** offers tools to address the complete calibration pipeline. These are instructions for quick starting your robotic system calibration. If you need more details read through the [detailed description](#System-calibration---Detailed-Description) below.
 
+Also, you can take a look at the ATOM [youtube playlist](https://www.youtube.com/watch?v=BYs1-H9vh0s&list=PLQN09mzV5mbI4h5IQt3Eu9kugSk-08mnY).
 
 1. **Create a calibration package** for you robotic system
 ```bash
@@ -194,13 +196,14 @@ You can use a couple of launch file arguments to configure the calibration proce
 
 Here are some examples of the system collecting data:
 
-[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration) 
+[Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye to_base](https://github.com/iris-ua/iris_ur10e_calibration)
 ------------- | ------------- | -------------
-<img align="center" src="docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="docs/agrob_data_collection.gif" width="450"/> | <img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
+<img align="center" src="docs/collect_data_atlascar2.gif" width="450"/>  | <img align="center" src="docs/agrob_data_collection.gif" width="450"/> | <img align="center" src="docs/ur10e_eye_to_base_collect_data.gif" width="450"/>
 
 A dataset is a folder which contains a set of collections. There, a _dataset.json_ file stores all the information required for the calibration. There are also in the folder images and point clouds associated with each collection.
 
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/viewing_data_collected_json.gif" width="600"/> 
+<img align="center" src="docs/viewing_data_collected_json.gif" width="600"/> 
+
 
 ### Calibrate sensors
 
@@ -209,7 +212,6 @@ Finally, a system calibration is called through:
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
 ```
-
 
 You can use a couple of launch file arguments to configure the calibration procedure, namely
 
@@ -297,9 +299,11 @@ optional arguments:
 
 It is also possible to call some of these through the launch file. Check the launch file to see how.
 
+ATOM provides extensive visualization possibilities while running the calibration optimization procedure. To visualize in ROS Rviz use the -rv flag.
+
 Here is an example of how the calibration procedure should look like.
 
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/agrob_calibration.gif" width="600"/> 
+<img align="center" src="docs/agrob_calibration.gif" width="600"/> 
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/1NOEBKDMIpk/0.jpg)](https://www.youtube.com/watch?v=1NOEBKDMIpk)
 
@@ -319,7 +323,14 @@ This includes several variants of the hand-eye calibration problem.
 ### [AgrobV2](https://github.com/aaguiar96/agrob)
  Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
 
+### [MMTBot](https://github.com/miguelriemoliveira/mmtbot)
+ A simulated robotic system containing a manipulator, two rgb cameras and one 3D lidar, with the goal of reserching how ATOM can calibration hand-eye systems.
+ 
 ##  Evaluating your calibration
+
+After the system is calibrated one common concern is to be able to assess the accuracy of the produced calibration. ATOM provides several evaluation scripts for this purpose.
+
+Unlike ATOM which calibrates all sensors simultaneously, evaluations are performed in pairs of sensors, which facilitates comparisons with other pairwise calibration approaches, e.g. [opencv's stereo calibration](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html). Thus, there is a different script for each combination of modalities.
 
 #### Camera-to-Camera evaluation
 
@@ -403,7 +414,10 @@ How to annotate:
 
 The result should be someting like this (for each image):
 
-<img align="center" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/lidar2cam_evaluation.png" width="450"/>
+<img align="center" src="docs/lidar2cam_evaluation.png" width="450"/>
+
+
+<!-- #TODO #422 Daniela, add here instructions for the depht to camera and depth to lidar calibrations!-->
 
 #### Point cloud image projection
 `atom_evaluation` also allows the user to visualize the point cloud projected into an image to check the calibration.
