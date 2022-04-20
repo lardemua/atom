@@ -18,8 +18,6 @@ Transformations, Expert Systems with Applications (2021) p. 114894, ISSN: 0957-4
 
 ## Table of Contents
 
-- [<img align="left" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215"> ATOM Calibration](#-atom-calibration)
-          - [A Calibration Framework using **A**tomic **T**ransformations **O**ptimization **M**ethod](#a-calibration-framework-using-atomic-transformations-optimization-method)
   - [Table of Contents](#table-of-contents)
   - [How to Use - Quick Start](#how-to-use---quick-start)
   - [System calibration - Detailed Description](#system-calibration---detailed-description)
@@ -42,7 +40,6 @@ Transformations, Expert Systems with Applications (2021) p. 114894, ISSN: 0957-4
   - [Maintainers](#maintainers)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 ## How to Use - Quick Start
 
