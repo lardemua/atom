@@ -334,50 +334,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             if sensor['modality'] == 'lidar3d':
 
                 # Add labelled points to the marker
-                frame_id = genCollectionPrefix(
-                    collection_key, collection['data'][sensor_key]['header']['frame_id'])
-#                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-#                                 ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-#                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(
-#                                     0),
-#                                 pose=Pose(position=Point(
-#                                     x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-#                                 scale=Vector3(x=0.05, y=0.05, z=0.05),
-#                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-#                                                 g=graphics['collections'][collection_key]['color'][1],
-#                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
-#                                 )
-#
-#                 points = getPointsInSensorAsNPArray(
-#                     collection_key, sensor_key, 'idxs', dataset)
-#
-#                 for idx in range(0, points.shape[1]):
-#                     marker.points.append(
-#                         Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
-#
-#                 markers.markers.append(copy.deepcopy(marker))
-#
-#                 # Add limit points to the marker, this time with larger spheres
-#                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-#                                 ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
-#                                 frame_locked=True,
-#                                 type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(
-#                                     0),
-#                                 pose=Pose(position=Point(x=0, y=0, z=0),
-#                                           orientation=Quaternion(x=0, y=0, z=0, w=1)),
-#                                 scale=Vector3(x=0.07, y=0.07, z=0.07),
-#                                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-#                                                 g=graphics['collections'][collection_key]['color'][1],
-#                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
-#                                 )
-#
-#                 points = getPointsInSensorAsNPArray(
-#                     collection_key, sensor_key, 'idxs_limit_points', dataset)
-#                 for idx in range(0, points.shape[1]):
-#                     marker.points.append(
-#                         Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
-#
-#                 markers.markers.append(copy.deepcopy(marker))
+                frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
 
                 # Add 3D lidar data
                 original_pointcloud_msg = getPointCloudMessageFromDictionary(
@@ -393,10 +350,6 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                    is_dense=original_pointcloud_msg.is_dense)
 
                 graphics['ros']['sensors'][sensor_key]['collections'][collection_key] = {}
-                # graphics['ros']['sensors'][sensor_key]['collections'][collection_key]['PubLabeled'] = rospy.Publisher(
-                #     '~labeled_data', MarkerArray, queue_size=0, latch=True)
-                # graphics['ros']['sensors'][sensor_key]['collections'][collection_key]['MarkersLabeled'] = markers
-
                 labeled_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='3d')
                 graphics['ros']['sensors'][sensor_key]['PubPointCloud'] = rospy.Publisher(
                     labeled_topic, PointCloud2, queue_size=0, latch=True)
@@ -405,79 +358,12 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -----------------------------------------------------------------------------------------------------
     # -------- Robot meshes
     # -----------------------------------------------------------------------------------------------------
-
-    # Evaluate for each link if it may move or not (movable or immovalbe), to see if it needs to be drawn for each
-    # collection. This is done by comparing the several transformations from the world_link to the <link> obtained
-    # from the collections.
-    immovable_links = []
-    movable_links = []
-    for link in xml_robot.links:  # cycle all links
-
-        # print(dataset['calibration_config']
-        #       ['world_link'] + ' to ' + link.name + ':')
-        first_time = True
-        for collection_key, collection in dataset['collections'].items():
-            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name,
-                                                    collection['transforms'])
-            if first_time:
-                first_time = False
-                transform_first_time = transform
-            elif not np.array_equal(transform_first_time, transform):
-                movable_links.append(link.name)
-                break
-
-        if link.name not in movable_links:
-            immovable_links.append(link.name)
-
-    # print('immovable links are: ' + str(immovable_links))
-    # print('movable links are: ' + str(movable_links))
-
-    # Check whether the robot is static, in the sense that all of its joints are fixed. If so, for efficiency purposes,
-    # only one robot mesh (from the selected collection) is published.
-    if args['all_joints_fixed']:  # assume the robot is static
-        all_joints_fixed = True
-        print('Robot is assumed to have all joints fixed.')
-    else:  # run automatic detection
-        all_joints_fixed = True
-        for joint in xml_robot.joints:
-            if not joint.type == 'fixed':
-                print('Robot has at least joint ' + joint.name +
-                      ' non fixed. Will render all collections')
-                all_joints_fixed = False
-                break
-
-    markers = MarkerArray()
-    if all_joints_fixed:  # render a single robot mesh
-        print('Robot has all joints fixed. Will render only collection ' +
-              selected_collection_key)
+    graphics['ros']['robot_mesh_markers'] = {'collections': {}}
+    for collection_key, collection in dataset['collections'].items():
         rgba = [.5, .5, .5, 1]  # best color we could find
-        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
-                              namespace='immovable',
-                              rgba=rgba)
-        markers.markers.extend(m.markers)
-
-    else:  # render robot meshes for all collections
-        print('Robot has some dynamic joints. Will use advanced rendering ...')
-
-        # Draw immovable links
-        rgba = [.5, .5, .5, 1]  # best color we could find
-        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
-                              namespace='immovable',
-                              rgba=rgba, skip_links=movable_links)
-        markers.markers.extend(m.markers)
-
-        # Draw movable links
-        for collection_key, collection in dataset['collections'].items():
-            rgba = graphics['collections'][collection_key]['color']
-            rgba[3] = 0.2  # change the alpha
-            m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                  namespace=collection_key,
-                                  rgba=rgba, skip_links=immovable_links)
-            markers.markers.extend(m.markers)
-
-           
-
-    graphics['ros']['robot_mesh_markers'] = markers
+        markers = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
+                                    namespace='robot_mesh', rgba=rgba)
+        graphics['ros']['robot_mesh_markers']['collections'][collection_key] = markers
 
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
@@ -623,11 +509,15 @@ def visualizationFunction(models, selection, clicked_points=None):
         graphics['ros']['Counter'] = 0
 
     # Update markers stamp, so that rviz uses newer transforms to compute their poses.
-    for marker in graphics['ros']['robot_mesh_markers'].markers:
-        marker.header.stamp = now
+    # for marker in graphics['ros']['robot_mesh_markers'].markers:
+        # marker.header.stamp = now
 
     # Publish the meshes
-    #  graphics['ros']['publisher_models'].publish(graphics['ros']['robot_mesh_markers'])
+    markers = graphics['ros']['robot_mesh_markers']['collections'][selected_collection_key]
+    for marker in markers.markers:
+        marker.header.stamp = now
+
+    graphics['ros']['publisher_models'].publish(markers)
 
     # Update timestamp for the patterns markers
     for marker in graphics['ros']['MarkersPattern'].markers:
@@ -690,7 +580,7 @@ def visualizationFunction(models, selection, clicked_points=None):
     # Publish the pattern data
     marker_array_1 = MarkerArray()
     for marker in graphics['ros']['MarkersPattern'].markers:
-        prefix = marker.header.frame_id[:3]
+        prefix = marker.header.frame_id[: 3]
         if prefix == 'c' + str(selected_collection_key) + '_':
             marker_array_1.markers.append(marker)
             marker_array_1.markers[-1].action = Marker.ADD
@@ -699,21 +589,6 @@ def visualizationFunction(models, selection, clicked_points=None):
             marker_array_1.markers.append(marker)
             marker_array_1.markers[-1].action = Marker.DELETE
     graphics['ros']['PubPattern'].publish(marker_array_1)
-
-    # Create a new marker array which contains only the marker related to the selected collection
-    # Publish the robot_mesh_
-    marker_array_2 = MarkerArray()
-    for marker in graphics['ros']['robot_mesh_markers'].markers:
-        prefix = marker.header.frame_id[:3]
-        if prefix == 'c' + str(selected_collection_key) + '_':
-            marker_array_2.markers.append(marker)
-            marker_array_2.markers[-1].action = Marker.ADD
-        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(
-                previous_selected_collection_key) + '_':
-            marker_array_2.markers.append(marker)
-            marker_array_2.markers[-1].action = Marker.DELETE
-    graphics['ros']['publisher_models'].publish(
-        graphics['ros']['robot_mesh_markers'])
 
     # Create a new marker array which contains only the marker related to the selected collection
     # Publish the robot_mesh_
