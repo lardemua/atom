@@ -683,18 +683,13 @@ if __name__ == "__main__":
 
         print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + modality + ')')
 
-        # if msg_type == 'sensor_msgs/CompressedImage' or \
-        #         msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
-        # TODO check if depth should be here or not
-        if modality == 'rgb' or modality == 'depth':
-
+        if modality == 'rgb':
             # Raw image
             labeled_topic = generateLabeledTopic(topic, type='2d')
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels-Image',
                                                                       'Image_Topic': labeled_topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-        # elif msg_type == 'sensor_msgs/LaserScan':
         elif modality == 'lidar2d':
             # Raw data
             labeled_topic = generateLabeledTopic(topic, type='3d')
@@ -703,13 +698,26 @@ if __name__ == "__main__":
                                                                           'Color': color})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-        # elif msg_type == 'sensor_msgs/PointCloud2':
         elif modality == 'lidar3d':
             # Raw data
             labeled_topic = generateLabeledTopic(topic, type='3d')
             rendered = env.get_template('/rviz/PointCloud2.rviz').render(
                 c={'Name': sensor_key + '-Labels3d-PointCloud2', 'Topic': labeled_topic, 'Color': color,
                    'Color_Transformer': 'RGB8', 'Style': 'Spheres', 'Size__m_': 0.02, 'Alpha': 1})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+        elif modality == 'depth':
+
+            # Raw image
+            labeled_topic = generateLabeledTopic(topic, type='2d')
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels-Image',
+                                                                      'Image_Topic': labeled_topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+            # 3D Rviz markers of Depth image 3D points corresponding to idxs and idxs_limit
+            labeled_topic = generateLabeledTopic(topic, type='3d')
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Labels-3D',
+                                                                            'Marker_Topic': labeled_topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         else:
@@ -732,22 +740,19 @@ if __name__ == "__main__":
     # Add interactive maker display for showing robot meshes
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         c={'Name': 'RobotMeshes-MarkerArray',
-           'Marker_Topic': 'calibrate/robot_meshes'}
-    )
+           'Marker_Topic': 'calibrate/robot_meshes'})
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Add a maker array display for showing the patterns
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         c={'Name': 'Patterns-MarkerArray',
-           'Marker_Topic': 'calibrate/patterns'}
-    )
+           'Marker_Topic': 'calibrate/patterns'})
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Add a maker array display for miscellaneous information
     rendered = env.get_template('/rviz/MarkerArray.rviz').render(
         c={'Name': 'Miscellaneous-MarkerArray',
-           'Marker_Topic': 'calibrate/Miscellaneous'}
-    )
+           'Marker_Topic': 'calibrate/Miscellaneous'})
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Check if 2d lidars exist, if so add laser beams marker
@@ -830,5 +835,7 @@ if __name__ == "__main__":
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(set_initial_estimate_launch_file) +
           Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(data_collection_launch_file) +
+          Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(dataset_playback_launch_file) +
           Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(calibrate_launch_file) + Style.RESET_ALL)

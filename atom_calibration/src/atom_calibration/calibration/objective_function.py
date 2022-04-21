@@ -1,16 +1,16 @@
 # stdlib
-import atom_core.atom
 import math
 import copy
+from datetime import datetime
 
+import atom_core.atom
 import chardet
 import numpy as np
 import ros_numpy
-from scipy.spatial import distance
-from datetime import datetime
 
 # 3rd-party
 import OptimizationUtils.utilities as opt_utilities
+from scipy.spatial import distance
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
@@ -22,10 +22,10 @@ from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
 from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 
-
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 @Cache(args_to_ignore=['_dataset'])
 def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
@@ -101,6 +101,50 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
 
 @Cache(args_to_ignore=['_dataset'])
 def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
+    # getting image and detected idxs
+    img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+
+    # getting information from camera info
+    pinhole_camera_model = PinholeCameraModel()
+    pinhole_camera_model.fromCameraInfo(
+        message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                            _dataset['sensors'][_sensor_key]['camera_info']))
+    f_x = pinhole_camera_model.fx()
+    f_y = pinhole_camera_model.fy()
+    c_x = pinhole_camera_model.cx()
+    c_y = pinhole_camera_model.cy()
+    w = pinhole_camera_model.fullResolution()[0]
+    # w = size[0]
+
+    # initialize lists
+    xs = []
+    ys = []
+    zs = []
+    for idx in idxs:  # iterate all points
+
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+
+        # get distance value for this pixel coordinate
+        distance = img[y_pix, x_pix]
+        if np.isnan(distance):  # Cannot use this point with distance nan
+            print('found nan distance for idx ' + str(idx))
+            continue
+
+        # compute 3D point and add to list of coordinates xs, ys, zs
+        x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+    homogeneous = np.ones((len(xs)))
+    points = np.array((xs, ys, zs, homogeneous), dtype=float)
+    return points
+
+
+def getPointsInDepthSensorAsNPArrayNonCached(_collection_key, _sensor_key, _label_key, _dataset):
     # getting image and detected idxs
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
@@ -256,7 +300,7 @@ def objectiveFunction(data):
                     rname = 'c' + str(collection_key) + '_' + str(sensor_key) + '_corner' + str(label_idx['id'])
                     r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
                                        (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer[
-                                   'rgb']
+                        'rgb']
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
@@ -266,8 +310,6 @@ def objectiveFunction(data):
 
                 if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
                     collection['labels'][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
-
-
 
             # elif sensor['msg_type'] == 'LaserScan':
             elif sensor['modality'] == 'lidar2d':
@@ -319,14 +361,14 @@ def objectiveFunction(data):
                 rname = collection_key + '_' + sensor_key + '_eright'
                 r[rname] = float(np.amin(distance.cdist(extrema_right.transpose(),
                                                         pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
-                           normalizer['lidar2d']
+                    normalizer['lidar2d']
 
                 # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
                 extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
                 rname = collection_key + '_' + sensor_key + '_eleft'
                 r[rname] = float(np.amin(distance.cdist(extrema_left.transpose(),
                                                         pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
-                           normalizer['lidar2d']
+                    normalizer['lidar2d']
 
                 # --- Residuals: Longitudinal distance for inner points
                 pts = []
@@ -346,7 +388,7 @@ def objectiveFunction(data):
 
                     rname = collection_key + '_' + sensor_key + '_inner_' + str(idx)
                     r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean'))) / \
-                               normalizer['lidar2d']
+                        normalizer['lidar2d']
 
                 # --- Residuals: Beam direction distance from point to chessboard plan
                 # For computing the intersection we need:
@@ -448,7 +490,7 @@ def objectiveFunction(data):
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(distance.cdist(m_pt,
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
-                               normalizer['lidar3d']
+                        normalizer['lidar3d']
                 # ------------------------------------------------------------------------------------------------
                 # print('Objective function for ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
 
@@ -482,7 +524,6 @@ def objectiveFunction(data):
                     if np.isnan(value):
                         print('Sensor ' + sensor_key + ' residual ' + rname + ' is nan')
                         print(value)
-
 
                 # print('ORTOGONAL RESIDUALS ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now).total_seconds()) + ' secs.')
@@ -519,7 +560,7 @@ def objectiveFunction(data):
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(distance.cdist(m_pt,
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
-                               normalizer['depth']
+                        normalizer['depth']
                 # print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
                 # print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now_i).total_seconds()) + ' secs.')
@@ -527,8 +568,7 @@ def objectiveFunction(data):
                 # inspiração no LiDAR mas transformar xpix ypix em X,Y no ref da câmera
                 # print(r.keys())
 
-
-                #PROJECT CORNER POINTS TO SENSOR
+                # PROJECT CORNER POINTS TO SENSOR
                 pts_in_pattern = getDepthPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
 
                 w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
@@ -541,7 +581,6 @@ def objectiveFunction(data):
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
                 pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
-
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []
