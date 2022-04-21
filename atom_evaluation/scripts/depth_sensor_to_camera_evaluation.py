@@ -104,16 +104,16 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-ss", "--source_sensor", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-ts", "--target_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-ds", "--depth_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-cs", "--rgb_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     # ap.add_argument("-ua", "--use_annotation", help="If true, the limit points will be manually annotated.",
     #                 action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
-    source_sensor = args['source_sensor']
-    target_sensor = args['target_sensor']
+    depth_sensor = args['depth_sensor']
+    rgb_sensor = args['rgb_sensor']
     show_images = args['show_images']
     # use_annotation = args['use_annotation']
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     f = open(test_json_file, 'r')
     test_dataset = json.load(f)
 
-    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + target_sensor + ".json"
+    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + rgb_sensor + ".json"
     if os.path.exists(annotation_file) is False:
         raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
         exit(0)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                            train_dataset['sensors'][source_sensor]['camera_info']))
+                                                            train_dataset['sensors'][depth_sensor]['camera_info']))
 
 
     print(Fore.BLUE + '\nStarting evalutation...')
@@ -195,8 +195,8 @@ if __name__ == "__main__":
 
     delta_total = []
 
-    from_frame = test_dataset['calibration_config']['sensors'][target_sensor]['link']
-    to_frame = test_dataset['calibration_config']['sensors'][source_sensor]['link']
+    from_frame = test_dataset['calibration_config']['sensors'][rgb_sensor]['link']
+    to_frame = test_dataset['calibration_config']['sensors'][depth_sensor]['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         # ---------------------------------------
@@ -204,12 +204,12 @@ if __name__ == "__main__":
         # ---------------------------------------
         depth2cam = atom_core.atom.getTransform(from_frame, to_frame,
                                               test_dataset['collections'][collection_key]['transforms'])
-        pts_in_image = depthToImage(collection, test_json_file, source_sensor, target_sensor, depth2cam, pinhole_camera_model)
+        pts_in_image = depthToImage(collection, test_json_file, depth_sensor, rgb_sensor, depth2cam, pinhole_camera_model)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
-        filename = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
+        filename = os.path.dirname(test_json_file) + '/' + collection['data'][rgb_sensor]['data_file']
         print (filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
