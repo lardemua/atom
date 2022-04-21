@@ -6,6 +6,7 @@ import copy
 import math
 import struct
 from re import I
+from tokenize import generate_tokens
 
 # 3rd-party
 import cv2
@@ -45,6 +46,62 @@ from visualization_msgs.msg import Marker, MarkerArray
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
+
+def createDepthMarkers3D(dataset, sensor_key, collection_key, color=(255, 255, 0, 0.5),
+                         stamp=None, cached=False, frame_id=None, namespace=None):
+
+    if stamp is None:
+        stamp = rospy.Time.now()
+
+    collection = dataset['collections'][collection_key]
+
+    if frame_id is None:
+        frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
+
+    if namespace is None:
+        namespace = str(collection_key) + '-' + str(sensor_key)
+
+    markers = MarkerArray()
+    # Add labelled points to the marker
+    marker = Marker(
+        header=Header(frame_id=frame_id, stamp=stamp),
+        ns=namespace,
+        id=0, frame_locked=True, type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+        pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+        scale=Vector3(x=0.01, y=0.01, z=0.01),
+        color=ColorRGBA(r=color[0], g=color[1], b=color[2], a=color[3]))
+
+    if cached:
+        points = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+    else:
+        points = getPointsInDepthSensorAsNPArrayNonCached(collection_key, sensor_key, 'idxs', dataset)
+
+    for idx in range(0, points.shape[1]):
+        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+
+    markers.markers.append(copy.deepcopy(marker))
+
+    # Add limit points to the marker, this time with larger cubes
+    marker = Marker(header=Header(frame_id=frame_id, stamp=stamp),
+                    ns=namespace + '-limit_points', id=0,
+                    frame_locked=True,
+                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                    pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                    scale=Vector3(x=0.05, y=0.05, z=0.05),
+                    color=ColorRGBA(r=color[0], g=color[1], b=color[2], a=color[3]))
+
+    if cached:
+        points = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+    else:
+        points = getPointsInDepthSensorAsNPArrayNonCached(collection_key, sensor_key, 'idxs_limit_points', dataset)
+
+    for idx in range(0, points.shape[1]):
+        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+
+    markers.markers.append(copy.deepcopy(marker))
+
+    return markers
 
 
 def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _dataset):
@@ -249,18 +306,22 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Create 3D Labels  (only for lidar3d and depth)
     # Note: Republish new labeled point clouds because the labels must be redrawn as they change position
     # ----------------------------------------------------------------------------------------
+
     graphics['ros']['PubPointCloud'] = dict()
     for sensor_key, sensor in dataset['sensors'].items():
 
-        if sensor['modality'] not in ['lidar2d', 'lidar3d', 'depht']:
+        if sensor['modality'] not in ['lidar2d', 'lidar3d', 'depth']:
             continue
 
         markers = MarkerArray()
         graphics['ros']['sensors'][sensor_key] = {'collections': {}}
 
         for collection_key, collection in dataset['collections'].items():
-            # if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
-            #     continue
+
+            if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
+                continue
+
+            graphics['ros']['sensors'][sensor_key]['collections'][collection_key] = {}
 
             # when the sensor has no label, the 'idxs_limit_points' does not exist!!!
             # TODO this is not correct I think ...
@@ -331,7 +392,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
-            if sensor['modality'] == 'lidar3d':
+            elif sensor['modality'] == 'lidar3d':
 
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
@@ -349,11 +410,25 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                    data=original_pointcloud_msg.data,
                                                    is_dense=original_pointcloud_msg.is_dense)
 
-                graphics['ros']['sensors'][sensor_key]['collections'][collection_key] = {}
                 labeled_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='3d')
                 graphics['ros']['sensors'][sensor_key]['PubPointCloud'] = rospy.Publisher(
                     labeled_topic, PointCloud2, queue_size=0, latch=True)
                 graphics['ros']['sensors'][sensor_key]['collections'][collection_key]['PointClouds'] = final_pointcloud_msg
+
+    # 3D labels for depth sensors ------------------------------------------------------------------------
+    # sensor_key + '-Labels-3D'
+    print('Creating 3D labels for depth sensors ...')
+    for sensor_key, sensor in dataset['sensors'].items():
+        if sensor['modality'] not in ['depth']:  # only depth sensors
+            continue
+
+        if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
+            continue
+
+        # Create a single publisher for the sensor (will use this one for all collections)
+        labeled_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='3d')
+        graphics['ros']['sensors'][sensor_key]['PubDepthMarkers'] = rospy.Publisher(
+            labeled_topic, MarkerArray, queue_size=0, latch=True)
 
     # -----------------------------------------------------------------------------------------------------
     # -------- Robot meshes
@@ -536,9 +611,25 @@ def visualizationFunction(models, selection, clicked_points=None):
     for marker in graphics['ros']['MarkersLaserBeams'].markers:
         marker.header.stamp = now
 
+    # Publish 3d markers for depth sensors -------------------------------------------------------------------
+    for sensor_key in graphics['ros']['sensors']:
+        if not dataset['sensors'][sensor_key]['modality'] in ['depth']:  # only for depth sensors
+            continue
+
+        if not dataset['collections'][selected_collection_key]['labels'][sensor_key]['detected']:
+            continue
+
+        color = (graphics['collections'][collection_key]['color'][0], graphics['collections']
+                 [collection_key]['color'][1], graphics['collections'][collection_key]['color'][2], 0.5)
+        markers = MarkerArray()
+        markers = createDepthMarkers3D(dataset, sensor_key, selected_collection_key, color=color,
+                                       stamp=None, cached=False, frame_id=None, namespace=sensor_key)
+
+        graphics['ros']['sensors'][sensor_key]['PubDepthMarkers'].publish(markers)
+
     # Update timestamp for pointcloud2 message
     for sensor_key in graphics['ros']['sensors']:
-        if not dataset['sensors'][sensor_key]['modality'] in ['lidar3d']:  # TODO add depth and lidar2d
+        if not dataset['sensors'][sensor_key]['modality'] in ['lidar3d']:  # TODO add  lidar2d
             continue
 
         # Create a new point cloud to publissh which has the new label idxs in green, idxs_limits in dark green.
