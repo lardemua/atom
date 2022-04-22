@@ -293,7 +293,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ----------------------------
-            if sensor['modality'] == 'lidar3d':
+            elif sensor['modality'] == 'lidar3d':
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -332,7 +332,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 markers.markers.append(copy.deepcopy(marker))
 
             # Setup visualization for depth
-            if sensor['modality'] == 'depth':  # -------- Publish the depth  ----------------------------
+            elif sensor['modality'] == 'depth':  # -------- Publish the depth  ----------------------------
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
