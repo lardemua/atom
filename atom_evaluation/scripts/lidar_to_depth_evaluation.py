@@ -97,7 +97,7 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-rs", "--lidar_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-ld", "--lidar_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--depth_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
