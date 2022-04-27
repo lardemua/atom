@@ -246,6 +246,7 @@ def objectiveFunction(data):
     # Get the data from the model
     dataset = data['dataset']
     patterns = data['dataset']['patterns']
+    status = data['status']
     args = data['args']
     if args['view_optimization'] or args['ros_visualization']:
         dataset_graphics = data['graphics']
@@ -593,7 +594,7 @@ def objectiveFunction(data):
             else:
                 raise ValueError("Unknown sensor msg_type or modality")
 
-    if args['verbose']:
+    if args['verbose'] and status['is_iteration']:
         print("Errors per sensor:")
         for sensor_key, sensor in dataset['sensors'].items():
             keys = [k for k in r.keys() if sensor_key in k]
