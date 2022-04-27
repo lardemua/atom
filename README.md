@@ -64,15 +64,56 @@ roslaunch <your_robot_calibration> set_initial_estimate.launch
 ```bash
 roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
 ```
-5. **Dataset Review & Manual Annotation** [_optional_] - it is possible to visualize the labels automatically produced during the collection stage
+5. **Dataset playback & Manual Annotation** [_optional_] - it is possible to visualize the labels automatically produced during the collection stage and correct them mannually:
    
-   ```bash
+```bash
 roslaunch <your_robot_calibration> set_initial_estimate.launch 
-`
-1. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
+```
+
+6. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
 ```bash
 roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
 ```
+
+## Examples
+
+ATOM provides extensive visualization possibilities while running the calibration optimization procedure. To visualize in ROS Rviz use the -rv flag.
+
+<!-- [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/1NOEBKDMIpk/0.jpg)](https://www.youtube.com/watch?v=1NOEBKDMIpk) -->
+
+
+So far, we have used **ATOM** to successfully calibrate several robotic platforms. Here are some examples:
+
+### [Atlascar2](https://github.com/lardemua/atlascar2)
+ 
+Atlascar2 is an intelligent vehicle containing several cameras and 2D Lidars. 
+
+### [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) 
+This includes several variants of the hand-eye calibration problem.
+
+
+### [AgrobV2](https://github.com/aaguiar96/agrob)
+ Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
+
+| <img align="center" src="docs/agrob_calibration.gif" width="600"/> 
+|:--:| 
+| Calibration of AgrobV2.|
+
+### [LARCC]()
+
+**L**aboratory of **A**utomation and **R**obotics **C**ollaborative **C**ell (LARCC) is included in a research project focusing of collaborative robotic industrial cells. The goal is to monitor in detail the volume of the cell in order to ensure safe collaboration between human operators and robots. For this, several sensors of different modalities are positioned everywhere in the cell, which makes the calibration of this robotic system a challenging task.
+
+| <img align="center" src="docs/larcc_calibration.png" width="850"/>
+|:--:| 
+| Calibration of LARCC.|
+
+
+### [MMTBot](https://github.com/miguelriemoliveira/mmtbot)
+ A simulated robotic system containing a manipulator, two rgb cameras and one 3D lidar, with the goal of reserching how ATOM can calibration hand-eye systems.
+
+
+
+
 
 
 ## System calibration - Detailed Description
@@ -167,8 +208,6 @@ Here are a couple of examples:
 [Atlascar2](https://github.com/lardemua/atlascar2)  | [AgrobV2](https://github.com/aaguiar96/agrob) | [UR10e eye in hand](https://github.com/iris-ua/iris_ur10e_calibration)
 ------------- | ------------- | -------------
 <img align="center" src="docs/set_initial_estimate_atlascar2.gif" width="450"/> | <img align="center" src="docs/agrob_initial_estimate.gif" width="450"/> | <img align="center" src="docs/ur10e_eye_in_hand_set_initial_estimate.gif" width="450"/>
-
-
 
 ### Collect data 
 
@@ -296,32 +335,7 @@ optional arguments:
 
 It is also possible to call some of these through the launch file. Check the launch file to see how.
 
-ATOM provides extensive visualization possibilities while running the calibration optimization procedure. To visualize in ROS Rviz use the -rv flag.
 
-Here is an example of how the calibration procedure should look like.
-
-<img align="center" src="docs/agrob_calibration.gif" width="600"/> 
-
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/1NOEBKDMIpk/0.jpg)](https://www.youtube.com/watch?v=1NOEBKDMIpk)
-
-
-## Examples
-
-So far, we have used **ATOM** to successfully calibrate several robotic platforms:
-
- ### [Atlascar2](https://github.com/lardemua/atlascar2)
- 
-Atlascar2 is an intelligent vehicle containing several cameras and 2D Lidars. 
-
-### [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) 
-This includes several variants of the hand-eye calibration problem.
-
-
-### [AgrobV2](https://github.com/aaguiar96/agrob)
- Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
-
-### [MMTBot](https://github.com/miguelriemoliveira/mmtbot)
- A simulated robotic system containing a manipulator, two rgb cameras and one 3D lidar, with the goal of reserching how ATOM can calibration hand-eye systems.
  
 ##  Evaluating your calibration
 
