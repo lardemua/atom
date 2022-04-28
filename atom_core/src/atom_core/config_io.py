@@ -1,19 +1,19 @@
 import os
 import re
-import rospkg
 import subprocess
-from colorama import Style, Fore
 from urllib.parse import urlparse
 
+import rospkg
 import yaml
+from colorama import Style, Fore
 from urdf_parser_py.urdf import URDF
 
 
 def readXacroFile(description_file):
     # xml_robot = URDF.from_parameter_server()
     urdf_file = '/tmp/description.urdf'
-    print('Parsing description file ' + description_file)
-    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create a temp urdf file
+    # print('Parsing description file ' + description_file)
+    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=False)  # create a temp urdf file
     try:
         xml_robot = URDF.from_xml_file(urdf_file)  # read teh urdf file
     except:
@@ -133,7 +133,7 @@ def loadConfig(filename, check_paths=True):
     # if "robot_name" not in config.keys():  # in config:
     #     raise ValueError(Fore.RED +
     #         'Error: argument robot_name is missing in config.yaml'+ Style.RESET_ALL)
-        # exit(0)
+    # exit(0)
     # Check if config has all the necessary keys.
     rospack = rospkg.RosPack()
     template_file = rospack.get_path('atom_calibration') + '/templates/config.yml'
