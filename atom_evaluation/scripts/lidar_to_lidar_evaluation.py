@@ -77,13 +77,13 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-ld1", "--lidar_sensor_1", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ld2", "--lidar_sensor_2", help="Target transformation sensor.", type=str, required=True)
-    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
     lidar_sensor_1 = args['lidar_sensor_1']
     lidar_sensor_2 = args['lidar_sensor_2']
-    show_images = args['show_images']
+    # show_images = args['show_images']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
@@ -152,9 +152,9 @@ if __name__ == "__main__":
     for collection_key, collection in od.items():
         # if not collection_key=='2':
         #     continue
-        if show_images:
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='3d')
+        # if show_images:
+        #     fig = plt.figure()
+        #     ax = fig.add_subplot(projection='3d')
             # ax.xlim([-5,5])
             # ax.ylim([-5, 5])
             # ax.zlim([-5, 5])
@@ -183,8 +183,8 @@ if __name__ == "__main__":
             distances.append(dist)
             delta_total.append(dist)
 
-            if show_images:
-                ax.plot((lidar_pt[0,0],min_dist_pt[0]),(lidar_pt[0,1],min_dist_pt[1]),(lidar_pt[0,2],min_dist_pt[2]), c='y' )
+            # if show_images:
+            #     ax.plot((lidar_pt[0,0],min_dist_pt[0]),(lidar_pt[0,1],min_dist_pt[1]),(lidar_pt[0,2],min_dist_pt[2]), c='y' )
 
         if len(delta_pts) == 0:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
@@ -213,12 +213,12 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Drawing ...
         # ---------------------------------------
-        if show_images:
-            for idx in range(0, lidar_pts_1_in_lidar_2.shape[1]):
-                ax.scatter(lidar_pts_1_in_lidar_2[0, idx], lidar_pts_1_in_lidar_2[1, idx], lidar_pts_1_in_lidar_2[2,idx], c='r')
-            for idx in range(0, lidar_pts_2.shape[1]):
-                ax.scatter(lidar_pts_2[0, idx], lidar_pts_2[1, idx],lidar_pts_2[2, idx], c='b')
-            plt.show()
+        # if show_images:
+        #     for idx in range(0, lidar_pts_1_in_lidar_2.shape[1]):
+        #         ax.scatter(lidar_pts_1_in_lidar_2[0, idx], lidar_pts_1_in_lidar_2[1, idx], lidar_pts_1_in_lidar_2[2,idx], c='r')
+        #     for idx in range(0, lidar_pts_2.shape[1]):
+        #         ax.scatter(lidar_pts_2[0, idx], lidar_pts_2[1, idx],lidar_pts_2[2, idx], c='b')
+        #     plt.show()
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float32)
@@ -242,8 +242,8 @@ if __name__ == "__main__":
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print("Press ESC to quit and close all open windows.")
 
-    plt.waitforbuttonpress(0)  # this will wait for indefinite time
-    plt.close(fig)
+    # plt.waitforbuttonpress(0)  # this will wait for indefinite time
+    # plt.close(fig)
 
     # while True:
     #     k = cv2.waitKey(0) & 0xFF
