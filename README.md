@@ -400,11 +400,6 @@ The output is stored in the **atom_calibration.json**, which is used and the inp
 
     rosrun atom_calibration calibrate -json $ATOM_DATASETS/larcc_real/ dataset_train/atom_calibration.json -uic -nig 0.0 0.0 -ipg -si -rv -v -ap -oj atom_anchored_calibration.json
 
-##  Evaluating your calibration
-
-
-A simulated robotic system containing a manipulator, two rgb cameras and one 3D lidar, with the goal of reserching how
-ATOM can calibration hand-eye systems.
 
 ## Evaluating your calibration
 
