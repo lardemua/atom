@@ -26,11 +26,11 @@ If this work is helpful for you please cite our papers:
 
   * [How to Use - Quick Start](#how-to-use---quick-start)
   * [Examples](#examples)
-    + [[Atlascar2](https://github.com/lardemua/atlascar2)](#-atlascar2--https---githubcom-lardemua-atlascar2-)
-    + [[IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)](#-irisua---ur10e--https---githubcom-iris-ua-iris-ur10e-calibration-)
-    + [[AgrobV2](https://github.com/aaguiar96/agrob)](#-agrobv2--https---githubcom-aaguiar96-agrob-)
-    + [[LARCC]()](#-larcc---)
-    + [[MMTBot](https://github.com/miguelriemoliveira/mmtbot)](#-mmtbot--https---githubcom-miguelriemoliveira-mmtbot-)
+    + [Atlascar2](#atlascar2)
+    + [IrisUA - ur10e](#irisua---ur10e)
+    + [AgrobV2](#agrobv2)
+    + [LARCC](#larcc)
+    + [MMTBot](#mmtbot)
   * [System calibration - Detailed Description](#system-calibration---detailed-description)
     + [Setup you environment](#setup-you-environment)
     + [Creating a calibration package](#creating-a-calibration-package)
@@ -113,22 +113,22 @@ ATOM provides extensive visualization possibilities while running the calibratio
 
 So far, we have used **ATOM** to successfully calibrate several robotic platforms. Here are some examples:
 
-### [Atlascar2](https://github.com/lardemua/atlascar2)
+### Atlascar2
  
-Atlascar2 is an intelligent vehicle containing several cameras and 2D Lidars. 
+[Atlascar2](https://github.com/lardemua/atlascar2) is an intelligent vehicle containing several cameras and 2D Lidars. 
 
-### [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) 
-This includes several variants of the hand-eye calibration problem.
+### IrisUA - ur10e 
+The [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) includes several variants of the hand-eye calibration problem.
 
 
-### [AgrobV2](https://github.com/aaguiar96/agrob)
- Agrob is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
+### AgrobV2 
+ [AgrobV2](https://github.com/aaguiar96/agrob) is a mobile robot with a stereo camera and a 3D Lidar designed for agriculture robotics.
 
 | <img align="center" src="docs/agrob_calibration.gif" width="600"/> 
 |:--:| 
 | Calibration of AgrobV2.|
 
-### [LARCC]()
+### LARCC
 
 **L**aboratory of **A**utomation and **R**obotics **C**ollaborative **C**ell (LARCC) is included in a research project focusing of collaborative robotic industrial cells. The goal is to monitor in detail the volume of the cell in order to ensure safe collaboration between human operators and robots. For this, several sensors of different modalities are positioned everywhere in the cell, which makes the calibration of this robotic system a challenging task.
 
@@ -137,8 +137,8 @@ This includes several variants of the hand-eye calibration problem.
 | Calibration of LARCC.|
 
 
-### [MMTBot](https://github.com/miguelriemoliveira/mmtbot)
- A simulated robotic system containing a manipulator, two rgb cameras and one 3D lidar, with the goal of reserching how ATOM can calibration hand-eye systems.
+### MMTBot
+ [MMTBot](https://github.com/miguelriemoliveira/mmtbot) is a simulated robotic system containing a manipulator, two rgb cameras and one 3D lidar, with the goal of reserching how ATOM can calibration hand-eye systems.
 
 
 ## System calibration - Detailed Description
