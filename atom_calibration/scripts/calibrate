@@ -76,6 +76,8 @@ def main():
     ap.add_argument("-ajf", "--all_joints_fixed", action="store_true", default=False,
                     help="Assume all joints are fixed and because of that draw a single robot mesh."
                     "Overrides automatic detection of static robot.")
+    ap.add_argument("-oas", "--only_anchored_sensor", action="store_true", default=False,
+                    help="Runs optimization only using the anchored sensor and discarding all others.")
     ap.add_argument("-ap", "--anchor_patterns", help="Runs optimization without changing the poses of the patterns.",
                     action="store_true", default=False)
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
@@ -482,7 +484,7 @@ def main():
     description_file, _, _ = uriReader(
         dataset["calibration_config"]["description_file"]
     )
-    rospy.loginfo("Reading description file " + description_file + "...")
+    print("Reading description file " + description_file + "...")
     xml_robot = readXacroFile(description_file)
 
     for sensor_key in dataset["calibration_config"]["sensors"]:
@@ -490,38 +492,25 @@ def main():
         parent = dataset["calibration_config"]["sensors"][sensor_key]["parent_link"]
         transform_key = atom_core.naming.generateKey(parent, child)
 
-        trans = list(
-            dataset["collections"][selected_collection_key]["transforms"][
-                transform_key
-            ]["trans"]
-        )
-        quat = list(
-            dataset["collections"][selected_collection_key]["transforms"][
-                transform_key
-            ]["quat"]
-        )
+        trans = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["trans"])
+        quat = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["quat"])
         found = False
 
         for joint in xml_robot.joints:
             if joint.parent == parent and joint.child == child:
                 found = True
-                print("Found joint: " + str(joint.name))
+                # print("Found joint: " + str(joint.name))
 
-                print("Replacing xyz = " + str(joint.origin.xyz) + " by " + str(trans))
+                # print("Replacing xyz = " + str(joint.origin.xyz) + " by " + str(trans))
                 joint.origin.xyz = trans
 
                 rpy = list(tf.transformations.euler_from_quaternion(quat, axes="sxyz"))
-                print("Replacing rpy = " + str(joint.origin.rpy) + " by " + str(rpy))
+                # print("Replacing rpy = " + str(joint.origin.rpy) + " by " + str(rpy))
                 joint.origin.rpy = rpy
                 break
 
         if not found:
-            raise ValueError(
-                "Could not find transform "
-                + str(transform_key)
-                + " in "
-                + description_file
-            )
+            raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
 
     time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     file_name = "optimized_" + time + ".urdf.xacro"
@@ -534,29 +523,19 @@ def main():
             out.write(URDF.to_xml_string(xml_robot))
     else:
         rospack = rospkg.RosPack()
-        path_to_file = (
-            rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration")
-            + "/urdf/optimized/"
-        )
+        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/optimized/")
         if not path.exists(path_to_file):
             os.mkdir(path_to_file)
         filename_results_xacro = path_to_file + file_name
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-        with open(
-            rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration")
-            + "/urdf/optimized.urdf.xacro",
-            "w",
-        ) as out:
+        with open(rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration")
+                  + "/urdf/optimized.urdf.xacro", "w",) as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
-    print(
-        "Optimized xacro file saved to "
-        + str(filename_results_xacro)
-        + " . You can use it as a ROS robot_description."
-    )
+    print("Optimized xacro saved to " + str(filename_results_xacro) + " . You can use it as a ROS robot_description.")
 
 
 if __name__ == "__main__":

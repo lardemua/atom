@@ -600,12 +600,12 @@ def objectiveFunction(data):
             v = [r[k] * normalizer[sensor['modality']] for k in keys]
             print('  ' + sensor_key + " " + str(np.mean(v)))
 
-        # for collection_key, collection in dataset['collections'].items():
-        #     v = []
-        #     for sensor_key, sensor in dataset['sensors'].items():
-        #         keys = [k for k in r.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
-        #         v = [r[k] * normalizer[sensor['modality']] for k in keys]
-        #         print('Collection ' + collection_key + ' ' + sensor_key + ' has ' + str(np.mean(v)))
+        for collection_key, collection in dataset['collections'].items():
+            v = []
+            for sensor_key, sensor in dataset['sensors'].items():
+                keys = [k for k in r.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+                v = [r[k] * normalizer[sensor['modality']] for k in keys]
+                print('Collection ' + collection_key + ' ' + sensor_key + ' has ' + str(np.mean(v)))
 
         # per_col_sensor = {str(c): {str(s): {'avg': mean([r[k] for k in r.keys() if c == k.split('_')[0] and s in k]),
         #                                     'navg': mean([rn[k] for k in rn.keys() if c == k.split('_')[0] and s in k])}

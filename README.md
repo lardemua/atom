@@ -266,7 +266,7 @@ You can use a couple of launch file arguments to configure the calibration proce
       csf:='lambda name: int(name) < 7'
     ```
 
-##### Advanced usage / debug
+##### Advanced usage - running calibration script in separate terminal
 
 Alternatively, for debugging the calibrate script it is better not to have it executed with a bunch of other scripts which is what happens when you call the launch file. You can run everything with the launch excluding without the calibrate script
 
@@ -280,7 +280,7 @@ and then launch the script in standalone mode
 rosrun atom_calibration calibrate -json dataset_file:=~/datasets/<my_dataset>/dataset.json 
 ```
 
-There are several additional command line arguments to use with the **calibrate** script, here's an extensive list:
+There are several additional command line arguments to use with the **calibrate** script, run calibrate --help to get the complete list:
 
 ```bash
 usage: calibrate [-h] [-sv SKIP_VERTICES] [-z Z_INCONSISTENCY_THRESHOLD]
@@ -301,9 +301,6 @@ optional arguments:
   -si, --show_images    shows images for each camera
   -oi, --optimize_intrinsics
                         Adds camera instrinsics and distortion to the optimization
-  -pof, --profile_objective_function
-                        Runs and prints a profile of the objective function,
-                        then exits.
   -sr SAMPLE_RESIDUALS, --sample_residuals SAMPLE_RESIDUALS
                         Samples residuals
   -ss SAMPLE_SEED, --sample_seed SAMPLE_SEED
@@ -334,6 +331,18 @@ optional arguments:
 ```
 
 It is also possible to call some of these through the launch file. Check the launch file to see how.
+
+##### Advanced usage - calibration with anchored sensors
+
+When one sensor is set to be acnhored in the calibration/config.yml file, i.e. this [file](https://github.com/lardemua/atlascar2/blob/6850dfe2209e3f5e9c7a3ca66a2b98054ebed256/atlascar2_calibration/calibration/config.yml#L99) for the AtlaCar2, we recommend a two stage procedure to achieve a more accurate calibration:
+
+First, run a calibration using parameter **--only_anchored_sensor** (**-oas**) which will exclude from the optimization all sensors which are not the anchored one. This optimization will position the patterns correctly w.r.t. the anchored sensor. For example:
+
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/larcc_real/ dataset_train/dataset_corrected.json -uic -nig 0.0 0.0 -ipg -si -rv -v -oas
+
+The output is stored in the **atom_calibration.json**, which is used and the input for the second stage, where all sensors are used. In this second stage the poses of the patterns are frozen using the parameter **--anchor_patterns** (**-ap**). To avoid overwritting atom_calibration.json, you should also define the output json file (**-oj**). For example:
+
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/larcc_real/ dataset_train/atom_calibration.json -uic -nig 0.0 0.0 -ipg -si -rv -v -ap -oj atom_anchored_calibration.json
 
 
  
