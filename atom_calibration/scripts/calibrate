@@ -29,7 +29,7 @@ import tf
 from click import style
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
                                                               setterCameraIntrinsics, setterTransform)
-from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
+from atom_calibration.calibration.objective_function import errorReport, getPointsInSensorAsNPArray, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.config_io import readXacroFile, uriReader
 from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
@@ -453,18 +453,12 @@ def main():
         waitForKeyPress2(opt.callObjectiveFunction, timeout=0.1,
                          message=Fore.RED + "Optimization finished" + Style.RESET_ALL)
     # Error Report
-    print(Back.LIGHTYELLOW_EX + "\n\n_________Final Errors ____________" + "\n\n")
     r = objectiveFunction(opt.data_models)
-    for sensor_key, sensor in dataset["sensors"].items():
-        keys = [k for k in r.keys() if sensor_key in k]
-        v = [r[k] * normalizer[sensor["modality"]] for k in keys]
-        print("Sensor " + Fore.BLUE + sensor_key + Fore.BLACK + " " + str(np.mean(v)))
-    print("__________________________________" + "\n\n" + Style.RESET_ALL)
+    errorReport(dataset=dataset, residuals=r, normalizer=normalizer)
 
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
-
     if args["output_json"] is None:
         filename_results_json = os.path.dirname(json_file) + "/atom_calibration.json"
     else:
