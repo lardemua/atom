@@ -10,6 +10,7 @@ import ros_numpy
 
 # 3rd-party
 import OptimizationUtils.utilities as opt_utilities
+from colorama import Fore, Style
 from scipy.spatial import distance
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
@@ -594,21 +595,48 @@ def objectiveFunction(data):
                 raise ValueError("Unknown sensor msg_type or modality")
 
     if args['verbose'] and data['status']['is_iteration']:
-        print("Errors per sensor:")
-        for sensor_key, sensor in dataset['sensors'].items():
-            keys = [k for k in r.keys() if sensor_key in k]
-            v = [r[k] * normalizer[sensor['modality']] for k in keys]
-            print('  ' + sensor_key + " " + str(np.mean(v)))
-
-        for collection_key, collection in dataset['collections'].items():
-            v = []
-            for sensor_key, sensor in dataset['sensors'].items():
-                keys = [k for k in r.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
-                v = [r[k] * normalizer[sensor['modality']] for k in keys]
-                print('Collection ' + collection_key + ' ' + sensor_key + ' has ' + str(np.mean(v)))
-
-        # per_col_sensor = {str(c): {str(s): {'avg': mean([r[k] for k in r.keys() if c == k.split('_')[0] and s in k]),
-        #                                     'navg': mean([rn[k] for k in rn.keys() if c == k.split('_')[0] and s in k])}
-        #                            for s in dataset['sensors']} for c in dataset['collections']}
+        errorReport(dataset=dataset, residuals=r, normalizer=normalizer)
 
     return r  # Return the residuals
+
+
+def errorReport(dataset, residuals, normalizer):
+
+    from prettytable import PrettyTable
+    table_header = ['Collection']
+
+    for sensor_key, sensor in dataset['sensors'].items():
+        if sensor_key == dataset['calibration_config']['anchored_sensor']:
+            table_header.append(Fore.YELLOW + sensor_key + Fore.BLACK)
+        else:
+            table_header.append(sensor_key)
+
+    table = PrettyTable(table_header)
+
+    for collection_key, collection in dataset['collections'].items():
+        row = [collection_key]
+        v = []
+
+        for sensor_key, sensor in dataset['sensors'].items():
+            keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            v = [residuals[k] * normalizer[sensor['modality']] for k in keys]
+            row.append(str(round(np.mean(v), 4)))
+
+        table.add_row(row)
+
+    bottom_row = []  # Compute averages and add bottom row to table
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            continue
+
+        total = 0
+        for row in table.rows:
+            total += float(row[col_idx])
+
+        bottom_row.append(Fore.BLUE + str(round(total / len(table.rows), 4)) + Fore.BLACK)
+
+    table.add_row(bottom_row)
+    table.align = 'c'
+    print(Style.BRIGHT + 'Errors per collection ' + Fore.YELLOW + ' (anchored sensor)' + Fore.BLACK + Style.NORMAL)
+    print(table)
