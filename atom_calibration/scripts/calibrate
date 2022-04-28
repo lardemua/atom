@@ -57,8 +57,6 @@ def main():
     # --- Parse command line argument
     # ---------------------------------------
     signal.signal(signal.SIGINT, signal_handler)
-    # print('Press Ctrl+C')
-    # signal.pause()
 
     ap = argparse.ArgumentParser()
     ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
@@ -275,7 +273,7 @@ def main():
                                     setter=partial(setterTransform, transform_key=transform_key,
                                                    collection_name=collection_key))
 
-        else:  # fixed pattern ---------------------------------------------------------------------------------------------
+        else:  # fixed pattern ----------------------------------------------------------------------------------
             # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
             # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
             # 'link']
