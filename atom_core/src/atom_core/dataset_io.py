@@ -182,11 +182,13 @@ def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
         dataset = dataset_in
 
     output_folder = os.path.dirname(output_file)
+    print('output_folder is: ' + output_folder)
     bridge = CvBridge()
 
     # Process the dataset to remove data from the data fields and, if needed, write the files.
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+            # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
             createDataFile(dataset, collection_key, sensor, sensor_key, output_folder)
 
         # Do the same for additional data topics ...
@@ -405,14 +407,12 @@ def createJSONFile(output_file, input):
     D = copy.deepcopy(input)
     walk(D)
 
-    print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
     # print >> f, json.dumps(D, indent=2, sort_keys=True)
     f.write(json.dumps(D, indent=2, sort_keys=True, cls=NpEncoder))
-
     f.close()
-    print("Completed.")
+    print("Saved json output file to " + str(output_file) + ".")
 
 
 def is_jsonable(x):
