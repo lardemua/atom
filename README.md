@@ -24,29 +24,37 @@ If this work is helpful for you please cite our papers:
 
 ## Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [How to Use - Quick Start](#how-to-use---quick-start)
-- [System calibration - Detailed Description](#system-calibration---detailed-description)
-    - [Setup you environment](#setup-you-environment)
-    - [Creating a calibration package](#creating-a-calibration-package)
-    - [Configuring a calibration package](#configuring-a-calibration-package)
-    - [Set initial estimate](#set-initial-estimate)
-    - [Collect data](#collect-data)
-- [Examples](#examples)
-    - [Atlascar2](#atlascar2)
-    - [IrisUA - ur10e](#irisua---ur10e)
-    - [AgrobV2](#agrobv2)
-    - [MMTBot](#mmtbot)
-- [Evaluating your calibration](#evaluating-your-calibration)
-    - [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
-    - [LiDAR-to-Camera evaluation](#lidar-to-camera-evaluation)
-    - [Point cloud image projection](#point-cloud-image-projection)
-- [Installation](#installation)
-- [Contributors](#contributors)
-- [Maintainers](#maintainers)
+  * [How to Use - Quick Start](#how-to-use---quick-start)
+  * [Examples](#examples)
+    + [[Atlascar2](https://github.com/lardemua/atlascar2)](#-atlascar2--https---githubcom-lardemua-atlascar2-)
+    + [[IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration)](#-irisua---ur10e--https---githubcom-iris-ua-iris-ur10e-calibration-)
+    + [[AgrobV2](https://github.com/aaguiar96/agrob)](#-agrobv2--https---githubcom-aaguiar96-agrob-)
+    + [[LARCC]()](#-larcc---)
+    + [[MMTBot](https://github.com/miguelriemoliveira/mmtbot)](#-mmtbot--https---githubcom-miguelriemoliveira-mmtbot-)
+  * [System calibration - Detailed Description](#system-calibration---detailed-description)
+    + [Setup you environment](#setup-you-environment)
+    + [Creating a calibration package](#creating-a-calibration-package)
+    + [Configuring a calibration package](#configuring-a-calibration-package)
+    + [Set initial estimate](#set-initial-estimate)
+    + [Collect data](#collect-data)
+    + [Calibrate sensors](#calibrate-sensors)
+        * [Advanced usage - running calibration script in separate terminal](#advanced-usage---running-calibration-script-in-separate-terminal)
+        * [Advanced usage - two stage calibration for robotic systems with an anchored sensor](#advanced-usage---two-stage-calibration-for-robotic-systems-with-an-anchored-sensor)
+  * [Evaluating your calibration](#evaluating-your-calibration)
+  * [Evaluating your calibration](#evaluating-your-calibration-1)
+      - [Annotation](#annotation)
+      - [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
+      - [LiDAR-to-Depth-Camera evaluation](#lidar-to-depth-camera-evaluation)
+      - [Camera-to-Depth-Camera evaluation](#camera-to-depth-camera-evaluation)
+      - [LiDAR-to-LiDAR evaluation](#lidar-to-lidar-evaluation)
+      - [LiDAR-to-Camera evaluation](#lidar-to-camera-evaluation)
+      - [Point cloud image projection](#point-cloud-image-projection)
+  * [Installation](#installation)
+  * [Contributors](#contributors)
+  * [Maintainers](#maintainers)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with
-markdown-toc</a></i></small>
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 ## How to Use - Quick Start
 
@@ -380,7 +388,7 @@ optional arguments:
 
 It is also possible to call some of these through the launch file. Check the launch file to see how.
 
-##### Advanced usage - calibration with anchored sensors
+##### Advanced usage - two stage calibration for robotic systems with an anchored sensor
 
 When one sensor is set to be acnhored in the calibration/config.yml file, i.e. this [file](https://github.com/lardemua/atlascar2/blob/6850dfe2209e3f5e9c7a3ca66a2b98054ebed256/atlascar2_calibration/calibration/config.yml#L99) for the AtlaCar2, we recommend a two stage procedure to achieve a more accurate calibration:
 
