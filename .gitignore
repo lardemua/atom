@@ -214,3 +214,4 @@ snaps/
 # Built Visual Studio Code Extensions
 *.vsix
 .vscode/settings.json
+atom_calibration/scripts/deprecated/calibration.code-workspace

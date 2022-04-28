@@ -193,6 +193,11 @@ if __name__ == "__main__":
     checkDirectoryExistence('scripts', package_name)
     checkDirectoryExistence('urdf', package_name)
 
+    # If anchored sensor exists, it must be one of the existing sensors
+    if config['anchored_sensor'] != '' and \
+            not config['anchored_sensor'] in list(config['sensors'].keys()):
+        raise ValueError('Anchored sensor must be empty string or one of the configured sensors.')
+
     compressed_topics = {}  # a list of compressed topics to decompress in the launch file
     # Check if config sensor topics exist in the bag file
     for sensor_key in config['sensors']:

@@ -3,23 +3,25 @@
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """
 
-# stdlib
-import atom_core.atom
 import math
 import pprint
 from copy import deepcopy
 
+import atom_core.atom
+
 # 3rd-party
 import numpy as np
 import cv2
+
+# stdlib
+from colorama import Fore, Style
 from tf import transformations
-
 from OptimizationUtils import utilities
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def sampleLineSegment(p0, p1, step):
     norm = math.sqrt((p1['x'] - p0['x']) ** 2 + (p1['y'] - p0['y']) ** 2)
@@ -39,6 +41,28 @@ def createPatternLabels(args, dataset, step=0.02):
     Creates the necessary data related to the chessboard calibration pattern
     :return: a dataset_chessboard dictionaryint((((args['chess_num_y'] * factor) - 1) * n) + 1) * (args['chess_num_x'] * factor)
     """
+
+    if 'patterns' in dataset:  # If we have a patterns that means that the pattern poses were already found and written to the dataset. In that case we use the poses that exist.
+        print('Dataset already contains patterns.' + Fore.BLUE +
+              ' Will skip generation of pattern labels and retrieve world to pattern transforms from the dataset.' +
+              Style.RESET_ALL)
+
+        patterns = dataset['patterns']
+
+        for collection_key, collection in dataset['collections'].items():
+            parent = dataset["calibration_config"]["calibration_pattern"]["parent_link"]
+            child = dataset["calibration_config"]["calibration_pattern"]["link"]
+            transform_key = atom_core.naming.generateKey(parent, child)
+
+            # transformation already in dataset, use it
+            if transform_key in dataset['collections'][collection_key]['transforms']:
+                trans = dataset['collections'][collection_key]['transforms'][transform_key]['trans']
+                quat = dataset['collections'][collection_key]['transforms'][transform_key]['quat']
+                patterns['transforms_initial'][str(collection_key)] = \
+                    {'detected': True, 'sensor': 'from_dataset', 'parent': parent, 'child': child,
+                        'trans': trans, 'quat': quat,
+                     }
+        return patterns
 
     nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
     ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
@@ -86,17 +110,15 @@ def createPatternLabels(args, dataset, step=0.02):
         patterns['frame']['corners']['bottom_left'] = {'x': -square - border_x, 'y': ny * square + border_y}
 
         # Lines sampled
-        patterns['frame']['lines_sampled']['top'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
-                                                                      patterns['frame']['corners']['top_right'], step)
-        patterns['frame']['lines_sampled']['bottom'] = sampleLineSegment(patterns['frame']['corners']['bottom_left'],
-                                                                         patterns['frame']['corners']['bottom_right'],
-                                                                         step)
+        patterns['frame']['lines_sampled']['top'] = sampleLineSegment(
+            patterns['frame']['corners']['top_left'], patterns['frame']['corners']['top_right'], step)
+        patterns['frame']['lines_sampled']['bottom'] = sampleLineSegment(
+            patterns['frame']['corners']['bottom_left'], patterns['frame']['corners']['bottom_right'], step)
         patterns['frame']['lines_sampled']['left'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
                                                                        patterns['frame']['corners']['bottom_left'],
                                                                        step)
-        patterns['frame']['lines_sampled']['right'] = sampleLineSegment(patterns['frame']['corners']['top_right'],
-                                                                        patterns['frame']['corners']['bottom_right'],
-                                                                        step)
+        patterns['frame']['lines_sampled']['right'] = sampleLineSegment(
+            patterns['frame']['corners']['top_right'], patterns['frame']['corners']['bottom_right'], step)
 
         # -------------- Transitions ----------------
         # vertical
@@ -136,17 +158,15 @@ def createPatternLabels(args, dataset, step=0.02):
         patterns['frame']['corners']['bottom_left'] = {'x': -square - border_x, 'y': ny * square + border_y}
 
         # Lines sampled
-        patterns['frame']['lines_sampled']['top'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
-                                                                      patterns['frame']['corners']['top_right'], step)
-        patterns['frame']['lines_sampled']['bottom'] = sampleLineSegment(patterns['frame']['corners']['bottom_left'],
-                                                                         patterns['frame']['corners']['bottom_right'],
-                                                                         step)
+        patterns['frame']['lines_sampled']['top'] = sampleLineSegment(
+            patterns['frame']['corners']['top_left'], patterns['frame']['corners']['top_right'], step)
+        patterns['frame']['lines_sampled']['bottom'] = sampleLineSegment(
+            patterns['frame']['corners']['bottom_left'], patterns['frame']['corners']['bottom_right'], step)
         patterns['frame']['lines_sampled']['left'] = sampleLineSegment(patterns['frame']['corners']['top_left'],
                                                                        patterns['frame']['corners']['bottom_left'],
                                                                        step)
-        patterns['frame']['lines_sampled']['right'] = sampleLineSegment(patterns['frame']['corners']['top_right'],
-                                                                        patterns['frame']['corners']['bottom_right'],
-                                                                        step)
+        patterns['frame']['lines_sampled']['right'] = sampleLineSegment(
+            patterns['frame']['corners']['top_right'], patterns['frame']['corners']['bottom_right'], step)
 
         # -------------- Transitions ----------------
         # vertical
@@ -181,8 +201,7 @@ def createPatternLabels(args, dataset, step=0.02):
                 continue
 
             # change accordingly to the first camera to give chessboard first poses
-            # if sensor['msg_type'] == 'Image':
-            if sensor['modality'] =='rgb':
+            if sensor['modality'] == 'rgb':
                 K = np.ndarray((3, 3), dtype=np.float, buffer=np.array(sensor['camera_info']['K']))
                 D = np.ndarray((5, 1), dtype=np.float, buffer=np.array(sensor['camera_info']['D']))
 
@@ -214,16 +233,17 @@ def createPatternLabels(args, dataset, step=0.02):
 
                 parent = dataset['calibration_config']['calibration_pattern']['parent_link']
                 child = dataset['calibration_config']['calibration_pattern']['link']
-                patterns['transforms_initial'][str(collection_key)] = \
-                    {'detected': True, 'sensor': sensor_key, 'parent': parent, 'child': child,
-                     'trans': list(root_T_chessboard[0:3, 3]), 'quat': list(transformations.quaternion_from_matrix(T)),
-                     }
+                patterns['transforms_initial'][
+                    str(collection_key)] = {
+                    'detected': True, 'sensor': sensor_key, 'parent': parent, 'child': child,
+                    'trans': list(root_T_chessboard[0: 3, 3]),
+                    'quat': list(transformations.quaternion_from_matrix(T)), }
 
                 flg_detected_pattern = True
                 break  # don't search for this collection's chessboard on anymore sensors
 
-        if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
-            raise ValueError('Collection ' + collection_key + ' could not find pattern.')
+    if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
+        raise ValueError('Collection ' + collection_key + ' could not find pattern.')
 
     return patterns
 

@@ -593,7 +593,7 @@ def objectiveFunction(data):
             else:
                 raise ValueError("Unknown sensor msg_type or modality")
 
-    if args['verbose']:
+    if args['verbose'] and data['status']['is_iteration']:
         print("Errors per sensor:")
         for sensor_key, sensor in dataset['sensors'].items():
             keys = [k for k in r.keys() if sensor_key in k]

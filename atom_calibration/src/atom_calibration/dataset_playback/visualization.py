@@ -440,30 +440,6 @@ def setupVisualization(dataset, args, selected_collection_key):
                                     namespace='robot_mesh', rgba=rgba)
         graphics['ros']['robot_mesh_markers']['collections'][collection_key] = markers
 
-    # -----------------------------------------------------------------------------------------------------
-    # -------- Publish the pattern data
-    # -----------------------------------------------------------------------------------------------------
-    # Draw single pattern for selected collection key
-    if dataset['calibration_config']['calibration_pattern']['fixed']:
-        frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
-                                prefix='c' + selected_collection_key)
-        ns = str(selected_collection_key)
-        markers = createPatternMarkers(
-            frame_id, ns, selected_collection_key, now, dataset, graphics)
-    else:  # Draw a pattern per collection
-        markers = MarkerArray()
-        for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
-            frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
-                                    prefix='c' + collection_key)
-            ns = str(collection_key)
-            collection_markers = createPatternMarkers(
-                frame_id, ns, collection_key, now, dataset, graphics)
-            markers.markers.extend(collection_markers.markers)
-
-    graphics['ros']['MarkersPattern'] = markers
-    graphics['ros']['PubPattern'] = rospy.Publisher(
-        '~patterns', MarkerArray, queue_size=0, latch=True)
-
     # Create LaserBeams Publisher -----------------------------------------------------------
     # This one is recomputed every time in the objective function, so just create the generic properties.
     markers = MarkerArray()
@@ -533,7 +509,6 @@ def visualizationFunction(models, selection, clicked_points=None):
     args = models['args']
     collections = models['dataset']['collections']
     sensors = models['dataset']['sensors']
-    patterns = models['dataset']['patterns']
     config = models['dataset']['calibration_config']
     graphics = models['graphics']
 
@@ -593,10 +568,6 @@ def visualizationFunction(models, selection, clicked_points=None):
         marker.header.stamp = now
 
     graphics['ros']['publisher_models'].publish(markers)
-
-    # Update timestamp for the patterns markers
-    for marker in graphics['ros']['MarkersPattern'].markers:
-        marker.header.stamp = now
 
     # Update timestamp for labeled markers
     #     for sensor_key in graphics['ros']['sensors']:
@@ -666,20 +637,6 @@ def visualizationFunction(models, selection, clicked_points=None):
         pointcloud_msg_labeled = pc2.create_cloud(pointcloud_msg.header, fields, points)
 
         graphics['ros']['sensors'][sensor_key]['PubPointCloud'].publish(pointcloud_msg_labeled)
-
-    # Create a new marker array which contains only the marker related to the selected collection
-    # Publish the pattern data
-    marker_array_1 = MarkerArray()
-    for marker in graphics['ros']['MarkersPattern'].markers:
-        prefix = marker.header.frame_id[: 3]
-        if prefix == 'c' + str(selected_collection_key) + '_':
-            marker_array_1.markers.append(marker)
-            marker_array_1.markers[-1].action = Marker.ADD
-        elif not previous_selected_collection_key == selected_collection_key and prefix == 'c' + str(
-                previous_selected_collection_key) + '_':
-            marker_array_1.markers.append(marker)
-            marker_array_1.markers[-1].action = Marker.DELETE
-    graphics['ros']['PubPattern'].publish(marker_array_1)
 
     # Create a new marker array which contains only the marker related to the selected collection
     # Publish the robot_mesh_
