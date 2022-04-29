@@ -9,7 +9,7 @@ import numpy as np
 import ros_numpy
 
 # 3rd-party
-import OptimizationUtils.utilities as opt_utilities
+from atom_core.opt_utilities import projectToCamera
 from colorama import Fore, Style
 from scipy.spatial import distance
 from geometry_msgs.msg import Point
@@ -291,7 +291,7 @@ def objectiveFunction(data):
                 K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
                 D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
 
-                pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+                pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 
                 # Get the detected points to use as ground truth--------------------------------------------------------
                 pts_detected_in_image = getPointsDetectedInImageAsNPArray(collection_key, sensor_key, dataset)
@@ -335,7 +335,7 @@ def objectiveFunction(data):
                 pts_in_chessboard = np.dot(pattern_to_sensor, pts_in_laser)
 
                 # Compute the coordinate of the laser points in the chessboard reference frame
-                # root_to_sensor = opt_utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
+                # root_to_sensor = getAggregateTransform(sensor['chain'], collection['transforms'])
                 # pts_in_root = np.dot(root_to_sensor, pts_in_laser)
                 #
                 # transform_key = opt_utilities.generateKey(sensor['calibration_parent'], sensor['calibration_child'])
@@ -581,7 +581,7 @@ def objectiveFunction(data):
                 sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
-                pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+                pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 
                 # Required by the visualization function to publish annotated images
                 idxs_projected = []

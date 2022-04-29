@@ -10,27 +10,18 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
-import numpy as np
-import ros_numpy
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
 from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
 
-from atom_core.naming import generateKey
-
+import numpy as np
+import cv2
+from colorama import Style, Fore
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def walk(node):
     for key, item in node.items():

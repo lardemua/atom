@@ -10,29 +10,27 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
+import argparse
+from copy import deepcopy
+from collections import OrderedDict
+
 import numpy as np
 import ros_numpy
-
 import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
 import cv2
-import argparse
-import OptimizationUtils.utilities as opt_utilities
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from rospy_message_converter import message_converter
+from atom_core.opt_utilities import projectToCamera
 from scipy.spatial import distance
-from copy import deepcopy
 from colorama import Style, Fore
-from collections import OrderedDict
 from image_geometry import PinholeCameraModel
-
 from atom_core.naming import generateKey
 from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def depthInImage(collection, json_file, ss, pinhole_camera_model):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
@@ -59,6 +57,7 @@ def depthInImage(collection, json_file, ss, pinhole_camera_model):
     # print(points_in_depth)
     return points_in_depth
 
+
 def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
     # From http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
 
@@ -69,12 +68,13 @@ def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
     y = y_over_z * z
     return x, y, z
 
+
 def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
 
     cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
-                                                            scale=10000.0)
+                                        scale=10000.0)
 
     idxs = collection['labels'][ss]['idxs_limit_points']
 
@@ -114,7 +114,7 @@ def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
-    pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return pts_in_image
 
@@ -190,8 +190,8 @@ if __name__ == "__main__":
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print(
         '{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'Avg Error', 'X Error', 'Y Error',
-                                                                         'X Standard Deviation',
-                                                                          'Y Standard Deviation'))
+                                                                   'X Standard Deviation',
+                                                                   'Y Standard Deviation'))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         depth1_2_depth2 = atom_core.atom.getTransform(from_frame, to_frame,
-                                              test_dataset['collections'][collection_key]['transforms'])
+                                                      test_dataset['collections'][collection_key]['transforms'])
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
@@ -228,7 +228,8 @@ if __name__ == "__main__":
         print(filename)
         image = cv2.imread(filename)
         depth_pts_in_depth_img_1 = depthInImage(collection, test_json_file, depth_sensor_1, pinhole_camera_model_1)
-        depth_pts_in_depth_img_2 = depthToImage(collection, test_json_file, depth_sensor_2, depth_sensor_1, depth1_2_depth2, pinhole_camera_model_2)
+        depth_pts_in_depth_img_2 = depthToImage(
+            collection, test_json_file, depth_sensor_2, depth_sensor_1, depth1_2_depth2, pinhole_camera_model_2)
 
         # Clear image annotations
         image = cv2.imread(filename)
@@ -247,7 +248,7 @@ if __name__ == "__main__":
             #     print(depth_pts_in_depth_img.transpose()[coords[1][0]])
             #     print(depth_pts_in_depth_img.transpose()[coords[1]],min_dist_pt)
             # else:
-            min_dist_pt=depth_pts_in_depth_img_1.transpose()[coords[1]][0]
+            min_dist_pt = depth_pts_in_depth_img_1.transpose()[coords[1]][0]
             # print(min_dist_pt)
             dist = abs(lidar_pt - min_dist_pt)
             distances.append(dist)
@@ -277,22 +278,22 @@ if __name__ == "__main__":
 
         print(
             '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, rms,
-                                                                                          avg_error, avg_error_x,
-                                                                                          avg_error_y,
-                                                                                          stdev_xy[0], stdev_xy[1]))
+                                                                                 avg_error, avg_error_x,
+                                                                                 avg_error_y,
+                                                                                 stdev_xy[0], stdev_xy[1]))
 
         # ---------------------------------------
         # --- Drawing ...
         # ---------------------------------------
         if show_images is True:
             for idx in range(0, depth_pts_in_depth_img_2.shape[1]):
-                image = cv2.circle(image, (int(depth_pts_in_depth_img_2[0, idx]), int(depth_pts_in_depth_img_2[1, idx])), 5, (255, 0, 0), -1)
+                image = cv2.circle(image, (int(depth_pts_in_depth_img_2[0, idx]), int(
+                    depth_pts_in_depth_img_2[1, idx])), 5, (255, 0, 0), -1)
             for idx in range(0, depth_pts_in_depth_img_1.shape[1]):
-                image = cv2.circle(image, (int(depth_pts_in_depth_img_1[0, idx]), int(depth_pts_in_depth_img_1[1, idx])), 5, (0, 0, 255),
-                                   -1)
+                image = cv2.circle(image, (int(depth_pts_in_depth_img_1[0, idx]), int(
+                    depth_pts_in_depth_img_1[1, idx])), 5, (0, 0, 255), -1)
             cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
-
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float32)
@@ -308,9 +309,9 @@ if __name__ == "__main__":
     print('-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print(
         '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', rms,
-                                                                                      avg_error, avg_error_x,
-                                                                                      avg_error_y,
-                                                                                      stdev_xy[0], stdev_xy[1]))
+                                                                             avg_error, avg_error_x,
+                                                                             avg_error_y,
+                                                                             stdev_xy[0], stdev_xy[1]))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print("Press ESC to quit and close all open windows.")

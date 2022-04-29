@@ -11,26 +11,26 @@ Reads the calibration results from a json file and computes the evaluation metri
 import json
 import math
 import os
+import argparse
+from copy import deepcopy
+from collections import OrderedDict
+
 import numpy as np
 import matplotlib.pyplot as plt
 import atom_core.atom
 import cv2
-import argparse
-import OptimizationUtils.utilities as opt_utilities
+from atom_core.opt_utilities import (rodriguesToMatrix, traslationRodriguesToTransform, matrixToRodrigues,
+                                     projectToCamera, drawSquare2D, drawCross2D)
 from scipy.spatial import distance
-from copy import deepcopy
 from colorama import Style, Fore
 from numpy.linalg import inv
 from matplotlib import cm
-
-from collections import OrderedDict
-
 from atom_core.naming import generateKey
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t, D_t):
     # ----------------------------------------------------------------------
@@ -39,11 +39,10 @@ def computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t
     ss_T_chess_h = np.zeros((4, 4), np.float32)
     ss_T_chess_h[3, 3] = 1
     ss_T_chess_h[0:3, 3] = tvecs[:, 0]
-    ss_T_chess_h[0:3, 0:3] = opt_utilities.rodriguesToMatrix(rvecs)
+    ss_T_chess_h[0:3, 0:3] = rodriguesToMatrix(rvecs)
 
     target_frame = test_dataset['calibration_config']['sensors'][camera_2_sensor]['link']
     source_frame = test_dataset['calibration_config']['sensors'][camera_1_sensor]['link']
-
 
     st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
                                           test_dataset['collections'][collection_key]['transforms'])
@@ -77,7 +76,7 @@ def computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t
 def undistortCorners(corners, K, D):
     """ Remove distortion from corner points. """
 
-    points = cv2.undistortPoints(corners, K, D);
+    points = cv2.undistortPoints(corners, K, D)
 
     fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
 
@@ -183,7 +182,7 @@ if __name__ == "__main__":
 
     f = open('test.json', 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print (json.dumps(test_dataset, indent=2, sort_keys=True), file=f)
+    print(json.dumps(test_dataset, indent=2, sort_keys=True), file=f)
     f.close()
     # exit(0)
 
@@ -229,8 +228,8 @@ if __name__ == "__main__":
             if not collection['labels'][sensor_key]['detected'] and (
                     sensor_key == camera_1_sensor or sensor_key == camera_2_sensor):
                 print(
-                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
 
                 collections_to_delete.append(collection_key)
                 break
@@ -293,7 +292,7 @@ if __name__ == "__main__":
         source_frame = test_dataset['calibration_config']['sensors'][camera_1_sensor]['link']
 
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_t], np.array(corners_t, dtype=np.float32), K_t, D_t)
-        pattern_pose_target = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+        pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = atom_core.atom.getTransform(common_frame, target_frame,
                                           test_dataset['collections'][collection_key]['transforms'])
@@ -302,18 +301,17 @@ if __name__ == "__main__":
 
         # NOTE(eurico): rvecs and tvecs are used ahead to compute the homography
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
-        pattern_pose_source = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+        pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = atom_core.atom.getTransform(common_frame, source_frame,
                                           test_dataset['collections'][collection_key]['transforms'])
-
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
         delta = np.dot(np.linalg.inv(pattern_pose_source), pattern_pose_target)
 
         deltaT = delta[0:3, 3]
-        deltaR = opt_utilities.matrixToRodrigues(delta[0:3, 0:3])
+        deltaR = matrixToRodrigues(delta[0:3, 0:3])
 
         terr.append(deltaT * deltaT)
         rerr.append(deltaR * deltaR)
@@ -334,7 +332,7 @@ if __name__ == "__main__":
                 corners_t_proj[1, i] = corners_t_proj[1, i] / corners_t_proj[2, i]
         else:
             corners_t_proj = np.dot(T, objp.T)
-            corners_t_proj, _, _ = opt_utilities.projectToCamera(K_t, D_t, 0, 0, corners_t_proj.T[idxs_s].T)
+            corners_t_proj, _, _ = projectToCamera(K_t, D_t, 0, 0, corners_t_proj.T[idxs_s].T)
 
         # Compute reprojection error
         delta_pts = []
@@ -354,7 +352,6 @@ if __name__ == "__main__":
                 # Compute reprojection error graphics
                 # TODO Andre why does this not work. Is it needed?
                 # plt.plot(diff[0], diff[1], 'o', label=collection_key, alpha=0.7, color=colors[int(collection_key)])
-
 
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
@@ -379,7 +376,7 @@ if __name__ == "__main__":
                 x = int(corners_t[idx, 0])
                 y = int(corners_t[idx, 1])
                 color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
-                opt_utilities.drawSquare2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                drawSquare2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
             cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
             cmap = cm.tab20b(np.linspace(0, 1, corners_t_proj.shape[1]))
@@ -391,7 +388,7 @@ if __name__ == "__main__":
                 x = int(corners_t_proj[0, idx])
                 y = int(corners_t_proj[1, idx])
                 color = (cmap[idx, 2] * 255, cmap[idx, 1] * 255, cmap[idx, 0] * 255)
-                opt_utilities.drawCross2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                drawCross2D(image_t, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
             cv2.imshow('Reprojection error', image_t)
             key = cv2.waitKey(0)
@@ -415,6 +412,6 @@ if __name__ == "__main__":
     print('---------------------------------------------------------------------------')
     print('{:^5s}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}{:^10.4f}'.format(
         'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1],
-        np.mean(np.sqrt(np.sum(terr, 1))), #* 1000,
-        np.mean(np.sqrt(np.sum(rerr, 1))))) #* 180.0 / np.pi))
+        np.mean(np.sqrt(np.sum(terr, 1))),  # * 1000,
+        np.mean(np.sqrt(np.sum(rerr, 1)))))  # * 180.0 / np.pi))
     print('---------------------------------------------------------------------------')

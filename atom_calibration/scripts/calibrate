@@ -14,13 +14,13 @@ from functools import partial
 
 import numpy as np
 
-# own packages
-import OptimizationUtils.OptimizationUtils as OptimizationUtils
-
 # Atom imports
 import atom_calibration.calibration.patterns_config as patterns
 import atom_core.naming
 from colorama import Fore, Style
+
+# own packages
+from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
                                                               setterCameraIntrinsics, setterTransform)
 from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
@@ -51,7 +51,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     ap = argparse.ArgumentParser()
-    ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
+    ap = addArguments(ap)
     ap.add_argument("-json", "--json_file", type=str, required=True, help="Json file containing input dataset.", )
     ap.add_argument("-v", "--verbose", help="Be verbose", action="store_true", default=False)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action="store_true")
@@ -148,7 +148,7 @@ def main():
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
-    opt = OptimizationUtils.Optimizer()
+    opt = Optimizer()
     opt.addDataModel("args", args)
     opt.addDataModel("dataset", dataset)
 

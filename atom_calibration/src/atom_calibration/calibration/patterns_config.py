@@ -16,7 +16,7 @@ import cv2
 # stdlib
 from colorama import Fore, Style
 from tf import transformations
-from OptimizationUtils import utilities
+from atom_core.opt_utilities import traslationRodriguesToTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -224,7 +224,7 @@ def createPatternLabels(args, dataset, step=0.02):
                     dataset['calibration_config']['calibration_pattern']['parent_link'],
                     sensor['camera_info']['header']['frame_id'], collection['transforms'])
 
-                sensor_T_chessboard = utilities.traslationRodriguesToTransform(tvecs, rvecs)
+                sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
                 root_T_chessboard = np.dot(root_T_sensor, sensor_T_chessboard)
                 T = deepcopy(root_T_chessboard)
                 T[0:3, 3] = 0  # remove translation component from 4x4 matrix
@@ -487,13 +487,13 @@ def createPatternLabels(args, dataset, step=0.02):
     #             # Find pose of the camera w.r.t the chessboard
     #             print(np.shape(objp))
     #             print(np.shape(corners))
-    #             # projected, _, _ = utilities.projectToCamera(K, D, width, height, np.dot(sTc, pattern['grid'].T[ids].T))
+    #             # projected, _, _ = projectToCamera(K, D, width, height, np.dot(sTc, pattern['grid'].T[ids].T))
     #             # ret, rvecs, tvecs = cv2.solvePnP(objp, corners, K, D)
     #             ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
     #
     #             # Compute the pose of he chessboard w.r.t the base_link
-    #             root_T_sensor = utilities.getAggregateTransform(sensor['chain'], collection['transforms'])
-    #             sensor_T_chessboard = utilities.traslationRodriguesToTransform(tvecs, rvecs)
+    #             root_T_sensor = getAggregateTransform(sensor['chain'], collection['transforms'])
+    #             sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
     #             root_T_chessboard = np.dot(root_T_sensor, sensor_T_chessboard)
     #             T = deepcopy(root_T_chessboard)
     #             T[0:3, 3] = 0  # remove translation component from 4x4 matrix

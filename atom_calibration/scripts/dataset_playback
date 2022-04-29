@@ -17,9 +17,6 @@ from sensor_msgs.msg import PointCloud2
 from colorama import Back, Fore, Style
 from pynput import keyboard
 
-# own packages
-from OptimizationUtils import OptimizationUtils
-
 # Atom imports
 from atom_calibration.dataset_playback.depth_manual_labeling import clickedPointsCallback, clickedPointsReset
 from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
@@ -27,6 +24,9 @@ from atom_calibration.dataset_playback.visualization import setupVisualization, 
 from atom_core.dataset_io import (filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
 from atom_calibration.calibration.patterns_config import createPatternLabels
+
+# own packages
+
 
 # global variables  ... are forbidden
 
@@ -103,7 +103,6 @@ def keyPressedCallback(key, selection, dataset, args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
     ap.add_argument("-json", "--json_file",
                     help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-v", "--verbose", help="Be verbose",

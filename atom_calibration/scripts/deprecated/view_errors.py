@@ -10,7 +10,7 @@ import matplotlib.cm as cm
 from collections import OrderedDict
 
 from OptimizationUtils.tf import Transform
-from OptimizationUtils.utilities import matrixToRodrigues
+
 
 def load_data(jsonfile):
     try:
@@ -22,16 +22,17 @@ def load_data(jsonfile):
 
     return OrderedDict(sorted(dataset['collections'].items(), key=lambda x: int(x[0])))
 
+
 def calculate_errors(data):
 
     cerr = []
     terr = []
     for key, collection in data.items():
         for sensor_name, value in collection.items():
-            A = Transform(*value['A']) # tTb
-            X = Transform(*value['X']) # bTw
-            Z = Transform(*value['Z']) # tTc
-            B = Transform(*value['B']) # cTw
+            A = Transform(*value['A'])  # tTb
+            X = Transform(*value['X'])  # bTw
+            Z = Transform(*value['Z'])  # tTc
+            B = Transform(*value['B'])  # cTw
 
             Ra = A.rotation_matrix
             ta = np.array(list(A.position))
@@ -43,14 +44,14 @@ def calculate_errors(data):
             tb = np.array(list(B.position))
 
             # Rotation error
-            r = np.dot( np.linalg.inv(np.dot(Rz, Rb)), np.dot(Ra, Rx))
+            r = np.dot(np.linalg.inv(np.dot(Rz, Rb)), np.dot(Ra, Rx))
 
             # diff = matrixToRodrigues(r)
             diff = np.array(Transform.from_matrix(r).euler)
             err = diff*diff
             cerr.append(err.tolist())
 
-            diff = (np.dot(Ra[0:3,0:3], tx) + ta) - (np.dot(Rz[0:3,0:3], tb) + tz)
+            diff = (np.dot(Ra[0:3, 0:3], tx) + ta) - (np.dot(Rz[0:3, 0:3], tb) + tz)
             terr.append(diff)
 
             # diff = np.dot(A.matrix, X.matrix) - np.dot(Z.matrix, B.matrix)
@@ -62,7 +63,7 @@ def calculate_errors(data):
 
     terr = np.array(terr)
     # print("Angular error {}".format(np.mean(np.sqrt(np.sum(cerr*cerr, 1))) * 180.0 / 3.14159) )
-    print("Angular error {}".format(np.mean(np.sqrt(np.sum(cerr,1))) * 180.0 / np.pi) )
+    print("Angular error {}".format(np.mean(np.sqrt(np.sum(cerr, 1))) * 180.0 / np.pi))
     print("Translation error {}".format(np.mean(np.sqrt(np.sum(terr*terr, 1)))*1000.0))
     # print("Full error {}".format(np.mean(cerr)))
 
@@ -97,6 +98,7 @@ def get_projection_errors(data, error_key):
 
     return all, per_collection
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("error", help="Error file", metavar='error_file', type=str)
@@ -122,7 +124,7 @@ def main():
     # print(np.mean(np.sqrt(all)))
     rmse = np.sqrt(np.mean(all))
 
-    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(10,5))
+    fig, axes = plt.subplots(2, 1, sharex=True, figsize=(10, 5))
 
     y = np.array([[np.sqrt(np.mean(xx['error'])) for xx in x['sensors'].values()] for x in per_collection.values()])
 
@@ -145,7 +147,7 @@ def main():
 
     fig.tight_layout()
 
-    st = fig.suptitle('{} ($RMSE = {}$)'.format(args['title'],rmse), fontsize=16)
+    st = fig.suptitle('{} ($RMSE = {}$)'.format(args['title'], rmse), fontsize=16)
     st.set_y(0.98)
     fig.subplots_adjust(top=0.85)
 
@@ -154,10 +156,10 @@ def main():
 
     plt.show()
 
-    #=========================================
+    # =========================================
 
     colors = cm.tab20b(np.linspace(0, 1, len(per_collection)))
-    fig, axes = plt.subplots(1,2, figsize=(10,5))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     y = np.array([[xx['yerr'] for xx in x['sensors'].values()] for x in per_collection.values()])
     x = np.array([[xx['xerr'] for xx in x['sensors'].values()] for x in per_collection.values()])
@@ -178,8 +180,8 @@ def main():
     dev = 4
     axes[1].set_title("Final")
     axes[1].grid(True)
-    axes[1].set_xlim( xmean- dev*xstd, xmean +dev*xstd )
-    axes[1].set_ylim( ymean- dev*ystd, ymean +dev*ystd )
+    axes[1].set_xlim(xmean - dev*xstd, xmean + dev*xstd)
+    axes[1].set_ylim(ymean - dev*ystd, ymean + dev*ystd)
     # axes[1].set_xscale('log')
     # axes[1].set_yscale('log')
 
@@ -221,13 +223,12 @@ def main():
     axes[0].set_xlabel('$x$ error (pixel)')
     axes[0].set_ylabel('$y$ error (pixel)')
 
-    axes[0].set_xlim( xmean- dev*xstd, xmean + dev*xstd )
-    axes[0].set_ylim( ymean- 2*dev*ystd, ymean + 2*dev*ystd )
+    axes[0].set_xlim(xmean - dev*xstd, xmean + dev*xstd)
+    axes[0].set_ylim(ymean - 2*dev*ystd, ymean + 2*dev*ystd)
 
     # axes.set_aspect('equal', 'box')
 
     axes[0].legend(ncol=2, fontsize='xx-small', title='Collections')
-
 
     fig.tight_layout()
     st = fig.suptitle('{} - Reprojection errors'.format(args['title']), fontsize=16)

@@ -10,25 +10,19 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
-import numpy as np
-import ros_numpy
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
-from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
+
+import numpy as np
+import atom_core.atom
+import cv2
+from rospy_message_converter import message_converter
+from atom_core.opt_utilities import projectToCamera
+from scipy.spatial import distance
+from colorama import Style, Fore
 from image_geometry import PinholeCameraModel
-
-
 from atom_core.naming import generateKey
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
+from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
 
 
 # -------------------------------------------------------------------------------
@@ -50,7 +44,7 @@ def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
 
     cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
-                                                            scale=10000.0)
+                                        scale=10000.0)
 
     idxs = collection['labels'][ss]['idxs_limit_points']
 
@@ -90,13 +84,14 @@ def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
-    pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return pts_in_image
 
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -130,10 +125,9 @@ if __name__ == "__main__":
 
     annotation_file = os.path.dirname(test_json_file) + "/annotation_" + rgb_sensor + ".json"
     if os.path.exists(annotation_file) is False:
-        raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
+        raise ValueError(
+            'Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
         exit(0)
-
-
 
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -173,12 +167,10 @@ if __name__ == "__main__":
     f = open(annotation_file, 'r')
     eval_data = json.load(f)
 
-
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
                                                             train_dataset['sensors'][depth_sensor]['camera_info']))
-
 
     print(Fore.BLUE + '\nStarting evalutation...')
     print(Fore.WHITE)
@@ -203,17 +195,17 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         depth2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                              test_dataset['collections'][collection_key]['transforms'])
-        pts_in_image = depthToImage(collection, test_json_file, depth_sensor, rgb_sensor, depth2cam, pinhole_camera_model)
+                                                test_dataset['collections'][collection_key]['transforms'])
+        pts_in_image = depthToImage(collection, test_json_file, depth_sensor,
+                                    rgb_sensor, depth2cam, pinhole_camera_model)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][rgb_sensor]['data_file']
-        print (filename)
+        print(filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
-
 
         # Clear image annotations
         image = cv2.imread(filename)
@@ -271,7 +263,7 @@ if __name__ == "__main__":
                                  (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
 
         if len(delta_pts) == 0:
-            print ('No Depth point mapped into the image for collection ' + str(collection_key))
+            print('No Depth point mapped into the image for collection ' + str(collection_key))
             continue
 
         # ---------------------------------------
