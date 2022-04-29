@@ -146,10 +146,9 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create a tf graph to support verifications
     # --------------------------------------------------------------------------
+    gx = nx.DiGraph()
     if not args['use_tfs']:  # create a graph using the information in the urdf
         print('Creating transformation tree using the urdf robot description ...')
-        gx = nx.DiGraph()
-
         for link in description.links:  # A graph node for each link in the urdf
             gx.add_node(link.name)
             print(link.name)
@@ -161,7 +160,6 @@ if __name__ == "__main__":
                 gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
     else:
         print('Creating transformation tree using the tfs in the bagfile ...')
-        gx = nx.DiGraph()
 
         print('Loading bagfile ' + bag_file)
         bag = rosbag.Bag(bag_file)
@@ -183,10 +181,9 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
     # --------------------------------------------------------------------------
-    # TODO #401 Verify if the standard folders of a calibration package exist
     print('Running verifications ... please wait ...')
 
-    # verify if the standard atom_calibration directories exist, if not create them
+    # Verify if the standard atom_calibration directories exist, if not create them (#401)
     checkDirectoryExistence('calibration', package_name)
     checkDirectoryExistence('launch', package_name)
     checkDirectoryExistence('rviz', package_name)
@@ -237,7 +234,7 @@ if __name__ == "__main__":
         throttle_topics[topic] = {'throttled_topic': topic, 'sensor_key': sensor_key, 'use_throttle': use_throttle,
                                   'throttle_hz': throttle}
 
-    # Verify consistency of the tf tree
+    # Verify the existence of all tf frames in the config
     frames_to_verify = {'world_link': config['world_link'],
                         'calibration_pattern.pattern_link': config['calibration_pattern']['parent_link']}
     for sensor_key in config['sensors']:  # Check if link, child_link and parent_link exist in the bagfile.
@@ -251,6 +248,15 @@ if __name__ == "__main__":
             raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
                              Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
                              Fore.BLUE + config_file + Style.RESET_ALL)
+
+    # Verify that the parent and child links for each sensor are a direct transformation (#316)
+    for sensor_key, sensor in config['sensors'].items():
+        edge_in_config = (config['sensors'][sensor_key]['parent_link'], config['sensors'][sensor_key]['child_link'])
+        if not edge_in_config in gx.edges():
+            raise ValueError(
+                'Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
+                edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
+                ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
 
     # if nx.is_connected(gx):
     if nx.is_weakly_connected(gx):
