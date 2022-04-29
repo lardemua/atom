@@ -2,43 +2,35 @@
 """
 Casts an optimization problem using an ATOM dataset file as input. Then calibrates by running the optimization.
 """
+
+# Standard imports
 import argparse
 import copy
-import json
-import math
 import os
 import random
 import signal
 import sys
-from datetime import datetime
 from functools import partial
-from os import path
 
-import atom_calibration.calibration.patterns_config as patterns
-import atom_core.naming
 import numpy as np
 
 # own packages
 import OptimizationUtils.OptimizationUtils as OptimizationUtils
-import ros_numpy
-import rospkg
 
-# 3rd-party
-import rospy
-import tf
-from click import style
+# Atom imports
+import atom_calibration.calibration.patterns_config as patterns
+import atom_core.naming
+from colorama import Fore, Style
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
                                                               setterCameraIntrinsics, setterTransform)
-from atom_calibration.calibration.objective_function import errorReport, getPointsInSensorAsNPArray, objectiveFunction
+from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
-from atom_core.config_io import readXacroFile, uriReader
 from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
-                                  filterCollectionsFromDataset, filterSensorsFromDataset,
-                                  getPointCloudMessageFromDictionary, loadResultsJSON, saveResultsJSON)
-from atom_core.naming import generateKey, generateName
-from atom_core.utilities import waitForKeyPress, waitForKeyPress2
-from colorama import Back, Fore, Style
-from urdf_parser_py.urdf import URDF
+                                  filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
+                                  saveResultsJSON)
+from atom_core.naming import generateName
+from atom_core.utilities import waitForKeyPress2
+from atom_core.xacro_io import saveResultsXacro
 
 
 # -------------------------------------------------------------------------------
@@ -60,14 +52,12 @@ def main():
 
     ap = argparse.ArgumentParser()
     ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
-    ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str,
-                    required=True)
+    ap.add_argument("-json", "--json_file", type=str, required=True, help="Json file containing input dataset.", )
     ap.add_argument("-v", "--verbose", help="Be verbose", action="store_true", default=False)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action="store_true")
-    ap.add_argument("-si", "--show_images", help="shows images for each camera",
-                    action="store_true",        default=False)
-    ap.add_argument("-oi", "--optimize_intrinsics", help="Adds camera instrinsics to the  ptimization",
-                    action="store_true", default=False)
+    ap.add_argument("-si", "--show_images", action="store_true", default=False, help="shows images for each camera")
+    ap.add_argument("-oi", "--optimize_intrinsics", action="store_true", default=False,
+                    help="Adds camera instrinsics to the  ptimization",)
     ap.add_argument("-sr", "--sample_residuals", help="Samples residuals", type=float, default=1)
     ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
     ap.add_argument("-slr", "--sample_longitudinal_residuals", help="Samples residuals", type=float, default=1)
@@ -76,8 +66,8 @@ def main():
                     "Overrides automatic detection of static robot.")
     ap.add_argument("-oas", "--only_anchored_sensor", action="store_true", default=False,
                     help="Runs optimization only using the anchored sensor and discarding all others.")
-    ap.add_argument("-ap", "--anchor_patterns", help="Runs optimization without changing the poses of the patterns.",
-                    action="store_true", default=False)
+    ap.add_argument("-ap", "--anchor_patterns", action="store_true", default=False,
+                    help="Runs optimization without changing the poses of the patterns.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
@@ -114,8 +104,7 @@ def main():
     # ---------------------------------------
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args["json_file"], args["collection_selection_function"])
-
-    dataset_original = copy.deepcopy(dataset)
+    dataset_original = copy.deepcopy(dataset)  # make a copy before filtering out collections and sensors
 
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
@@ -446,15 +435,14 @@ def main():
     options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'o
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:
         waitForKeyPress2(opt.callObjectiveFunction, timeout=0.1,
-                         message=Fore.RED + "Optimization finished" + Style.RESET_ALL)
+                         message=Fore.BLUE + "Optimization finished" + Style.RESET_ALL)
     # Error Report
-    r = objectiveFunction(opt.data_models)
-    errorReport(dataset=dataset, residuals=r, normalizer=normalizer)
+    errorReport(dataset=dataset, residuals=objectiveFunction(opt.data_models), normalizer=normalizer)
 
     # ---------------------------------------
     # --- Save updated JSON file
@@ -462,7 +450,7 @@ def main():
     if args["output_json"] is None:
         filename_results_json = os.path.dirname(json_file) + "/atom_calibration.json"
     else:
-        filename_results_json = args["output_json"]
+        filename_results_json = os.path.dirname(json_file) + "/" + args["output_json"]
 
     # to store all sensors that existed in the dataset, regardless of which were optimized
     dataset['sensors'] = dataset_original['sensors']
@@ -471,63 +459,7 @@ def main():
     # ---------------------------------------
     # --- Save updated xacro
     # ---------------------------------------
-    # Cycle all sensors in calibration config, and for each replace the optimized transform in the original xacro
-    # Parse xacro description file
-    description_file, _, _ = uriReader(
-        dataset["calibration_config"]["description_file"]
-    )
-    print("Reading description file " + description_file + "...")
-    xml_robot = readXacroFile(description_file)
-
-    for sensor_key in dataset["calibration_config"]["sensors"]:
-        child = dataset["calibration_config"]["sensors"][sensor_key]["child_link"]
-        parent = dataset["calibration_config"]["sensors"][sensor_key]["parent_link"]
-        transform_key = atom_core.naming.generateKey(parent, child)
-
-        trans = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["trans"])
-        quat = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["quat"])
-        found = False
-
-        for joint in xml_robot.joints:
-            if joint.parent == parent and joint.child == child:
-                found = True
-                # print("Found joint: " + str(joint.name))
-
-                # print("Replacing xyz = " + str(joint.origin.xyz) + " by " + str(trans))
-                joint.origin.xyz = trans
-
-                rpy = list(tf.transformations.euler_from_quaternion(quat, axes="sxyz"))
-                # print("Replacing rpy = " + str(joint.origin.rpy) + " by " + str(rpy))
-                joint.origin.rpy = rpy
-                break
-
-        if not found:
-            raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
-
-    time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-    file_name = "optimized_" + time + ".urdf.xacro"
-
-    if "_metadata" not in dataset:
-        # if args['output_xacro'] is None:
-        filename_results_xacro = "/tmp/" + file_name
-        print("The dataset does not have the metadata field.")
-        with open(filename_results_xacro, "w") as out:
-            out.write(URDF.to_xml_string(xml_robot))
-    else:
-        rospack = rospkg.RosPack()
-        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/optimized/")
-        if not path.exists(path_to_file):
-            os.mkdir(path_to_file)
-        filename_results_xacro = path_to_file + file_name
-        with open(filename_results_xacro, "w") as out:
-            out.write(URDF.to_xml_string(xml_robot))
-
-        with open(rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration")
-                  + "/urdf/optimized.urdf.xacro", "w",) as out:
-            out.write(URDF.to_xml_string(xml_robot))
-        # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
-
-    print("Optimized xacro saved to " + str(filename_results_xacro) + " . You can use it as a ROS robot_description.")
+    saveResultsXacro(args['output_xacro'], dataset, selected_collection_key)
 
 
 if __name__ == "__main__":

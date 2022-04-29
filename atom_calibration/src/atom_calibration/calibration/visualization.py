@@ -24,7 +24,6 @@ import tf
 import tf2_ros
 from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from cv2 import STEREO_BM_PREFILTER_NORMALIZED_RESPONSE
-
 from atom_calibration.dataset_playback.visualization import getCvDepthImageFromCollectionSensor
 from atom_core.cache import Cache
 from rospy_message_converter import message_converter
@@ -41,11 +40,11 @@ from matplotlib import cm
 # own packages
 from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateLabeledTopic, generateName
-from atom_core.config_io import readXacroFile, execute, uriReader
+from atom_core.config_io import execute, uriReader
+from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary, genCollectionPrefix)
 from atom_calibration.calibration.objective_function import *
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS

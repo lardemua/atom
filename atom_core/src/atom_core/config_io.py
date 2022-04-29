@@ -1,25 +1,14 @@
+
+# Standard imports
 import os
 import re
 import subprocess
+
+# Ros imports
 from urllib.parse import urlparse
 
-import rospkg
 import yaml
-from colorama import Style, Fore
-from urdf_parser_py.urdf import URDF
-
-
-def readXacroFile(description_file):
-    # xml_robot = URDF.from_parameter_server()
-    urdf_file = '/tmp/description.urdf'
-    # print('Parsing description file ' + description_file)
-    execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=False)  # create a temp urdf file
-    try:
-        xml_robot = URDF.from_xml_file(urdf_file)  # read teh urdf file
-    except:
-        raise ValueError('Could not parse description file ' + description_file)
-
-    return xml_robot
+import rospkg
 
 
 def execute(cmd, blocking=True, verbose=True):

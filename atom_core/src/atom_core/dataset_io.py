@@ -1,32 +1,27 @@
 import copy
 
-# stdlib
-import functools
+# Standard imports
 import json
 import os
-import random
 
-# 3rd-party
 import numpy as np
+
+# Opencv imports
 import cv2
+
+# Ros imports
 import rospy
-import sensor_msgs.point_cloud2 as pc2
 import tf
 import atom_core.pypcd as pypcd
-import imageio
 
-# 3rd-party
-# import pypcd
+# Atom imports
+from cv_bridge import CvBridge
 from colorama import Fore, Style
+from rospy_message_converter import message_converter
+from std_msgs.msg import Header
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
-from cv_bridge import CvBridge
-from geometry_msgs.msg import Transform
-from rospy_message_converter import message_converter
-from sensor_msgs.msg import PointCloud2, PointField
-from std_msgs.msg import Header
-from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
-                                                     imageShowUInt16OrFloat32OrBool)
+from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
 
 
 def printImageInfo(image, text=None):
