@@ -27,7 +27,7 @@ def readXacroFile(description_file):
     return xml_robot
 
 
-def saveResultsXacro(output_file, dataset, selected_collection_key):
+def saveResultsXacro(dataset, selected_collection_key):
     # Cycle all sensors in calibration config, and for each replace the optimized transform in the original xacro
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset["calibration_config"]["description_file"])
@@ -58,7 +58,6 @@ def saveResultsXacro(output_file, dataset, selected_collection_key):
         if not found:
             raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
 
-    # TODO #434 Should we remove command line arg output_xacro?
     time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     file_name = "optimized_" + time + ".urdf.xacro"
 

@@ -92,8 +92,6 @@ def main():
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
     ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
                     type=str, required=False, default=None)
-    ap.add_argument("-ox", "--output_xacro", help="Full path to output xacro file.",
-                    type=str, required=False, default=None)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -459,7 +457,7 @@ def main():
     # ---------------------------------------
     # --- Save updated xacro
     # ---------------------------------------
-    saveResultsXacro(args['output_xacro'], dataset, selected_collection_key)
+    saveResultsXacro(dataset, selected_collection_key)
 
 
 if __name__ == "__main__":
