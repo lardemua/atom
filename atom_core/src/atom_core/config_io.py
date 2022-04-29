@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import yaml
 import rospkg
+from colorama import Fore
 
 
 def execute(cmd, blocking=True, verbose=True):

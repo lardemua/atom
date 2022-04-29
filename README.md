@@ -94,7 +94,11 @@ roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets
 5. **Dataset playback & Manual Annotation** [_optional_] - it is possible to visualize the labels automatically produced during the collection stage and correct them mannually:
    
 ```bash
-roslaunch <your_robot_calibration> set_initial_estimate.launch 
+roslaunch <your_robot_calibration> dataset_playback.launch
+```
+and then:
+```bash
+rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/<your_robot_calibration>/<your_dataset>/dataset.json -uic -si  -ow
 ```
 
 6. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
