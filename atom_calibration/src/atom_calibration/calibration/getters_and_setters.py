@@ -6,16 +6,15 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
-import numpy as np
-
-# Atom imports
-import atom_core.opt_utilities as opt_utilities
-
 # Standard imports
+import numpy as np
 from scipy.spatial import distance
 
 # ROS imports
 from tf import transformations
+
+# Atom imports
+from atom_core.geometry import matrixToRodrigues, rodriguesToMatrix
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -35,7 +34,7 @@ def getterTransform(dataset, transform_key, collection_name):
     # Convert from (trans, quat) to [tx, ty, tz, r1, r2, r3] format
     h_matrix = transformations.quaternion_matrix(quat)  # quaternion to homogeneous matrix
     matrix = h_matrix[0:3, 0:3]  # non-homogeneous matrix 3x3
-    rod = opt_utilities.matrixToRodrigues(matrix).tolist()  # matrix to Rodrigues
+    rod = matrixToRodrigues(matrix).tolist()  # matrix to Rodrigues
     return trans + rod
 
 
@@ -45,7 +44,7 @@ def setterTransform(dataset, values, transform_key, collection_name=None):
 
     # Convert from [tx, ty, tz, r1, r2, r3] format to trans and quat format
     trans, rod = values[0:3], values[3:]
-    matrix = opt_utilities.rodriguesToMatrix(rod)
+    matrix = rodriguesToMatrix(rod)
     h_matrix = np.identity(4)
     h_matrix[0:3, 0:3] = matrix
     quat = transformations.quaternion_from_matrix(h_matrix)
@@ -88,13 +87,13 @@ def getterSensorRotation(data, sensor_key, collection_key):
     hmatrix = transformations.quaternion_matrix(quat)
     matrix = hmatrix[0:3, 0:3]
 
-    return opt_utilities.matrixToRodrigues(matrix)
+    return matrixToRodrigues(matrix)
 
 
 def setterSensorRotation(data, value, sensor_key):
     assert len(value) == 3, "value must be a list with length 3."
 
-    matrix = opt_utilities.rodriguesToMatrix(value)
+    matrix = rodriguesToMatrix(value)
     hmatrix = np.identity(4)
     hmatrix[0:3, 0:3] = matrix
     quat = transformations.quaternion_from_matrix(hmatrix)
@@ -160,13 +159,13 @@ def getterPatternRotation(data, collection_key):
     quat = data['patterns']['collections'][collection_key]['quat']
     hmatrix = transformations.quaternion_matrix(quat)
     matrix = hmatrix[0:3, 0:3]
-    return opt_utilities.matrixToRodrigues(matrix)
+    return matrixToRodrigues(matrix)
 
 
 def setterPatternRotation(data, value, collection_key):
     assert len(value) == 3, "value must be a list with length 3."
 
-    matrix = opt_utilities.rodriguesToMatrix(value)
+    matrix = rodriguesToMatrix(value)
     hmatrix = np.identity(4).astype(np.float)
     hmatrix[0:3, 0:3] = matrix
     quat = transformations.quaternion_from_matrix(hmatrix)

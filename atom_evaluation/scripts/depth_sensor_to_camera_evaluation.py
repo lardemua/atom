@@ -17,7 +17,7 @@ import numpy as np
 import atom_core.atom
 import cv2
 from rospy_message_converter import message_converter
-from atom_core.opt_utilities import projectToCamera
+from atom_core.vision import projectToCamera
 from scipy.spatial import distance
 from colorama import Style, Fore
 from image_geometry import PinholeCameraModel

@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 from atom_core.naming import generateKey
-from atom_core.opt_utilities import translationQuaternionToTransform
+from atom_core.geometry import translationQuaternionToTransform
 
 
 def getChain(from_frame, to_frame, transform_pool):

@@ -25,7 +25,7 @@ from rospy_message_converter import message_converter
 
 # Atom imports
 from atom_core.naming import generateKey
-from atom_core.opt_utilities import projectToCamera
+from atom_core.vision import projectToCamera
 from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 from atom_core.atom import getTransform
 

@@ -16,7 +16,7 @@ import cv2
 # stdlib
 from colorama import Fore, Style
 from tf import transformations
-from atom_core.opt_utilities import traslationRodriguesToTransform
+from atom_core.geometry import traslationRodriguesToTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS

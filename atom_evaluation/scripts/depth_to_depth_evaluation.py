@@ -20,7 +20,7 @@ import atom_core.atom
 import cv2
 from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 from rospy_message_converter import message_converter
-from atom_core.opt_utilities import projectToCamera
+from atom_core.vision import projectToCamera
 from scipy.spatial import distance
 from colorama import Style, Fore
 from image_geometry import PinholeCameraModel

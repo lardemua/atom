@@ -8,24 +8,26 @@ Reads the calibration results from a json file and computes the evaluation metri
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+# Standard imports
 import json
 import math
 import os
 import argparse
-from copy import deepcopy
 from collections import OrderedDict
 
 import numpy as np
 import matplotlib.pyplot as plt
-import atom_core.atom
 import cv2
-from atom_core.opt_utilities import (rodriguesToMatrix, traslationRodriguesToTransform, matrixToRodrigues,
-                                     projectToCamera, drawSquare2D, drawCross2D)
-from scipy.spatial import distance
 from colorama import Style, Fore
 from numpy.linalg import inv
 from matplotlib import cm
+from atom_core.atom import getTransform
+
+# Atom imports
 from atom_core.naming import generateKey
+from atom_core.vision import projectToCamera
+from atom_core.geometry import rodriguesToMatrix, matrixToRodrigues, traslationRodriguesToTransform
+from atom_core.drawing import drawSquare2D, drawCross2D
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -44,10 +46,10 @@ def computeHomographyMat(collection, collection_key, rvecs, tvecs, K_s, D_s, K_t
     target_frame = test_dataset['calibration_config']['sensors'][camera_2_sensor]['link']
     source_frame = test_dataset['calibration_config']['sensors'][camera_1_sensor]['link']
 
-    st_T_ss = atom_core.atom.getTransform(target_frame, source_frame,
-                                          test_dataset['collections'][collection_key]['transforms'])
-    ss_T_st = atom_core.atom.getTransform(source_frame, target_frame,
-                                          test_dataset['collections'][collection_key]['transforms'])
+    st_T_ss = getTransform(target_frame, source_frame,
+                           test_dataset['collections'][collection_key]['transforms'])
+    ss_T_st = getTransform(source_frame, target_frame,
+                           test_dataset['collections'][collection_key]['transforms'])
 
     st_T_chess_h = np.dot(inv(ss_T_st), ss_T_chess_h)
 
@@ -294,8 +296,8 @@ if __name__ == "__main__":
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_t], np.array(corners_t, dtype=np.float32), K_t, D_t)
         pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
-        bTp = atom_core.atom.getTransform(common_frame, target_frame,
-                                          test_dataset['collections'][collection_key]['transforms'])
+        bTp = getTransform(common_frame, target_frame,
+                           test_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
@@ -303,8 +305,8 @@ if __name__ == "__main__":
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[:3, :].T[idxs_s], np.array(corners_s, dtype=np.float32), K_s, D_s)
         pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
-        bTp = atom_core.atom.getTransform(common_frame, source_frame,
-                                          test_dataset['collections'][collection_key]['transforms'])
+        bTp = getTransform(common_frame, source_frame,
+                           test_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 

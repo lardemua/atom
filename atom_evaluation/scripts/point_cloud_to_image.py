@@ -21,7 +21,7 @@ import numpy as np
 import ros_numpy
 
 # Atom imports
-from atom_core.opt_utilities import projectToCamera
+from atom_core.vision import projectToCamera
 from atom_core.dataset_io import read_pcd
 from atom_core.atom import getTransform
 

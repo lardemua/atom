@@ -27,7 +27,7 @@ from image_geometry import PinholeCameraModel
 # Atom imports
 from atom_core.naming import generateKey
 from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
-from atom_core.opt_utilities import projectToCamera
+from atom_core.vision import projectToCamera
 from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 from atom_core.atom import getTransform
 

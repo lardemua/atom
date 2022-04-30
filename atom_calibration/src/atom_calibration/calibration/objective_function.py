@@ -24,7 +24,7 @@ from cv_bridge import CvBridge
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.opt_utilities import projectToCamera
+from atom_core.vision import projectToCamera
 from atom_core.dataset_io import getPointCloudMessageFromDictionary
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
