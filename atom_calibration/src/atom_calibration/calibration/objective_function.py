@@ -1,23 +1,30 @@
-# stdlib
+"""
+Definition of the objective function.
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
+# Standard imports
 import math
 import copy
 from datetime import datetime
 
-import atom_core.atom
-import chardet
 import numpy as np
 import ros_numpy
-
-# 3rd-party
-from atom_core.opt_utilities import projectToCamera
 from colorama import Fore, Style
 from scipy.spatial import distance
+
+# ROS imports
 from geometry_msgs.msg import Point
 from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
 from cv_bridge import CvBridge
 
-# Own modules
+# Atom imports
+from atom_core.atom import getTransform
+from atom_core.opt_utilities import projectToCamera
 from atom_core.dataset_io import getPointCloudMessageFromDictionary
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
@@ -258,11 +265,11 @@ def objectiveFunction(data):
 
         # from tf import transformations
         # print('collection ' + str(collection_key))
-        # m = atom_core.atom.getTransform('world', 'hand_camera_link', collection['transforms'])
+        # m = getTransform('world', 'hand_camera_link', collection['transforms'])
         # q = transformations.quaternion_from_matrix(m)
         # print('world to hand_camera_link = ' + str(m) + '\nquat = ' + str(q))
         #
-        # m = atom_core.atom.getTransform('world', 'world_camera_link', collection['transforms'])
+        # m = getTransform('world', 'world_camera_link', collection['transforms'])
         # q = transformations.quaternion_from_matrix(m)
         # print('world to world_camera_link = ' + str(m) + '\nquat = ' + str(q))
 
@@ -280,7 +287,7 @@ def objectiveFunction(data):
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                sensor_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
                 # q = transformations.quaternion_from_matrix(sensor_to_pattern)
@@ -331,7 +338,7 @@ def objectiveFunction(data):
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_chessboard = np.dot(pattern_to_sensor, pts_in_laser)
 
                 # Compute the coordinate of the laser points in the chessboard reference frame
@@ -405,7 +412,7 @@ def objectiveFunction(data):
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                laser_to_chessboard = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                laser_to_chessboard = getTransform(from_frame, to_frame, collection['transforms'])
 
                 p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
                 p_co_in_laser = np.dot(laser_to_chessboard, p_co_in_chessboard)
@@ -454,7 +461,7 @@ def objectiveFunction(data):
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                lidar_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                lidar_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
 
                 # TODO we could also use the middle points ...
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
@@ -474,7 +481,7 @@ def objectiveFunction(data):
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
                 detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
 
                 pts = []
@@ -505,7 +512,7 @@ def objectiveFunction(data):
                 now = datetime.now()
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                depth_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                depth_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
 
                 # TODO we could also use the middle points ...
                 # points_in_pattern = np.dot(lidar_to_pattern, detected_middle_points_in_sensor)
@@ -541,7 +548,7 @@ def objectiveFunction(data):
 
                 from_frame = dataset['calibration_config']['calibration_pattern']['link']
                 to_frame = sensor['parent']
-                pattern_to_sensor = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
                 detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
                 # print('POINTS IN PATTERN LIMITS ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now).total_seconds()) + ' secs.')
@@ -578,7 +585,7 @@ def objectiveFunction(data):
 
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                sensor_to_pattern = atom_core.atom.getTransform(from_frame, to_frame, collection['transforms'])
+                sensor_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
                 pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])

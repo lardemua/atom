@@ -389,8 +389,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         # print(dataset['calibration_config']['world_link'] + ' to ' + link.name + ':')
         first_time = True
         for collection_key, collection in dataset['collections'].items():
-            transform = atom_core.atom.getTransform(dataset['calibration_config']['world_link'], link.name,
-                                                    collection['transforms'])
+            transform = getTransform(dataset['calibration_config']['world_link'], link.name,
+                                     collection['transforms'])
             # print('Collection ' + collection_key + ': ')
             if first_time:
                 first_time = False

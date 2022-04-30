@@ -6,24 +6,23 @@ A set of utilities to be used in the optimization algorithms
 # -------------------------------------------------------------------------------
 # --- IMPORTS (standard, then third party, then my own modules)
 # -------------------------------------------------------------------------------
+
+import math
+
+# Standard imports
 from copy import deepcopy
 
-from . import transformations
-
-# import KeyPressManager
-from OptimizationUtils import KeyPressManager
 import numpy as np
 import cv2
+from numpy.linalg import norm
 from matplotlib import cm
+
+# Atom imports
+from atom_core.key_press_manager import WindowManager
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-
-# ---------------------------------------
-# --- Drawing functions
-# ---------------------------------------
-from numpy.linalg import norm
 
 
 def drawCross2D(image, x, y, size, color=(0, 0, 255), thickness=1):
@@ -363,13 +362,33 @@ def traslationRodriguesToTransform(translation, rodrigues):
 
 
 def translationQuaternionToTransform(trans, quat):
-    matrix = transformations.quaternion_matrix(quat)
+    matrix = quaternionMatrix(quat)
     matrix[0, 3] = trans[0]
     matrix[1, 3] = trans[1]
     matrix[2, 3] = trans[2]
     matrix[3, 3] = 1
     # print(str(matrix))
     return matrix
+
+
+def quaternionMatrix(quaternion):
+    """Return homogeneous rotation matrix from quaternion.
+    Copied from 2006, Christoph Gohlke
+    """
+    _EPS = np.finfo(float).eps * 4.0
+
+    q_ = np.array(quaternion[:4], dtype=np.float64).copy()
+    nq = np.dot(q_, q_)
+    if nq < _EPS:
+        return np.identity(4)
+    q_ *= math.sqrt(2.0 / nq)
+    q = np.outer(q_, q_)
+    return np.array((
+        (1.0-q[1, 1]-q[2, 2],     q[0, 1]-q[2, 3],     q[0, 2]+q[1, 3], 0.0),
+        (q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2],     q[1, 2]-q[0, 3], 0.0),
+        (q[0, 2]-q[1, 3],     q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1], 0.0),
+        (0.0,                 0.0,                 0.0, 1.0)
+    ), dtype=np.float64)
 
 
 # ---------------------------------------
@@ -438,7 +457,7 @@ def projectToCameraPair(cam_a, cam_b, pts3D_in_map, z_inconsistency_threshold=0.
         cv2.namedWindow('cam_b', cv2.WINDOW_NORMAL)
         cv2.imshow('cam_b', cam_b_image)
 
-        wm = KeyPressManager.KeyPressManager.WindowManager()
+        wm = WindowManager()
         if wm.waitForKey(time_to_wait=None, verbose=False):
             exit(0)
 
@@ -455,7 +474,6 @@ def projectToCamera(intrinsic_matrix, distortion, width, height, pts):
     :param pts: a list of point coordinates (in the camera frame) with the following format: np array 4xn or 3xn
     :return: a list of pixel coordinates with the same lenght as pts
     """
-
 
     # print('intrinsic_matrix=' + str(intrinsic_matrix))
     # print('distortion=' + str(distortion))

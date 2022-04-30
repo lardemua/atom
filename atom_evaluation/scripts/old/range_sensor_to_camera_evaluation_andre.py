@@ -10,27 +10,29 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
-import numpy as np
-import ros_numpy
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
 from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
 
-from atom_core.naming import generateKey
+import numpy as np
+import ros_numpy
+import atom_core.atom
+import cv2
+from scipy.spatial import distance
+from colorama import Fore
 
+# ROS imports
+from rospy_message_converter import message_converter
+
+# Atom imports
+from atom_core.naming import generateKey
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from atom_core.opt_utilities import projectToCamera
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def walk(node):
     for key, item in node.items():
@@ -53,7 +55,7 @@ def createJSONFile(output_file, input):
     print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print (json.dumps(D, indent=2, sort_keys=True), file=f)
+    print(json.dumps(D, indent=2, sort_keys=True), file=f)
     f.close()
     print("Completed.")
 
@@ -80,7 +82,7 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
-    pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return pts_in_image
 
@@ -239,7 +241,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][target_sensor]['data_file']
-        print (filename)
+        print(filename)
         image = cv2.imread(filename)
         if use_annotation is False:
             limits_on_image = eval_data['ground_truth_pts'][collection_key]
@@ -307,7 +309,7 @@ if __name__ == "__main__":
                                  (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
 
         if len(delta_pts) == 0:
-            print ('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
             continue
 
         # ---------------------------------------

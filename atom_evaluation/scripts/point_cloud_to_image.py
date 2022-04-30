@@ -8,26 +8,27 @@ Projects a point cloud into an image
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
-import rospy
-import ros_numpy
-import struct
+# Standard imports
 import json
 import os
+import argparse
+from collections import OrderedDict
+
 import cv2
 import numpy as np
-import argparse
-import OptimizationUtils.utilities as opt_utilities
-import atom_core.atom
-from collections import OrderedDict
-from atom_core.dataset_io import read_pcd, write_pcd
-from sensor_msgs import point_cloud2
-from sensor_msgs.msg import PointCloud2, PointField
-from std_msgs.msg import Header
 
+# ROS imports
+import ros_numpy
+
+# Atom imports
+from atom_core.opt_utilities import projectToCamera
+from atom_core.dataset_io import read_pcd
+from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def walk(node):
     for key, item in node.items():
@@ -67,7 +68,7 @@ def rangeToImage(collection, ss, ts, tf, pts):
     K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
-    pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return pts_in_image
 
@@ -127,8 +128,8 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         selected_collection_key = list(dataset['collections'].keys())[0]
-        lidar2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                                dataset['collections'][selected_collection_key]['transforms'])
+        lidar2cam = getTransform(from_frame, to_frame,
+                                 dataset['collections'][selected_collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
         for idx in range(0, pts_in_image.shape[1]):
             if int(pts_in_image[0, idx]) > 0 and int(pts_in_image[0, idx]) < img_size[1] and \

@@ -8,29 +8,31 @@ Reads the calibration results from a json file and computes the evaluation metri
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+# Standard imports
 import json
 import os
-import numpy as np
-import ros_numpy
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
-from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
 
-from atom_core.naming import generateKey
+import numpy as np
+import ros_numpy
+import cv2
+from scipy.spatial import distance
+from colorama import Style, Fore
 
+# ROS imports
+from rospy_message_converter import message_converter
+
+# Atom imports
+from atom_core.naming import generateKey
+from atom_core.opt_utilities import projectToCamera
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def rangeToImage(collection, json_file, ss, ts, tf):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
@@ -54,13 +56,14 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
-    pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return pts_in_image
 
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -97,7 +100,8 @@ if __name__ == "__main__":
 
     annotation_file = os.path.dirname(test_json_file) + "/annotation_" + camera_sensor + ".json"
     if os.path.exists(annotation_file) is False:
-        raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
+        raise ValueError(
+            'Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
         exit(0)
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -158,15 +162,15 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                              test_dataset['collections'][collection_key]['transforms'])
+        vel2cam = getTransform(from_frame, to_frame,
+                               test_dataset['collections'][collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, test_json_file, range_sensor, camera_sensor, vel2cam)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
-        print (filename)
+        print(filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
         # print(limits_on_image)
@@ -227,7 +231,7 @@ if __name__ == "__main__":
                                  (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
 
         if len(delta_pts) == 0:
-            print ('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
             continue
 
         # ---------------------------------------

@@ -1,12 +1,20 @@
-#!/usr/bin/env python
 """
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """
 
-# 3rd-party
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
 import numpy as np
+
+# Atom imports
 import atom_core.opt_utilities as opt_utilities
+
+# Standard imports
 from scipy.spatial import distance
+
+# ROS imports
 from tf import transformations
 
 # -------------------------------------------------------------------------------
