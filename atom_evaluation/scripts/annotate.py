@@ -10,27 +10,25 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
-import numpy as np
-import ros_numpy
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
 from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
 
+import numpy as np
+import ros_numpy
+import atom_core.atom
+import cv2
+import OptimizationUtils.utilities as opt_utilities
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from rospy_message_converter import message_converter
+from scipy.spatial import distance
+from colorama import Style, Fore
 from atom_core.naming import generateKey
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def walk(node):
     for key, item in node.items():
@@ -148,7 +146,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
-        print(filename)
+        print('Reading image ' + filename)
         image = cv2.imread(filename)
 
         success = False
