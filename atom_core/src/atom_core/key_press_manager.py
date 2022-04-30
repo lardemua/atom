@@ -11,30 +11,15 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-def drawAxis3D(ax, transform, text, axis_scale=0.1, line_width=1.0):
-    pt_origin = np.array([[0, 0, 0, 1]], dtype=np.float).transpose()
-    x_axis = np.array([[0, 0, 0, 1], [axis_scale, 0, 0, 1]], dtype=np.float).transpose()
-    y_axis = np.array([[0, 0, 0, 1], [0, axis_scale, 0, 1]], dtype=np.float).transpose()
-    z_axis = np.array([[0, 0, 0, 1], [0, 0, axis_scale, 1]], dtype=np.float).transpose()
-
-    pt_origin = np.dot(transform, pt_origin)
-    x_axis = np.dot(transform, x_axis)
-    y_axis = np.dot(transform, y_axis)
-    z_axis = np.dot(transform, z_axis)
-
-    ax.plot(x_axis[0, :], x_axis[1, :], x_axis[2, :], 'r-', linewidth=line_width)
-    ax.plot(y_axis[0, :], y_axis[1, :], y_axis[2, :], 'g-', linewidth=line_width)
-    ax.plot(z_axis[0, :], z_axis[1, :], z_axis[2, :], 'b-', linewidth=line_width)
-    ax.text(pt_origin[0, 0], pt_origin[1, 0], pt_origin[2, 0], text, color='black')  # , size=15, zorder=1
-
 
 # -------------------------------------------------------------------------------
 # CLASS
 # -------------------------------------------------------------------------------
+
+
 class WindowManager:
 
     def __init__(self, figs=None):
