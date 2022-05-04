@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Reads the calibration results from a json file and computes the evaluation metrics
