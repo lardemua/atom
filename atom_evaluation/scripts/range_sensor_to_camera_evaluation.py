@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Reads the calibration results from a json file and computes the evaluation metrics
@@ -10,27 +10,25 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
-import numpy as np
-import ros_numpy
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
 from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
 
+import numpy as np
+import ros_numpy
+import atom_core.atom
+import cv2
+import OptimizationUtils.utilities as opt_utilities
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from rospy_message_converter import message_converter
+from scipy.spatial import distance
+from colorama import Style, Fore
 from atom_core.naming import generateKey
-
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def rangeToImage(collection, json_file, ss, ts, tf):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
@@ -61,6 +59,7 @@ def rangeToImage(collection, json_file, ss, ts, tf):
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -97,7 +96,8 @@ if __name__ == "__main__":
 
     annotation_file = os.path.dirname(test_json_file) + "/annotation_" + camera_sensor + ".json"
     if os.path.exists(annotation_file) is False:
-        raise ValueError('Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
+        raise ValueError(
+            'Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
         exit(0)
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
-        print (filename)
+        print(filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
         # print(limits_on_image)
@@ -227,7 +227,7 @@ if __name__ == "__main__":
                                  (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
 
         if len(delta_pts) == 0:
-            print ('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
             continue
 
         # ---------------------------------------
