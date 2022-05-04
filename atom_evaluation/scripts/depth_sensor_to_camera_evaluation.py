@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, float)
-    avg_error_x = np.sum(np.abs(delta_to[:, 0])) / total_pts
+    avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
     rms = np.sqrt((delta_total ** 2).mean())

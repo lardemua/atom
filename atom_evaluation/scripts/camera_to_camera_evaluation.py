@@ -249,14 +249,14 @@ if __name__ == "__main__":
         square = test_dataset['calibration_config']['calibration_pattern']['size']
 
         # Get corners on both images
-        corners_s = np.zeros((len(collection['labels'][camera_1_sensor]['idxs']), 2), dtype=np.float)
+        corners_s = np.zeros((len(collection['labels'][camera_1_sensor]['idxs']), 2), dtype=float)
         idxs_s = list(range(0, len(collection['labels'][camera_1_sensor]['idxs'])))
         for idx, point in enumerate(collection['labels'][camera_1_sensor]['idxs']):
             corners_s[idx, 0] = point['x']
             corners_s[idx, 1] = point['y']
             idxs_s[idx] = point['id']
         # ----
-        corners_t = np.zeros((len(collection['labels'][camera_2_sensor]['idxs']), 2), dtype=np.float)
+        corners_t = np.zeros((len(collection['labels'][camera_2_sensor]['idxs']), 2), dtype=float)
         idxs_t = list(range(0, len(collection['labels'][camera_2_sensor]['idxs'])))
         for idx, point in enumerate(collection['labels'][camera_2_sensor]['idxs']):
             corners_t[idx, 0] = point['x']
@@ -283,7 +283,7 @@ if __name__ == "__main__":
         corners_t = cv2.cornerSubPix(gray_t, corners_t, (3, 3), (-1, -1), criteria)
 
         # Compute camera pose w.r.t the pattern
-        objp = np.zeros((nx * ny, 4), np.float)
+        objp = np.zeros((nx * ny, 4), float)
         objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
         objp[:, 3] = 1
 
@@ -400,7 +400,7 @@ if __name__ == "__main__":
                 cv2.destroyAllWindows()
 
     total_pts = len(delta_total)
-    delta_total = np.array(delta_total, np.float)
+    delta_total = np.array(delta_total, float)
     avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
