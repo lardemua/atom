@@ -50,7 +50,8 @@ def errorReport(dataset, residuals, normalizer):
             keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
             v = [residuals[k] * normalizer[sensor['modality']] for k in keys if residuals[k]]
             if v:
-                row.append(str(round(np.mean(v), 4)))
+                value = '%.4f' % np.mean(v)
+                row.append(value)
             else:
                 row.append(Fore.LIGHTBLACK_EX + '---' + Style.RESET_ALL)
 
@@ -74,7 +75,8 @@ def errorReport(dataset, residuals, normalizer):
             except:
                 pass
 
-        bottom_row.append(Fore.BLUE + str(round(total / count, 4)) + Fore.BLACK)
+        value = '%.4f' % (total / count)
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
 
     table.add_row(bottom_row)
 
