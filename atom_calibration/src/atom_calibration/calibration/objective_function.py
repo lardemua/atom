@@ -35,7 +35,7 @@ def errorReport(dataset, residuals, normalizer):
 
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor_key == dataset['calibration_config']['anchored_sensor']:
-            table_header.append(Fore.YELLOW + sensor_key + Fore.BLACK)
+            table_header.append(Fore.YELLOW + sensor_key + Style.RESET_ALL)
         else:
             table_header.append(sensor_key)
 
@@ -103,7 +103,7 @@ def errorReport(dataset, residuals, normalizer):
     table.align = 'c'
     print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL + ' (' + Fore.YELLOW + 'anchored sensor' +
           Fore.BLACK + ', ' + Fore.RED + ' max error per sensor' + Fore.BLACK + ', ' + Fore.LIGHTBLACK_EX +
-          ', not detected as \"---\")' + Style.NORMAL)
+          'not detected as \"---\")' + Style.RESET_ALL)
     print(table)
 
 
