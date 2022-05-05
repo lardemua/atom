@@ -343,7 +343,8 @@ class DataCollectorAndLabeler:
 
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': transforms,
                            'additional_data': all_additional_data_dict}
-        self.collections[self.data_stamp] = collection_dict
+        collection_key = str(self.data_stamp).zfill(3)
+        self.collections[collection_key] = collection_dict
         self.data_stamp += 1
 
         dataset_name = self.output_folder.split('/')[-1]
