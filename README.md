@@ -24,7 +24,7 @@ If this work is helpful for you please cite our papers:
 
 ## Table of Contents
 
-  * [How to Use - Quick Start](#how-to-use---quick-start)
+ * [How to Use - Quick Start](#how-to-use---quick-start)
   * [Examples](#examples)
     + [Atlascar2](#atlascar2)
     + [IrisUA - ur10e](#irisua---ur10e)
@@ -41,7 +41,6 @@ If this work is helpful for you please cite our papers:
         * [Advanced usage - running calibration script in separate terminal](#advanced-usage---running-calibration-script-in-separate-terminal)
         * [Advanced usage - two stage calibration for robotic systems with an anchored sensor](#advanced-usage---two-stage-calibration-for-robotic-systems-with-an-anchored-sensor)
   * [Evaluating your calibration](#evaluating-your-calibration)
-  * [Evaluating your calibration](#evaluating-your-calibration-1)
       - [Annotation](#annotation)
       - [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
       - [LiDAR-to-Depth-Camera evaluation](#lidar-to-depth-camera-evaluation)
@@ -54,7 +53,6 @@ If this work is helpful for you please cite our papers:
   * [Maintainers](#maintainers)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 ## How to Use - Quick Start
 
