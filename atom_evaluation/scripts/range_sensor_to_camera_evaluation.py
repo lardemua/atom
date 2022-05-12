@@ -13,6 +13,7 @@ import os
 import argparse
 from copy import deepcopy
 from collections import OrderedDict
+import sys
 
 import numpy as np
 import ros_numpy
@@ -134,7 +135,23 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
     f = open(annotation_file, 'r')
-    eval_data = json.load(f)
+    eval_data = json.load(f)   
+    
+    # Deleting collections where the pattern is not found by all sensors:
+    collections_to_delete = []
+    for collection_key, collection in test_dataset['collections'].items():
+        for sensor_key, sensor in test_dataset['sensors'].items():
+            if not collection['labels'][sensor_key]['detected'] and (
+                    sensor_key == camera_sensor or sensor_key == range_sensor):
+                print(
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+
+                collections_to_delete.append(collection_key)
+                break
+
+    for collection_key in collections_to_delete:
+        del test_dataset['collections'][collection_key]
 
     print(Fore.BLUE + '\nStarting evalutation...')
     print(Fore.WHITE)
@@ -166,7 +183,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
-        print(filename)
+        # print(filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
         # print(limits_on_image)
@@ -251,8 +268,10 @@ if __name__ == "__main__":
             for idx in range(0, pts_in_image.shape[1]):
                 image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
 
-            cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
+            window_name = "Lidar to Camera reprojection - collection " + str(collection_key)
+            cv2.imshow(window_name, image)
             cv2.waitKey()
+            cv2.destroyWindow(winname=window_name)
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, float)
@@ -267,13 +286,15 @@ if __name__ == "__main__":
         'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1]))
     print(
         '------------------------------------------------------------------------------------------------------------------------------------------------------------')
-    print("Press ESC to quit and close all open windows.")
+    print('Ending script...')
+    sys.exit()
+    # print("Press ESC to quit and close all open windows.")
 
-    while True:
-        k = cv2.waitKey(0) & 0xFF
-        if k == 27:
-            cv2.destroyAllWindows()
-            break
+    # while True:
+        # k = cv2.waitKey(0) & 0xFF
+        # if k == 27:
+            # cv2.destroyAllWindows()
+            # break
     # Save evaluation data
     # if use_annotation is True:
     #     createJSONFile(eval_file, output_dict)
