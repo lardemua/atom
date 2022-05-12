@@ -210,7 +210,6 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][rgb_sensor]['data_file']
-        print (filename)
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
 
@@ -295,8 +294,10 @@ if __name__ == "__main__":
             for idx in range(0, pts_in_image.shape[1]):
                 image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
 
-            cv2.imshow("Depth to Camera reprojection - collection " + str(collection_key), image)
-            cv2.waitKey()
+            window_name = "Depth to Camera reprojection - collection " + str(collection_key)
+            cv2.imshow(window_name, image)
+            cv2.waitKey(0)
+            cv2.destroyWindow(winname=window_name)
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, float)
