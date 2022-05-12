@@ -10,6 +10,7 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
+import sys
 import numpy as np
 import ros_numpy
 
@@ -312,11 +313,13 @@ if __name__ == "__main__":
         'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1]))
     print(
         '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print('Ending script...')
+    sys.exit()
 
-    print("Press ESC to quit and close all open windows.")
+    # print("Press ESC to quit and close all open windows.")
 
-    while True:
-        k = cv2.waitKey(0) & 0xFF
-        if k == 27:
-            cv2.destroyAllWindows()
-            break
+    # while True:
+    #     k = cv2.waitKey(0) & 0xFF
+    #     if k == 27:
+    #         cv2.destroyAllWindows()
+    #         break

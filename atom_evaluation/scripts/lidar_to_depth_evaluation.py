@@ -10,6 +10,7 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
+import sys
 import numpy as np
 import ros_numpy
 
@@ -189,7 +190,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][depth_sensor]['data_file']
-        print(filename)
+        # print(filename)
         image = cv2.imread(filename)
         depth_pts_in_depth_img = depthInImage(collection, test_json_file, depth_sensor, pinhole_camera_model)
 
@@ -253,8 +254,10 @@ if __name__ == "__main__":
             for idx in range(0, depth_pts_in_depth_img.shape[1]):
                 image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255),
                                    -1)
-            cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
+            win_name = "lidar to Camera reprojection - collection " + str(collection_key)
+            cv2.imshow(win_name, image)
             cv2.waitKey()
+            cv2.destroyWindow(winname=win_name)
 
 
     total_pts = len(delta_total)
@@ -276,13 +279,13 @@ if __name__ == "__main__":
                                                                                       stdev_xy[0], stdev_xy[1]))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
-    print("Press ESC to quit and close all open windows.")
+    print('Ending script...')
+    sys.exit()
 
-    while True:
-        k = cv2.waitKey(0) & 0xFF
-        if k == 27:
-            cv2.destroyAllWindows()
-            break
-# Save evaluation data
-# if use_annotation is True:
-#     createJSONFile(eval_file, output_dict)
+    # print("Press ESC to quit and close all open windows.")
+
+    # while True:
+    #     k = cv2.waitKey(0) & 0xFF
+    #     if k == 27:
+    #         cv2.destroyAllWindows()
+    #         break
