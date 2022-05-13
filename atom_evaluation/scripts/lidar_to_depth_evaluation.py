@@ -102,12 +102,15 @@ if __name__ == "__main__":
     ap.add_argument("-ld", "--lidar_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--depth_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-bt", "--border_tolerance", help="Define the percentage of pixels to use to create a border. Lidar points outside that border will not count for the error calculations",
+                                                 type=float, default=0.025)
 
     # - Save args
     args = vars(ap.parse_args())
     lidar_sensor = args['lidar_sensor']
     depth_sensor = args['depth_sensor']
     show_images = args['show_images']
+    border_tolerance = args['border_tolerance']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
@@ -201,13 +204,13 @@ if __name__ == "__main__":
         delta_pts = []
         distances = []
         w, h = collection['data'][depth_sensor]['width'], collection['data'][depth_sensor]['height']
-        tolerance = 20
         for idx in range(lidar_pts_in_img.shape[1]):
             x = lidar_pts_in_img[0][idx]
             y = lidar_pts_in_img[1][idx]
             
             # If the points are near or surpassing the image limits, do not count them for the errors
-            if x > w - tolerance or x < tolerance or y > h - tolerance or y < tolerance:
+            if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
+                y > h * (1 - border_tolerance) or y < h * border_tolerance:
                 continue
 
             lidar_pt = np.reshape(lidar_pts_in_img[0:2, idx], (1, 2))
