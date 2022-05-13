@@ -456,7 +456,11 @@ def main():
         filename_results_json = os.path.dirname(json_file) + "/" + args["output_json"]
 
     # to store all sensors that existed in the dataset, regardless of which were optimized
-    dataset['sensors'] = dataset_original['sensors']
+    # If a sensor_key exists in the original dataset but not in the optimized dataset, then it was removed from the optimization and we should copy it back to the dataset before saving.
+    for sensor_key, sensor in dataset_original["sensors"].items():
+        if not sensor_key in dataset['sensors']:
+            dataset['sensors'][sensor_key] = sensor
+
     saveResultsJSON(filename_results_json, dataset)
 
     # ---------------------------------------
