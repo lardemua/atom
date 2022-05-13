@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
             if show_images is True:
                 image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
-                                 (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
+                                 (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 2)
 
         if len(delta_pts) == 0:
             print ('No Depth point mapped into the image for collection ' + str(collection_key))
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         if show_images is True:
             for idx in range(0, pts_in_image.shape[1]):
-                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
+                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, (255, 0, 255), -1)
 
             window_name = "Depth to Camera reprojection - collection " + str(collection_key)
             cv2.imshow(window_name, image)

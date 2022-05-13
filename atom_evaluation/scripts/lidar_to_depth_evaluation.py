@@ -10,6 +10,7 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
+from re import I
 import sys
 import numpy as np
 import ros_numpy
@@ -199,9 +200,16 @@ if __name__ == "__main__":
 
         delta_pts = []
         distances = []
-        # lidar_points_xy = np.array([[pt['x'] for pt in lidar_points_in_pattern], [pt['y'] for pt in lidar_points_in_pattern]],
-        #                                                 np.float)
+        w, h = collection['data'][depth_sensor]['width'], collection['data'][depth_sensor]['height']
+        tolerance = 20
         for idx in range(lidar_pts_in_img.shape[1]):
+            x = lidar_pts_in_img[0][idx]
+            y = lidar_pts_in_img[1][idx]
+            
+            # If the points are near or surpassing the image limits, do not count them for the errors
+            if x > w - tolerance or x < tolerance or y > h - tolerance or y < tolerance:
+                continue
+
             lidar_pt = np.reshape(lidar_pts_in_img[0:2, idx], (1, 2))
             delta_pts.append(np.min(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
             coords = np.where(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean') == np.min(
@@ -219,7 +227,7 @@ if __name__ == "__main__":
 
             if show_images:
                 image = cv2.line(image, (int(lidar_pt.transpose()[0]), int(lidar_pt.transpose()[1])),
-                                 (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 3)
+                                 (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 2)
 
         if len(delta_pts) == 0:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
@@ -249,11 +257,11 @@ if __name__ == "__main__":
         # --- Drawing ...
         # ---------------------------------------
         if show_images is True:
+            for idx in range(0, depth_pts_in_depth_img.shape[1]):
+                image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(depth_pts_in_depth_img[1, idx])), 2, (255, 0, 255),
+                                   -1)
             for idx in range(0, lidar_pts_in_img.shape[1]):
                 image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
-            for idx in range(0, depth_pts_in_depth_img.shape[1]):
-                image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255),
-                                   -1)
             win_name = "lidar to Camera reprojection - collection " + str(collection_key)
             cv2.imshow(win_name, image)
             cv2.waitKey()
