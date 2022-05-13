@@ -42,7 +42,9 @@ def errorReport(dataset, residuals, normalizer):
     table = PrettyTable(table_header)
 
     # Build each row in the table
-    for collection_key, collection in dataset['collections'].items():
+    keys = sorted([int(key) for key in list(dataset['collections'].keys())])  # convert to int and then sort
+    keys = [str(key) for key in keys]  # convert back to string
+    for collection_key in keys:
         row = [collection_key]
         v = []
 
