@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Reads the calibration results from a json file and computes the evaluation metrics
 
@@ -40,26 +39,28 @@ Using this equation we can compute the projections from the detections in sa to 
 we compare the projections with the annotated corners in sb
 """
 
+
+import argparse
+import os
+import math
+import json
+from collections import OrderedDict
+from copy import deepcopy
+
+import OptimizationUtils.utilities as opt_utilities
+import cv2
+import atom_core.atom
+import numpy as np
+from atom_core.atom import getTransform
+from atom_core.naming import generateKey
+from matplotlib import cm
+from colorama import Style, Fore
+from prettytable import PrettyTable
+
 # -------------------------------------------------------------------------------
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
-import json
-import math
-import os
-import argparse
-from copy import deepcopy
-from collections import OrderedDict
-
-import numpy as np
-import atom_core.atom
-import cv2
-import OptimizationUtils.utilities as opt_utilities
-from prettytable import PrettyTable
-from colorama import Style, Fore
-from matplotlib import cm
-from atom_core.naming import generateKey
-from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -137,20 +138,12 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing test input dataset.", type=str,
                     required=True)
-    ap.add_argument("-c1", "--camera_1_sensor", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-c2", "--camera_2_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
-    ap.add_argument("-po", "--pattern_object", help="Use pattern object projection instead of Homography.",
-                    action='store_true', default=False)
-    ap.add_argument("-sg", "--save_graphics", help="Save reprojection error graphics.",
-                    action='store_true', default=False)
 
-    # - Save args
+    # parse args
     args = vars(ap.parse_args())
-    camera_1_sensor = args['camera_1_sensor']
-    camera_2_sensor = args['camera_2_sensor']
-    use_pattern_object = args['pattern_object']
-    save_graphics = args['save_graphics']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from files
@@ -208,25 +201,25 @@ if __name__ == "__main__":
     # Source sensor
     K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
-    K_s[0, :] = test_dataset['sensors'][camera_1_sensor]['camera_info']['K'][0:3]
-    K_s[1, :] = test_dataset['sensors'][camera_1_sensor]['camera_info']['K'][3:6]
-    K_s[2, :] = test_dataset['sensors'][camera_1_sensor]['camera_info']['K'][6:9]
-    D_s[:, 0] = test_dataset['sensors'][camera_1_sensor]['camera_info']['D'][0:5]
+    K_s[0, :] = test_dataset['sensors'][args['sensor_source']]['camera_info']['K'][0:3]
+    K_s[1, :] = test_dataset['sensors'][args['sensor_source']]['camera_info']['K'][3:6]
+    K_s[2, :] = test_dataset['sensors'][args['sensor_source']]['camera_info']['K'][6:9]
+    D_s[:, 0] = test_dataset['sensors'][args['sensor_source']]['camera_info']['D'][0:5]
 
     # Target sensor
     K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
-    K_t[0, :] = test_dataset['sensors'][camera_2_sensor]['camera_info']['K'][0:3]
-    K_t[1, :] = test_dataset['sensors'][camera_2_sensor]['camera_info']['K'][3:6]
-    K_t[2, :] = test_dataset['sensors'][camera_2_sensor]['camera_info']['K'][6:9]
-    D_t[:, 0] = test_dataset['sensors'][camera_2_sensor]['camera_info']['D'][0:5]
+    K_t[0, :] = test_dataset['sensors'][args['sensor_target']]['camera_info']['K'][0:3]
+    K_t[1, :] = test_dataset['sensors'][args['sensor_target']]['camera_info']['K'][3:6]
+    K_t[2, :] = test_dataset['sensors'][args['sensor_target']]['camera_info']['K'][6:9]
+    D_t[:, 0] = test_dataset['sensors'][args['sensor_target']]['camera_info']['D'][0:5]
 
     # Deleting collections where the pattern is not found by all sensors:
     collections_to_delete = []
     for collection_key, collection in test_dataset['collections'].items():
         for sensor_key, sensor in test_dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected'] and (
-                    sensor_key == camera_1_sensor or sensor_key == camera_2_sensor):
+                    sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
                 print(
                     Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
                     sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
@@ -246,8 +239,8 @@ if __name__ == "__main__":
         e[collection_key] = {}  # init the dictionary of errors for this collection
 
         # Read image data
-        path_s = os.path.dirname(test_json_file) + '/' + collection['data'][camera_1_sensor]['data_file']
-        path_t = os.path.dirname(test_json_file) + '/' + collection['data'][camera_2_sensor]['data_file']
+        path_s = os.path.dirname(test_json_file) + '/' + collection['data'][args['sensor_source']]['data_file']
+        path_t = os.path.dirname(test_json_file) + '/' + collection['data'][args['sensor_target']]['data_file']
 
         image_s = cv2.imread(path_s)
         gray_s = cv2.cvtColor(image_s, cv2.COLOR_BGR2GRAY)
@@ -260,17 +253,17 @@ if __name__ == "__main__":
         square = test_dataset['calibration_config']['calibration_pattern']['size']
 
         # Get corners and idxs for the source sensor
-        corners_s = np.ones((3, len(collection['labels'][camera_1_sensor]['idxs'])), dtype=float)
-        idxs_s = list(range(0, len(collection['labels'][camera_1_sensor]['idxs'])))
-        for idx, point in enumerate(collection['labels'][camera_1_sensor]['idxs']):
+        corners_s = np.ones((3, len(collection['labels'][args['sensor_source']]['idxs'])), dtype=float)
+        idxs_s = list(range(0, len(collection['labels'][args['sensor_source']]['idxs'])))
+        for idx, point in enumerate(collection['labels'][args['sensor_source']]['idxs']):
             corners_s[0, idx] = point['x']
             corners_s[1, idx] = point['y']
             idxs_s[idx] = point['id']
 
         # Get corners and idxs for the target sensor
-        corners_t = np.ones((3, len(collection['labels'][camera_2_sensor]['idxs'])), dtype=float)
-        idxs_t = list(range(0, len(collection['labels'][camera_2_sensor]['idxs'])))
-        for idx, point in enumerate(collection['labels'][camera_2_sensor]['idxs']):
+        corners_t = np.ones((3, len(collection['labels'][args['sensor_target']]['idxs'])), dtype=float)
+        idxs_t = list(range(0, len(collection['labels'][args['sensor_target']]['idxs'])))
+        for idx, point in enumerate(collection['labels'][args['sensor_target']]['idxs']):
             corners_t[0, idx] = point['x']
             corners_t[1, idx] = point['y']
             idxs_t[idx] = point['id']
@@ -294,9 +287,9 @@ if __name__ == "__main__":
         # print('ss_T_p =\n' + str(ss_T_p))
 
         # STEP 3. Compute sb_T_p
-        sa_frame = test_dataset['calibration_config']['sensors'][camera_1_sensor]['link']
-        sb_frame = test_dataset['calibration_config']['sensors'][camera_2_sensor]['link']
-        st_T_ss = getTransform(sb_frame, sa_frame, test_dataset['collections'][collection_key]['transforms'])
+        ss_frame = test_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+        st_frame = test_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+        st_T_ss = getTransform(st_frame, ss_frame, test_dataset['collections'][collection_key]['transforms'])
 
         st_T_p = np.dot(st_T_ss, ss_T_p)
         # print('st_T_p =\n' + str(st_T_p))
@@ -336,10 +329,10 @@ if __name__ == "__main__":
         x_errors = []
         y_errors = []
         rms_errors = []
-        for label_s_idx, label_s in enumerate(collection['labels'][camera_1_sensor]['idxs']):
+        for label_s_idx, label_s in enumerate(collection['labels'][args['sensor_source']]['idxs']):
             has_corresponding_id = False
             # Search for corresponding label id in target sensor?
-            for label_t_idx, label_t in enumerate(collection['labels'][camera_2_sensor]['idxs']):
+            for label_t_idx, label_t in enumerate(collection['labels'][args['sensor_target']]['idxs']):
                 if label_s['id'] == label_t['id']:
                     has_corresponding_id = True
                     break
@@ -364,8 +357,8 @@ if __name__ == "__main__":
         terr = []
         rerr = []
         common_frame = test_dataset['calibration_config']['world_link']
-        target_frame = test_dataset['calibration_config']['sensors'][camera_2_sensor]['link']
-        source_frame = test_dataset['calibration_config']['sensors'][camera_1_sensor]['link']
+        source_frame = test_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+        target_frame = test_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
         _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_t],
                                        np.array(corners_t[0: 2, :].T, dtype=np.float32),
@@ -398,12 +391,12 @@ if __name__ == "__main__":
         # STEP 10: Show projections (optional)
         # -------------------------------------------------------------
         if args['show_images']:
-            width = collection['data'][camera_2_sensor]['width']
-            height = collection['data'][camera_2_sensor]['height']
+            width = collection['data'][args['sensor_target']]['width']
+            height = collection['data'][args['sensor_target']]['height']
             diagonal = math.sqrt(width ** 2 + height ** 2)
 
-            window_name_s = 'Sensor ' + camera_1_sensor + ' (source) - Collection ' + collection_key
-            window_name_t = 'Sensor ' + camera_2_sensor + ' (target) - Collection ' + collection_key
+            window_name_s = 'Sensor ' + args['sensor_source'] + ' (source) - Collection ' + collection_key
+            window_name_t = 'Sensor ' + args['sensor_target'] + ' (target) - Collection ' + collection_key
             cv2.namedWindow(window_name_s, cv2.WINDOW_NORMAL)
             cv2.namedWindow(window_name_t, cv2.WINDOW_NORMAL)
             image_gui_s = deepcopy(image_s)
@@ -411,10 +404,10 @@ if __name__ == "__main__":
             cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
 
             # Iterate all corner detections in the source image and, if the same corner was detected on the target image, draw in color.
-            for label_s_idx, label_s in enumerate(collection['labels'][camera_1_sensor]['idxs']):
+            for label_s_idx, label_s in enumerate(collection['labels'][args['sensor_source']]['idxs']):
                 has_corresponding_id = False
                 # Search for corresponding label id in target sensor?
-                for label_t_idx, label_t in enumerate(collection['labels'][camera_2_sensor]['idxs']):
+                for label_t_idx, label_t in enumerate(collection['labels'][args['sensor_target']]['idxs']):
                     if label_s['id'] == label_t['id']:
                         has_corresponding_id = True
                         break
