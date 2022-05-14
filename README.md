@@ -405,18 +405,14 @@ The output is stored in the **atom_calibration.json**, which is used and the inp
 
 ## Evaluating your calibration
 
-After the system is calibrated one common concern is to be able to assess the accuracy of the produced calibration. ATOM
-provides several evaluation scripts for this purpose.
+After the system is calibrated one common concern is to be able to assess the accuracy of the produced calibration. ATOM provides several evaluation scripts for this purpose.
 
-Unlike ATOM which calibrates all sensors simultaneously, evaluations are performed in pairs of sensors, which
-facilitates comparisons with other pairwise calibration approaches,
-e.g. [opencv's stereo calibration](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html). Thus, there is a different
-script for each combination of modalities.
+Unlike ATOM which calibrates all sensors simultaneously, evaluations are performed in pairs of sensors, which facilitates comparisons with other calibration approaches (which are mostly pairwise),
+e.g. [opencv's stereo calibration](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html). Thus, there is a different evaluation script for each combination of modalities.
 
 #### Annotation
 
-To evaluate calibration between range sensors and cameras, it is necessary to annotate the physical limits on the
-chessboard in the images of the collection, to allow a comparison with physical labellings of those sensors.
+To evaluate calibration between range sensors and cameras, it is necessary to annotate the physical limits on the chessboard in the images of the collection, to allow a comparison with physical labellings of those sensors.
 
 ``` bash
 rosrun atom_evaluation annotate.py -test_json TEST_JSON_FILE -cs CAMERA_TO_ANNOTATE -si
@@ -430,8 +426,7 @@ optional arguments:
    -si, --show_images    If true the script shows images.                      
 ```
 
-Note: you must annotate each camera sensor present in your calibration system. These annotation will be used to evaluate
-both the lidar-camera pairs and depth-camera.
+Note: you must annotate each camera sensor present in your calibration system. These annotation will be used to evaluate both the lidar-camera pairs and depth-camera.
 
 How to annotate:
 
@@ -447,16 +442,16 @@ The result should be someting like this (for each image):
 
 <img align="center" src="docs/annotation.png" width="450"/>
 
-#### Camera-to-Camera evaluation
+#### RGB to RGB camera evaluation
 
 Evaluates de camera-to-camera reprojection error with the following metrics:
 
 - X and Y errors
-- Translation and rotation errors
 - Root mean squared error
+- Translation and rotation errors
 
 ```
-usage: camera_to_camera_evaluation.py [-h] -train_json TRAIN_JSON_FILE -test_json TEST_JSON_FILE -ss SOURCE_SENSOR -ts TARGET_SENSOR [-si] [-po] [-sg]
+usage: rgb_to_rgb_evaluation [-h] -train_json TRAIN_JSON_FILE -test_json TEST_JSON_FILE -ss SENSOR_SOURCE -st SENSOR_TARGET [-si] [-sg]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -464,24 +459,22 @@ optional arguments:
                         Json file containing train input dataset.
   -test_json TEST_JSON_FILE, --test_json_file TEST_JSON_FILE
                         Json file containing test input dataset.
-  -c1 SOURCE_SENSOR, --source_sensor SOURCE_SENSOR
+  -ss SENSOR_SOURCE, --sensor_source SENSOR_SOURCE
                         Source transformation sensor.
-  -c2 TARGET_SENSOR, --target_sensor TARGET_SENSOR
+  -st SENSOR_TARGET, --sensor_target SENSOR_TARGET
                         Target transformation sensor.
   -si, --show_images    If true the script shows images.
-  -po, --pattern_object
-                        Use pattern object projection instead of Homography.
   -sg, --save_graphics  Save reprojection error graphics.
 ```
 
 How to run:
 
 ``` bash
-rosrun atom_evaluation camera_to_camera_evalutation.py -train_json <path_to_train_file> -test_json <path_to_test_file> -ss <source_sensor_name> -ts <target_sensor_name>
+rosrun atom_evaluation rgb_to_rgb_evalutation.py -train_json <path_to_train_file> -test_json <path_to_test_file> -ss <source_sensor_name> -ts <target_sensor_name>
 
 ```
 
-#### LiDAR-to-Depth-Camera evaluation
+#### LiDAR to Depth Camera evaluation
 
 How to run:
 
@@ -502,7 +495,7 @@ optional arguments:
 
 ```
 
-#### Camera-to-Depth-Camera evaluation
+#### RGB to Depth camera evaluation
 
 How to run:
 
@@ -523,7 +516,7 @@ optional arguments:
 
 ```
 
-#### LiDAR-to-LiDAR evaluation
+#### LiDAR to LiDAR evaluation
 
 How to run:
 
@@ -543,7 +536,7 @@ optional arguments:
 
 ```
 
-#### LiDAR-to-Camera evaluation
+#### LiDAR to RGB camera evaluation
 
 Evaluates the LiDAR-to-Camera calibration through the reprojection of the pattern limit 3D points into the image using
 the following metrics:
