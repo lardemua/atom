@@ -11,9 +11,9 @@ Reads the calibration results from a json file and computes the evaluation metri
 # Standard imports
 import json
 import os
+
 import argparse
 from collections import OrderedDict
-
 import numpy as np
 import cv2
 import ros_numpy
@@ -102,12 +102,15 @@ if __name__ == "__main__":
     ap.add_argument("-ld", "--lidar_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--depth_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-bt", "--border_tolerance", help="Define the percentage of pixels to use to create a border. Lidar points outside that border will not count for the error calculations",
+                                                 type=float, default=0.025)
 
     # - Save args
     args = vars(ap.parse_args())
     lidar_sensor = args['lidar_sensor']
     depth_sensor = args['depth_sensor']
     show_images = args['show_images']
+    border_tolerance = args['border_tolerance']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
@@ -190,7 +193,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][depth_sensor]['data_file']
-        print(filename)
+        # print(filename)
         image = cv2.imread(filename)
         depth_pts_in_depth_img = depthInImage(collection, test_json_file, depth_sensor, pinhole_camera_model)
 
@@ -199,9 +202,16 @@ if __name__ == "__main__":
 
         delta_pts = []
         distances = []
-        # lidar_points_xy = np.array([[pt['x'] for pt in lidar_points_in_pattern], [pt['y'] for pt in lidar_points_in_pattern]],
-        #                                                 np.float)
+        w, h = collection['data'][depth_sensor]['width'], collection['data'][depth_sensor]['height']
         for idx in range(lidar_pts_in_img.shape[1]):
+            x = lidar_pts_in_img[0][idx]
+            y = lidar_pts_in_img[1][idx]
+            
+            # If the points are near or surpassing the image limits, do not count them for the errors
+            if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
+                y > h * (1 - border_tolerance) or y < h * border_tolerance:
+                continue
+
             lidar_pt = np.reshape(lidar_pts_in_img[0:2, idx], (1, 2))
             delta_pts.append(np.min(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
             coords = np.where(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean') == np.min(
@@ -219,7 +229,7 @@ if __name__ == "__main__":
 
             if show_images:
                 image = cv2.line(image, (int(lidar_pt.transpose()[0]), int(lidar_pt.transpose()[1])),
-                                 (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 3)
+                                 (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 2)
 
         if len(delta_pts) == 0:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
@@ -249,6 +259,7 @@ if __name__ == "__main__":
         # --- Drawing ...
         # ---------------------------------------
         if show_images is True:
+
             for idx in range(0, lidar_pts_in_img.shape[1]):
                 image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(
                     lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
@@ -257,6 +268,7 @@ if __name__ == "__main__":
                     depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255), -1)
             cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
+            cv2.destroyWindow(winname=win_name)
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float32)
@@ -277,13 +289,13 @@ if __name__ == "__main__":
                                                                              stdev_xy[0], stdev_xy[1]))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
-    print("Press ESC to quit and close all open windows.")
+    print('Ending script...')
+    sys.exit()
 
-    while True:
-        k = cv2.waitKey(0) & 0xFF
-        if k == 27:
-            cv2.destroyAllWindows()
-            break
-# Save evaluation data
-# if use_annotation is True:
-#     createJSONFile(eval_file, output_dict)
+    # print("Press ESC to quit and close all open windows.")
+
+    # while True:
+    #     k = cv2.waitKey(0) & 0xFF
+    #     if k == 27:
+    #         cv2.destroyAllWindows()
+    #         break

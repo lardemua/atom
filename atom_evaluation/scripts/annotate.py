@@ -139,7 +139,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
-        print(filename)
+        print('Reading image ' + filename)
         image = cv2.imread(filename)
 
         success = False

@@ -24,7 +24,7 @@ If this work is helpful for you please cite our papers:
 
 ## Table of Contents
 
-  * [How to Use - Quick Start](#how-to-use---quick-start)
+ * [How to Use - Quick Start](#how-to-use---quick-start)
   * [Examples](#examples)
     + [Atlascar2](#atlascar2)
     + [IrisUA - ur10e](#irisua---ur10e)
@@ -41,7 +41,6 @@ If this work is helpful for you please cite our papers:
         * [Advanced usage - running calibration script in separate terminal](#advanced-usage---running-calibration-script-in-separate-terminal)
         * [Advanced usage - two stage calibration for robotic systems with an anchored sensor](#advanced-usage---two-stage-calibration-for-robotic-systems-with-an-anchored-sensor)
   * [Evaluating your calibration](#evaluating-your-calibration)
-  * [Evaluating your calibration](#evaluating-your-calibration-1)
       - [Annotation](#annotation)
       - [Camera-to-Camera evaluation](#camera-to-camera-evaluation)
       - [LiDAR-to-Depth-Camera evaluation](#lidar-to-depth-camera-evaluation)
@@ -54,7 +53,6 @@ If this work is helpful for you please cite our papers:
   * [Maintainers](#maintainers)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 ## How to Use - Quick Start
 
@@ -94,7 +92,11 @@ roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets
 5. **Dataset playback & Manual Annotation** [_optional_] - it is possible to visualize the labels automatically produced during the collection stage and correct them mannually:
    
 ```bash
-roslaunch <your_robot_calibration> set_initial_estimate.launch 
+roslaunch <your_robot_calibration> dataset_playback.launch
+```
+and then:
+```bash
+rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/<your_robot_calibration>/<your_dataset>/dataset.json -uic -si  -ow
 ```
 
 6. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:

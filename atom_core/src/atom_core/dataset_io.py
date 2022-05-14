@@ -502,19 +502,20 @@ def filterSensorsFromDataset(dataset, args):
     :param args: Makes use of 'sensor_selection_function'
     """
 
-    if args['only_anchored_sensor']:
-        if dataset['calibration_config']['anchored_sensor'] == '':
-            raise ValueError('Option only_anchored_sensor selected but there is no anchored sensor.')
+    if 'only_anchored_sensor' in args.keys():
+        if args['only_anchored_sensor'] == True:
+            if dataset['calibration_config']['anchored_sensor'] == '':
+                raise ValueError('Option only_anchored_sensor selected but there is no anchored sensor.')
 
-        deleted = []
-        for sensor_key in dataset['sensors']:
-            if not sensor_key == dataset['calibration_config']['anchored_sensor']:
-                deleted.append(sensor_key)
+            deleted = []
+            for sensor_key in dataset['sensors']:
+                if not sensor_key == dataset['calibration_config']['anchored_sensor']:
+                    deleted.append(sensor_key)
 
-        for sensor_key in deleted:
-            del dataset['sensors'][sensor_key]
+            for sensor_key in deleted:
+                del dataset['sensors'][sensor_key]
 
-        print("Deleted sensors (option only_anchored_sensor): " + str(deleted))
+            print("Deleted sensors (option only_anchored_sensor): " + str(deleted))
 
     if not args['sensor_selection_function'] is None:
         deleted = []

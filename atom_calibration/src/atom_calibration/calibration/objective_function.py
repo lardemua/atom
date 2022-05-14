@@ -35,6 +35,87 @@ from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 # -------------------------------------------------------------------------------
 
 
+def errorReport(dataset, residuals, normalizer):
+
+    from prettytable import PrettyTable
+    table_header = ['Collection']
+
+    for sensor_key, sensor in dataset['sensors'].items():
+        if sensor_key == dataset['calibration_config']['anchored_sensor']:
+            table_header.append(Fore.YELLOW + sensor_key + Style.RESET_ALL)
+        else:
+            table_header.append(sensor_key)
+
+    table = PrettyTable(table_header)
+
+    # Build each row in the table
+    keys = sorted([int(key) for key in list(dataset['collections'].keys())])  # convert to int and then sort
+    keys = [str(key) for key in keys]  # convert back to string
+    for collection_key in keys:
+        row = [collection_key]
+        v = []
+
+        for sensor_key, sensor in dataset['sensors'].items():
+            keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            v = [residuals[k] * normalizer[sensor['modality']] for k in keys if residuals[k]]
+            if v:
+                value = '%.4f' % np.mean(v)
+                row.append(value)
+            else:
+                row.append(Fore.LIGHTBLACK_EX + '---' + Style.RESET_ALL)
+
+        table.add_row(row)
+
+    # Compute averages and add a bottom row
+    bottom_row = []  # Compute averages and add bottom row to table
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            continue
+
+        total = 0
+        count = 0
+        for row in table.rows:
+            # if row[col_idx].isnumeric():
+            try:
+                value = float(row[col_idx])
+                total += float(value)
+                count += 1
+            except:
+                pass
+
+        value = '%.4f' % (total / count)
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+
+    table.add_row(bottom_row)
+
+    # Put larger errors in red per column (per sensor)
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:  # nothing to do
+            continue
+
+        max = 0
+        max_row_idx = 0
+        for row_idx, row in enumerate(table.rows[:-1]):  # ignore bottom row
+            try:
+                value = float(row[col_idx])
+            except:
+                continue
+
+            if value > max:
+                max = value
+                max_row_idx = row_idx
+
+        # set the max column value to red
+        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+
+    table.align = 'c'
+    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL + ' (' + Fore.YELLOW + 'anchored sensor' +
+          Fore.BLACK + ', ' + Fore.RED + ' max error per sensor' + Fore.BLACK + ', ' + Fore.LIGHTBLACK_EX +
+          'not detected as \"---\")' + Style.RESET_ALL)
+    print(table)
+
+
 @Cache(args_to_ignore=['_dataset'])
 def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
     pts_in_pattern_list = []  # collect the points
@@ -605,45 +686,3 @@ def objectiveFunction(data):
         errorReport(dataset=dataset, residuals=r, normalizer=normalizer)
 
     return r  # Return the residuals
-
-
-def errorReport(dataset, residuals, normalizer):
-
-    from prettytable import PrettyTable
-    table_header = ['Collection']
-
-    for sensor_key, sensor in dataset['sensors'].items():
-        if sensor_key == dataset['calibration_config']['anchored_sensor']:
-            table_header.append(Fore.YELLOW + sensor_key + Fore.BLACK)
-        else:
-            table_header.append(sensor_key)
-
-    table = PrettyTable(table_header)
-
-    for collection_key, collection in dataset['collections'].items():
-        row = [collection_key]
-        v = []
-
-        for sensor_key, sensor in dataset['sensors'].items():
-            keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
-            v = [residuals[k] * normalizer[sensor['modality']] for k in keys]
-            row.append(str(round(np.mean(v), 4)))
-
-        table.add_row(row)
-
-    bottom_row = []  # Compute averages and add bottom row to table
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
-            continue
-
-        total = 0
-        for row in table.rows:
-            total += float(row[col_idx])
-
-        bottom_row.append(Fore.BLUE + str(round(total / len(table.rows), 4)) + Fore.BLACK)
-
-    table.add_row(bottom_row)
-    table.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection ' + Fore.YELLOW + ' (anchored sensor)' + Fore.BLACK + Style.NORMAL)
-    print(table)

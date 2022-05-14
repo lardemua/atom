@@ -67,6 +67,8 @@ def main():
                     help="Runs optimization without changing the poses of the patterns.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
                     help="Remove any collection which does not have a detection for all sensors.", )
+    ap.add_argument("-ias", "--ignore_anchored_sensor", action="store_true", default=False,
+                    help="Ignore the anchored sensor information in the dataset.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
@@ -171,10 +173,13 @@ def main():
     # Each sensor will have a position (tx,ty,tz) and a rotation (r1,r2,r3)
 
     # Add parameters related to the sensors
+    if args['ignore_anchored_sensor']:  # remove anchored sensor if flagged as such.
+        dataset["calibration_config"]["anchored_sensor"] = ''
+
+    anchored_sensor = dataset["calibration_config"]["anchored_sensor"]
     print("Anchored sensor is " + Fore.GREEN + dataset["calibration_config"]["anchored_sensor"]
           + Style.RESET_ALL)
 
-    anchored_sensor = dataset["calibration_config"]["anchored_sensor"]
     if anchored_sensor in dataset["sensors"]:
         anchored_parent = dataset["sensors"][anchored_sensor]["calibration_parent"]
         anchored_child = dataset["sensors"][anchored_sensor]["calibration_child"]
@@ -447,7 +452,11 @@ def main():
         filename_results_json = os.path.dirname(json_file) + "/" + args["output_json"]
 
     # to store all sensors that existed in the dataset, regardless of which were optimized
-    dataset['sensors'] = dataset_original['sensors']
+    # If a sensor_key exists in the original dataset but not in the optimized dataset, then it was removed from the optimization and we should copy it back to the dataset before saving.
+    for sensor_key, sensor in dataset_original["sensors"].items():
+        if not sensor_key in dataset['sensors']:
+            dataset['sensors'][sensor_key] = sensor
+
     saveResultsJSON(filename_results_json, dataset)
 
     # ---------------------------------------

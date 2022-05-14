@@ -10,6 +10,7 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 import json
 import os
+
 import argparse
 from collections import OrderedDict
 
@@ -163,7 +164,7 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
-        # Loads a json file containing the evaluation data
+    # Loads a json file containing the evaluation data
     f = open(annotation_file, 'r')
     eval_data = json.load(f)
 
@@ -203,7 +204,7 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][rgb_sensor]['data_file']
-        print(filename)
+
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
 
@@ -260,7 +261,7 @@ if __name__ == "__main__":
 
             if show_images is True:
                 image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
-                                 (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
+                                 (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 2)
 
         if len(delta_pts) == 0:
             print('No Depth point mapped into the image for collection ' + str(collection_key))
@@ -285,14 +286,16 @@ if __name__ == "__main__":
         # ---------------------------------------
         if show_images is True:
             for idx in range(0, pts_in_image.shape[1]):
-                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
+                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, (255, 0, 255), -1)
 
-            cv2.imshow("Depth to Camera reprojection - collection " + str(collection_key), image)
-            cv2.waitKey()
+            window_name = "Depth to Camera reprojection - collection " + str(collection_key)
+            cv2.imshow(window_name, image)
+            cv2.waitKey(0)
+            cv2.destroyWindow(winname=window_name)
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, float)
-    avg_error_x = np.sum(np.abs(delta_to[:, 0])) / total_pts
+    avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
     avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
     stdev = np.std(delta_total, axis=0)
     rms = np.sqrt((delta_total ** 2).mean())
@@ -303,8 +306,11 @@ if __name__ == "__main__":
         'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1]))
     print(
         '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print('Ending script...')
+    sys.exit()
 
-    print("Press ESC to quit and close all open windows.")
+    # print("Press ESC to quit and close all open windows.")
+
 
     while True:
         k = cv2.waitKey(0) & 0xFF

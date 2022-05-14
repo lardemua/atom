@@ -126,6 +126,9 @@ if __name__ == '__main__':
                         int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+            if sensor_key not in [left_camera, right_camera]:
+                continue
+
             if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                 if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                     print(
