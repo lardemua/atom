@@ -8,33 +8,33 @@ Reads the calibration results from a json file and computes the evaluation metri
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+# Standard imports
 import json
 import os
-from re import I
-import sys
-import numpy as np
-import ros_numpy
 
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
-from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
+import numpy as np
+import cv2
+import ros_numpy
+from scipy.spatial import distance
+from colorama import Fore
+
+# Ros imports
+from rospy_message_converter import message_converter
 from image_geometry import PinholeCameraModel
 
+# Atom imports
 from atom_core.naming import generateKey
 from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
-
+from atom_core.vision import projectToCamera
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def rangeToImage(collection, json_file, ss, ts, tf):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
@@ -58,7 +58,7 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
-    lidar_pts_in_img, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    lidar_pts_in_img, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return lidar_pts_in_img
 
@@ -163,8 +163,8 @@ if __name__ == "__main__":
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print(
         '{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'Avg Error', 'X Error', 'Y Error',
-                                                                         'X Standard Deviation',
-                                                                          'Y Standard Deviation'))
+                                                                   'X Standard Deviation',
+                                                                   'Y Standard Deviation'))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
 
@@ -186,8 +186,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                              test_dataset['collections'][collection_key]['transforms'])
+        vel2cam = getTransform(from_frame, to_frame, test_dataset['collections'][collection_key]['transforms'])
         lidar_pts_in_img = rangeToImage(collection, test_json_file, lidar_sensor, depth_sensor, vel2cam)
 
         # ---------------------------------------
@@ -222,7 +221,7 @@ if __name__ == "__main__":
             #     print(depth_pts_in_depth_img.transpose()[coords[1][0]])
             #     print(depth_pts_in_depth_img.transpose()[coords[1]],min_dist_pt)
             # else:
-            min_dist_pt=depth_pts_in_depth_img.transpose()[coords[1]][0]
+            min_dist_pt = depth_pts_in_depth_img.transpose()[coords[1]][0]
             # print(min_dist_pt)
             dist = abs(lidar_pt - min_dist_pt)
             distances.append(dist)
@@ -252,24 +251,24 @@ if __name__ == "__main__":
 
         print(
             '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, rms,
-                                                                                          avg_error, avg_error_x,
-                                                                                          avg_error_y,
-                                                                                          stdev_xy[0], stdev_xy[1]))
+                                                                                 avg_error, avg_error_x,
+                                                                                 avg_error_y,
+                                                                                 stdev_xy[0], stdev_xy[1]))
 
         # ---------------------------------------
         # --- Drawing ...
         # ---------------------------------------
         if show_images is True:
-            for idx in range(0, depth_pts_in_depth_img.shape[1]):
-                image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(depth_pts_in_depth_img[1, idx])), 2, (255, 0, 255),
-                                   -1)
+
             for idx in range(0, lidar_pts_in_img.shape[1]):
-                image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
-            win_name = "lidar to Camera reprojection - collection " + str(collection_key)
-            cv2.imshow(win_name, image)
+                image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(
+                    lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
+            for idx in range(0, depth_pts_in_depth_img.shape[1]):
+                image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(
+                    depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255), -1)
+            cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
             cv2.waitKey()
             cv2.destroyWindow(winname=win_name)
-
 
     total_pts = len(delta_total)
     delta_total = np.array(delta_total, np.float32)
@@ -285,9 +284,9 @@ if __name__ == "__main__":
     print('-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print(
         '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', rms,
-                                                                                      avg_error, avg_error_x,
-                                                                                      avg_error_y,
-                                                                                      stdev_xy[0], stdev_xy[1]))
+                                                                             avg_error, avg_error_x,
+                                                                             avg_error_y,
+                                                                             stdev_xy[0], stdev_xy[1]))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print('Ending script...')

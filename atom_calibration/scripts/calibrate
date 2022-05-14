@@ -14,13 +14,10 @@ from functools import partial
 
 import numpy as np
 
-# own packages
-import OptimizationUtils.OptimizationUtils as OptimizationUtils
-
 # Atom imports
 import atom_calibration.calibration.patterns_config as patterns
-import atom_core.naming
 from colorama import Fore, Style
+from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
                                                               setterCameraIntrinsics, setterTransform)
 from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
@@ -28,7 +25,7 @@ from atom_calibration.calibration.visualization import setupVisualization, visua
 from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
-from atom_core.naming import generateName
+from atom_core.naming import generateName, generateKey
 from atom_core.utilities import waitForKeyPress2
 from atom_core.xacro_io import saveResultsXacro
 
@@ -51,7 +48,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     ap = argparse.ArgumentParser()
-    ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
+    ap = addArguments(ap)
     ap.add_argument("-json", "--json_file", type=str, required=True, help="Json file containing input dataset.", )
     ap.add_argument("-v", "--verbose", help="Be verbose", action="store_true", default=False)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action="store_true")
@@ -150,7 +147,7 @@ def main():
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
     # ---------------------------------------
-    opt = OptimizationUtils.Optimizer()
+    opt = Optimizer()
     opt.addDataModel("args", args)
     opt.addDataModel("dataset", dataset)
 
@@ -186,7 +183,7 @@ def main():
     if anchored_sensor in dataset["sensors"]:
         anchored_parent = dataset["sensors"][anchored_sensor]["calibration_parent"]
         anchored_child = dataset["sensors"][anchored_sensor]["calibration_child"]
-        anchored_transform_key = atom_core.naming.generateKey(
+        anchored_transform_key = generateKey(
             anchored_parent, anchored_child)
     else:
         anchored_transform_key = ""  # not transform is anchored
@@ -199,8 +196,7 @@ def main():
     # transformations to be optimized and then compute the unique set of that list.
     transforms_set = set()
     for sensor_key, sensor in dataset["sensors"].items():
-        transform_key = atom_core.naming.generateKey(
-            sensor["calibration_parent"], sensor["calibration_child"])
+        transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
         transforms_set.add(transform_key)
 
     for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
@@ -241,7 +237,7 @@ def main():
             # publishing ROS, but we must add this to the parameter name.
             parent = dataset["calibration_config"]["calibration_pattern"]["parent_link"]
             child = dataset["calibration_config"]["calibration_pattern"]["link"]
-            transform_key = atom_core.naming.generateKey(parent, child)
+            transform_key = generateKey(parent, child)
 
             for collection_key, collection in dataset["collections"].items():  # iterate all collections
 
@@ -271,7 +267,7 @@ def main():
             # 'link']
             parent = dataset["calibration_config"]["calibration_pattern"]["parent_link"]
             child = dataset["calibration_config"]["calibration_pattern"]["link"]
-            transform_key = atom_core.naming.generateKey(parent, child)
+            transform_key = generateKey(parent, child)
 
             # Set transform using the initial estimate of the transformations.
             initial_estimate = dataset["patterns"]["transforms_initial"][selected_collection_key]
@@ -325,7 +321,7 @@ def main():
                 continue
 
             # Sensor related parameters
-            sensors_transform_key = atom_core.naming.generateKey(
+            sensors_transform_key = generateKey(
                 sensor["calibration_parent"], sensor["calibration_child"])
             params = opt.getParamsContainingPattern(sensors_transform_key)
 
@@ -335,11 +331,11 @@ def main():
 
             # Pattern related parameters
             if dataset["calibration_config"]["calibration_pattern"]["fixed"]:
-                pattern_transform_key = atom_core.naming.generateKey(
+                pattern_transform_key = generateKey(
                     dataset["calibration_config"]["calibration_pattern"]["parent_link"],
                     dataset["calibration_config"]["calibration_pattern"]["link"])
             else:
-                pattern_transform_key = "c" + collection_key + "_" + atom_core.naming.generateKey(
+                pattern_transform_key = "c" + collection_key + "_" + generateKey(
                     dataset["calibration_config"]["calibration_pattern"]["parent_link"],
                     dataset["calibration_config"]["calibration_pattern"]["link"])
 

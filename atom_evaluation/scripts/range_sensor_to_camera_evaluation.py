@@ -8,23 +8,27 @@ Reads the calibration results from a json file and computes the evaluation metri
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+# Standard imports
 import json
 import os
 import argparse
-from copy import deepcopy
+
 from collections import OrderedDict
-import sys
 
 import numpy as np
 import ros_numpy
-import atom_core.atom
 import cv2
-import OptimizationUtils.utilities as opt_utilities
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-from rospy_message_converter import message_converter
 from scipy.spatial import distance
 from colorama import Style, Fore
+
+# ROS imports
+from rospy_message_converter import message_converter
+
+# Atom imports
 from atom_core.naming import generateKey
+from atom_core.vision import projectToCamera
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -53,7 +57,7 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
-    pts_in_image, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return pts_in_image
 
@@ -175,15 +179,17 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = atom_core.atom.getTransform(from_frame, to_frame,
-                                              test_dataset['collections'][collection_key]['transforms'])
+        vel2cam = getTransform(from_frame, to_frame,
+                               test_dataset['collections'][collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, test_json_file, range_sensor, camera_sensor, vel2cam)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
+
         # print(filename)
+
         image = cv2.imread(filename)
         limits_on_image = eval_data['ground_truth_pts'][collection_key]
         # print(limits_on_image)

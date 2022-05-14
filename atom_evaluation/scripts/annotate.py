@@ -15,15 +15,8 @@ from copy import deepcopy
 from collections import OrderedDict
 
 import numpy as np
-import ros_numpy
-import atom_core.atom
 import cv2
-import OptimizationUtils.utilities as opt_utilities
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-from rospy_message_converter import message_converter
-from scipy.spatial import distance
 from colorama import Style, Fore
-from atom_core.naming import generateKey
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS

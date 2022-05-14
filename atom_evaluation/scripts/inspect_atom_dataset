@@ -9,23 +9,8 @@ Reads the calibration results from a json file and computes the evaluation metri
 # -------------------------------------------------------------------------------
 
 import json
-import math
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import atom_core.atom
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
-from copy import deepcopy
-from colorama import Style, Fore
-from numpy.linalg import inv
-from matplotlib import cm
-
-from collections import OrderedDict, namedtuple
-
-from atom_core.naming import generateKey
+from collections import namedtuple
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -53,7 +38,7 @@ if __name__ == "__main__":
     dataset = json.load(f)
 
     number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-                        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
 
     number_of_sensors = len(dataset['sensors'].keys())
 

@@ -1,6 +1,7 @@
-import numpy as np
-
 import math
+
+import cv2
+import numpy as np
 
 
 def distance_two_3D_points(p0, p1):
@@ -54,9 +55,9 @@ def sub_v3v3(v0, v1):
 
 def dot_v3v3(v0, v1):
     return (
-            (v0[0] * v1[0]) +
-            (v0[1] * v1[1]) +
-            (v0[2] * v1[2])
+        (v0[0] * v1[0]) +
+        (v0[1] * v1[1]) +
+        (v0[2] * v1[2])
     )
 
 
@@ -83,3 +84,56 @@ def fitPlaneLTSQ(XYZ):
     nn = np.linalg.norm(normal)
     normal = normal / nn
     return (c, normal)
+
+
+def matrixToRodrigues(T):
+    rods, _ = cv2.Rodrigues(T[0:3, 0:3])
+    rods = rods.transpose()
+    return rods[0]
+
+
+def rodriguesToMatrix(r):
+    rod = np.array(r, dtype=np.float)
+    matrix = cv2.Rodrigues(rod)
+    return matrix[0]
+
+
+def traslationRodriguesToTransform(translation, rodrigues):
+    R = rodriguesToMatrix(rodrigues)
+    T = np.zeros((4, 4), dtype=np.float)
+    T[0:3, 0:3] = R
+    T[0, 3] = translation[0]
+    T[1, 3] = translation[1]
+    T[2, 3] = translation[2]
+    T[3, 3] = 1
+    return T
+
+
+def translationQuaternionToTransform(trans, quat):
+    matrix = quaternionMatrix(quat)
+    matrix[0, 3] = trans[0]
+    matrix[1, 3] = trans[1]
+    matrix[2, 3] = trans[2]
+    matrix[3, 3] = 1
+    # print(str(matrix))
+    return matrix
+
+
+def quaternionMatrix(quaternion):
+    """Return homogeneous rotation matrix from quaternion.
+    Copied from 2006, Christoph Gohlke
+    """
+    _EPS = np.finfo(float).eps * 4.0
+
+    q_ = np.array(quaternion[:4], dtype=np.float64).copy()
+    nq = np.dot(q_, q_)
+    if nq < _EPS:
+        return np.identity(4)
+    q_ *= math.sqrt(2.0 / nq)
+    q = np.outer(q_, q_)
+    return np.array((
+        (1.0-q[1, 1]-q[2, 2],     q[0, 1]-q[2, 3],     q[0, 2]+q[1, 3], 0.0),
+        (q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2],     q[1, 2]-q[0, 3], 0.0),
+        (q[0, 2]-q[1, 3],     q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1], 0.0),
+        (0.0,                 0.0,                 0.0, 1.0)
+    ), dtype=np.float64)

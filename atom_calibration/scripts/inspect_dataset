@@ -2,34 +2,20 @@
 """
 Casts an optimization problem using an ATOM dataset file as input. Then calibrates by running the optimization.
 """
-import copy
-import json
-import os, math, signal, sys
-import argparse, random
-from functools import partial
-import numpy as np
-import ros_numpy
 
-# 3rd-party
-import rospy, tf
-from colorama import Fore, Style, Back
-from urdf_parser_py.urdf import URDF
 
-# own packages
-import OptimizationUtils.OptimizationUtils as OptimizationUtils
-import atom_core.naming
-from atom_calibration.calibration.getters_and_setters import getterTransform, setterTransform, getterCameraIntrinsics, \
-    setterCameraIntrinsics
+# Standard imports
+import signal
+import sys
+import argparse
 
-from atom_core.naming import generateKey, generateName
-from atom_core.utilities import waitForKeyPress
-from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray, objectiveFunction
+# Atom imports
 import atom_calibration.calibration.patterns_config as patterns
-from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
-from atom_core.config_io import readXacroFile, uriReader
-from atom_core.dataset_io import loadResultsJSON, saveResultsJSON, \
-    getPointCloudMessageFromDictionary, filterCollectionsFromDataset, filterSensorsFromDataset, \
-    addNoiseToInitialGuess
+from colorama import Fore, Style
+from atom_core.dataset_io import loadResultsJSON, filterSensorsFromDataset
+
+# Ros imports
+from urdf_parser_py.urdf import URDF
 
 
 # -------------------------------------------------------------------------------
@@ -48,11 +34,8 @@ def main():
     # --- Parse command line argument
     # ---------------------------------------
     signal.signal(signal.SIGINT, signal_handler)
-    # print('Press Ctrl+C')
-    # signal.pause()
 
     ap = argparse.ArgumentParser()
-    ap = OptimizationUtils.addArguments(ap)  # OptimizationUtils arguments
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-v", "--verbose", help="Be verbose", action='store_true', default=False)
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action='store_true')
@@ -150,11 +133,11 @@ def main():
     # --- Count partial detections
     # ---------------------------------------
     number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-                        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
     for sensor_key, sensor in dataset['sensors'].items():
         complete_detections = []
         partial_detections = []
-        if sensor['modality'] == 'rgb': # and collection['labels'][sensor_key]['detected']:
+        if sensor['modality'] == 'rgb':  # and collection['labels'][sensor_key]['detected']:
             for collection_key, collection in dataset['collections'].items():
                 if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                     partial_detections.append(collection_key)
@@ -259,8 +242,6 @@ def main():
             #     row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
             # else:
 
-
-
         if is_complete:
             row[1] = Fore.GREEN + 'yes' + Style.RESET_ALL
         else:
@@ -272,6 +253,7 @@ def main():
     # table.align[Back.LIGHTWHITE_EX + "Player"] = 'l'
     # table.align['Team'] = 'l'
     print(table)
+
 
 if __name__ == "__main__":
     main()

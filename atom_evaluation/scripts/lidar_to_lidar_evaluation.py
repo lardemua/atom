@@ -8,34 +8,30 @@ Reads the calibration results from a json file and computes the evaluation metri
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+# Standard imports
 import json
 import os
-import numpy as np
-import ros_numpy
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
 from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
-from image_geometry import PinholeCameraModel
 
+import numpy as np
+import atom_core.atom
+from scipy.spatial import distance
+from colorama import Style, Fore
+
+# ROS imports
+from rospy_message_converter import message_converter
+from ros_numpy import numpify
+
+# Atom imports
 from atom_core.naming import generateKey
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
-from scipy.spatial.distance import directed_hausdorff
-
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def rangeToImage(collection, json_file, ss):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
@@ -46,7 +42,7 @@ def rangeToImage(collection, json_file, ss):
     # idxs = collection['labels'][ss]['idxs_limit_points']
     idxs = collection['labels'][ss]['idxs']
 
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    pc = numpify(cloud_msg)[idxs]
     points_in_vel = np.zeros((4, pc.shape[0]))
     points_in_vel[0, :] = pc['x']
     points_in_vel[1, :] = pc['y']
@@ -60,7 +56,7 @@ def rangeToImage(collection, json_file, ss):
     # K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     # D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
     #
-    # lidar_pts_in_img, _, _ = opt_utilities.projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    # lidar_pts_in_img, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
     return points_in_vel
 
@@ -156,9 +152,9 @@ if __name__ == "__main__":
         # if show_images:
         #     fig = plt.figure()
         #     ax = fig.add_subplot(projection='3d')
-            # ax.xlim([-5,5])
-            # ax.ylim([-5, 5])
-            # ax.zlim([-5, 5])
+        # ax.xlim([-5,5])
+        # ax.ylim([-5, 5])
+        # ax.zlim([-5, 5])
 
         # ---------------------------------------
         # --- Range to image projection
@@ -179,7 +175,7 @@ if __name__ == "__main__":
             delta_pts.append((np.min(dist)))
             coords = np.where(dist == np.min(dist))
 
-            min_dist_pt = lidar_pts_1_in_lidar_2.transpose()[coords[1]][0,:3]
+            min_dist_pt = lidar_pts_1_in_lidar_2.transpose()[coords[1]][0, :3]
             dist = abs(lidar_pt - min_dist_pt)
             distances.append(dist)
             delta_total.append(dist)

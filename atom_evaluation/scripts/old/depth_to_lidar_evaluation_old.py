@@ -8,32 +8,32 @@ Computes the evaluation metrics between depth sensors and lidars
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+# Standard imports
 import json
 import os
-import numpy as np
-import ros_numpy
-from scipy.spatial import distance
-
-import atom_core.atom
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
-
-from rospy_message_converter import message_converter
-import cv2
 import argparse
-import OptimizationUtils.utilities as opt_utilities
-from scipy.spatial import distance
-from copy import deepcopy
-from colorama import Style, Fore
 from collections import OrderedDict
+
+import numpy as np
+import cv2
+
+# ROS imports
+import ros_numpy
+from colorama import Fore
+from scipy.spatial import distance
+from rospy_message_converter import message_converter
 from image_geometry import PinholeCameraModel
 
+# Atom imports
 from atom_core.naming import generateKey
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
-
+from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
+from atom_core.atom import getTransform
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
 
 def rangeToImage(collection, json_file, lidar_sensor, tf):
     filename = os.path.dirname(json_file) + '/' + collection['data'][lidar_sensor]['data_file']
@@ -207,11 +207,11 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2pattern = atom_core.atom.getTransform(lidar_frame, pattern_frame,
-                                                  train_dataset['collections'][collection_key]['transforms'])
+        vel2pattern = getTransform(lidar_frame, pattern_frame,
+                                   train_dataset['collections'][collection_key]['transforms'])
         print(vel2pattern)
-        depth2pattern = atom_core.atom.getTransform(depth_frame, pattern_frame,
-                                                    train_dataset['collections'][collection_key]['transforms'])
+        depth2pattern = getTransform(depth_frame, pattern_frame,
+                                     train_dataset['collections'][collection_key]['transforms'])
 
         lidar_points_in_pattern = rangeToImage(collection, test_json_file, range_sensor, vel2pattern)
         depth_points_in_pattern = depthToImage(collection, test_json_file, depth_sensor, depth2pattern,
@@ -278,12 +278,12 @@ if __name__ == "__main__":
     print(
         '------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print(
-    '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4s}{:^25.4f}{:^25.4f}'.format('All', rms,
-                                                                                  avg_error, avg_error_x,
-                                                                                  avg_error_y, '-',
-                                                                                  stdev_xy[0], stdev_xy[1]))
+        '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4s}{:^25.4f}{:^25.4f}'.format('All', rms,
+                                                                                      avg_error, avg_error_x,
+                                                                                      avg_error_y, '-',
+                                                                                      stdev_xy[0], stdev_xy[1]))
     print(
-    '------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print("Press ESC to quit and close all open windows.")
 
     while True:
