@@ -674,7 +674,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
 
     return labels, gui_image, new_seed_point
 
-def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns):
+def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     marker = Marker()
 
     marker.ns = ns
@@ -682,13 +682,13 @@ def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns):
     marker.action = marker.ADD
     marker.header.frame_id = frame_id
     # marker scale
-    marker.scale.x = 0.01
+    marker.scale.x = 0.035
 
     # marker color
     marker.color.a = 1.0
-    marker.color.r = 1.0
-    marker.color.g = 0.0
-    marker.color.b = 0.0
+    marker.color.r = color[0]
+    marker.color.g = color[1]
+    marker.color.b = color[2]
 
     # marker orientaiton
     marker.pose.orientation.x = 0.0
@@ -792,7 +792,7 @@ def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns):
     marker.points.append(P8)
     marker.points.append(P5)
 
-    return marker
+    return marker, P6, P8
 
 
 def worldToPix(fx, fy, cx, cy, X, Y, Z):
