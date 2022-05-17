@@ -10,16 +10,13 @@ Reads the calibration results from a json file and computes the evaluation metri
 
 # Standard imports
 import json
-import math
 import os
 import argparse
-import sys
 from collections import OrderedDict
 
 import numpy as np
 import ros_numpy
 import cv2
-from prettytable import PrettyTable
 from scipy.spatial import distance
 from colorama import Style, Fore
 
@@ -159,14 +156,25 @@ if __name__ == "__main__":
     for collection_key in collections_to_delete:
         del test_dataset['collections'][collection_key]
 
-    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
+    print(Fore.BLUE + '\nStarting evalutation...')
+    print(Fore.WHITE)
+    print(
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'X Error', 'Y Error', 'X Standard Deviation',
+                                                              'Y Standard Deviation'))
+    print(
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+
+    # Declare output dict to save the evaluation data if desired
+    output_dict = {}
+    output_dict['ground_truth_pts'] = {}
+
+    delta_total = []
 
     from_frame = test_dataset['calibration_config']['sensors'][camera_sensor]['link']
     to_frame = test_dataset['calibration_config']['sensors'][range_sensor]['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
-    e = {}  # dictionary with all the errors
     for collection_key, collection in od.items():
-        e[collection_key] = {}  # init the dictionary of errors for this collection
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
@@ -178,126 +186,132 @@ if __name__ == "__main__":
         # --- Get evaluation data for current collection
         # ---------------------------------------
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][camera_sensor]['data_file']
+
+        # print(filename)
+
+        image = cv2.imread(filename)
+        limits_on_image = annotations[collection_key]
+        # print(limits_on_image)
+
+        # Clear image annotations
         image = cv2.imread(filename)
 
-        if args['show_images']:  # draw all ground truth annotations
-            for side in annotations[collection_key].keys():
-                for x, y in zip(annotations[collection_key][side]['ixs'],
-                                annotations[collection_key][side]['iys']):
-                    cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
+        #         output_dict['ground_truth_pts'][collection_key] = {}
+        #         for i, pts in limits_on_image.items():
+        #             pts = np.array(pts)
+        #             if pts.size == 0:
+        #                 continue
+        #
+        #             x = pts[:, 0]
+        #             y = pts[:, 1]
+        #             coefficients = np.polyfit(x, y, 3)
+        #             poly = np.poly1d(coefficients)
+        #             new_x = np.linspace(np.min(x), np.max(x), 5000)
+        #             new_y = poly(new_x)
+        #
+        #             if show_images:
+        #                 for idx in range(0, len(new_x)):
+        #                     image = cv2.circle(image, (int(new_x[idx]), int(new_y[idx])), 3, (0, 0, 255), -1)
+        #
+        #             output_dict['ground_truth_pts'][collection_key][i] = []
+        #             for idx in range(0, len(new_x)):
+        #                 output_dict['ground_truth_pts'][collection_key][i].append([new_x[idx], new_y[idx]])
 
         # ---------------------------------------
         # --- Evaluation metrics - reprojection error
         # ---------------------------------------
+
         # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
-        x_errors = []
-        y_errors = []
-        rms_errors = []
+        delta_pts = []
         for idx in range(0, pts_in_image.shape[1]):
             x_proj = pts_in_image[0, idx]
             y_proj = pts_in_image[1, idx]
 
-            # Do not consider points that are re-projected outside of the image
-            if x_proj > image.shape[1] or x_proj < 0 or y_proj > image.shape[0] or y_proj < 0:
-                continue
-
-            min_error = sys.float_info.max  # a very large value
-            x_min = None
-            y_min = None
             for side in annotations[collection_key].keys():
                 for x, y in zip(annotations[collection_key][side]['ixs'],
                                 annotations[collection_key][side]['iys']):
-                    error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
-                    if error < min_error:
-                        min_error = error
-                        x_min = x
-                        y_min = y
+                    pass
 
-            x_errors.append(abs(x_proj - x_min))
-            y_errors.append(abs(y_proj - y_min))
-            rms_errors.append(min_error)
+        # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+        delta_pts = []
+        for idx in range(0, pts_in_image.shape[1]):
+            target_pt = pts_in_image[:, idx]
+            target_pt = np.reshape(target_pt[0:2], (2, 1))
+            min_dist = 1e6
 
-            if args['show_images']:
-                cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
-                cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
-                         (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
+            # Do not consider points that are re-projected outside of the image
+            if target_pt[0] > image.shape[1] or target_pt[0] < 0 or target_pt[1] > image.shape[0] or target_pt[1] < 0:
+                continue
 
-        if not rms_errors:
+            for i, pts in output_dict['ground_truth_pts'][collection_key].items():
+                dist = np.min(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
+
+                if dist < min_dist:
+                    min_dist = dist
+                    arg = np.argmin(distance.cdist(target_pt.transpose(), pts, 'euclidean'))
+                    closest_pt = pts[arg]
+
+            diff = (closest_pt - target_pt.transpose())[0]
+
+            delta_pts.append(diff)
+            delta_total.append(diff)
+
+            if show_images is True:
+                image = cv2.line(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])),
+                                 (int(closest_pt[0]), int(closest_pt[1])), (0, 255, 255), 3)
+
+        if len(delta_pts) == 0:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
             continue
 
-        e[collection_key]['x'] = np.average(x_errors)
-        e[collection_key]['y'] = np.average(y_errors)
-        e[collection_key]['rms'] = np.average(rms_errors)
+        # ---------------------------------------
+        # --- Compute error metrics
+        # ---------------------------------------
+        total_pts = len(delta_pts)
+        delta_pts = np.array(delta_pts, np.float32)
+        avg_error_x = np.sum(np.abs(delta_pts[:, 0])) / total_pts
+        avg_error_y = np.sum(np.abs(delta_pts[:, 1])) / total_pts
+        stdev = np.std(delta_pts, axis=0)
 
-        if args['show_images']:
-            print('Errors collection ' + collection_key + '\n' + str(e[collection_key]))
-            window_name = 'Collection ' + collection_key
-            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        # Print error metrics
+        print(
+            '{:^25s}{:^25s}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, '-', avg_error_x, avg_error_y,
+                                                                        stdev[0], stdev[1]))
+
+        # ---------------------------------------
+        # --- Drawing ...
+        # ---------------------------------------
+        if show_images is True:
+            for idx in range(0, pts_in_image.shape[1]):
+                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 5, (255, 0, 0), -1)
+
+            window_name = "Lidar to Camera reprojection - collection " + str(collection_key)
             cv2.imshow(window_name, image)
-            cv2.waitKey(0)
+            cv2.waitKey()
+            cv2.destroyWindow(winname=window_name)
 
-    # -------------------------------------------------------------
-    # Print output table
-    # -------------------------------------------------------------
-    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
-    table = PrettyTable(table_header)
+    total_pts = len(delta_total)
+    delta_total = np.array(delta_total, float)
+    avg_error_x = np.sum(np.abs(delta_total[:, 0])) / total_pts
+    avg_error_y = np.sum(np.abs(delta_total[:, 1])) / total_pts
+    stdev = np.std(delta_total, axis=0)
+    rms = np.sqrt((delta_total ** 2).mean())
 
-    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        row = [collection_key,
-               '%.4f' % e[collection_key]['rms'],
-               '%.4f' % e[collection_key]['x'],
-               '%.4f' % e[collection_key]['y']]
-
-        table.add_row(row)
-
-    # Compute averages and add a bottom row
-    bottom_row = []  # Compute averages and add bottom row to table
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
-            continue
-
-        total = 0
-        count = 0
-        for row in table.rows:
-            # if row[col_idx].isnumeric():
-            try:
-                value = float(row[col_idx])
-                total += float(value)
-                count += 1
-            except:
-                pass
-
-        value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
-
-    table.add_row(bottom_row)
-
-    # Put larger errors in red per column (per sensor)
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:  # nothing to do
-            continue
-
-        max = 0
-        max_row_idx = 0
-        for row_idx, row in enumerate(table.rows[:-1]):  # ignore bottom row
-            try:
-                value = float(row[col_idx])
-            except:
-                continue
-
-            if value > max:
-                max = value
-                max_row_idx = row_idx
-
-        # set the max column value to red
-        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
-
-    table.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
-    print(table)
-
+    print(
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
+    print('{:^25}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(
+        'All', rms, avg_error_x, avg_error_y, stdev[0], stdev[1]))
+    print(
+        '------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print('Ending script...')
     sys.exit()
+    # print("Press ESC to quit and close all open windows.")
+
+    # while True:
+    # k = cv2.waitKey(0) & 0xFF
+    # if k == 27:
+    # cv2.destroyAllWindows()
+    # break
+    # Save evaluation data
+    # if use_annotation is True:
+    #     createJSONFile(eval_file, output_dict)
