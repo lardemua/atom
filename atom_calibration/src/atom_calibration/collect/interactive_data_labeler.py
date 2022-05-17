@@ -44,9 +44,6 @@ import random
 
 import math
 import image_geometry
-import rviz_tools_py 
-
-
 
 # local packages
 from atom_calibration.collect import patterns
@@ -143,7 +140,6 @@ class InteractiveDataLabeler:
         self.marker_scale = marker_scale
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
-
         # self.server = server
         self.server = InteractiveMarkerServer(self.name + "/data_labeler")
         self.lock = threading.Lock()
@@ -194,15 +190,10 @@ class InteractiveDataLabeler:
             height = self.pinhole_camera_model.fullResolution()[1]
             f_x = self.pinhole_camera_model.fx()
             f_y = self.pinhole_camera_model.fy()
-            self.P1=(0,0,0)
-            self.P2=(0,0,0)
-
-
             # frame_id = self.msg.header.frame_id
             frame_id = sensor_dict['camera_info']['header']['frame_id']
-            self.marker_plane = rviz_tools_py.RvizMarkers(frame_id, 'visualization_marker')
             self.frustum_marker_array = MarkerArray()
-            marker_frustrum, P1, P2 = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.topic, color=(random.uniform(0, 1),random.uniform(0, 1),random.uniform(0, 1)))
+            marker_frustrum = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.topic, color=(random.uniform(0, 1),random.uniform(0, 1),random.uniform(0, 1)))
             self.frustum_marker_array.markers.append(marker_frustrum)
             # images with the detected chessboard overlaid onto the image.
 
@@ -231,8 +222,6 @@ class InteractiveDataLabeler:
 
         elif self.modality == 'depth' and self.label_data:  # Velodyne data (Andre Aguiar)
             # print('Depth labeller under construction')
-            self.P1=(0,0,0)
-            self.P2=(0,0,0)
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_depth = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=1)  # publish
@@ -254,10 +243,8 @@ class InteractiveDataLabeler:
             f_y = self.pinhole_camera_model.fy()
             # frame_id = self.msg.header.frame_id
             frame_id = sensor_dict['camera_info']['header']['frame_id']
-            self.marker_plane = rviz_tools_py.RvizMarkers(frame_id, 'visualization_marker')
-
             self.frustum_marker_array = MarkerArray()
-            marker_frustrum, P1, P2 = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.topic, color=(1,0,0))
+            marker_frustrum = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.topic, color=(1,0,0))
             self.frustum_marker_array.markers.append(marker_frustrum)
 
             # Use image resolution to define initial seed in the middle of the image
@@ -457,9 +444,6 @@ class InteractiveDataLabeler:
             self.publisher_labelled_image.publish(msg_out)
             self.publisher_frustrum.publish(self.frustum_marker_array)
 
-            self.marker_plane.publishRectangle(self.P1, self.P2, 'blue', 5.0)
-
-
 
         # elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
         elif self.modality == 'lidar3d':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
@@ -569,8 +553,6 @@ class InteractiveDataLabeler:
             self.server.applyChanges()
 
             self.publisher_frustrum.publish(self.frustum_marker_array)
-            self.marker_plane.publishRectangle(self.P1, self.P2, 'blue', 5.0)
-
 
         else:
             raise ValueError('Unknown modality')

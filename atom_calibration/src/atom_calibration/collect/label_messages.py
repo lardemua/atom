@@ -682,7 +682,7 @@ def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     marker.action = marker.ADD
     marker.header.frame_id = frame_id
     # marker scale
-    marker.scale.x = 0.035
+    marker.scale.x = 0.03
 
     # marker color
     marker.color.a = 1.0
@@ -792,7 +792,7 @@ def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     marker.points.append(P8)
     marker.points.append(P5)
 
-    return marker, P6, P8
+    return marker
 
 
 def worldToPix(fx, fy, cx, cy, X, Y, Z):
