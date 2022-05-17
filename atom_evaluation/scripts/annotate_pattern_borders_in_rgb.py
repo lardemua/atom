@@ -24,6 +24,7 @@ import numpy as np
 import cv2
 from click import style
 from colorama import Style, Fore
+from atom_core.drawing import drawCross2D, drawSquare2D
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     ap.add_argument("-cs", "--camera_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=True)
     ap.add_argument("-ww", "--window_width", help="Width of the window.", default=1200)
-    ap.add_argument("-ps", "--point_size", help="Size of points to draw on image.", default=14)
+    ap.add_argument("-ps", "--point_size", help="Size of points to draw on image.", default=10, type=int)
     ap.add_argument("-ppp", "--points_per_pixel",
                     help="How many points per pixel to sample between annotated points.", default=1)
     args = vars(ap.parse_args())
@@ -92,10 +93,10 @@ if __name__ == "__main__":
     # Load annotations
     # ----------------------------------------------------
     sides = ['top', 'right', 'bottom', 'left']
-    side_colors = [(255, 255, 0), (0, 255, 255), (255, 0, 255), (128, 128, 255)]
+    side_colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255)]
+    side_symbols = ['square', 'cross', 'square', 'cross']
 
     annotation_file = os.path.dirname(args['dataset_file']) + "/annotation_" + args['camera_sensor'] + ".json"
-
     if os.path.exists(annotation_file):
         print('Found anotation file at ' + annotation_file + ' ... loading.')
         f = open(annotation_file, 'r')
@@ -131,6 +132,7 @@ if __name__ == "__main__":
     collection_key = collection_keys[0]
     clicked = {'new_click': False, 'x': None, 'y': None}
     load_collection_data = True
+    side = sides[0]
     while True:  # loop to iterate collections
 
         # ----------------------------------------------------
@@ -148,7 +150,6 @@ if __name__ == "__main__":
             cv2.resizeWindow(window_name, args['window_width'], int(args['window_width']*image.shape[0]/image.shape[1]))
             cv2.setMouseCallback(window_name, partial(mouseClick, clicked=clicked))
 
-            side = sides[0]
             load_collection_data = False
 
         # ----------------------------------------------------
@@ -184,8 +185,12 @@ if __name__ == "__main__":
 
         for side_key in annotations[collection_key].keys():
             side_color = side_colors[sides.index(side_key)]
+            side_symbol = side_symbols[sides.index(side_key)]
             for x, y in zip(annotations[collection_key][side_key]['xs'], annotations[collection_key][side_key]['ys']):
-                cv2.line(gui_image, pt1=(x, y), pt2=(x, y), color=side_color, thickness=args['point_size'])
+                if side_symbol == 'square':
+                    drawSquare2D(gui_image, x, y, args['point_size'], color=side_color, thickness=2)
+                elif side_symbol == 'cross':
+                    drawCross2D(gui_image, x, y, args['point_size'], color=side_color, thickness=2)
 
         for side_key in annotations[collection_key].keys():
             side_color = side_colors[sides.index(side_key)]
@@ -195,7 +200,6 @@ if __name__ == "__main__":
 
         cv2.imshow(window_name, gui_image)
 
-        # print(annotations[collection_key])
         # ----------------------------------------------------
         # Check for pressed keys
         # ----------------------------------------------------
@@ -213,6 +217,12 @@ if __name__ == "__main__":
                 side_idx += 1
                 side = sides[side_idx]
                 print('Setting side to ' + side + '.')
+
+                if not annotations[collection_key][side]['xs']:  # If emtpy list, auto insert first point in empty list
+                    previous_side = sides[side_idx-1]
+                    annotations[collection_key][side]['xs'].append(annotations[collection_key][previous_side]['xs'][-1])
+                    annotations[collection_key][side]['ys'].append(annotations[collection_key][previous_side]['ys'][-1])
+
         elif key == ord('p'):
             # if side is first then move to previous collection
             side_idx = sides.index(side)
@@ -223,7 +233,7 @@ if __name__ == "__main__":
                 side = sides[side_idx]
                 print('Setting side to ' + side + '.')
 
-        if key == 46:  # "." key
+        if key == 46:  # "." key, next collection
             print('Saving annotations ...')
             createJSONFile(annotation_file, annotations)
             print('Moving to next collection ...')
@@ -231,13 +241,14 @@ if __name__ == "__main__":
             if collection_key_idx < len(collection_keys) - 1:
                 collection_key_idx += 1
                 collection_key = collection_keys[collection_key_idx]
+                side = sides[0]
             else:
                 print(Fore.YELLOW + 'This is the last collection.' + Style.RESET_ALL)
 
             cv2.destroyWindow(window_name)
             load_collection_data = True
 
-        elif key == 44:  # "," key
+        elif key == 44:  # "," key, previous collection
             print('Saving annotations ...')
             createJSONFile(annotation_file, annotations)
             print('Moving to previous collection ...')
@@ -245,6 +256,7 @@ if __name__ == "__main__":
             if collection_key_idx > 0:
                 collection_key_idx -= 1
                 collection_key = collection_keys[collection_key_idx]
+                side = sides[-1]
             else:
                 print(Fore.YELLOW + 'This is the first collection.' + Style.RESET_ALL)
 
@@ -269,10 +281,10 @@ if __name__ == "__main__":
         # -------------------------------------------------------------------
         elif key == ord('c'):  # clear all annotations in collection.
             print('Clearing all annotations in collection ' + collection_key)
-            annotations[collection_key] = {'top': {'xs': [], 'ys': []},
-                                           'right': {'xs': [], 'ys': []},
-                                           'bottom': {'xs': [], 'ys': []},
-                                           'left': {'xs': [], 'ys': []}}
+            annotations[collection_key] = {'top': {'xs': [], 'ys': [], 'ixs': [], 'iys': []},
+                                           'right': {'xs': [], 'ys': [], 'ixs': [], 'iys': []},
+                                           'bottom': {'xs': [], 'ys': [], 'ixs': [], 'iys': []},
+                                           'left': {'xs': [], 'ys': [], 'ixs': [], 'iys': []}}
         elif key == ord('x'):  # clear all annotations in side of collection.
             print('Clearing all annotations in collection ' + collection_key + ' and current side ' + side)
             annotations[collection_key][side] = {'xs': [], 'ys': []}
