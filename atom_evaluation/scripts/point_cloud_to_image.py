@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Projects a point cloud into an image
@@ -19,6 +19,7 @@ import numpy as np
 
 # ROS imports
 import ros_numpy
+from matplotlib import cm
 
 # Atom imports
 from atom_core.vision import projectToCamera
@@ -68,9 +69,9 @@ def rangeToImage(collection, ss, ts, tf, pts):
     K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
     D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
 
-    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+    pts_in_image, valid_pixs, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
-    return pts_in_image
+    return pts_in_image, valid_pixs
 
 
 # -------------------------------------------------------------------------------
@@ -130,11 +131,20 @@ if __name__ == "__main__":
         selected_collection_key = list(dataset['collections'].keys())[0]
         lidar2cam = getTransform(from_frame, to_frame,
                                  dataset['collections'][selected_collection_key]['transforms'])
-        pts_in_image = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
+        pts_in_image, valid_pixs = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
+
+        # Use a color scale up to six meters. Use milimeters to define the color
+        cm_sensors = cm.rainbow(np.linspace(0, 1, 5000))
+
         for idx in range(0, pts_in_image.shape[1]):
-            if int(pts_in_image[0, idx]) > 0 and int(pts_in_image[0, idx]) < img_size[1] and \
-                    int(pts_in_image[1, idx]) > 0 and int(pts_in_image[1, idx]) < img_size[0]:
-                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, (255, 0, 0), -1)
+            if valid_pixs[idx]:
+                # in ros x is forward from the sensor. Convert to milimeters to retrieve color from colormap
+                color_idx = min(5000-1, int(round(points[idx, 0] * 1000)))
+                color = (cm_sensors[color_idx, 0]*255, cm_sensors[color_idx, 1]*255, cm_sensors[color_idx, 2]*255)
+                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, color, -1)
 
         cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
-        cv2.waitKey()
+        key = cv2.waitKey()
+        if key == ord('q'):
+            print('You pressed q ... aborting.')
+            break
