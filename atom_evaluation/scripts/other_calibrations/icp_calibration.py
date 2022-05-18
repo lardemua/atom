@@ -23,87 +23,7 @@ from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
 from atom_core.dataset_io import saveResultsJSON
 
-
-def cvStereoCalibrate(objp):
-    # Arrays to store object points and image points from all the images.
-    objpoints = []  # 3d point in real world space
-    imgpoints_l = []  # 2d points in image plane.
-    imgpoints_r = []  # 2d points in image plane.
-
-    for collection_key, collection in dataset['collections'].items():
-        # Find the chess board corners
-        n_points = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-            int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
-        image_points_r = np.ones((n_points, 2), np.float32)
-        image_points_l = np.ones((n_points, 2), np.float32)
-
-        for idx, point in enumerate(collection['labels'][right_camera]['idxs']):
-            image_points_r[idx, 0] = point['x']
-            image_points_r[idx, 1] = point['y']
-
-        for idx, point in enumerate(collection['labels'][left_camera]['idxs']):
-            image_points_l[idx, 0] = point['x']
-            image_points_l[idx, 1] = point['y']
-
-        imgpoints_l.append(image_points_l)
-        imgpoints_r.append(image_points_r)
-        objpoints.append(objp)
-
-    # ---------------------------------------
-    # --- Get intrinsic data for both sensors
-    # ---------------------------------------
-    # Source sensor
-    K_r = np.zeros((3, 3), np.float32)
-    D_r = np.zeros((5, 1), np.float32)
-    K_r[0, :] = dataset['sensors'][right_camera]['camera_info']['K'][0:3]
-    K_r[1, :] = dataset['sensors'][right_camera]['camera_info']['K'][3:6]
-    K_r[2, :] = dataset['sensors'][right_camera]['camera_info']['K'][6:9]
-    D_r[:, 0] = dataset['sensors'][right_camera]['camera_info']['D'][0:5]
-
-    # Target sensor
-    K_l = np.zeros((3, 3), np.float32)
-    D_l = np.zeros((5, 1), np.float32)
-    K_l[0, :] = dataset['sensors'][left_camera]['camera_info']['K'][0:3]
-    K_l[1, :] = dataset['sensors'][left_camera]['camera_info']['K'][3:6]
-    K_l[2, :] = dataset['sensors'][left_camera]['camera_info']['K'][6:9]
-    D_l[:, 0] = dataset['sensors'][left_camera]['camera_info']['D'][0:5]
-
-    height = dataset['sensors'][right_camera]['camera_info']['height']
-    width = dataset['sensors'][right_camera]['camera_info']['width']
-    image_size = (height, width)
-
-    print('\n---------------------\n Starting stereo calibration ...')
-
-    # Extrinsic stereo calibration
-    stereocalib_criteria = (cv2.TERM_CRITERIA_MAX_ITER +
-                            cv2.TERM_CRITERIA_EPS, 100, 1e-5)
-    flags = (cv2.CALIB_USE_INTRINSIC_GUESS)
-
-    ret, K_l, D_l, K_r, D_r, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_l,
-                                                              imgpoints_r, K_l, D_l, K_r,
-                                                              D_r, image_size,
-                                                              criteria=stereocalib_criteria, flags=flags)
-
-    print('\n---------------------\n Done!\n\n------\nCalibration results:\n------\n')
-
-    print('K_left', K_l)
-    print('D_left', D_l)
-    print('K_right', K_r)
-    print('D_right', D_r)
-    print('R', R)
-    print('T', T)
-    print('E', E)
-    print('F', F)
-
-    camera_model = dict([('K_l', K_l), ('K_r', K_r), ('D_l', D_l),
-                         ('D_r', D_r), ('R', R), ('T', T),
-                         ('E', E), ('F', F)])
-
-    cv2.destroyAllWindows()
-    return camera_model
-
-
-if __name__ == '__main__':
+def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file", help="Json file containing train input dataset.", type=str,
                     required=True)
@@ -126,13 +46,10 @@ if __name__ == '__main__':
     T_lidar1_to_lidar2 = getTransform(source_frame, target_frame,
                                       dataset['collections'][selected_collection_key]['transforms'])
 
-#     T_lidar1_to_lidar2 = getTransform(target, target_frame,
-#                                       dataset['collections'][selected_collection_key]['transforms'])
-#
 
     print('T_lidar1_to_lidar2 = ' + str(T_lidar1_to_lidar2))
 
-    # TODO use ICP for all colelctions and take average
+    # TODO use ICP for all collections and take average
     ss_filename = os.path.dirname(
         args['json_file']) + '/' + dataset['collections'][selected_collection_key]['data'][args['sensor_source']]['data_file']
     st_filename = os.path.dirname(
@@ -144,9 +61,6 @@ if __name__ == '__main__':
     source_point_cloud = o3d.io.read_point_cloud(ss_filename)
     target_point_cloud = o3d.io.read_point_cloud(st_filename)
     threshold = 0.02
-    trans_init = np.asarray([[0.862, 0.011, -0.507, 0.5],
-                            [-0.139, 0.967, -0.215, 0.7],
-                            [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]])
 
     def draw_registration_result(source, target, transformation):
         source_temp = copy.deepcopy(source)
@@ -163,7 +77,7 @@ if __name__ == '__main__':
     draw_registration_result(source_point_cloud, target_point_cloud, T_lidar1_to_lidar2)
 
     print("Apply point-to-point ICP")
-    reg_p2p = o3d.pipelines.registration.registration_icp(source_point_cloud, target_point_cloud, threshold, trans_init,
+    reg_p2p = o3d.pipelines.registration.registration_icp(source_point_cloud, target_point_cloud, threshold, T_lidar1_to_lidar2,
                                                           o3d.pipelines.registration.TransformationEstimationPointToPoint())
     print(reg_p2p)
     print("Transformation is:")
@@ -171,7 +85,7 @@ if __name__ == '__main__':
     draw_registration_result(source_point_cloud, target_point_cloud, reg_p2p.transformation)
 
     reg_p2p = o3d.pipelines.registration.registration_icp(
-        source_point_cloud, target_point_cloud, threshold, trans_init,
+        source_point_cloud, target_point_cloud, threshold, T_lidar1_to_lidar2,
         o3d.pipelines.registration.TransformationEstimationPointToPoint(),
         o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2000))
     print(reg_p2p)
@@ -183,3 +97,8 @@ if __name__ == '__main__':
     # filename_results_json = os.path.dirname(json_file) + '/cv_calibration.json'
     # saveResultsJSON(filename_results_json, dataset)
 
+
+
+
+if __name__ == '__main__':
+   main() 
