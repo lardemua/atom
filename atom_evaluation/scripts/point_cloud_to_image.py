@@ -84,6 +84,9 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-ls", "--lidar_sensor", help="LiDAR sensor name.", type=str, required=True)
     ap.add_argument("-cs", "--camera_sensor", help="Camera sensor name.", type=str, required=True)
+    ap.add_argument("-md", "--max_distance", type=int, required=False, default=5.0,
+                    help="Used for scaling colors of points projected in the image (in m)." +
+                    "From max distance onward, everything will be the same color")
 
     # - Save args
     args = vars(ap.parse_args())
@@ -134,12 +137,12 @@ if __name__ == "__main__":
         pts_in_image, valid_pixs = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
 
         # Use a color scale up to six meters. Use milimeters to define the color
-        cm_sensors = cm.rainbow(np.linspace(0, 1, 5000))
+        cm_sensors = cm.rainbow(np.linspace(0, 1, int(args['max_distance'])*1000))
 
         for idx in range(0, pts_in_image.shape[1]):
             if valid_pixs[idx]:
                 # in ros x is forward from the sensor. Convert to milimeters to retrieve color from colormap
-                color_idx = min(5000-1, int(round(points[idx, 0] * 1000)))
+                color_idx = min(int(args['max_distance'])*1000-1, int(round(points[idx, 0] * 1000)))
                 color = (cm_sensors[color_idx, 0]*255, cm_sensors[color_idx, 1]*255, cm_sensors[color_idx, 2]*255)
                 image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, color, -1)
 
