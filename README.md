@@ -410,37 +410,46 @@ After the system is calibrated one common concern is to be able to assess the ac
 Unlike ATOM which calibrates all sensors simultaneously, evaluations are performed in pairs of sensors, which facilitates comparisons with other calibration approaches (which are mostly pairwise),
 e.g. [opencv's stereo calibration](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html). Thus, there is a different evaluation script for each combination of modalities.
 
-#### Annotation
+#### Annotation of rgb images
 
-To evaluate calibration between range sensors and cameras, it is necessary to annotate the physical limits on the chessboard in the images of the collection, to allow a comparison with physical labellings of those sensors.
+To evaluate calibration between range sensors and cameras, it is necessary to annotate the physical limits on the calibration pattern in the images of the collection, to allow a comparison with physical labellings as measured by range sensors .
 
 ``` bash
-rosrun atom_evaluation annotate.py -test_json TEST_JSON_FILE -cs CAMERA_TO_ANNOTATE -si
+rosrun atom_evaluation  annotate_pattern_borders_in_rgb.py [-h] -d DATASET_FILE -cs CAMERA_SENSOR [-si] [-ww WINDOW_WIDTH] [-ps POINT_SIZE] [-ppp POINTS_PER_PIXEL]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -test_json TEST_JSON_FILE, --test_json_file TEST_JSON_FILE
-                        Json file containing test input dataset.
-  -c1 SOURCE_SENSOR, --source_sensor SOURCE_SENSOR
+  -d DATASET_FILE, --dataset_file DATASET_FILE
+                        Json file containing input dataset.
+  -cs CAMERA_SENSOR, --camera_sensor CAMERA_SENSOR
                         Source transformation sensor.
-   -si, --show_images    If true the script shows images.                      
+  -si, --show_images    If true the script shows images.
+  -ww WINDOW_WIDTH, --window_width WINDOW_WIDTH
+                        Width of the window.
+  -ps POINT_SIZE, --point_size POINT_SIZE
+                        Size of points to draw on image.
+  -ppp POINTS_PER_PIXEL, --points_per_pixel POINTS_PER_PIXEL
+                        How many points per pixel to sample between annotated points.
+
 ```
 
 Note: you must annotate each camera sensor present in your calibration system. These annotation will be used to evaluate both the lidar-camera pairs and depth-camera.
 
 How to annotate:
 
-- **click** to add a point
-- add points in one of the four edges
-- **c** to change class (that is, move to the next edge)
-- repeat this for the four classes/edges
-- once you have complete the 4 edges, click **c** again and it will move to the next image
+- **click** to add points in the currently selected pattern side (text in top left corner)
+- if the pattern limit is viewed as a straight line in the image you may click only the corners, if needed you can click more points
+- once a side is complete, move on to the **n**ext side by pressing "n"
+- when the four sides are complete move to the next collection image by pressing "."
 
-Note: be sure to label the corners in both intersected edges, ie, each corner should have two different coloured points.
+The complete list of keys is printed when "h" is pressed. Be sure to label the corners in both intersected edges, ie, each corner should have two different coloured points.
+
 
 The result should be someting like this (for each image):
 
-<img align="center" src="docs/annotation.png" width="450"/>
+<img align="center" src="docs/annotation_rgb_images.png" width="450"/>
+
+Here is a [video tutorial](https://www.youtube.com/watch?v=DSYyKU-nDcs).
 
 #### RGB to RGB camera evaluation
 

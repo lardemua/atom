@@ -39,7 +39,7 @@ Using this equation we can compute the projections from the detections in sa to 
 we compare the projections with the annotated corners in sb
 """
 
-
+# Standard imports
 import argparse
 import os
 import math
@@ -47,15 +47,19 @@ import json
 from collections import OrderedDict
 from copy import deepcopy
 
-import OptimizationUtils.utilities as opt_utilities
+# ROS imports
 import cv2
-import atom_core.atom
 import numpy as np
-from atom_core.atom import getTransform
-from atom_core.naming import generateKey
 from matplotlib import cm
 from colorama import Style, Fore
 from prettytable import PrettyTable
+from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
+
+# Atom imports
+from atom_core.atom import getTransform
+from atom_core.utilities import rootMeanSquare
+from atom_core.naming import generateKey
+from atom_core.drawing import drawCross2D, drawSquare2D
 
 # -------------------------------------------------------------------------------
 # --- IMPORTS
@@ -283,7 +287,7 @@ if __name__ == "__main__":
         # -------------------------------------------------------------
         _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
                                        K_s, D_s)
-        ss_T_p = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+        ss_T_p = traslationRodriguesToTransform(tvecs, rvecs)
         # print('ss_T_p =\n' + str(ss_T_p))
 
         # STEP 3. Compute sb_T_p
@@ -348,7 +352,7 @@ if __name__ == "__main__":
 
         e[collection_key]['x'] = np.average(x_errors)
         e[collection_key]['y'] = np.average(y_errors)
-        e[collection_key]['rms'] = np.average(rms_errors)
+        e[collection_key]['rms'] = rootMeanSquare(rms_errors)
 
         # -------------------------------------------------------------
         # STEP 9: Compute translation and rotation errors (This is from Eurico, did not change style)
@@ -363,26 +367,26 @@ if __name__ == "__main__":
         _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_t],
                                        np.array(corners_t[0: 2, :].T, dtype=np.float32),
                                        K_t, D_t)
-        pattern_pose_target = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+        pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
-        bTp = atom_core.atom.getTransform(common_frame, target_frame,
-                                          test_dataset['collections'][collection_key]['transforms'])
+        bTp = getTransform(common_frame, target_frame,
+                           test_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
         ret, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
                                          K_s, D_s)
-        pattern_pose_source = opt_utilities.traslationRodriguesToTransform(tvecs, rvecs)
+        pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
-        bTp = atom_core.atom.getTransform(common_frame, source_frame,
-                                          test_dataset['collections'][collection_key]['transforms'])
+        bTp = getTransform(common_frame, source_frame,
+                           test_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
         delta = np.dot(np.linalg.inv(pattern_pose_source), pattern_pose_target)
 
         deltaT = delta[0:3, 3]
-        deltaR = opt_utilities.matrixToRodrigues(delta[0:3, 0:3])
+        deltaR = matrixToRodrigues(delta[0:3, 0:3])
 
         e[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
         e[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
@@ -420,18 +424,18 @@ if __name__ == "__main__":
                     color = (cmap[label_s['id'], 2] * 255, cmap[label_s['id'], 1] * 255, cmap[label_s['id'], 0] * 255)
 
                     # Draw labels on source image (crosses)
-                    opt_utilities.drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
+                    drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
 
                     # Draw labels on target image (squares)
-                    opt_utilities.drawSquare2D(image_gui_t, x_t, y_t, 6, color=color, thickness=1)
+                    drawSquare2D(image_gui_t, x_t, y_t, 6, color=color, thickness=1)
 
                     # Draw projections of source to target, i.e. proj_to_t (crosses)
-                    opt_utilities.drawCross2D(image_gui_t, x_s_proj_to_t, y_s_proj_to_t, 5, color=color, thickness=1)
+                    drawCross2D(image_gui_t, x_s_proj_to_t, y_s_proj_to_t, 5, color=color, thickness=1)
 
                 else:
                     color = (140, 140, 140)
                     # Draw labels on source image (gray crosses)
-                    opt_utilities.drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
+                    drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
 
             cv2.resizeWindow(window_name_s, 800, int(800/image_gui_s.shape[1] * image_gui_s.shape[0]))
             cv2.resizeWindow(window_name_t, 800, int(800/image_gui_t.shape[1] * image_gui_t.shape[0]))

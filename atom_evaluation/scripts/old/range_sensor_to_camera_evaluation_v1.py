@@ -12,7 +12,6 @@ Reads the calibration results from a json file and computes the evaluation metri
 import json
 import os
 import argparse
-
 from collections import OrderedDict
 import sys
 
@@ -140,8 +139,8 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
     f = open(annotation_file, 'r')
-    eval_data = json.load(f)   
-    
+    annotations = json.load(f)
+
     # Deleting collections where the pattern is not found by all sensors:
     collections_to_delete = []
     for collection_key, collection in test_dataset['collections'].items():
@@ -149,8 +148,8 @@ if __name__ == "__main__":
             if not collection['labels'][sensor_key]['detected'] and (
                     sensor_key == camera_sensor or sensor_key == range_sensor):
                 print(
-                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
 
                 collections_to_delete.append(collection_key)
                 break
@@ -192,36 +191,48 @@ if __name__ == "__main__":
         # print(filename)
 
         image = cv2.imread(filename)
-        limits_on_image = eval_data['ground_truth_pts'][collection_key]
+        limits_on_image = annotations[collection_key]
         # print(limits_on_image)
 
         # Clear image annotations
         image = cv2.imread(filename)
 
-        output_dict['ground_truth_pts'][collection_key] = {}
-        for i, pts in limits_on_image.items():
-            pts = np.array(pts)
-            if pts.size == 0:
-                continue
-
-            x = pts[:, 0]
-            y = pts[:, 1]
-            coefficients = np.polyfit(x, y, 3)
-            poly = np.poly1d(coefficients)
-            new_x = np.linspace(np.min(x), np.max(x), 5000)
-            new_y = poly(new_x)
-
-            if show_images:
-                for idx in range(0, len(new_x)):
-                    image = cv2.circle(image, (int(new_x[idx]), int(new_y[idx])), 3, (0, 0, 255), -1)
-
-            output_dict['ground_truth_pts'][collection_key][i] = []
-            for idx in range(0, len(new_x)):
-                output_dict['ground_truth_pts'][collection_key][i].append([new_x[idx], new_y[idx]])
+        #         output_dict['ground_truth_pts'][collection_key] = {}
+        #         for i, pts in limits_on_image.items():
+        #             pts = np.array(pts)
+        #             if pts.size == 0:
+        #                 continue
+        #
+        #             x = pts[:, 0]
+        #             y = pts[:, 1]
+        #             coefficients = np.polyfit(x, y, 3)
+        #             poly = np.poly1d(coefficients)
+        #             new_x = np.linspace(np.min(x), np.max(x), 5000)
+        #             new_y = poly(new_x)
+        #
+        #             if show_images:
+        #                 for idx in range(0, len(new_x)):
+        #                     image = cv2.circle(image, (int(new_x[idx]), int(new_y[idx])), 3, (0, 0, 255), -1)
+        #
+        #             output_dict['ground_truth_pts'][collection_key][i] = []
+        #             for idx in range(0, len(new_x)):
+        #                 output_dict['ground_truth_pts'][collection_key][i].append([new_x[idx], new_y[idx]])
 
         # ---------------------------------------
         # --- Evaluation metrics - reprojection error
         # ---------------------------------------
+
+        # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+        delta_pts = []
+        for idx in range(0, pts_in_image.shape[1]):
+            x_proj = pts_in_image[0, idx]
+            y_proj = pts_in_image[1, idx]
+
+            for side in annotations[collection_key].keys():
+                for x, y in zip(annotations[collection_key][side]['ixs'],
+                                annotations[collection_key][side]['iys']):
+                    pass
+
         # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
         delta_pts = []
         for idx in range(0, pts_in_image.shape[1]):
@@ -229,7 +240,7 @@ if __name__ == "__main__":
             target_pt = np.reshape(target_pt[0:2], (2, 1))
             min_dist = 1e6
 
-            # Don't consider point that are re-projected outside of the image
+            # Do not consider points that are re-projected outside of the image
             if target_pt[0] > image.shape[1] or target_pt[0] < 0 or target_pt[1] > image.shape[0] or target_pt[1] < 0:
                 continue
 
@@ -298,10 +309,10 @@ if __name__ == "__main__":
     # print("Press ESC to quit and close all open windows.")
 
     # while True:
-        # k = cv2.waitKey(0) & 0xFF
-        # if k == 27:
-            # cv2.destroyAllWindows()
-            # break
+    # k = cv2.waitKey(0) & 0xFF
+    # if k == 27:
+    # cv2.destroyAllWindows()
+    # break
     # Save evaluation data
     # if use_annotation is True:
     #     createJSONFile(eval_file, output_dict)

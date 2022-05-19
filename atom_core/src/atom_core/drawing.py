@@ -56,7 +56,6 @@ def drawSquare2D(image, x, y, size, color=(0, 0, 255), thickness=1):
     br = (int(x + size), int(y + size))
     bl = (int(x - size), int(y + size))
 
-
     # cv2.line(image, (x,y), (x,y), color, 5)
     cv2.line(image, tl, tr, color, thickness)
     cv2.line(image, tr, br, color, thickness)

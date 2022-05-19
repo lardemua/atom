@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+
+"""
+Reads the calibration results from a json file and computes the evaluation metrics
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
+# Standard imports
+import json
+import math
+import os
+import argparse
+import sys
+from collections import OrderedDict
+
+import numpy as np
+import cv2
+from prettytable import PrettyTable
+from scipy.spatial import distance
+from colorama import Style, Fore
+from atom_core.dataset_io import getMixedDataset, readAnnotationFile
+from atom_core.utilities import rootMeanSquare
+
+# ROS imports
+from image_geometry import PinholeCameraModel
+from rospy_message_converter import message_converter
+
+# Atom imports
+from atom_core.atom import getTransform
+from atom_core.naming import generateKey
+from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
+from atom_core.vision import projectToCamera
+
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
+    # From http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
+
+    x_over_z = (xpix - cx) / fx
+    y_over_z = (ypix - cy) / fy
+    z = d
+    x = x_over_z * z
+    y = y_over_z * z
+    return x, y, z
+
+
+def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
+
+    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
+
+    cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+    img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
+                                        scale=10000.0)
+
+    idxs = collection['labels'][ss]['idxs_limit_points']
+
+    f_x = pinhole_camera_model.fx()
+    f_y = pinhole_camera_model.fy()
+    c_x = pinhole_camera_model.cx()
+    c_y = pinhole_camera_model.cy()
+    w = pinhole_camera_model.fullResolution()[0]
+    # w = size[0]
+
+    # initialize lists
+    xs = []
+    ys = []
+    zs = []
+    for idx in idxs:  # iterate all points
+
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+
+        # get distance value for this pixel coordinate
+        distance = img[y_pix, x_pix]
+
+        # compute 3D point and add to list of coordinates xs, ys, zs
+        x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+    homogeneous = np.ones((len(xs)))
+    points_in_depth = np.array((xs, ys, zs, homogeneous), dtype=float)
+
+    points_in_cam = np.dot(tf, points_in_depth)
+
+    # -- Project them to the image
+    # TODO #466 this should be retrieved from the train dataset. Doing like this means that if we optimize the depth's intrinsics we will not take the estimated intrinsics into consideration.
+    w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
+    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
+
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+
+    return pts_in_image
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+
+
+if __name__ == "__main__":
+
+    # ---------------------------------------
+    # --- Read commmand line arguments
+    # ---------------------------------------
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-train_json", "--train_json_file", help="Json file containing input training dataset.", type=str,
+                    required=True)
+    ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
+                    required=True)
+    ap.add_argument("-ds", "--depth_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-cs", "--rgb_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read calibration data from file
+    # ---------------------------------------
+    # Loads a json file containing the calibration
+    train_dataset = json.load(open(args['train_json_file'], 'r'))
+    test_dataset = json.load(open(args['test_json_file'], 'r'))
+    annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['rgb_sensor'])
+
+    # --- Get mixed json (calibrated transforms from train and the rest from test)
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read evaluation data from file ---> if desired <---
+    # ---------------------------------------
+
+    pinhole_camera_model = PinholeCameraModel()
+    pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
+        'sensor_msgs/CameraInfo', train_dataset['sensors'][args['depth_sensor']]['camera_info']))
+
+    print('\nStarting evalutation...')
+
+    # Declare output dict to save the evaluation data if desired
+    output_dict = {}
+    output_dict['ground_truth_pts'] = {}
+
+    delta_total = []
+
+    from_frame = mixed_dataset['calibration_config']['sensors'][args['rgb_sensor']]['link']
+    to_frame = mixed_dataset['calibration_config']['sensors'][args['depth_sensor']]['link']
+    e = {}  # dictionary with all the errors
+    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
+        e[collection_key] = {}  # init the dictionary of errors for this collection
+        # ---------------------------------------
+        # --- Range to image projection
+        # ---------------------------------------
+        depth2cam = getTransform(from_frame, to_frame, mixed_dataset['collections'][collection_key]['transforms'])
+        pts_in_image = depthToImage(collection, args['test_json_file'], args['depth_sensor'],
+                                    args['rgb_sensor'], depth2cam, pinhole_camera_model)
+
+        # ---------------------------------------
+        # --- Get evaluation data for current collection
+        # ---------------------------------------
+        filename = os.path.dirname(args['test_json_file']) + '/' + collection['data'][args['rgb_sensor']]['data_file']
+        image = cv2.imread(filename)
+
+        if args['show_images']:  # draw all ground truth annotations
+            for side in annotations[collection_key].keys():
+                for x, y in zip(annotations[collection_key][side]['ixs'],
+                                annotations[collection_key][side]['iys']):
+                    cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
+
+        # ---------------------------------------
+        # --- Evaluation metrics - reprojection error
+        # ---------------------------------------
+        # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+        x_errors = []
+        y_errors = []
+        errors = []
+        for idx in range(0, pts_in_image.shape[1]):
+            x_proj = pts_in_image[0, idx]
+            y_proj = pts_in_image[1, idx]
+
+            # Do not consider points that are re-projected outside of the image
+            if x_proj > image.shape[1] or x_proj < 0 or y_proj > image.shape[0] or y_proj < 0:
+                continue
+
+            min_error = sys.float_info.max  # a very large value
+            x_min = None
+            y_min = None
+            for side in annotations[collection_key].keys():
+                for x, y in zip(annotations[collection_key][side]['ixs'],
+                                annotations[collection_key][side]['iys']):
+                    error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
+                    if error < min_error:
+                        min_error = error
+                        x_min = x
+                        y_min = y
+
+            x_errors.append(abs(x_proj - x_min))
+            y_errors.append(abs(y_proj - y_min))
+            errors.append(min_error)
+
+            if args['show_images']:
+                cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
+                cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
+                         (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
+
+        if not errors:
+            print('No Depth point mapped into the image for collection ' + str(collection_key))
+            continue
+
+        e[collection_key]['x'] = np.average(x_errors)
+        e[collection_key]['y'] = np.average(y_errors)
+        e[collection_key]['rms'] = rootMeanSquare(errors)
+
+        if args['show_images']:
+            print('Errors collection ' + collection_key + '\n' + str(e[collection_key]))
+            window_name = 'Collection ' + collection_key
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            cv2.imshow(window_name, image)
+            key = cv2.waitKey(0)
+            cv2.destroyWindow(window_name)
+            if key == ord('q') or key == ord('c'):
+                args['show_images'] = False
+
+    # -------------------------------------------------------------
+    # Print output table
+    # -------------------------------------------------------------
+    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
+    table = PrettyTable(table_header)
+
+    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
+        row = [collection_key,
+               '%.4f' % e[collection_key]['rms'],
+               '%.4f' % e[collection_key]['x'],
+               '%.4f' % e[collection_key]['y']]
+
+        table.add_row(row)
+
+    # Compute averages and add a bottom row
+    bottom_row = []  # Compute averages and add bottom row to table
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            continue
+
+        total = 0
+        count = 0
+        for row in table.rows:
+            # if row[col_idx].isnumeric():
+            try:
+                value = float(row[col_idx])
+                total += float(value)
+                count += 1
+            except:
+                pass
+
+        value = '%.4f' % (total / count)
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+
+    table.add_row(bottom_row)
+
+    # Put larger errors in red per column (per sensor)
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:  # nothing to do
+            continue
+
+        max = 0
+        max_row_idx = 0
+        for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
+            try:
+                value = float(row[col_idx])
+            except:
+                continue
+
+            if value > max:
+                max = value
+                max_row_idx = row_idx
+
+        # set the max column value to red
+        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+
+    table.align = 'c'
+    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+    print(table)
+
+    print('Ending script...')
+    sys.exit()
