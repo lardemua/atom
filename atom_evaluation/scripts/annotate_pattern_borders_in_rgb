@@ -1,0 +1,302 @@
+#!/usr/bin/env python3
+"""
+This script is used to produce annotations of the pattern limites on rgb images.
+These annotations are used later by the range_sensor_to_camera_evaluation.py script.
+Since these annotations are only used for evaluation, they are only produced for the test datasets and not the train datasets.
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
+import getpass
+import json
+import math
+import os
+import argparse
+import time
+from functools import partial
+from copy import deepcopy
+from collections import OrderedDict
+from enum import Enum
+
+import numpy as np
+import cv2
+from click import style
+from colorama import Style, Fore
+from atom_core.dataset_io import createJSONFile
+from atom_core.drawing import drawCross2D, drawSquare2D
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+def mouseClick(event, x, y, flags, param, clicked):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        clicked['x'] = x
+        clicked['y'] = y
+        clicked['new_click'] = True
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+if __name__ == "__main__":
+
+    # ---------------------------------------
+    # --- Command line arguments
+    # ---------------------------------------
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-d", "--dataset_file", help="Json file containing input dataset.", type=str, required=True)
+    ap.add_argument("-cs", "--rgb_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=True)
+    ap.add_argument("-ww", "--window_width", help="Width of the window.", default=1200)
+    ap.add_argument("-ps", "--point_size", help="Size of points to draw on image.", default=10, type=int)
+    ap.add_argument("-ppp", "--points_per_pixel",
+                    help="How many points per pixel to sample between annotated points.", default=1)
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # --- Read dataset file
+    # ---------------------------------------
+    dataset = args['dataset_file']
+    f = open(dataset, 'r')
+    dataset = json.load(f)
+
+    # ----------------------------------------------------
+    # Load annotations
+    # ----------------------------------------------------
+    sides = ['top', 'right', 'bottom', 'left']
+    side_colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255)]
+    side_symbols = ['square', 'cross', 'square', 'cross']
+
+    annotation_file = os.path.dirname(args['dataset_file']) + "/annotation_" + args['rgb_sensor'] + ".json"
+    if os.path.exists(annotation_file):
+        print('Found anotation file at ' + annotation_file + ' ... loading.')
+        f = open(annotation_file, 'r')
+        annotations = json.load(f)
+
+        if not annotations['_metadata']['version'] == '2.0':
+            print(Fore.RED + 'This annotations file does not have the correct version. Exiting.' + Style.RESET_ALL)
+    else:
+        annotations = {}
+
+    # ----------------------------------------------------
+    # Verify annotations
+    # ----------------------------------------------------
+    if not '_metadata' in annotations:
+        annotations['_metadata'] = {"timestamp": str(time.time()),
+                                    "date": time.ctime(time.time()),
+                                    "user": getpass.getuser(),
+                                    'version': '2.0'}
+
+    for collection_key, collection in dataset["collections"].items():
+        if collection_key not in annotations:  # Create collection_key if they do not exist.
+            annotations[collection_key] = {}
+
+        for side in sides:  # Create pattern side dicts inside if they do not exist.
+            if not side in annotations[collection_key]:
+                annotations[collection_key][side] = {'xs': [], 'ys': [], 'ixs': [], 'iys': []}
+
+    # ----------------------------------------------------
+    # Annotation loop
+    # ----------------------------------------------------
+    od = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
+    collection_keys = list(od.keys())
+    collection_key = collection_keys[0]
+    clicked = {'new_click': False, 'x': None, 'y': None}
+    load_collection_data = True
+    side = sides[0]
+    while True:  # loop to iterate collections
+
+        # ----------------------------------------------------
+        # Load collection data
+        # ----------------------------------------------------
+        if load_collection_data:
+            # Get evaluation data for current collection_key
+            collection = dataset['collections'][collection_key]
+            filename = os.path.dirname(
+                args['dataset_file']) + '/' + collection['data'][args['rgb_sensor']]['data_file']
+            print('Reading image ' + filename)
+            image = cv2.imread(filename)
+            window_name = 'Sensor ' + args['rgb_sensor'] + ' collection ' + collection_key
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(window_name, args['window_width'], int(args['window_width']*image.shape[0]/image.shape[1]))
+            cv2.setMouseCallback(window_name, partial(mouseClick, clicked=clicked))
+
+            load_collection_data = False
+
+        # ----------------------------------------------------
+        # Process clicks and interpolate data
+        # ----------------------------------------------------
+        if clicked['new_click']:  # there is a click to process
+            annotations[collection_key][side]['xs'].append(clicked['x'])
+            annotations[collection_key][side]['ys'].append(clicked['y'])
+            clicked['new_click'] = False
+
+        # interpolate new data
+        annotations[collection_key][side]['ixs'] = []
+        annotations[collection_key][side]['iys'] = []
+        for xi, yi, xf, yf in zip(annotations[collection_key][side]['xs'][:-1],
+                                  annotations[collection_key][side]['ys'][:-1],
+                                  annotations[collection_key][side]['xs'][1:],
+                                  annotations[collection_key][side]['ys'][1:]):
+            # use parametric line equation to sample points over the line
+            num_points = round(args['points_per_pixel'] * round(math.sqrt((xf-xi)**2 + (yf-yi)**2)))
+            ts = list(np.linspace(0, 1, num_points))
+
+            for t in ts:
+                annotations[collection_key][side]['ixs'].append(round(xi + t*(xf-xi)))
+                annotations[collection_key][side]['iys'].append(round(yi + t*(yf-yi)))
+
+        # ----------------------------------------------------
+        # Redraw points from data
+        # ----------------------------------------------------
+        gui_image = deepcopy(image)
+        side_color = side_colors[sides.index(side)]
+        cv2.putText(gui_image, 'Collection ' + collection_key + ': ' + side + ' side',
+                    (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, side_color, 2, cv2.LINE_AA)
+
+        for side_key in annotations[collection_key].keys():
+            side_color = side_colors[sides.index(side_key)]
+            side_symbol = side_symbols[sides.index(side_key)]
+            for x, y in zip(annotations[collection_key][side_key]['xs'], annotations[collection_key][side_key]['ys']):
+                if side_symbol == 'square':
+                    drawSquare2D(gui_image, x, y, args['point_size'], color=side_color, thickness=2)
+                elif side_symbol == 'cross':
+                    drawCross2D(gui_image, x, y, args['point_size'], color=side_color, thickness=2)
+
+        for side_key in annotations[collection_key].keys():
+            side_color = side_colors[sides.index(side_key)]
+            for x, y in zip(annotations[collection_key][side_key]['ixs'], annotations[collection_key][side_key]['iys']):
+                cv2.line(gui_image, pt1=(int(x), int(y)), pt2=(int(x), int(y)), color=side_color,
+                         thickness=max(int(round(args['point_size'])/5), 1))
+
+        cv2.imshow(window_name, gui_image)
+
+        # ----------------------------------------------------
+        # Check for pressed keys
+        # ----------------------------------------------------
+        key = cv2.waitKey(200) & 0xFF
+
+        # -------------------------------------------------------------------
+        # Navigation
+        # -------------------------------------------------------------------
+        if key == ord('n'):
+            # if side is last then move to next collection
+            side_idx = sides.index(side)
+            if side_idx == len(sides)-1:
+                key = 46
+            else:
+                side_idx += 1
+                side = sides[side_idx]
+                print('Setting side to ' + side + '.')
+
+                if not annotations[collection_key][side]['xs']:  # If emtpy list, auto insert first point in empty list
+                    previous_side = sides[side_idx-1]
+                    annotations[collection_key][side]['xs'].append(annotations[collection_key][previous_side]['xs'][-1])
+                    annotations[collection_key][side]['ys'].append(annotations[collection_key][previous_side]['ys'][-1])
+
+        elif key == ord('p'):
+            # if side is first then move to previous collection
+            side_idx = sides.index(side)
+            if side_idx == 0:
+                key = 44
+            else:
+                side_idx -= 1
+                side = sides[side_idx]
+                print('Setting side to ' + side + '.')
+
+        if key == 46:  # "." key, next collection
+            print('Saving annotations ...')
+            createJSONFile(annotation_file, annotations)
+            print('Moving to next collection ...')
+            collection_key_idx = collection_keys.index(collection_key)
+            if collection_key_idx < len(collection_keys) - 1:
+                collection_key_idx += 1
+                collection_key = collection_keys[collection_key_idx]
+                side = sides[0]
+            else:
+                print(Fore.YELLOW + 'This is the last collection.' + Style.RESET_ALL)
+
+            cv2.destroyWindow(window_name)
+            load_collection_data = True
+
+        elif key == 44:  # "," key, previous collection
+            print('Saving annotations ...')
+            createJSONFile(annotation_file, annotations)
+            print('Moving to previous collection ...')
+            collection_key_idx = collection_keys.index(collection_key)
+            if collection_key_idx > 0:
+                collection_key_idx -= 1
+                collection_key = collection_keys[collection_key_idx]
+                side = sides[-1]
+            else:
+                print(Fore.YELLOW + 'This is the first collection.' + Style.RESET_ALL)
+
+            cv2.destroyWindow(window_name)
+            load_collection_data = True
+
+        # -------------------------------------------------------------------
+        # Navigation
+        # -------------------------------------------------------------------
+        elif key == ord('+'):  # increase point size
+            args['point_size'] += 1
+            print('Increased point size to ' + str(args['point_size']))
+        elif key == ord('-'):  # increase point size
+            if args['point_size'] > 1:
+                args['point_size'] -= 1
+                print('Increased point size to ' + str(args['point_size']))
+            else:
+                print('Point size is already at minimum. Cannot decrease.')
+
+        # -------------------------------------------------------------------
+        # Removing and clearing
+        # -------------------------------------------------------------------
+        elif key == ord('c'):  # clear all annotations in collection.
+            print('Clearing all annotations in collection ' + collection_key)
+            annotations[collection_key] = {'top': {'xs': [], 'ys': [], 'ixs': [], 'iys': []},
+                                           'right': {'xs': [], 'ys': [], 'ixs': [], 'iys': []},
+                                           'bottom': {'xs': [], 'ys': [], 'ixs': [], 'iys': []},
+                                           'left': {'xs': [], 'ys': [], 'ixs': [], 'iys': []}}
+        elif key == ord('x'):  # clear all annotations in side of collection.
+            print('Clearing all annotations in collection ' + collection_key + ' and current side ' + side)
+            annotations[collection_key][side] = {'xs': [], 'ys': []}
+        elif key == ord('r'):  # clear last annotation in side of collection.
+            print('Removing last annotation in this side')
+            if annotations[collection_key][side]['xs']:  # list not empty
+                annotations[collection_key][side]['xs'].pop()
+                annotations[collection_key][side]['ys'].pop()
+
+        # -------------------------------------------------------------------
+        # Help and exit
+        # -------------------------------------------------------------------
+        elif key == ord('h'):  # print help message
+            print(Style.BRIGHT + "ATOM annotation tool for rgb images." + Style.RESET_ALL)
+            print("\nThis script is used to annotate the boundaries of the pattern in rgb images. These annotations are used to conduct evaluation between range sensors and rgb sensors." +
+                  "\nFor more information check " + Fore.BLUE + 'https://github.com/lardemua/atom#annotation\n' + Style.RESET_ALL)
+            print(Style.BRIGHT + "List of keys:" + Style.RESET_ALL)
+            print(Style.BRIGHT + Fore.RED + '"."' + Style.RESET_ALL + ' next collection.')
+            print(Style.BRIGHT + Fore.RED + '","' + Style.RESET_ALL + ' previous collection.')
+            print(Style.BRIGHT + Fore.RED + '"n"' + Style.RESET_ALL + ' next side (moves to next collection if last side).')
+            print(Style.BRIGHT + Fore.RED + '"p"' + Style.RESET_ALL +
+                  ' previous side (moves to previous collection if first side).')
+
+            print(Style.BRIGHT + Fore.RED + '"c"' + Style.RESET_ALL + ' clear all annotations in current collection.')
+            print(Style.BRIGHT + Fore.RED + '"x"' + Style.RESET_ALL +
+                  ' clear all annotations in current collection and current side.')
+            print(Style.BRIGHT + Fore.RED + '"r"' + Style.RESET_ALL + ' remove previous annotation.')
+
+            print(Style.BRIGHT + Fore.RED + '"+"' + Style.RESET_ALL + ' increase point side.')
+            print(Style.BRIGHT + Fore.RED + '"-"' + Style.RESET_ALL + ' decrease point side.')
+            print(Style.BRIGHT + Fore.RED + '"h"' + Style.RESET_ALL + ' print this help.')
+            print(Style.BRIGHT + Fore.RED + '"s"' + Style.RESET_ALL + ' save and exit.')
+            print(Style.BRIGHT + Fore.RED + '"h"' + Style.RESET_ALL + ' exit (without save).')
+        elif key == ord('s'):  # save to json file and exit.
+            print('Saving annotations ...')
+            createJSONFile(annotation_file, annotations)
+            break
+        elif key == ord('q'):  # quit without saving.
+            print('Quitting ...')
+            break

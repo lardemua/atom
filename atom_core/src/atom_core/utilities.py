@@ -9,6 +9,7 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 import math
 import os
 import subprocess
+from statistics import mean
 from signal import setitimer, signal, SIGALRM, ITIMER_REAL
 
 import readchar
@@ -121,3 +122,13 @@ def checkDirectoryExistence(directory, package_name):
     if not os.path.exists(package_path + '/' + directory):
         print(Fore.RED + directory + Style.RESET_ALL + ' directory does not exist. Package ' + Fore.BLUE + package_name +
               Style.RESET_ALL + ' may be corrupted. You should create a new calibration package')
+
+
+def rootMeanSquare(errors):
+    """Computes mean square error of a list of error values.
+
+    Args:
+        errors (list of float): the list of errors
+    """
+
+    return math.sqrt(mean([e**2 for e in errors]))

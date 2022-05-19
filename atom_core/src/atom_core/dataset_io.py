@@ -393,13 +393,13 @@ class NpEncoder(json.JSONEncoder):
 
 # json.dumps(data, cls=NpEncoder)
 
-def createJSONFile(output_file, input):
+def createJSONFile(output_file, data):
     """
     Creates the json file containing the results data.
     :param output_file: output file.
-    :param input: input dictionary containing the data.
+    :param data: data in dict format to save.
     """
-    D = copy.deepcopy(input)
+    D = copy.deepcopy(data)
     walk(D)
 
     f = open(output_file, 'w')
@@ -662,3 +662,58 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
                     dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
                 dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
                     dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
+
+
+def getMixedDataset(train_dataset, test_dataset):
+    """Creates a mixed dataset from the train and test datasets.
+
+    This is used for evaluating, when we want the transformations between sensors (and also the intrinsics) estimated during calibration and stored in the train dataset, combined with previsously unseen collections, which come from the test dataset.
+
+    Args:
+        train_dataset (dict): An ATOM dataset produced through calibration.
+        test_dataset (dict): An ATOM dataset for testing.
+    """
+
+    # Make full of the test dataset. Then small bits from the train dataset are copied.
+    mixed_dataset = copy.deepcopy(test_dataset)
+
+    # Replace optimized transformations in the test dataset copying from the train dataset
+    for sensor_key, sensor in train_dataset['sensors'].items():
+        calibration_parent = sensor['calibration_parent']
+        calibration_child = sensor['calibration_child']
+        transform_name = generateKey(calibration_parent, calibration_child)
+
+        # We can only optimize fixed transformations, so the optimized transform should be the same for all
+        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
+        # transformation for that.
+        selected_collection_key = list(train_dataset['collections'].keys())[0]
+        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
+
+        # iterate all collections of the test dataset and replace the optimized transformation
+        for collection_key, collection in mixed_dataset['collections'].items():
+            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
+            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
+
+    # Copy intrinsic parameters for cameras from train to mixed dataset.
+    for train_sensor_key, train_sensor in train_dataset['sensors'].items():
+        if train_sensor['msg_type'] == 'Image':
+            mixed_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
+            mixed_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
+            mixed_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
+            mixed_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
+
+    return mixed_dataset
+
+
+def readAnnotationFile(json_file, sensor):
+    annotations_file = os.path.dirname(json_file) + "/annotation_" + sensor + ".json"
+    if os.path.exists(annotations_file) is False:
+        print('Annotation file does not exist ' + Fore.RED + annotations_file + Style.RESET_ALL +
+              '\nPlease annotate this sensor using: ' + Fore.BLUE +
+              'rosrun atom_evaluation annotate_pattern_borders_in_rgb --camera_sensor ' + sensor +
+              Style.RESET_ALL)
+        exit(0)
+
+    print('Loading annotation file ' + Fore.BLUE + annotations_file + Style.RESET_ALL)
+    annotations = json.load(open(annotations_file, 'r'))
+    return annotations, annotations_file
