@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # ---------------------------------------
     ap = argparse.ArgumentParser()
     ap.add_argument("-d", "--dataset_file", help="Json file containing input dataset.", type=str, required=True)
-    ap.add_argument("-cs", "--camera_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-cs", "--rgb_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=True)
     ap.add_argument("-ww", "--window_width", help="Width of the window.", default=1200)
     ap.add_argument("-ps", "--point_size", help="Size of points to draw on image.", default=10, type=int)
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     side_colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255)]
     side_symbols = ['square', 'cross', 'square', 'cross']
 
-    annotation_file = os.path.dirname(args['dataset_file']) + "/annotation_" + args['camera_sensor'] + ".json"
+    annotation_file = os.path.dirname(args['dataset_file']) + "/annotation_" + args['rgb_sensor'] + ".json"
     if os.path.exists(annotation_file):
         print('Found anotation file at ' + annotation_file + ' ... loading.')
         f = open(annotation_file, 'r')
@@ -142,10 +142,10 @@ if __name__ == "__main__":
             # Get evaluation data for current collection_key
             collection = dataset['collections'][collection_key]
             filename = os.path.dirname(
-                args['dataset_file']) + '/' + collection['data'][args['camera_sensor']]['data_file']
+                args['dataset_file']) + '/' + collection['data'][args['rgb_sensor']]['data_file']
             print('Reading image ' + filename)
             image = cv2.imread(filename)
-            window_name = 'Sensor ' + args['camera_sensor'] + ' collection ' + collection_key
+            window_name = 'Sensor ' + args['rgb_sensor'] + ' collection ' + collection_key
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             cv2.resizeWindow(window_name, args['window_width'], int(args['window_width']*image.shape[0]/image.shape[1]))
             cv2.setMouseCallback(window_name, partial(mouseClick, clicked=clicked))

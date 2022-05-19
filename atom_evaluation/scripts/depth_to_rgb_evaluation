@@ -17,44 +17,81 @@ import sys
 from collections import OrderedDict
 
 import numpy as np
-import ros_numpy
 import cv2
 from prettytable import PrettyTable
+from scipy.spatial import distance
 from colorama import Style, Fore
+from atom_core.dataset_io import getMixedDataset
+from atom_core.utilities import rootMeanSquare
 
 # ROS imports
+from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
 
 # Atom imports
-from atom_core.naming import generateKey
-from atom_core.vision import projectToCamera
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 from atom_core.atom import getTransform
-from atom_core.utilities import rootMeanSquare
+from atom_core.naming import generateKey
+from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
+from atom_core.vision import projectToCamera
+
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
+    # From http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
+
+    x_over_z = (xpix - cx) / fx
+    y_over_z = (ypix - cy) / fy
+    z = d
+    x = x_over_z * z
+    y = y_over_z * z
+    return x, y, z
 
 
-def rangeToImage(collection, json_file, ss, ts, tf):
+def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
+
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
-    msg = read_pcd(filename)
-    collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
 
-    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
+    cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+    img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
+                                        scale=10000.0)
+
     idxs = collection['labels'][ss]['idxs_limit_points']
 
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
-    points_in_vel = np.zeros((4, pc.shape[0]))
-    points_in_vel[0, :] = pc['x']
-    points_in_vel[1, :] = pc['y']
-    points_in_vel[2, :] = pc['z']
-    points_in_vel[3, :] = 1
+    f_x = pinhole_camera_model.fx()
+    f_y = pinhole_camera_model.fy()
+    c_x = pinhole_camera_model.cx()
+    c_y = pinhole_camera_model.cy()
+    w = pinhole_camera_model.fullResolution()[0]
+    # w = size[0]
 
-    points_in_cam = np.dot(tf, points_in_vel)
+    # initialize lists
+    xs = []
+    ys = []
+    zs = []
+    for idx in idxs:  # iterate all points
+
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+
+        # get distance value for this pixel coordinate
+        distance = img[y_pix, x_pix]
+
+        # compute 3D point and add to list of coordinates xs, ys, zs
+        x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+    homogeneous = np.ones((len(xs)))
+    points_in_depth = np.array((xs, ys, zs, homogeneous), dtype=float)
+
+    points_in_cam = np.dot(tf, points_in_depth)
 
     # -- Project them to the image
+    # TODO #466 this should be retrieved from the train dataset. Doing like this means that if we optimize the depth's intrinsics we will not take the estimated intrinsics into consideration.
     w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
     K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
     D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
@@ -73,109 +110,79 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- Read commmand line arguments
     # ---------------------------------------
-
     ap = argparse.ArgumentParser()
     ap.add_argument("-train_json", "--train_json_file", help="Json file containing input training dataset.", type=str,
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-rs", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-cs", "--camera_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-ds", "--depth_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-cs", "--rgb_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     args = vars(ap.parse_args())
-    show_images = args['show_images']
-    # eval_file = args['eval_file']
-    # use_annotation = args['use_annotation']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
     # Loads a json file containing the calibration
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
-    test_json_file = args['test_json_file']
-    f = open(test_json_file, 'r')
-    test_dataset = json.load(f)
+    train_dataset = json.load(open(args['train_json_file'], 'r'))
+    test_dataset = json.load(open(args['test_json_file'], 'r'))
 
-    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + args['camera_sensor'] + ".json"
+    annotation_file = os.path.dirname(args['test_json_file']) + "/annotation_" + args['rgb_sensor'] + ".json"
     if os.path.exists(annotation_file) is False:
-        raise ValueError(
-            'Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
+        print(
+            'Annotation file does not exist ' + Fore.RED + annotation_file + Style.RESET_ALL +
+            '\nPlease annotate this sensor using: ' + Fore.BLUE +
+            'rosrun atom_evaluation annotate_pattern_borders_in_rgb --rgb_sensor ' + args['rgb_sensor'] +
+            Style.RESET_ALL)
         exit(0)
 
+    print('Loading annotation file ' + Fore.BLUE + annotation_file + Style.RESET_ALL)
     annotations = json.load(open(annotation_file, 'r'))
 
-    # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
-    # ---------------------------------------
-    # test_dataset = test_dataset
-    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
-
-    # Replace optimized transformations in the test dataset copying from the train dataset
-    for sensor_key, sensor in train_dataset['sensors'].items():
-        calibration_parent = sensor['calibration_parent']
-        calibration_child = sensor['calibration_child']
-        transform_name = generateKey(calibration_parent, calibration_child)
-
-        # We can only optimized fixed transformations, so the optimized transform should be the same for all
-        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
-        # transformation for that.
-        selected_collection_key = list(train_dataset['collections'].keys())[0]
-        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
-
-        # iterate all collections of the test dataset and replace the optimized transformation
-        for collection_key, collection in test_dataset['collections'].items():
-            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
-            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
-
-    # Copy intrinsic parameters for cameras from train to test dataset.
-    for train_sensor_key, train_sensor in train_dataset['sensors'].items():
-        if train_sensor['msg_type'] == 'Image':
-            test_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
-    # Deleting collections where the pattern is not found by all sensors:
-    collections_to_delete = []
-    for collection_key, collection in test_dataset['collections'].items():
-        for sensor_key, sensor in test_dataset['sensors'].items():
-            if not collection['labels'][sensor_key]['detected'] and (
-                    sensor_key == args['camera_sensor'] or sensor_key == args['range_sensor']):
-                print(
-                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
 
-                collections_to_delete.append(collection_key)
-                break
+    pinhole_camera_model = PinholeCameraModel()
+    pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
+        'sensor_msgs/CameraInfo', train_dataset['sensors'][args['depth_sensor']]['camera_info']))
 
-    for collection_key in collections_to_delete:
-        del test_dataset['collections'][collection_key]
+    print(Fore.BLUE + '\nStarting evalutation...')
+    print(Style.RESET_ALL)
+    print(
+        '---------------------------------------------------------------------------------------------------')
+    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'X Error', 'Y Error', 'X Standard Deviation',
+                                                              'Y Standard Deviation'))
+    print(
+        '------------------------------------------------------------------------------------------------')
 
-    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
+    # Declare output dict to save the evaluation data if desired
+    output_dict = {}
+    output_dict['ground_truth_pts'] = {}
 
-    from_frame = test_dataset['calibration_config']['sensors'][args['camera_sensor']r]['link']
-    to_frame = test_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
-    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    delta_total = []
+
+    from_frame = mixed_dataset['calibration_config']['sensors'][args['rgb_sensor']]['link']
+    to_frame = mixed_dataset['calibration_config']['sensors'][args['depth_sensor']]['link']
     e = {}  # dictionary with all the errors
+    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         e[collection_key] = {}  # init the dictionary of errors for this collection
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = getTransform(from_frame, to_frame,
-                               test_dataset['collections'][collection_key]['transforms'])
-        pts_in_image = rangeToImage(collection, test_json_file, args['range_sensor'], args['camera_sensor']r, vel2cam)
+        depth2cam = getTransform(from_frame, to_frame, mixed_dataset['collections'][collection_key]['transforms'])
+        pts_in_image = depthToImage(collection, args['test_json_file'], args['depth_sensor'],
+                                    args['rgb_sensor'], depth2cam, pinhole_camera_model)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
-        filename = os.path.dirname(test_json_file) + '/' + collection['data'][args['camera_sensor']r]['data_file']
+        filename = os.path.dirname(args['test_json_file']) + '/' + collection['data'][args['rgb_sensor']]['data_file']
         image = cv2.imread(filename)
 
         if args['show_images']:  # draw all ground truth annotations
@@ -221,7 +228,7 @@ if __name__ == "__main__":
                          (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
 
         if not errors:
-            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            print('No Depth point mapped into the image for collection ' + str(collection_key))
             continue
 
         e[collection_key]['x'] = np.average(x_errors)
