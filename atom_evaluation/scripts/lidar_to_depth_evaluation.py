@@ -267,7 +267,8 @@ if __name__ == "__main__":
             for idx in range(0, depth_pts_in_depth_img.shape[1]):
                 image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(
                     depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255), -1)
-            cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
+            win_name = "Lidar to Camera reprojection - collection " + str(collection_key)
+            cv2.imshow(win_name, image)
             cv2.waitKey()
             cv2.destroyWindow(winname=win_name)
 
