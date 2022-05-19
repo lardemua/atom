@@ -30,11 +30,10 @@ from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
 from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-
-
 def errorReport(dataset, residuals, normalizer):
 
     from prettytable import PrettyTable
@@ -49,12 +48,10 @@ def errorReport(dataset, residuals, normalizer):
     table = PrettyTable(table_header)
 
     # Build each row in the table
-    keys = sorted([int(key) for key in list(dataset['collections'].keys())])  # convert to int and then sort
-    keys = [str(key) for key in keys]  # convert back to string
+    keys = sorted(dataset['collections'].keys(), key=lambda x: int(x))
     for collection_key in keys:
         row = [collection_key]
         v = []
-
         for sensor_key, sensor in dataset['sensors'].items():
             keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
             v = [residuals[k] * normalizer[sensor['modality']] for k in keys if residuals[k]]
@@ -84,7 +81,11 @@ def errorReport(dataset, residuals, normalizer):
             except:
                 pass
 
-        value = '%.4f' % (total / count)
+        if count > 0:
+            value = '%.4f' % (total / count)
+        else:
+            value = '---'
+
         bottom_row.append(Fore.BLUE + value + Fore.BLACK)
 
     table.add_row(bottom_row)

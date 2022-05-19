@@ -13,6 +13,7 @@ import json
 import os
 import argparse
 from collections import OrderedDict
+import sys
 
 import numpy as np
 import ros_numpy

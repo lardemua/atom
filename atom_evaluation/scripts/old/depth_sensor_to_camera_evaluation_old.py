@@ -13,6 +13,7 @@ import os
 
 import argparse
 from collections import OrderedDict
+import sys
 
 import numpy as np
 import atom_core.atom
@@ -172,6 +173,22 @@ if __name__ == "__main__":
     pinhole_camera_model.fromCameraInfo(
         message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
                                                             train_dataset['sensors'][depth_sensor]['camera_info']))
+
+    # Deleting collections where the pattern is not found by all sensors:
+    collections_to_delete = []
+    for collection_key, collection in test_dataset['collections'].items():
+        for sensor_key, sensor in test_dataset['sensors'].items():
+            if not collection['labels'][sensor_key]['detected'] and (
+                    sensor_key == rgb_sensor or sensor_key == depth_sensor):
+                print(
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+
+                collections_to_delete.append(collection_key)
+                break
+
+    for collection_key in collections_to_delete:
+        del test_dataset['collections'][collection_key]
 
     print(Fore.BLUE + '\nStarting evalutation...')
     print(Fore.WHITE)

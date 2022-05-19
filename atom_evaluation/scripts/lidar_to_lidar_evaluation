@@ -26,7 +26,7 @@ from ros_numpy import numpify
 
 # Atom imports
 from atom_core.naming import generateKey
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -92,37 +92,8 @@ if __name__ == "__main__":
     f = open(test_json_file, 'r')
     test_dataset = json.load(f)
 
-    # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
-    # ---------------------------------------
-    # test_dataset = test_dataset
-    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
-
-    # Replace optimized transformations in the test dataset copying from the train dataset
-    for sensor_key, sensor in train_dataset['sensors'].items():
-        calibration_parent = sensor['calibration_parent']
-        calibration_child = sensor['calibration_child']
-        transform_name = generateKey(calibration_parent, calibration_child)
-
-        # We can only optimized fixed transformations, so the optimized transform should be the same for all
-        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
-        # transformation for that.
-        selected_collection_key = list(train_dataset['collections'].keys())[0]
-        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
-
-        # iterate all collections of the test dataset and replace the optimized transformation
-        for collection_key, collection in test_dataset['collections'].items():
-            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
-            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
-
-    # Copy intrinsic parameters for cameras from train to test dataset.
-    for train_sensor_key, train_sensor in train_dataset['sensors'].items():
-        if train_sensor['msg_type'] == 'Image':
-            test_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
-    
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
@@ -143,9 +114,9 @@ if __name__ == "__main__":
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
-    from_frame = test_dataset['calibration_config']['sensors'][lidar_sensor_1]['link']
-    to_frame = test_dataset['calibration_config']['sensors'][lidar_sensor_2]['link']
-    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    from_frame = mixed_dataset['calibration_config']['sensors'][lidar_sensor_1]['link']
+    to_frame = mixed_dataset['calibration_config']['sensors'][lidar_sensor_2]['link']
+    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         # if not collection_key=='2':
         #     continue
@@ -160,7 +131,7 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         lidar1_to_lidar2 = atom_core.atom.getTransform(to_frame, from_frame,
-                                                       test_dataset['collections'][collection_key]['transforms'])
+                                                       mixed_dataset['collections'][collection_key]['transforms'])
         lidar_pts_1 = rangeToImage(collection, test_json_file, lidar_sensor_1)
         lidar_pts_2 = rangeToImage(collection, test_json_file, lidar_sensor_2)
         lidar_pts_1_in_lidar_2 = np.dot(lidar1_to_lidar2, lidar_pts_1)
