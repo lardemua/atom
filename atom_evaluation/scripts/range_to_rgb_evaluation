@@ -235,7 +235,10 @@ if __name__ == "__main__":
             window_name = 'Collection ' + collection_key
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             cv2.imshow(window_name, image)
-            cv2.waitKey(0)
+            key = cv2.waitKey(0)
+            cv2.destroyWindow(window_name)
+            if key == ord('q') or key == ord('c'):
+                args['show_images'] = False
 
     # -------------------------------------------------------------
     # Print output table
