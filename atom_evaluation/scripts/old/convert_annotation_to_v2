@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+
+"""
+Converts an ATOM annotations file format 1.0 to format 2.0
+
+Format 1.0 is define like this:
+{
+  "ground_truth_pts": {
+    "0": {
+      "0": [                        # this is the first side
+        [
+          496.0,                    # x pixel coordinate
+          453.50645744553685        # y pixel coordinate
+        ],
+        [
+          496.03340668133626,
+          453.45310926692764
+        ],
+      ],
+      "1": [                        # this is the second side
+        [
+          496.0,
+          454.0578687583163
+        ],
+        [
+          496.0320064012802,
+          454.08577674012054
+        ],
+   },
+}
+
+Format 2.0 is like this:
+
+{
+  "0": {                            # colletion key
+    "bottom": {                     # side of pattern
+      "xs": [787,659],              # annotated x coordinates
+      "ys": [369,593]               # annotated y coordinates
+      "ixs": [787.0,  659.0],       # interpolated x coordinates
+      "iys": [369.0,  370.0],       # interpolated y coordinates       
+    },
+    "left": {...}
+    "top": {...}
+    "right": {...}
+ },
+  "_metadata": {
+    "date": "Sun May 15 15:48:40 2022",
+    "timestamp": "1652626120.172186",
+    "user": "mike",
+    "version": "2.0"
+  }
+}
+
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
+# Standard imports
+import json
+import time
+import math
+import os
+import argparse
+import sys
+from collections import OrderedDict
+
+import numpy as np
+import ros_numpy
+import cv2
+from tqdm import tqdm
+from atom_core.dataset_io import createJSONFile, readAnnotationFile
+from prettytable import PrettyTable
+from colorama import Style, Fore
+
+# ROS imports
+
+# Atom imports
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+if __name__ == "__main__":
+
+    # ---------------------------------------
+    # --- Read commmand line arguments
+    # ---------------------------------------
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-json", "--json_file", help="Json file of dataset.", type=str,
+                    required=True)
+    ap.add_argument("-cs", "--rgb_sensor",
+                    help="Camera sensor' annotation we want to convert.", type=str, required=True)
+    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # Read old annotation file
+    # ---------------------------------------
+    old_annotations, annotations_file = readAnnotationFile(args['json_file'], args['rgb_sensor'])
+
+    # verify if its the old format
+    if '_metadata' in old_annotations:  # format 1.0 does not have the metadata field
+        print('File ' + Fore.RED + annotations_file + Style.RESET_ALL +
+              ' is not an ATOM annotation format 1.0. Terminating.')
+        exit(0)
+
+    # ---------------------------------------
+    # Create empty annotation dict
+    # ---------------------------------------
+    annotations = {}
+    if not '_metadata' in annotations:
+        annotations['_metadata'] = {"timestamp": str(time.time()),
+                                    "date": time.ctime(time.time()),
+                                    "user": os.path.basename(__file__),
+                                    'version': '2.0'}
+
+    sides = ['top', 'right', 'bottom', 'left']
+    for collection_key in old_annotations['ground_truth_pts'].keys():
+        annotations[collection_key] = {}
+
+        for side in sides:  # Create pattern side dicts inside if they do not exist.
+            if not side in annotations[collection_key]:
+                annotations[collection_key][side] = {'xs': [], 'ys': [], 'ixs': [], 'iys': []}
+
+    # ---------------------------------------
+    # Create empty annotation dict
+    # ---------------------------------------
+    for collection_key in tqdm(old_annotations['ground_truth_pts'].keys()):
+        for side_idx in old_annotations['ground_truth_pts'][collection_key]:
+            side = sides[int(side_idx)]  # NOTE there is no way to know that side 0 is top, let's just assume
+            for point in old_annotations['ground_truth_pts'][collection_key][side_idx]:
+                x = point[0]
+                y = point[1]
+                annotations[collection_key][side]['xs'].append(x)
+                annotations[collection_key][side]['ys'].append(y)
+                annotations[collection_key][side]['ixs'].append(x)
+                annotations[collection_key][side]['iys'].append(y)
+
+    # ---------------------------------------
+    # Backup and save
+    # ---------------------------------------
+    # Do a backup of the old annotations, just in case ...
+    old_annotation_file = os.path.dirname(args['json_file']) + "/old_annotation_" + args['rgb_sensor'] + ".json"
+    createJSONFile(old_annotation_file, old_annotations)
+
+    # Save new annotations
+    createJSONFile(annotations_file, annotations)

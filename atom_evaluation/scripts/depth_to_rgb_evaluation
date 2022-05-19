@@ -21,7 +21,7 @@ import cv2
 from prettytable import PrettyTable
 from scipy.spatial import distance
 from colorama import Style, Fore
-from atom_core.dataset_io import getMixedDataset
+from atom_core.dataset_io import getMixedDataset, readAnnotationFile
 from atom_core.utilities import rootMeanSquare
 
 # ROS imports
@@ -127,18 +127,7 @@ if __name__ == "__main__":
     # Loads a json file containing the calibration
     train_dataset = json.load(open(args['train_json_file'], 'r'))
     test_dataset = json.load(open(args['test_json_file'], 'r'))
-
-    annotation_file = os.path.dirname(args['test_json_file']) + "/annotation_" + args['rgb_sensor'] + ".json"
-    if os.path.exists(annotation_file) is False:
-        print(
-            'Annotation file does not exist ' + Fore.RED + annotation_file + Style.RESET_ALL +
-            '\nPlease annotate this sensor using: ' + Fore.BLUE +
-            'rosrun atom_evaluation annotate_pattern_borders_in_rgb --rgb_sensor ' + args['rgb_sensor'] +
-            Style.RESET_ALL)
-        exit(0)
-
-    print('Loading annotation file ' + Fore.BLUE + annotation_file + Style.RESET_ALL)
-    annotations = json.load(open(annotation_file, 'r'))
+    annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['rgb_sensor'])
 
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
@@ -151,14 +140,7 @@ if __name__ == "__main__":
     pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
         'sensor_msgs/CameraInfo', train_dataset['sensors'][args['depth_sensor']]['camera_info']))
 
-    print(Fore.BLUE + '\nStarting evalutation...')
-    print(Style.RESET_ALL)
-    print(
-        '---------------------------------------------------------------------------------------------------')
-    print('{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'X Error', 'Y Error', 'X Standard Deviation',
-                                                              'Y Standard Deviation'))
-    print(
-        '------------------------------------------------------------------------------------------------')
+    print('\nStarting evalutation...')
 
     # Declare output dict to save the evaluation data if desired
     output_dict = {}

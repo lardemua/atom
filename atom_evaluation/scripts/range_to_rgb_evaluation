@@ -28,7 +28,7 @@ from rospy_message_converter import message_converter
 # Atom imports
 from atom_core.naming import generateKey
 from atom_core.vision import projectToCamera
-from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd, readAnnotationFile
 from atom_core.atom import getTransform
 from atom_core.utilities import rootMeanSquare
 
@@ -92,20 +92,9 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
     # Loads a json file containing the calibration
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
-    test_json_file = args['test_json_file']
-    f = open(test_json_file, 'r')
-    test_dataset = json.load(f)
-
-    annotation_file = os.path.dirname(test_json_file) + "/annotation_" + args['camera_sensor'] + ".json"
-    if os.path.exists(annotation_file) is False:
-        raise ValueError(
-            'Annotation file does not exist. Please annotate using the command rosrun atom_evaluation annotate.py -test_json {path_to_folder} -cs {souce_sensor} -si)')
-        exit(0)
-
-    annotations = json.load(open(annotation_file, 'r'))
+    train_dataset = json.load(open(args['train_json_file'], 'r'))
+    test_dataset = json.load(open(args['test_json_file'], 'r'))
+    annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['camera_sensor'])
 
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -159,7 +148,7 @@ if __name__ == "__main__":
 
     print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
 
-    from_frame = test_dataset['calibration_config']['sensors'][args['camera_sensor']r]['link']
+    from_frame = test_dataset['calibration_config']['sensors'][args['camera_sensor']]['link']
     to_frame = test_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     e = {}  # dictionary with all the errors
@@ -170,12 +159,14 @@ if __name__ == "__main__":
         # ---------------------------------------
         vel2cam = getTransform(from_frame, to_frame,
                                test_dataset['collections'][collection_key]['transforms'])
-        pts_in_image = rangeToImage(collection, test_json_file, args['range_sensor'], args['camera_sensor']r, vel2cam)
+        pts_in_image = rangeToImage(collection, args['test_json_file'], args['range_sensor'],
+                                    args['camera_sensor'], vel2cam)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
-        filename = os.path.dirname(test_json_file) + '/' + collection['data'][args['camera_sensor']r]['data_file']
+        filename = os.path.dirname(args['test_json_file']
+                                   ) + '/' + collection['data'][args['camera_sensor']]['data_file']
         image = cv2.imread(filename)
 
         if args['show_images']:  # draw all ground truth annotations

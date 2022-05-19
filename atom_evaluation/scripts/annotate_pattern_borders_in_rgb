@@ -24,37 +24,12 @@ import numpy as np
 import cv2
 from click import style
 from colorama import Style, Fore
+from atom_core.dataset_io import createJSONFile
 from atom_core.drawing import drawCross2D, drawSquare2D
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-
-
-def walk(node):
-    for key, item in node.items():
-        if isinstance(item, dict):
-            walk(item)
-        else:
-            if isinstance(item, np.ndarray) and key == 'data':  # to avoid saving images in the json
-                del node[key]
-
-            elif isinstance(item, np.ndarray):
-                node[key] = item.tolist()
-            pass
-
-
-# Save to json file
-def createJSONFile(output_file, input):
-    D = deepcopy(input)
-    walk(D)
-
-    print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
-    f = open(output_file, 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print(json.dumps(D, indent=2, sort_keys=True), file=f)
-    f.close()
-    print("Completed.")
 
 
 def mouseClick(event, x, y, flags, param, clicked):
@@ -125,7 +100,7 @@ if __name__ == "__main__":
                 annotations[collection_key][side] = {'xs': [], 'ys': [], 'ixs': [], 'iys': []}
 
     # ----------------------------------------------------
-    # Verify annotations
+    # Annotation loop
     # ----------------------------------------------------
     od = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
     collection_keys = list(od.keys())

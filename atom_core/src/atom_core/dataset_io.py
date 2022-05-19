@@ -393,13 +393,13 @@ class NpEncoder(json.JSONEncoder):
 
 # json.dumps(data, cls=NpEncoder)
 
-def createJSONFile(output_file, input):
+def createJSONFile(output_file, data):
     """
     Creates the json file containing the results data.
     :param output_file: output file.
-    :param input: input dictionary containing the data.
+    :param data: data in dict format to save.
     """
-    D = copy.deepcopy(input)
+    D = copy.deepcopy(data)
     walk(D)
 
     f = open(output_file, 'w')
@@ -703,3 +703,17 @@ def getMixedDataset(train_dataset, test_dataset):
             mixed_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
 
     return mixed_dataset
+
+
+def readAnnotationFile(json_file, sensor):
+    annotations_file = os.path.dirname(json_file) + "/annotation_" + sensor + ".json"
+    if os.path.exists(annotations_file) is False:
+        print('Annotation file does not exist ' + Fore.RED + annotations_file + Style.RESET_ALL +
+              '\nPlease annotate this sensor using: ' + Fore.BLUE +
+              'rosrun atom_evaluation annotate_pattern_borders_in_rgb --camera_sensor ' + sensor +
+              Style.RESET_ALL)
+        exit(0)
+
+    print('Loading annotation file ' + Fore.BLUE + annotations_file + Style.RESET_ALL)
+    annotations = json.load(open(annotations_file, 'r'))
+    return annotations, annotations_file
