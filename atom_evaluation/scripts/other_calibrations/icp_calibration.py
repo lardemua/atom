@@ -177,7 +177,7 @@ def main():
         reg_p2p_aligned = ICP_calibration(source_point_cloud, target_point_cloud, threshold, T_target_to_source_aligned, show_images)
 
         # Append transforms
-        aligned_transforms += reg_p2p_initial.transformation
+        aligned_transforms += reg_p2p_aligned.transformation
         if reg_p2p_aligned.inlier_rmse < aligned_min_rmse:
             aligned_min_transform = reg_p2p_aligned.transformation
             aligned_min_rmse = reg_p2p_aligned.inlier_rmse
