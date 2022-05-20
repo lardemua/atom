@@ -582,6 +582,12 @@ if __name__ == "__main__":
                                                                        'Image_Topic': topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
+            # Frustum
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
+                                                                            'Marker_Topic': sensor_key + '/frustum'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+
         elif modality == 'depth':
             depth += 1
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
