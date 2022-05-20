@@ -3,8 +3,6 @@
 
 # stdlib
 import os
-
-import atom_core.ros_utils
 import math
 import random
 import threading
@@ -13,43 +11,35 @@ import time
 # from __builtin__ import enumerate
 from copy import deepcopy
 
+import atom_core.ros_utils
+
 # 3rd-party
 import colorama
 import cv2
 import rospy
+import numpy
 import numpy as np
 import ros_numpy
 import scipy.spatial
-
 import sensor_msgs.point_cloud2 as pc2
-
+import image_geometry
+import atom_core.utilities
 from cv_bridge import CvBridge
 from matplotlib import cm
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
-from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
+from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl, MarkerArray
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import *
-from sensor_msgs.msg import PointField
+from sensor_msgs.msg import PointField, CameraInfo, Image
 from image_geometry import PinholeCameraModel
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
-
-import numpy
-import rospy
-from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
-from sensor_msgs.msg import CameraInfo, Image
-from visualization_msgs.msg import MarkerArray
-import random
-
-import math
-import image_geometry
 
 # local packages
 from atom_calibration.collect import patterns
-import atom_core.utilities
-from atom_calibration.collect.label_messages import labelPointCloud2Msg, labelDepthMsg, calculateFrustrum, \
-    pixToWorld, worldToPix
+from atom_calibration.collect.label_messages import (getFrustumMarkerArray, labelPointCloud2Msg, labelDepthMsg,
+                                                     calculateFrustrum, pixToWorld, worldToPix)
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -58,7 +48,7 @@ FIELDS_XYZ = [
     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
 ]
 FIELDS_XYZRGB = FIELDS_XYZ + \
-                [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
+    [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
 
 # Bit operations
 BIT_MOVE_16 = 2 ** 16
@@ -115,10 +105,10 @@ class InteractiveDataLabeler:
         Cameras: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
         LaserScans: Semi-automated labelling. An rviz interactive marker is placed on the laser cluster which contains
                     the calibration pattern, and the pattern is tracked from there onward.
-        PointCloud2: #TODO Tiago Madeira can you complete?
+        PointCloud2: #TODO #471 Daniela can you complete?
     """
 
-    def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, label_data=True):
+    def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, color, label_data=True):
         """
         Class constructor. Initializes several variables and ros stuff.
         :param server: an interactive marker server
@@ -127,6 +117,7 @@ class InteractiveDataLabeler:
         :param marker_scale: scale of the markers to be drawn
         :param chess_numx: chessboard size in x
         :param chess_numy: chessboard size in y
+        :param color: tuple with the values of the three color channels (0-1)
         """
         print('Creating an InteractiveDataLabeler for sensor ' + str(sensor_dict['_name']))
 
@@ -138,6 +129,7 @@ class InteractiveDataLabeler:
         self.topic = sensor_dict['topic']
         self.modality = sensor_dict['modality']
         self.marker_scale = marker_scale
+        self.color = color
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
         # self.server = server
@@ -185,16 +177,18 @@ class InteractiveDataLabeler:
             self.pinhole_camera_model.fromCameraInfo(
                 message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
                                                                     sensor_dict['camera_info']))
-            self.publisher_frustrum = rospy.Publisher(self.name + '/frustum', MarkerArray, queue_size=1)
+            self.publisher_frustum = rospy.Publisher(self.name + '/frustum', MarkerArray, queue_size=1)
             width = self.pinhole_camera_model.fullResolution()[0]
             height = self.pinhole_camera_model.fullResolution()[1]
             f_x = self.pinhole_camera_model.fx()
             f_y = self.pinhole_camera_model.fy()
             # frame_id = self.msg.header.frame_id
             frame_id = sensor_dict['camera_info']['header']['frame_id']
-            self.frustum_marker_array = MarkerArray()
-            marker_frustrum = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.topic, color=(random.uniform(0, 1),random.uniform(0, 1),random.uniform(0, 1)))
-            self.frustum_marker_array.markers.append(marker_frustrum)
+
+            self.frustum_marker_array = getFrustumMarkerArray(width, height, f_x, f_y,
+                                                              Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.name,
+                                                              color=self.color)
+
             # images with the detected chessboard overlaid onto the image.
 
         # elif self.msg_type_str in ['PointCloud2'] and self.label_data:  # Velodyne data (Andre Aguiar)
@@ -214,13 +208,13 @@ class InteractiveDataLabeler:
             self.number_iterations = 15  # RANSAC number of iterations
             self.ransac_threshold = 0.01  # RANSAC point-to-plane distance threshold to consider inliers
             # Chessboard point tracker distance threshold
-            self.tracker_threshold = math.sqrt(((calib_pattern['dimension']['x'] - 1) * calib_pattern['size']) ** 2 + \
+            self.tracker_threshold = math.sqrt(((calib_pattern['dimension']['x'] - 1) * calib_pattern['size']) ** 2 +
                                                ((calib_pattern['dimension']['y'] - 1) * calib_pattern[
                                                    'size']) ** 2) * 0.8
 
             print('Created interactive marker for point clouds.')
 
-        elif self.modality == 'depth' and self.label_data:  # Velodyne data (Andre Aguiar)
+        elif self.modality == 'depth' and self.label_data:  # depth data
             # print('Depth labeller under construction')
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_depth = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
@@ -229,12 +223,12 @@ class InteractiveDataLabeler:
             self.pinhole_camera_model.fromCameraInfo(
                 message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
                                                                     sensor_dict['camera_info']))
-            self.createInteractiveMarkerRGBD(x=0.804, y=0.298, z=0.409) # TODO this should also not be hardcoded ...
+            self.createInteractiveMarkerRGBD(x=0.804, y=0.298, z=0.409)  # TODO this should also not be hardcoded ...
 
             # self.camera_info = rospy.wait_for_message(self.topic, CameraInfo)
             print(sensor_dict['camera_info']['header']['frame_id'])
 
-            self.publisher_frustrum = rospy.Publisher(self.name + '/frustum', MarkerArray, queue_size=1)
+            self.publisher_frustum = rospy.Publisher(self.name + '/frustum', MarkerArray, queue_size=1)
 
             # Define the frustum marker array (defined only once bcause its always the same)
             width = self.pinhole_camera_model.fullResolution()[0]
@@ -243,20 +237,20 @@ class InteractiveDataLabeler:
             f_y = self.pinhole_camera_model.fy()
             # frame_id = self.msg.header.frame_id
             frame_id = sensor_dict['camera_info']['header']['frame_id']
-            self.frustum_marker_array = MarkerArray()
-            marker_frustrum = calculateFrustrum(width, height, f_x, f_y, Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.topic, color=(1,0,0))
-            self.frustum_marker_array.markers.append(marker_frustrum)
+
+            self.frustum_marker_array = getFrustumMarkerArray(width, height, f_x, f_y,
+                                                              Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.name,
+                                                              color=self.color)
 
             # Use image resolution to define initial seed in the middle of the image
             self.seed = {'x': round(width / 2), 'y': round(height / 2)}
-
 
         elif self.label_data:
             # We handle only know message types
             raise ValueError(
                 'Message type ' + self.modality + ' for topic ' + self.topic + 'is of an unknown type.')
             # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
-        else: # label_data is false
+        else:  # label_data is false
             print('Sensor ' + colorama.Fore.BLUE + self.name + colorama.Style.RESET_ALL +
                   ' labelling ' + colorama.Fore.RED + ' DISABLED' + colorama.Style.RESET_ALL)
 
@@ -365,7 +359,7 @@ class InteractiveDataLabeler:
             number_of_idxs = len(clusters[idx_closest_cluster].idxs)
             idxs_to_remove = int(percentage_points_to_remove * float(number_of_idxs))
             clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
-                                                          idxs_to_remove:number_of_idxs - idxs_to_remove]
+                idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
 
@@ -377,8 +371,8 @@ class InteractiveDataLabeler:
                 for idx in cluster.idxs:
                     x, y = xs[idx], ys[idx]
                     r, g, b = int(cmap[cluster.cluster_count, 0] * 255.0), \
-                              int(cmap[cluster.cluster_count, 1] * 255.0), \
-                              int(cmap[cluster.cluster_count, 2] * 255.0)
+                        int(cmap[cluster.cluster_count, 1] * 255.0), \
+                        int(cmap[cluster.cluster_count, 2] * 255.0)
                     rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
                     pt = [x, y, z, rgb]
                     points.append(pt)
@@ -442,8 +436,7 @@ class InteractiveDataLabeler:
             msg_out.header.stamp = self.msg.header.stamp
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_image.publish(msg_out)
-            self.publisher_frustrum.publish(self.frustum_marker_array)
-
+            self.publisher_frustum.publish(self.frustum_marker_array)
 
         # elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
         elif self.modality == 'lidar3d':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
@@ -453,7 +446,7 @@ class InteractiveDataLabeler:
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
-                                           self.marker.pose.position.z  # interactive marker pose
+                self.marker.pose.position.z  # interactive marker pose
 
             # Extract 3D point from the ros msg
             self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
@@ -506,7 +499,8 @@ class InteractiveDataLabeler:
             # get seed point from interactive marker
             c_x = self.pinhole_camera_model.cx()
             c_y = self.pinhole_camera_model.cy()
-            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z  # interactive marker pose
+            # interactive marker pose
+            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z
             x_pix, y_pix = worldToPix(f_x, f_y, c_x, c_y, x_marker, y_marker, z_marker)
             x_pix = int(x_pix)
             y_pix = int(y_pix)
@@ -552,7 +546,7 @@ class InteractiveDataLabeler:
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
-            self.publisher_frustrum.publish(self.frustum_marker_array)
+            self.publisher_frustum.publish(self.frustum_marker_array)
 
         else:
             raise ValueError('Unknown modality')

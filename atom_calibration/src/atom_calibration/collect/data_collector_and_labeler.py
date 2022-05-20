@@ -6,6 +6,7 @@ import time
 import getpass
 from datetime import datetime, date
 
+import numpy as np
 import tf2_ros
 import yaml
 import atom_core.config_io
@@ -14,6 +15,7 @@ import atom_core.dataset_io
 # 3rd-party
 import atom_msgs.srv
 import tf
+from matplotlib import cm
 from cv_bridge import CvBridge
 from colorama import Style, Fore
 from interactive_markers.menu_handler import *
@@ -77,11 +79,15 @@ class DataCollectorAndLabeler:
 
         self.world_link = self.config['world_link']
 
+        # Create a colormap so that we have one color per sensor
+        self.cm_sensors = cm.Pastel2(np.linspace(0, 1, len(self.config['sensors'].keys())))
+
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
         print('Number of sensors: ' + str(len(self.config['sensors'])))
 
         # Go through the sensors in the calib config.
+        sensor_idx = 0
         for sensor_key, value in self.config['sensors'].items():
 
             # Create a dictionary that describes this sensor
@@ -136,12 +142,13 @@ class DataCollectorAndLabeler:
                     label_data = False
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
                                                     args['marker_size'], self.config['calibration_pattern'],
-                                                    label_data=label_data)
+                                                    color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
             print('Setup for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
+            sensor_idx += 1
 
         # Additional data loop
         if 'additional_data' in self.config:

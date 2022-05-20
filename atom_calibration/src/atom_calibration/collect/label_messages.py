@@ -1,36 +1,38 @@
+
+# Standard imports
 import copy
 import math
 import random
-import struct
 
-import PIL.Image
+import scipy
+import numpy as np
+import cv2
+
+# ROS imports
 import cv_bridge
 import rospy
-import scipy
 import ros_numpy
-import functools
 from scipy import ndimage
-
+from std_msgs.msg import Header, ColorRGBA
 from cv_bridge import CvBridge
-from cv2 import imwrite
-import numpy as np
-import time
-import cv2
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
-from visualization_msgs.msg import MarkerArray
+
+# Atom imports
 
 
 def labelImageMsg():
     pass
     # TODO the stuff from patterns.py should be here
 
+
 def find_nearest_white(img, target):
     nonzero = np.argwhere(img == 255)
     distances = np.sqrt((nonzero[:, 0] - target[0]) ** 2 + (nonzero[:, 1] - target[1]) ** 2)
     nearest_index = np.argmin(distances)
     return nonzero[nearest_index]
+
 
 def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
                         ransac_threshold):
@@ -119,7 +121,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     # Extract the inliers
     distances = abs((A * pts[:, 0] + B * pts[:, 1] + C * pts[:, 2] + D)) / \
-                (math.sqrt(A * A + B * B + C * C))
+        (math.sqrt(A * A + B * B + C * C))
     inliers = pts[np.where(distances < ransac_threshold)]
     # Create dictionary [pcl point index, distance to plane] to select the pcl indexes of the inliers
     idx_map = dict(zip(idx, distances))
@@ -576,8 +578,8 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             x = value[0][0]
             y = value[0][1]
 
-            if np.isnan(image[y, x]): # if x,y is nan in depth image, find nearest white pixel
-                closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y,x))
+            if np.isnan(image[y, x]):  # if x,y is nan in depth image, find nearest white pixel
+                closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y, x))
                 x = closest_not_nan_pixel[1]
                 y = closest_not_nan_pixel[0]
 
@@ -673,6 +675,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         print('Time taken preparing gui image ' + str((rospy.Time.now() - now).to_sec()))
 
     return labels, gui_image, new_seed_point
+
 
 def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     marker = Marker()
@@ -793,6 +796,154 @@ def calculateFrustrum(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     marker.points.append(P5)
 
     return marker
+
+
+def getFrustumMarkerArray(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
+    # big help from https: // github.com/ros-visualization/rviz/issues/925
+    marker_array = MarkerArray()
+
+    # ------------------------------------
+    # Define view frustum points
+    # ------------------------------------
+    fov_x = 2 * math.atan2(w, (2 * f_x))
+    fov_y = 2 * math.atan2(h, (2 * f_y))
+
+    x_n = math.tan(fov_x / 2) * Z_near
+    y_n = math.tan(fov_y / 2) * Z_near
+
+    x_f = math.tan(fov_x / 2) * Z_far
+    y_f = math.tan(fov_y / 2) * Z_far
+
+    points = [Point(-x_n, y_n, Z_near),
+              Point(x_n, y_n, Z_near),
+              Point(x_n, -y_n, Z_near),
+              Point(-x_n, -y_n, Z_near),
+              Point(-x_f, y_f, Z_far),
+              Point(x_f, y_f, Z_far),
+              Point(x_f, -y_f, Z_far),
+              Point(-x_f, -y_f, Z_far)]
+
+    # ------------------------------------
+    # Define wireframe
+    # ------------------------------------
+    color_rviz = ColorRGBA(r=color[0]/2, g=color[1]/2, b=color[2]/2, a=1.0)
+    marker = Marker(ns=ns+'_wireframe', type=Marker.LINE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
+                    color=color_rviz)
+
+    marker.scale.x = 0.005  # line width
+    marker.pose.orientation.w = 1.0
+
+    # marker line points
+    marker.points.append(points[0])
+    marker.points.append(points[1])
+
+    marker.points.append(points[1])
+    marker.points.append(points[2])
+
+    marker.points.append(points[2])
+    marker.points.append(points[3])
+
+    marker.points.append(points[3])
+    marker.points.append(points[0])
+
+    marker.points.append(points[0])
+    marker.points.append(points[4])
+
+    marker.points.append(points[1])
+    marker.points.append(points[5])
+
+    marker.points.append(points[2])
+    marker.points.append(points[6])
+
+    marker.points.append(points[3])
+    marker.points.append(points[7])
+
+    marker.points.append(points[4])
+    marker.points.append(points[5])
+
+    marker.points.append(points[5])
+    marker.points.append(points[6])
+
+    marker.points.append(points[6])
+    marker.points.append(points[7])
+
+    marker.points.append(points[7])
+    marker.points.append(points[4])
+
+    marker_array.markers.append(copy.deepcopy(marker))
+
+    # ------------------------------------
+    # Define filled
+    # ------------------------------------
+    color_rviz = ColorRGBA(r=color[0], g=color[1], b=color[2], a=0.5)
+    marker = Marker(ns=ns+'_filled', type=Marker.TRIANGLE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
+                    color=color_rviz)
+
+    marker.scale.x = 1  # line width
+    marker.scale.y = 1  # line width
+    marker.scale.z = 1  # line width
+    marker.pose.orientation.w = 1.0
+
+    # marker triangles of the lateral face of the frustum pyramid
+    marker.points.append(points[1])
+    marker.points.append(points[2])
+    marker.points.append(points[6])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[1])
+    marker.points.append(points[6])
+    marker.points.append(points[5])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[0])
+    marker.points.append(points[4])
+    marker.points.append(points[3])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[3])
+    marker.points.append(points[4])
+    marker.points.append(points[7])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[0])
+    marker.points.append(points[1])
+    marker.points.append(points[5])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[0])
+    marker.points.append(points[4])
+    marker.points.append(points[5])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[3])
+    marker.points.append(points[2])
+    marker.points.append(points[6])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker.points.append(points[3])
+    marker.points.append(points[6])
+    marker.points.append(points[7])
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+    marker.colors.append(color_rviz)
+
+    marker_array.markers.append(copy.deepcopy(marker))
+
+    return marker_array
 
 
 def worldToPix(fx, fy, cx, cy, X, Y, Z):
