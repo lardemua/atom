@@ -51,7 +51,8 @@ def pick_points(pcd):
         "1) Please pick at least three correspondences using [shift + left click]"
     )
     print("   Press [shift + right click] to undo point picking")
-    print("2) Afther picking points, press q for close the window")
+    print("2) After picking points, press q for close the window")
+    print("3) If you desire to not use this collection, please don't choose any points in both pointclouds")
     vis = o3d.visualization.VisualizerWithEditing()
     vis.create_window()
     vis.add_geometry(pcd)
@@ -122,9 +123,10 @@ def main():
     aligned_min_transform = None
     source_frame = dataset['calibration_config']['sensors'][args['sensor_source']]['link']
     target_frame = dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+    collections_list = list(dataset['collections'].keys())
+    used_datasets = 0
 
-
-    for selected_collection_key in list(dataset['collections'].keys()):
+    for idx, selected_collection_key in enumerate(collections_list):
         print('\nCalibrating collection ' + str(selected_collection_key))
         # Get the transformation from target to frame
         T_target_to_source_initial = getTransform(target_frame, source_frame,
@@ -159,8 +161,19 @@ def main():
         source_picked_points = pick_points(source_point_cloud)
         target_picked_points = pick_points(target_point_cloud)
 
-        assert (len(source_picked_points) >= 3 and len(target_picked_points) >= 3)
-        assert (len(source_picked_points) == len(target_picked_points))
+        # Conditions of alignment
+        if len(source_picked_points) == 0 and len(target_picked_points) == 0:
+            print('\nYou have not chosen any points, so this collection will be ignored')
+            continue
+        elif not (len(source_picked_points) >= 3 and len(target_picked_points) >= 3):
+            print('\nYou have chosen less than 3 points in at least one of the last two pointclouds, please redo them.')
+            collections_list.insert(idx, selected_collection_key)
+            continue            
+        if not (len(source_picked_points) == len(target_picked_points)):
+            print(f'\nYou have chosen {len(source_picked_points)} and {len(target_picked_points)} points, which needed to be equal, please redo them.')
+            collections_list.insert(idx, selected_collection_key)
+            continue           
+
         corr = np.zeros((len(source_picked_points), 2))
         corr[:, 0] = source_picked_points
         corr[:, 1] = target_picked_points
@@ -181,10 +194,13 @@ def main():
         if reg_p2p_aligned.inlier_rmse < aligned_min_rmse:
             aligned_min_transform = reg_p2p_aligned.transformation
             aligned_min_rmse = reg_p2p_aligned.inlier_rmse
+        
+        # Define dataset as used
+        used_datasets += 1
 
     # Average the initial transforms
-    initial_transform = initial_transforms / len(list(dataset['collections'].keys()))
-    aligned_transform = aligned_transforms / len(list(dataset['collections'].keys()))
+    initial_transform = initial_transforms / used_datasets 
+    aligned_transform = aligned_transforms / used_datasets 
 
     # Saving Json files
     save_ICP_calibration(dataset, args['sensor_source'], args['sensor_target'], initial_transform, json_file, 'initial_average')
