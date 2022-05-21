@@ -195,8 +195,11 @@ if __name__ == "__main__":
 
                 if not annotations[collection_key][side]['xs']:  # If emtpy list, auto insert first point in empty list
                     previous_side = sides[side_idx-1]
-                    annotations[collection_key][side]['xs'].append(annotations[collection_key][previous_side]['xs'][-1])
-                    annotations[collection_key][side]['ys'].append(annotations[collection_key][previous_side]['ys'][-1])
+                    if len(annotations[collection_key][previous_side]['xs']) > 0:
+                        annotations[collection_key][side]['xs'].append(
+                            annotations[collection_key][previous_side]['xs'][-1])
+                        annotations[collection_key][side]['ys'].append(
+                            annotations[collection_key][previous_side]['ys'][-1])
 
         elif key == ord('p'):
             # if side is first then move to previous collection
