@@ -33,7 +33,7 @@ def printImageInfo(image, text=None):
               '\n\tmin value = ' + str(np.nanmin(image)))
 
 
-def loadResultsJSON(json_file, collection_selection_function):
+def loadResultsJSON(json_file, collection_selection_function=None):
     # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
     #   and our guide lines is to use environment variables, which the shell already expands.
     #   Furthermore, the URI resolver required an import from a `top-level` package which does
