@@ -22,7 +22,7 @@ import tf
 from colorama import Style, Fore
 from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
-from atom_core.dataset_io import saveResultsJSON
+from atom_core.dataset_io import addNoiseToInitialGuess, saveResultsJSON
 
 def draw_registration_result(source, target, transformation, initial_transformation):
     """
@@ -103,6 +103,10 @@ def main():
     ap.add_argument("-ss", "--sensor_source", help="Name of the sensor to be aligned.", type=str, required=True)
     ap.add_argument("-st", "--sensor_target", help="Name of the anchored sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-seed", "--sample_seed", help="Sampling seed", type=int)
+    ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
+                    help="Percentage of noise to add to the initial guess atomic transformations set before.",
+                    type=float, default=[0.0, 0.0],)
 
     # Save args
     args = vars(ap.parse_args())
@@ -125,6 +129,9 @@ def main():
     target_frame = dataset['calibration_config']['sensors'][args['sensor_target']]['link']
     collections_list = list(dataset['collections'].keys())
     used_datasets = 0
+
+    # Add noise to initial guess
+    addNoiseToInitialGuess(dataset, args, list(dataset["collections"].keys())[0])
 
     for idx, selected_collection_key in enumerate(collections_list):
         print('\nCalibrating collection ' + str(selected_collection_key))
