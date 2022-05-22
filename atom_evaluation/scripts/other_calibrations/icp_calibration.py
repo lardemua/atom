@@ -153,7 +153,7 @@ def main():
                 point_cloud = o3d.io.read_point_cloud(filename)
                 pointclouds[sensor] = point_cloud
             elif dataset['calibration_config']['sensors'][sensor]['modality'] == 'depth':
-                point_cloud = depthToPointCloud(dataset, selected_collection_key, args['json_file'], sensor, full_image=True)
+                point_cloud = depthToPointCloud(dataset, selected_collection_key, args['json_file'], sensor, full_image=True, pixel_interval=100)
                 print('Reading point cloud from idxs')
                 pointclouds[sensor] = point_cloud
             else:

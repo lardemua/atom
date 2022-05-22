@@ -162,7 +162,7 @@ def depthToPointArray(dataset, selected_collection_key, json_file, ss, full_imag
     ys = []
     zs = []
     for idx in idxs:  # iterate all points
-        if not idx % pixel_interval and full_image:
+        if idx % pixel_interval and full_image:
             continue
         # convert from linear idx to x_pix and y_pix indices.
         y_pix = int(idx / w)
