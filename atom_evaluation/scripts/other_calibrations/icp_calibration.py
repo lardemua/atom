@@ -23,6 +23,7 @@ from colorama import Style, Fore
 from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
 from atom_core.dataset_io import addNoiseToInitialGuess, saveResultsJSON
+from atom_core.vision import depthToPointCloud
 
 def draw_registration_result(source, target, transformation, initial_transformation):
     """
@@ -52,7 +53,8 @@ def pick_points(pcd):
     )
     print("   Press [shift + right click] to undo point picking")
     print("2) After picking points, press q for close the window")
-    print("3) If you desire to not use this collection, please don't choose any points in both pointclouds")
+    print("3) Press [shift + '] or [shift + «] to increase or decrease the size of the picked points")
+    print("4) If you desire to not use this collection, please don't choose any points in both pointclouds")
     vis = o3d.visualization.VisualizerWithEditing()
     vis.create_window()
     vis.add_geometry(pcd)
@@ -96,6 +98,8 @@ def save_ICP_calibration(dataset, sensor_source, sensor_target, transform, json_
     filename_results_json = os.path.dirname(json_file) + '/ICP_calibration_' + descriptor + '.json'
     saveResultsJSON(filename_results_json, dataset)
 
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file", help="Json file containing train input dataset.", type=str,
@@ -129,27 +133,36 @@ def main():
     target_frame = dataset['calibration_config']['sensors'][args['sensor_target']]['link']
     collections_list = list(dataset['collections'].keys())
     used_datasets = 0
+    pointclouds = {}
 
     # Add noise to initial guess
     addNoiseToInitialGuess(dataset, args, list(dataset["collections"].keys())[0])
 
     for idx, selected_collection_key in enumerate(collections_list):
-        print('\nCalibrating collection ' + str(selected_collection_key))
+        print('\nCalibrating collection ' + str(selected_collection_key) + '\n')
         # Get the transformation from target to frame
         T_target_to_source_initial = getTransform(target_frame, source_frame,
                                         dataset['collections'][selected_collection_key]['transforms'])
 
-        # Retrieve file names
-        ss_filename = os.path.dirname(
-            args['json_file']) + '/' + dataset['collections'][selected_collection_key]['data'][args['sensor_source']]['data_file']
-        st_filename = os.path.dirname(
-            args['json_file']) + '/' + dataset['collections'][selected_collection_key]['data'][args['sensor_target']]['data_file']
+        # Retrieve pointclouds
+        for sensor in [args['sensor_source'], args['sensor_target']]:
+            if dataset['calibration_config']['sensors'][sensor]['modality'] == 'lidar3d':
+                filename = os.path.dirname(
+                    args['json_file']) + '/' + dataset['collections'][selected_collection_key]['data'][sensor]['data_file']
+                print('Reading point cloud from ' + filename)
+                point_cloud = o3d.io.read_point_cloud(filename)
+                pointclouds[sensor] = point_cloud
+            elif dataset['calibration_config']['sensors'][sensor]['modality'] == 'depth':
+                point_cloud = depthToPointCloud(dataset, selected_collection_key, args['json_file'], sensor, full_image=True)
+                print('Reading point cloud from idxs')
+                pointclouds[sensor] = point_cloud
+            else:
+                print('The sensor ' + sensor +  ' does not have a pointcloud to retrieve, so ICP would not work.\nShutting down...')
+                exit(0)
 
-        print('Reading point cloud from ' + ss_filename)
-        print('Reading point cloud from ' + st_filename)
 
-        source_point_cloud = o3d.io.read_point_cloud(ss_filename)
-        target_point_cloud = o3d.io.read_point_cloud(st_filename)
+        source_point_cloud = pointclouds[args['sensor_source']]
+        target_point_cloud = pointclouds[args['sensor_target']]
 
         # Calibrate using the dataset initial estimate
         print('Using ICP to calibrate using the initial transform defined in the dataset')

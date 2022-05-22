@@ -9,10 +9,19 @@ A set of utilities to be used in the optimization algorithms
 
 
 # Standard imports
+import os
+import cv2
+import open3d as o3d
 import numpy as np
 from numpy.linalg import norm
+from trimesh import PointCloud
+
+# ROS imports
+from image_geometry import PinholeCameraModel
+from rospy_message_converter import message_converter
 
 # Atom imports
+from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -110,3 +119,92 @@ def projectWithoutDistortion(intrinsic_matrix, width, height, pts):
     valid_ypix = np.logical_and(pixs[1, :] >= 0, pixs[1, :] < height)
     valid_pixs = np.logical_and(valid_z, np.logical_and(valid_xpix, valid_ypix))
     return pixs, valid_pixs, dists
+
+def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
+    # From http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
+
+    x_over_z = (xpix - cx) / fx
+    y_over_z = (ypix - cy) / fy
+    z = d
+    x = x_over_z * z
+    y = y_over_z * z
+    return x, y, z
+
+def depthToPointArray(dataset, selected_collection_key, json_file, ss, full_image=False, pixel_interval=8):
+    filename = os.path.dirname(json_file) + '/' + \
+                dataset['collections'][selected_collection_key]['data'][ss]['data_file']
+
+    cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+    
+    img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
+                                        scale=10000.0)
+
+    # idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
+    if full_image:
+        pixels = img.shape[0] * img.shape[1]
+        idxs = range(pixels)
+    else:
+        idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
+
+    pinhole_camera_model = PinholeCameraModel()
+    pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
+        'sensor_msgs/CameraInfo', dataset['sensors'][ss]['camera_info']))
+
+    f_x = pinhole_camera_model.fx()
+    f_y = pinhole_camera_model.fy()
+    c_x = pinhole_camera_model.cx()
+    c_y = pinhole_camera_model.cy()
+    w = pinhole_camera_model.fullResolution()[0]
+    # w = size[0]
+
+    # initialize lists
+    xs = []
+    ys = []
+    zs = []
+    for idx in idxs:  # iterate all points
+        if not idx % pixel_interval and full_image:
+            continue
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+
+        # get distance value for this pixel coordinate
+        distance = img[y_pix, x_pix]
+
+        # compute 3D point and add to list of coordinates xs, ys, zs
+        x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
+        xs.append(x)
+        ys.append(y)
+        zs.append(z)
+
+    homogeneous = np.ones((len(xs)))
+    points_in_depth = np.array((xs, ys, zs, homogeneous), dtype=float)
+
+    return points_in_depth
+
+
+def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf, test_dataset):
+    points_in_depth = depthToPointArray(dataset, selected_collection_key, json_file, ss)
+
+    points_in_cam = np.dot(tf, points_in_depth)
+
+    # -- Project them to the image
+    # TODO #466 this should be retrieved from the train dataset. Doing like this means that if we optimize the depth's intrinsics we will not take the estimated intrinsics into consideration.
+    w, h = dataset['collections'][selected_collection_key]['data'][ts]['width'],\
+            dataset['collections'][selected_collection_key]['data'][ts]['height']
+    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
+
+    pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+
+    return pts_in_image
+
+
+def depthToPointCloud(dataset, selected_collection_key, json_file, ss, full_image=False, pixel_interval=8):
+    points_in_depth = depthToPointArray(dataset, selected_collection_key, json_file, ss, full_image, pixel_interval)
+    points_3 = np.transpose(np.delete(points_in_depth, 3, 0))
+    point_cloud = o3d.geometry.PointCloud()
+    point_cloud.points = o3d.utility.Vector3dVector(points_3)
+
+
+    return point_cloud
