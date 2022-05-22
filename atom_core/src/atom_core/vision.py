@@ -36,7 +36,7 @@ def projectToCamera(intrinsic_matrix, distortion, width, height, pts):
     :param width: the image width
     :param height: the image height
     :param pts: a list of point coordinates (in the camera frame) with the following format: np array 4xn or 3xn
-    :return: a list of pixel coordinates with the same lenght as pts
+    :return: a list of pixel coordinates with the same length as pts
     """
 
     # print('intrinsic_matrix=' + str(intrinsic_matrix))
@@ -86,7 +86,7 @@ def projectWithoutDistortion(intrinsic_matrix, width, height, pts):
     :param width: the image width
     :param height: the image height
     :param pts: a list of point coordinates (in the camera frame) with the following format
-    :return: a list of pixel coordinates with the same lenght as pts
+    :return: a list of pixel coordinates with the same length as pts
     """
 
     _, n_pts = pts.shape
@@ -130,7 +130,11 @@ def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
     y = y_over_z * z
     return x, y, z
 
-def depthToPointArray(dataset, selected_collection_key, json_file, ss, full_image=False, pixel_interval=8):
+def depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs):
+    """
+    Convert a depth image to numpy array
+    """
+    
     filename = os.path.dirname(json_file) + '/' + \
                 dataset['collections'][selected_collection_key]['data'][ss]['data_file']
 
@@ -138,13 +142,6 @@ def depthToPointArray(dataset, selected_collection_key, json_file, ss, full_imag
     
     img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
                                         scale=10000.0)
-
-    # idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
-    if full_image:
-        pixels = img.shape[0] * img.shape[1]
-        idxs = range(pixels)
-    else:
-        idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
 
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
@@ -155,21 +152,21 @@ def depthToPointArray(dataset, selected_collection_key, json_file, ss, full_imag
     c_x = pinhole_camera_model.cx()
     c_y = pinhole_camera_model.cy()
     w = pinhole_camera_model.fullResolution()[0]
-    # w = size[0]
 
     # initialize lists
     xs = []
     ys = []
     zs = []
     for idx in idxs:  # iterate all points
-        if idx % pixel_interval and full_image:
-            continue
         # convert from linear idx to x_pix and y_pix indices.
         y_pix = int(idx / w)
         x_pix = int(idx - y_pix * w)
 
         # get distance value for this pixel coordinate
         distance = img[y_pix, x_pix]
+
+        if np.isnan(distance): # if the value of the pixel is nan, ignore it
+            continue
 
         # compute 3D point and add to list of coordinates xs, ys, zs
         x, y, z = convert_from_uvd(c_x, c_y, f_x, f_y, x_pix, y_pix, distance)
@@ -184,7 +181,12 @@ def depthToPointArray(dataset, selected_collection_key, json_file, ss, full_imag
 
 
 def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf, test_dataset):
-    points_in_depth = depthToPointArray(dataset, selected_collection_key, json_file, ss)
+    """
+    Convert a depth image to points inside an rgb image
+    """
+
+    idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
+    points_in_depth = depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs)
 
     points_in_cam = np.dot(tf, points_in_depth)
 
@@ -200,8 +202,11 @@ def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf, test_d
     return pts_in_image
 
 
-def depthToPointCloud(dataset, selected_collection_key, json_file, ss, full_image=False, pixel_interval=8):
-    points_in_depth = depthToPointArray(dataset, selected_collection_key, json_file, ss, full_image, pixel_interval)
+def depthToPointCloud(dataset, selected_collection_key, json_file, ss, idxs):
+    """
+    Converts a depth image to an open3d pointcloud
+    """
+    points_in_depth = depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs)
     points_3 = np.transpose(np.delete(points_in_depth, 3, 0))
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points_3)
