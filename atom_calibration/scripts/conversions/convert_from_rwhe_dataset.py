@@ -19,7 +19,7 @@ def createJSONFile(output_file, D):
     print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print >> f, json.dumps(D, indent=2, sort_keys=True)
+    print(json.dumps(D, indent=2, sort_keys=True), file=f)
     f.close()
     print("Completed.")
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             msg = Fore.YELLOW + "To continue, the directory '{}' will be deleted.\n"
             msg = msg + "Do you wish to continue? [y/N] " + Style.RESET_ALL
 
-            answer = raw_input(msg.format(args['dataset_out']))
+            answer = input(msg.format(args['dataset_out']))            
             if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
                 if answer[0].lower() == 'n':
                     sys.exit(1)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         h, w, _ = image.shape
 
         stamp = {'nsecs': 0, 'secs': idx}  # assume one collection per second
-        data = {'data_file': filename_out, 'encoding': 'rgb8',
+        data = {'data_file': filename_relative, 'encoding': 'rgb8',
                 'header': {'frame_id': args['sensor'] + '_optical_frame', 'stamp': stamp},
                 'height': h, 'width': w, 'step': w, 'is_bigendian': 0
                 }
