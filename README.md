@@ -134,9 +134,15 @@ The [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) includes
 
 **L**aboratory of **A**utomation and **R**obotics **C**ollaborative **C**ell (LARCC) is included in a research project focusing of collaborative robotic industrial cells. The goal is to monitor in detail the volume of the cell in order to ensure safe collaboration between human operators and robots. For this, several sensors of different modalities are positioned everywhere in the cell, which makes the calibration of this robotic system a challenging task.
 
+
+| <img align="center" src="docs/larcc_fovs.png" width="850"/>
+|:--:| 
+| Sensor fields of view in LARCC.|
+
 | <img align="center" src="docs/larcc_calibration.png" width="850"/>
 |:--:| 
 | Calibration of LARCC.|
+
 
 
 ### MMTBot
@@ -281,6 +287,7 @@ You can use a couple of launch file arguments to configure the calibration proce
     roslaunch <your_robot_calibration> collect_data.launch 
       output_folder:=$ATOM_DATASETS/<my_dataset>/
       ssl:='lambda name: name in ["lidar_1", "lidar_2", "lidar_3"]'
+
 
 Here are some examples of the system collecting data:
 
