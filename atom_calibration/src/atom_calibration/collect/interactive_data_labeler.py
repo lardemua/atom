@@ -48,7 +48,7 @@ FIELDS_XYZ = [
     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
 ]
 FIELDS_XYZRGB = FIELDS_XYZ + \
-    [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
+                [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
 
 # Bit operations
 BIT_MOVE_16 = 2 ** 16
@@ -102,10 +102,15 @@ class LaserScanCluster:
 class InteractiveDataLabeler:
     """
     Handles data labelling for a generic sensor:
-        Cameras: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
+        RGB: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
         LaserScans: Semi-automated labelling. An rviz interactive marker is placed on the laser cluster which contains
                     the calibration pattern, and the pattern is tracked from there onward.
-        PointCloud2: #TODO #471 Daniela can you complete?
+        PointCloud2: Semi-automated labelling. An rviz interactive marker is placed on the point cloud where the
+                    calibration pattern shape is, and the pattern is tracked automatically from there onward.
+        Depth: Semi-automated labelling. An rviz interactive marker is placed inside the camera frustum overlapping the
+                calibration pattern and the pattern is tracked from that seed point using a propagation mask. The
+                pattern is tracked automatically from there onward by assuming that the centroid of the calibration
+                pattern's shape is the seed point in  the next frame.
     """
 
     def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, color, label_data=True):
@@ -359,7 +364,7 @@ class InteractiveDataLabeler:
             number_of_idxs = len(clusters[idx_closest_cluster].idxs)
             idxs_to_remove = int(percentage_points_to_remove * float(number_of_idxs))
             clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
-                idxs_to_remove:number_of_idxs - idxs_to_remove]
+                                                          idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
 
@@ -371,8 +376,8 @@ class InteractiveDataLabeler:
                 for idx in cluster.idxs:
                     x, y = xs[idx], ys[idx]
                     r, g, b = int(cmap[cluster.cluster_count, 0] * 255.0), \
-                        int(cmap[cluster.cluster_count, 1] * 255.0), \
-                        int(cmap[cluster.cluster_count, 2] * 255.0)
+                              int(cmap[cluster.cluster_count, 1] * 255.0), \
+                              int(cmap[cluster.cluster_count, 2] * 255.0)
                     rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
                     pt = [x, y, z, rgb]
                     points.append(pt)
@@ -446,7 +451,7 @@ class InteractiveDataLabeler:
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
-                self.marker.pose.position.z  # interactive marker pose
+                                           self.marker.pose.position.z  # interactive marker pose
 
             # Extract 3D point from the ros msg
             self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
