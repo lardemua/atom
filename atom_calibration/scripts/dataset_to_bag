@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import argparse
+import json
+
+import rosbag
+import rospy
+import cv2
+
+from sensor_msgs.msg import Image
+
+
+def loadImageToRosMsg(filename):
+    image_np = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+
+    rosimage = Image()
+    # rosimage.header.stamp = timestamp
+    rosimage.height = image_np.shape[0]
+    rosimage.width = image_np.shape[1]
+    rosimage.step = rosimage.width  #only with mono8! (step = width * byteperpixel * numChannels)
+    rosimage.encoding = "mono8"
+    rosimage.data = image_np.tobytes()
+
+    return rosimage
+
+def main():
+
+    parser = argparse.ArgumentParser(description='Create a ROS bag from an ATOM dataset')
+    parser.add_argument('-i', '--input-json', metavar='input_json', required=True, help='ATOM dataset JSON file')
+    parser.add_argument('-o', '--output-bag', metavar='output_bag', default='output.bag', help='ROS bag file %(default)s')
+
+    arguments = parser.parse_args()
+
+    input_json = arguments.input_json
+    output_bag = arguments.output_bag
+
+    basedir = os.path.dirname(input_json)
+
+    try:
+        bag = rosbag.Bag(output_bag, 'w')
+
+        with open(input_json, 'r') as f:
+            data = json.load(f)
+
+        sensors = data['sensors']
+        for k, v in sensors.items():
+            # Only handle images
+            if v['msg_type'] != 'Image':
+                continue
+
+            topic = '/{}/image_raw'.format(k)
+            print(k)
+
+            for vv in data['collections'].values():
+                info = vv['data'][k]
+
+                stamp = rospy.Time(int(info['header']['stamp']['secs']),
+                                   int(info['header']['stamp']['nsecs']))
+
+                image = loadImageToRosMsg(os.path.join(basedir, info['data_file']))
+                image.header.stamp = stamp
+
+                bag.write(topic, image, stamp)
+
+    finally:
+        bag.close()
+
+if __name__ == "__main__":
+    main()
