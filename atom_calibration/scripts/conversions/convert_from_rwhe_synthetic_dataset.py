@@ -19,6 +19,7 @@ def createJSONFile(output_file, D):
     print("Saving the json output file to " + str(output_file) + ", please wait, it could take a while ...")
     f = open(output_file, 'w')
     json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
+    # print >> f, json.dumps(D, indent=2, sort_keys=True)
     print(json.dumps(D, indent=2, sort_keys=True), file=f)
     f.close()
     print("Completed.")
@@ -44,7 +45,7 @@ if __name__ == "__main__":
             msg = Fore.YELLOW + "To continue, the directory '{}' will be deleted.\n"
             msg = msg + "Do you wish to continue? [y/N] " + Style.RESET_ALL
 
-            answer = input(msg.format(args['dataset_out']))            
+            answer = input(msg.format(args['dataset_out']))
             if len(answer) > 0 and answer[0].lower() in ('y', 'n'):
                 if answer[0].lower() == 'n':
                     sys.exit(1)
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     image_paths.sort()
     print('Copying ' + str(len(image_paths)) + ' images...')
     for image_path in image_paths:
-        image_idx = os.path.basename(image_path)[:-4]
+        image_idx = os.path.basename(image_path)[3:-4]
         filename_out = args['dataset_out'] + '/' + args['sensor'] + '_' + image_idx + '.png'
         print('Copy image ' + image_path + ' to ' + filename_out)
         copyfile(image_path, filename_out)
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     # ---------------------------------------
     collections = {}
     for idx, image_path in enumerate(image_paths):
-        image_idx = os.path.basename(image_path)[:-4]
+        image_idx = os.path.basename(image_path)[3:-4]
         filename_out = args['dataset_out'] + '/' + args['sensor'] + '_' + image_idx + '.png'
         filename_relative = args['sensor'] + '_' + image_idx + '.png'
 
@@ -113,7 +114,7 @@ if __name__ == "__main__":
         result = pattern_detector.detect(image)
         if result['detected']:
             c = []
-            if result.has_key('ids'):
+            if 'ids' in result:
                 # The charuco pattern also return an ID for each keypoint.
                 # We can use this information for partial detections.
                 for idx, corner in enumerate(result['keypoints']):
@@ -126,6 +127,7 @@ if __name__ == "__main__":
             labels = {'detected': True, 'idxs': c}
         else:
             labels = {'detected': False, 'idxs': []}
+            print("No chessboard points found.")
 
         # Create transforms dictionary
         transforms = {}  # initialize the transforms dictionary
@@ -176,19 +178,20 @@ if __name__ == "__main__":
     # ---------------------------------------
     sensors = {}
     name = args['sensor']
-
-    # Values from Matlab
+    
+    # Values from Matlab for the synthetic datasets of Ali2019
     # cameraIntrinsics with properties:
-    #   FocalLength: [2.0587e+03 2.0593e+03]
-    #   PrincipalPoint: [962.1690 611.0970]
-    #   ImageSize: [1208 1928]
-    #   RadialDistortion: [-0.1163 0.1688 - 0.0722]
-    #   TangentialDistortion: [2.8333e-04 2.1871e-04]
-    #   Skew: 0.1682
-    K = [2058.7, 0, 962.1690, 0, 2059.3, 611.0970, 0, 0, 1]
-    Dist = [-0.1163, 0.1688, 2.8333e-04, 2.1871e-04, -0.0722]  # We use distortion_coefficients = (k1,k2,p1,p2,k3) as
+    #   FocalLength: [1.0810e+03 1.0810e+03]
+    #   PrincipalPoint: [959.7764 539.8413]
+    #   ImageSize: [1080 1920]
+    #   RadialDistortion: [-1.4944e-04 1.3746e-04 -1.4643e-04]
+    #   TangentialDistortion: [3.7970e-05 5.0265e-06]
+    #   Skew: 0
+    
+    K = [1081.0, 0, 959.7764, 0, 1081.0, 539.8413, 0, 0, 1]
+    Dist = [-1.4944e-04, 1.3746e-04, 3.7970e-05, 5.0265e-06, -1.4643e-04]  # We use distortion_coefficients = (k1,k2,p1,p2,k3) as
     # in opencv
-    P = [2058.7, 0, 962.1690, 0, 0, 2059.3, 611.0970, 0, 0, 0, 1, 0]
+    P = [1081.0, 0, 959.7764, 0, 0, 1081.0, 539.8413, 0, 0, 0, 1, 0]   
     R = [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
     camera_info = {'K': K, 'D': Dist, 'P': P, 'R': R, 'binning_x': 0, 'binning_y': 0, 'distortion_model': 'plump_bob',
