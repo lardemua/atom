@@ -517,16 +517,17 @@ def filterSensorsFromDataset(dataset, args):
 
             print("Deleted sensors (option only_anchored_sensor): " + str(deleted))
 
-    if not args['sensor_selection_function'] is None:
-        deleted = []
-        for sensor_key in dataset['sensors']:
-            if not args['sensor_selection_function'](sensor_key):  # use the lambda expression ssf
-                deleted.append(sensor_key)
+    if 'sensor_selection_function' in args:
+        if not args['sensor_selection_function'] is None:
+            deleted = []
+            for sensor_key in dataset['sensors']:
+                if not args['sensor_selection_function'](sensor_key):  # use the lambda expression ssf
+                    deleted.append(sensor_key)
 
-        for sensor_key in deleted:
-            del dataset['sensors'][sensor_key]
+            for sensor_key in deleted:
+                del dataset['sensors'][sensor_key]
 
-        print("Deleted sensors: " + str(deleted))
+            print("Deleted sensors: " + str(deleted))
 
     if not dataset['sensors'].keys():
         raise ValueError('No sensors were selected. Cannot optimize without sensors. Please revise your '
