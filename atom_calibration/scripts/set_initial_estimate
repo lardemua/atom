@@ -3,6 +3,7 @@
 # stdlib
 import sys
 import argparse
+import time
 
 # 3rd-party
 import rospkg
@@ -58,6 +59,9 @@ class InteractiveFirstGuess(object):
         self.menu.insert("Save sensors configuration", callback=self.onSaveInitialEstimate)
         self.menu.insert("Reset all sensors to initial configuration", callback=self.onResetAll)
         self.menu.reApply(self.server)
+
+        # Waiting for the loading of the bagfile
+        time.sleep(2)
 
         # For each node generate an interactive marker.
         for name, sensor in self.config['sensors'].items():
