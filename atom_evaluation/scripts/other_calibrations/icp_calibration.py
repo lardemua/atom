@@ -126,7 +126,7 @@ def main():
     min_transform = None
     source_frame = dataset['calibration_config']['sensors'][args['sensor_source']]['link']
     target_frame = dataset['calibration_config']['sensors'][args['sensor_target']]['link']
-    collections_list = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
+    collections_list = list(OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0]))))
     used_datasets = 0
     pointclouds = {}
 
