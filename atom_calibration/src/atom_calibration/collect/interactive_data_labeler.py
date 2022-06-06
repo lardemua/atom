@@ -34,7 +34,7 @@ from sensor_msgs.msg import *
 from sensor_msgs.msg import PointField, CameraInfo, Image
 from image_geometry import PinholeCameraModel
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 
 # local packages
 from atom_calibration.collect import patterns
@@ -48,7 +48,7 @@ FIELDS_XYZ = [
     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
 ]
 FIELDS_XYZRGB = FIELDS_XYZ + \
-                [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
+    [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
 
 # Bit operations
 BIT_MOVE_16 = 2 ** 16
@@ -249,12 +249,14 @@ class InteractiveDataLabeler:
 
             # Use image resolution to define initial seed in the middle of the image
             self.seed = {'x': round(width / 2), 'y': round(height / 2)}
+            self.pyrdown = 1
+
+            self.subscriber_mouse_click = rospy.Subscriber(self.topic+'/labeled/mouse_click', PointStamped,
+                                                           self.mouseClickReceivedCallback)
 
         elif self.label_data:
-            # We handle only know message types
-            raise ValueError(
-                'Message type ' + self.modality + ' for topic ' + self.topic + 'is of an unknown type.')
-            # self.publisher = rospy.Publisher(self.topic + '/labeled', self.msg_type, queue_size=0)
+            # We handle only known message types
+            raise ValueError('Message type ' + self.modality + ' for topic ' + self.topic + 'is of an unknown type.')
         else:  # label_data is false
             print('Sensor ' + colorama.Fore.BLUE + self.name + colorama.Style.RESET_ALL +
                   ' labelling ' + colorama.Fore.RED + ' DISABLED' + colorama.Style.RESET_ALL)
@@ -267,6 +269,11 @@ class InteractiveDataLabeler:
         self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1,
                                            buff_size=10000000000)
         # self.subscriber = rospy.Subscriber(self.topic, self.msg_type, self.sensorDataReceivedCallback, queue_size=1)
+
+    def mouseClickReceivedCallback(self, msg):
+        self.seed['x'] = msg.point.x * pow(2, self.pyrdown)
+        self.seed['y'] = msg.point.y * pow(2, self.pyrdown)
+        print('Setting new seed point for sensor ' + self.name + ' to ' + str(self.seed))
 
     def sensorDataReceivedCallback(self, msg):
         # rospy.loginfo(self.name + ' (Before lock) received msg which is ' + str((rospy.Time.now() - msg.header.stamp).to_sec()) + ' secs.')
@@ -364,7 +371,7 @@ class InteractiveDataLabeler:
             number_of_idxs = len(clusters[idx_closest_cluster].idxs)
             idxs_to_remove = int(percentage_points_to_remove * float(number_of_idxs))
             clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
-                                                          idxs_to_remove:number_of_idxs - idxs_to_remove]
+                idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
 
@@ -376,8 +383,8 @@ class InteractiveDataLabeler:
                 for idx in cluster.idxs:
                     x, y = xs[idx], ys[idx]
                     r, g, b = int(cmap[cluster.cluster_count, 0] * 255.0), \
-                              int(cmap[cluster.cluster_count, 1] * 255.0), \
-                              int(cmap[cluster.cluster_count, 2] * 255.0)
+                        int(cmap[cluster.cluster_count, 1] * 255.0), \
+                        int(cmap[cluster.cluster_count, 2] * 255.0)
                     rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
                     pt = [x, y, z, rgb]
                     points.append(pt)
@@ -451,7 +458,7 @@ class InteractiveDataLabeler:
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
-                                           self.marker.pose.position.z  # interactive marker pose
+                self.marker.pose.position.z  # interactive marker pose
 
             # Extract 3D point from the ros msg
             self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
@@ -490,66 +497,18 @@ class InteractiveDataLabeler:
             # exit(0)
         elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
 
-            # publishing frustrum
-            f_x = self.pinhole_camera_model.fx()
-            f_y = self.pinhole_camera_model.fy()
-            frame_id = self.msg.header.frame_id
-            size = self.pinhole_camera_model.fullResolution()
-            w = size[0]
-            h = size[1]
-            # marker_frustrum = calculateFrustrum(w, h, f_x, f_y, Z_near=0.3, Z_far=5, frame_id=frame_id, ns=self.topic)
-            # # self.publisher_frustrum.publish(marker_frustrum)
-            # self.frustum_marker_array.markers.append(marker_frustrum)
-
-            # get seed point from interactive marker
-            c_x = self.pinhole_camera_model.cx()
-            c_y = self.pinhole_camera_model.cy()
-            # interactive marker pose
-            x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, self.marker.pose.position.z
-            x_pix, y_pix = worldToPix(f_x, f_y, c_x, c_y, x_marker, y_marker, z_marker)
-            x_pix = int(x_pix)
-            y_pix = int(y_pix)
-            # print(self.pinhole_camera_model.fullResolution())
-
-            if 0 < x_pix < self.pinhole_camera_model.fullResolution()[0] and 0 < y_pix < \
-                    self.pinhole_camera_model.fullResolution()[1]:
-                self.seed['x'] = x_pix
-                self.seed['y'] = y_pix
-
-            # actual labelling
-            self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed,
-                                                                      bridge=self.bridge,
-                                                                      pyrdown=1, scatter_seed=True, debug=False,
-                                                                      subsample_solid_points=3, limit_sample_step=1)
-
-            w = self.pinhole_camera_model.fullResolution()[0]
-            h = self.pinhole_camera_model.fullResolution()[1]
-
-            # print(x_pix, y_pix)
-            if 0 < x_pix < w and 0 < y_pix < h:
-                cv2.line(result_image, (x_pix, y_pix), (x_pix, y_pix), (0, 255, 255), 5)
-            else:
-                x = int(w / 2)
-                y = int(h / 2)
-                cv2.line(result_image, (x, y), (x, y), (0, 0, 255), 5)
+           # actual labeling
+            self.labels, result_image, new_seed_point = labelDepthMsg(
+                self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False,
+                subsample_solid_points=3, limit_sample_step=1)
 
             self.seed['x'] = new_seed_point['x']
             self.seed['y'] = new_seed_point['y']
-            # print(result_image.dtype)
 
             msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_depth.publish(msg_out)
-
-            # update interactive marker
-            X, Y, Z = pixToWorld(f_x, f_y, c_x, c_y, self.seed['x'], self.seed['y'], z_marker)
-
-            self.marker.pose.position.x = X
-            self.marker.pose.position.y = Y
-            self.marker.pose.position.z = Z
-            self.menu_handler.reApply(self.server)
-            self.server.applyChanges()
 
             self.publisher_frustum.publish(self.frustum_marker_array)
 
