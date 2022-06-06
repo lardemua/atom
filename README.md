@@ -102,7 +102,7 @@ rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/<your_robot_calibr
 6. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
 
 ```bash
-roslaunch <your_robot_calibration> dataset_playback.launch 
+roslaunch <your_robot_calibration> calibrate.launch -json $ATOM_DATASETS/<your_robot_calibration>/<your_dataset>/dataset.json
 ```
 
 
