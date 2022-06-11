@@ -19,54 +19,13 @@
 
 <!--
 @file {{c.filename}} Runs an optimization to calibrate the robot's sensors.
-
-@arg dataset_file JSON file that contains the data collection.
-@arg single_pattern If true, the pattern will have the same pose for all collections.
-@arg use_incomplete_collections Allow the use of collection without a pattern detection
-    in all sensors.
-@arg ssf Sensor selection function in the form "lambda name: <selection-code>"
-@arg csf Collection selection function in the form "lambda id: <selection-code>"
-@arg run           Execute calibrate node.
-
 -->
 
 <launch>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Parameters-->
-    <!--<arg name="marker_size" default="0.5"/>-->
-    <arg name="dataset_file"/>
     <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_calibrate }}"/>
-    <arg name="single_pattern" default="false"/>
-    <arg name="use_incomplete_collections" default="false"/>
-    <arg name="ssf" default="lambda sensor_name: True"/>
-    <arg name="csf" default="lambda collection_name: True"/>
-    <arg name="run" default="True"/>
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-    <!-- Start calibrate node -->
-    <group if="$(arg run)">
-        <group if="$(arg single_pattern)">
-            <group if="$(arg use_incomplete_collections)">
-                <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
-            </group>
-
-            <group unless="$(arg use_incomplete_collections)">
-                <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --single_pattern -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
-            </group>
-        </group>
-
-        <group unless="$(arg single_pattern)">
-            <group if="$(arg use_incomplete_collections)">
-                <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization --use_incomplete_collections -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
-            </group>
-
-            <group unless="$(arg use_incomplete_collections)">
-                <node name="calibrate" pkg="atom_calibration" type="calibrate" args="-json $(arg dataset_file) --show_images --ros_visualization -csf '$(arg csf)' -ssf '$(arg ssf)'" required="true" output="screen"/>
-            </group>
-        </group>
-    </group>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->

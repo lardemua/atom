@@ -56,11 +56,6 @@ def addArguments(ap):
     :param ap:
     :return:
     """
-    ap.add_argument("-sv", "--skip_vertices", help="skip vertices. Useful for fast testing", type=int, default=1)
-    ap.add_argument("-z", "--z_inconsistency_threshold", help="threshold for max z inconsistency value", type=float,
-                    default=0.05)
-    ap.add_argument("-vpv", "--view_projected_vertices", help="visualize projections of vertices onto images",
-                    action='store_true', default=False)
     ap.add_argument("-vo", "--view_optimization", help="...", action='store_true', default=False)
     return ap
 
