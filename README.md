@@ -66,43 +66,43 @@ ATOM [youtube playlist](https://www.youtube.com/watch?v=BYs1-H9vh0s&list=PLQN09m
 1. **Create a calibration package** for you robotic system
 
 ```bash
-rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
+rosrun atom_calibration create_calibration_pkg --name <my_robot_calibration>
 ```
 
 2. **Configure your calibration package** - edit the file
-   _<your_robot_calibration>/calibration/config.yml_ with your system information.
+   _<my_robot_calibration>/calibration/config.yml_ with your system information.
 
 ```bash
-rosrun <your_robot_calibration> configure 
+rosrun <my_robot_calibration> configure 
 ```
 
 3. **Set initial estimate** [_optional_] - deployment of interactive tools based on rviz that allow the user to set the
    pose of the sensors to be calibrated, while receiving visual feedback;
 
 ```bash
-roslaunch <your_robot_calibration> set_initial_estimate.launch 
+roslaunch <my_robot_calibration> set_initial_estimate.launch 
 ```
 
 4. **Collect Data** - Extraction of snapshots of data (a.k.a., collections) which constitute an ATOM dataset:
 
 ```bash
-roslaunch <your_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
+roslaunch <my_robot_calibration> collect_data.launch output_folder:=~/datasets/<my_dataset> 
 ```
 
 5. **Dataset playback & Manual Annotation** [_optional_] - it is possible to visualize the labels automatically produced during the collection stage and correct them mannually:
    
 ```bash
-roslaunch <your_robot_calibration> dataset_playback.launch
+roslaunch <my_robot_calibration> dataset_playback.launch
 ```
 and then:
 ```bash
-rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/<your_robot_calibration>/<your_dataset>/dataset.json -uic -si  -ow
+rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/<my_robot_calibration>/<your_dataset>/dataset.json -uic -si  -ow
 ```
 
 6. **Calibrate sensors** - finally run an optimization that will calibrate your sensors:
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch -json $ATOM_DATASETS/<your_robot_calibration>/<your_dataset>/dataset.json
+roslaunch <my_robot_calibration> calibrate.launch -json $ATOM_DATASETS/<my_robot_calibration>/<your_dataset>/dataset.json
 ```
 
 
@@ -151,8 +151,8 @@ The [IrisUA - ur10e](https://github.com/iris-ua/iris_ur10e_calibration) includes
 
 ## System calibration - Detailed Description
 
-To calibrate your robot you must define your robotic system, (e.g. <your_robot>). You should also have a **system
-description** in the form of an urdf or a xacro file(s). This is normally stored in a ros package named **<your_robot>_
+To calibrate your robot you must define your robotic system, (e.g. <my_robot>). You should also have a **system
+description** in the form of an urdf or a xacro file(s). This is normally stored in a ros package named **<my_robot>_
 description**.
 
 Finally, **ATOM** requires a bagfile with a recording of the data from the sensors you wish to calibrate.
@@ -178,7 +178,7 @@ export ATOM_DATASETS="$HOME/datasets"
 and then you can refer to these environment variables when providing paths to atom scripts, e.g.:
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json
+roslaunch <my_robot_calibration> calibrate.launch dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json
 ```
 
 and you can also refer to them inside
@@ -189,20 +189,20 @@ the [calibration configuration file](https://github.com/lardemua/atlascar2/blob/
 To start you should create a calibration ros package specific for your robot. **ATOM** provides a script for this:
 
 ```bash
-rosrun atom_calibration create_calibration_pkg --name <your_robot_calibration>
+rosrun atom_calibration create_calibration_pkg --name <my_robot_calibration>
 ```
 
-This will create the ros package <your_robot_calibration> in the current folder, but you can also specify the folder,
+This will create the ros package <my_robot_calibration> in the current folder, but you can also specify the folder,
 e.g.:
 
 ```bash
-rosrun atom_calibration create_calibration_pkg --name ~/my/path/<your_robot_calibration>
+rosrun atom_calibration create_calibration_pkg --name ~/my/path/<my_robot_calibration>
 ```
 
 ### Configuring a calibration package
 
 Once your calibration package is created you will have to configure the calibration procedure by editing the
-_<your_robot_calibration>/calibration/config.yml_ file with your system information.
+_<my_robot_calibration>/calibration/config.yml_ file with your system information.
 
 Here are examples of calibration **config.yml** files for
 an [autonomous vehicle](https://github.com/lardemua/atlascar2/blob/master/atlascar2_calibration/calibration/config.yml)
@@ -212,7 +212,7 @@ a [simulated hand eye system](https://github.com/miguelriemoliveira/mmtbot/blob/
 After filling the config.yml file, you can run the package configuration:
 
 ```bash
-rosrun <your_robot_calibration> configure 
+rosrun <my_robot_calibration> configure 
 ```
 
 This will go through a series of varifications, and create a set of files for launching the system, configuring rviz,
@@ -222,13 +222,13 @@ It is also possible to configure your calibration package with a different confi
 multiple configurations with multiple config.yml files. To do this, you can use:
 
 ```bash
-rosrun <your_robot_calibration> configure -c new_config_file.yml
+rosrun <my_robot_calibration> configure -c new_config_file.yml
 ```
 
 If you want to use other arguments of the calibration package configuration you may run:
 
 ```bash
-rosrun atom_calibration configure_calibration_package  --name <your_robot_calibration> <other options>
+rosrun atom_calibration configure_calibration_package  --name <my_robot_calibration> <other options>
 ```
 
 ```bash
@@ -252,7 +252,7 @@ user to set the pose of the sensors while having immediate visual feedback.
 To set an initial estimate run:
 
 ```bash
-roslaunch <your_robot_calibration> set_initial_estimate.launch 
+roslaunch <my_robot_calibration> set_initial_estimate.launch 
 ```
 
 Here are a couple of examples:
@@ -267,14 +267,14 @@ Here are a couple of examples:
 To run a system calibration, one requires sensor data collected at different time instants. We refer to these as **data collections** or simply **collections**. To collect data, the user should launch:
 
 ```bash
-roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder>
+roslaunch <my_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder>
 ```
 
 Depending on the size and number of topics in the bag file, it may be necessary (it often is) to reduce the playback
 rate of the bag file.
 
 ```bash
-roslaunch <your_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder> bag_rate:=<playback_rate>
+roslaunch <my_robot_calibration> collect_data.launch  output_folder:=<your_dataset_folder> bag_rate:=<playback_rate>
 ```
 
 You can use a couple of launch file arguments to configure the calibration procedure, namely
@@ -284,7 +284,7 @@ You can use a couple of launch file arguments to configure the calibration proce
 * **ssl** [false] - **S**kip **S**ensor **L**abelling: A string to be evaluated into a lambda function that receives a
   sensor name as input and returns True or False to indicate if that sensor should be labelled. An example:
    ```
-    roslaunch <your_robot_calibration> collect_data.launch 
+    roslaunch <my_robot_calibration> collect_data.launch 
       output_folder:=$ATOM_DATASETS/<my_dataset>/
       ssl:='lambda name: name in ["lidar_1", "lidar_2", "lidar_3"]'
 
@@ -305,7 +305,7 @@ required for the calibration. There are also in the folder images and point clou
 Finally, a system calibration is called through:
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
+roslaunch <my_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json
 ```
 
 You can use a couple of launch file arguments to configure the calibration procedure, namely
@@ -316,7 +316,7 @@ You can use a couple of launch file arguments to configure the calibration proce
   a sensor name as input and returns True or False to indicate if the sensor should be loaded (and used in the
   optimization). An example:
     ```
-    roslaunch <your_robot_calibration> calibrate.launch 
+    roslaunch <my_robot_calibration> calibrate.launch 
       dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json  
       ssf:='lambda name: name in ["camera1, "lidar2"]'
     ```
@@ -324,7 +324,7 @@ You can use a couple of launch file arguments to configure the calibration proce
   receives a collection name as input and returns True or False to indicate if that collection should be loaded (and
   used in the optimization). An example:
    ```
-    roslaunch <your_robot_calibration> calibrate.launch 
+    roslaunch <my_robot_calibration> calibrate.launch 
       dataset_file:=$ATOM_DATASETS/<my_dataset>/dataset.json  
       csf:='lambda name: int(name) < 7'
     ```
@@ -336,7 +336,7 @@ which is what happens when you call the launch file. You can run everything with
 calibrate script
 
 ```bash
-roslaunch <your_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json run_calibration:=false 
+roslaunch <my_robot_calibration> calibrate.launch dataset_file:=~/datasets/<my_dataset>/dataset.json run_calibration:=false 
 ```
 
 and then launch the script in standalone mode
@@ -419,7 +419,7 @@ e.g. [opencv's stereo calibration](https://docs.opencv.org/4.x/d9/d0c/group__cal
 
 #### Annotation of rgb images
 
-To evaluate calibration between range sensors and cameras, it is necessary to annotate the physical limits on the calibration pattern in the images of the collection, to allow a comparison with physical labellings as measured by range sensors .
+To evaluate calibration between range sensors and cameras, it is necessary to annotate the physical limits on the calibration pattern in the images of the collection, to allow a comparison with physical labelings as measured by range sensors .
 
 ``` bash
 rosrun atom_evaluation  annotate_pattern_borders_in_rgb.py [-h] -d DATASET_FILE -cs CAMERA_SENSOR [-si] [-ww WINDOW_WIDTH] [-ps POINT_SIZE] [-ppp POINTS_PER_PIXEL]

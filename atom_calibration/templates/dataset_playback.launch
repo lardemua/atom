@@ -17,21 +17,12 @@
 <!-- WARNING WARNING WARNING WARNING auto-generated file!! -->
 <!-- Only modify this file if you know what you are doing! -->
 
-<!--
-@file {{c.filename}} Plays back the bag file.
-    Sets up image decompressors if needed, reads the urdf robot description.
-
-@arg bag_file  Absolute path to the playing bag.
-    default: {{ c.bag_file }}
-@arg bag_start Playback starting time (in seconds). default: 0.0
-@arg bag_rate  Playback rate. default: 1.0
-@arg use_tfs  Use tfs in the bag file or generate new ones using the urdf, joint state messages and the robot state publisher. default: False
--->
-
 <launch>
 
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Parameters-->
     <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_dataset_playback }}"/>
-<!--    TODO check if this rviz configuration is ok-->
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Visualization -->

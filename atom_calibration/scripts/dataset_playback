@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# System and standar imports
+# System and standard imports
 import argparse
 import os
 import os.path
@@ -45,12 +45,17 @@ def printHelp():
         ' p - Publish selected points to /rviz_selected_points\n'\
         ' b - Publish selected points to /rviz_selected_border_points\n'\
         ' r - Publish selected points to /rviz_selected_remove_points\n'\
-        ' c - Publish selected points to /rviz_selected_clear_all_points\n'
+        ' c - Publish selected points to /rviz_selected_clear_all_points\n'\
+        ' s - Save dataset\n'\
+        ' q - Save dataset and quit \n'
 
     print(s)
 
 
 def keyPressedCallback(key, selection, dataset, args):
+
+    if key is None:
+        return
     # TODO #402 does not work if some of the collections in the middles, e.g. '1' are removed. An easy test is to run a -csf "lambda x: x in ['0', '2']"
 
     # print("collection_key = " + str(selection['collection_key']))
@@ -66,35 +71,41 @@ def keyPressedCallback(key, selection, dataset, args):
     output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
 
     # Convert from type to string to keep uniform.
-    key = str(key)
-    if key == 'Key.right':  # Save and move to collection + 1.
-        if idx_collection < idx_max_collection:
-            selection['previous_collection_key'] = selection['collection_key']
-            selection['collection_key'] = list(dataset['collections'].keys())[idx_collection+1]
-            print('Changed selected_collection_key to ' + str(selection['collection_key']))
-            saveResultsJSON(output_file, dataset, freeze_dataset=True)
-        else:
-            print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
-    elif key == 'Key.left':  # Save and move to collection - 1.
-        if idx_collection > 0:
-            selection['previous_collection_key'] = selection['collection_key']
-            selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
-            print('Changed selected_collection_key to ' + str(selection['collection_key']))
-            saveResultsJSON(output_file, dataset, freeze_dataset=True)
-        else:
-            print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
-    elif key == "'s'":  # Saves dataset.
-        saveResultsJSON(output_file, dataset, freeze_dataset=True)
-        print('A new dataset was saved in ' + output_file)
-    elif key == "'q'":  # Saves dataset and quits.
-        saveResultsJSON(output_file, dataset, freeze_dataset=True)
-        print('A new dataset was saved in ' + output_file)
+    # key = str(key)
 
-        print('Exiting ...')
-        selection['exit'] = True
+    try:
+        print('alphanumeric key {0} pressed'.format(key.char))
+        key_char = key.char
+        print(key_char)
+        if key_char == 's':  # Saves dataset.
+            saveResultsJSON(output_file, dataset, freeze_dataset=True)
+            print('A new dataset was saved in ' + output_file)
+        elif key_char == 'q':  # Saves dataset and quits.
+            saveResultsJSON(output_file, dataset, freeze_dataset=True)
+            print('A new dataset was saved in ' + output_file)
+            print('Exiting ...')
+            selection['exit'] = True
+        elif key_char == 'h':  # Prints help.
+            printHelp()
 
-    elif key == "'h'":  # Prints help.
-        printHelp()
+    except AttributeError:
+        if key == keyboard.Key.right:  # Save and move to collection + 1.
+            if idx_collection < idx_max_collection:
+                selection['previous_collection_key'] = selection['collection_key']
+                selection['collection_key'] = list(dataset['collections'].keys())[idx_collection+1]
+                print('Changed selected_collection_key to ' + str(selection['collection_key']))
+                saveResultsJSON(output_file, dataset, freeze_dataset=True)
+            else:
+                print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
+        elif key == keyboard.Key.left:  # Save and move to collection - 1.
+            if idx_collection > 0:
+                selection['previous_collection_key'] = selection['collection_key']
+                selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
+                print('Changed selected_collection_key to ' + str(selection['collection_key']))
+                saveResultsJSON(output_file, dataset, freeze_dataset=True)
+            else:
+                print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
+
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -105,41 +116,23 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file",
                     help="Json file containing input dataset.", type=str, required=True)
-    ap.add_argument("-v", "--verbose", help="Be verbose",
-                    action='store_true', default=False)
-    ap.add_argument("-rv", "--ros_visualization",
-                    help="Publish ros visualization markers.", action='store_true')
-    ap.add_argument("-si", "--show_images", help="shows images for each camera",
-                    action='store_true', default=False)
-    ap.add_argument("-ajf", "--all_joints_fixed",
-                    help="Assume all joints are fixed and because of that draw a single robot mesh. Overrides "
-                         "automatic detection of static robot.",
-                    action='store_true', default=False)
-    ap.add_argument("-uic", "--use_incomplete_collections",
-                    help="Remove any collection which does not have a detection for all sensors.",
-                    action='store_true', default=False)
-    ap.add_argument("-rpd", "--remove_partial_detections",
-                    help="Remove detected labels which are only partial. Used or the Charuco.",
-                    action='store_true', default=False)
-    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
-                    help='A string to be evaluated into a lambda function that receives a sensor name as input and '
-                         'returns True or False to indicate if the sensor should be loaded (and used in the '
-                         'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
-                         'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
-                         'sensors left_laser and frontal_camera')
     ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help='A string to be evaluated into a lambda function that receives a collection name as input and '
                          'returns True or False to indicate if the collection should be loaded (and used in the '
                          'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
                          'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
-    ap.add_argument('-oj', '--output_json', help='Full path to output json file.', type=str, required=False,
-                    default=None)
     ap.add_argument("-ow", "--overwrite",
                     help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
+
+    # Arguments which are not options for dataset_playback
+    args['ros_visualization'] = True
+    args['show_images'] = True
+    args['use_incomplete_collections'] = True
+    args['remove_partial_detections'] = False
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
@@ -231,7 +224,7 @@ def main():
     # ---------------------------------------
     print('\nPress ' + Fore.BLUE + '"h"' + Style.RESET_ALL + ' for instructions.\n')
 
-    rate = rospy.Rate(30)  # in hertz.
+    rate = rospy.Rate(10)  # in hertz.
     tic = rospy.Time.now()
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}

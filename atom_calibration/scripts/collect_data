@@ -117,11 +117,11 @@ if __name__ == "__main__":
     ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
     ap.add_argument("-ov", "--overwrite", help="Overwrite dataset folder if it exists.", action='store_true',
                     default=False)
-    ap.add_argument("-ssl", "--skip_sensor_labelling", default=None, type=lambda s: eval(s, globals()),
+    ap.add_argument("-ssl", "--skip_sensor_labeling", default=None, type=lambda s: eval(s, globals()),
                     help='A string to be evaluated into a lambda function that receives a sensor name as input and '
                          'returns True or False to indicate if the sensor should be labelled.'
                          ' The Syntax is lambda name: f(x), where f(x) is the function in python '
-                         'language. Example: lambda name: name in ["lidar1", "camera2"] , to avoid labelling of sensors'
+                         'language. Example: lambda name: name in ["lidar1", "camera2"] , to avoid labeling of sensors'
                          ' lida1 and camera2.')
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))

@@ -135,7 +135,7 @@ def loadConfig(filename, check_paths=True):
         raise ValueError(Fore.RED + 'Your config file ' + filename +
                          ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
                          str(missing_parameters) + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
-                         ' rosrun <your_robot>_calibration configure' + Fore.RESET)
+                         ' rosrun <my_robot>_calibration configure' + Fore.RESET)
 
     # Check if description file is ok
     fullpath, name, uri = uriReader(config['description_file'])

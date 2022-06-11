@@ -101,13 +101,13 @@ class LaserScanCluster:
 
 class InteractiveDataLabeler:
     """
-    Handles data labelling for a generic sensor:
-        RGB: Fully automated labelling. Periodically runs a chessboard detection on the newly received image.
-        LaserScans: Semi-automated labelling. An rviz interactive marker is placed on the laser cluster which contains
+    Handles data labeling for a generic sensor:
+        RGB: Fully automated labeling. Periodically runs a chessboard detection on the newly received image.
+        LaserScans: Semi-automated labeling. An rviz interactive marker is placed on the laser cluster which contains
                     the calibration pattern, and the pattern is tracked from there onward.
-        PointCloud2: Semi-automated labelling. An rviz interactive marker is placed on the point cloud where the
+        PointCloud2: Semi-automated labeling. An rviz interactive marker is placed on the point cloud where the
                     calibration pattern shape is, and the pattern is tracked automatically from there onward.
-        Depth: Semi-automated labelling. An rviz interactive marker is placed inside the camera frustum overlapping the
+        Depth: Semi-automated labeling. An rviz interactive marker is placed inside the camera frustum overlapping the
                 calibration pattern and the pattern is tracked from that seed point using a propagation mask. The
                 pattern is tracked automatically from there onward by assuming that the centroid of the calibration
                 pattern's shape is the seed point in  the next frame.
@@ -153,18 +153,18 @@ class InteractiveDataLabeler:
             sys.exit(1)
 
         # Get the type of message from the message topic of the sensor data, which is given as input. The message
-        # type is used to define which labelling technique is used.
+        # type is used to define which labeling technique is used.
         self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.topic)
         print('msg_type_str is = ' + str(self.msg_type_str))
 
         # TODO decide which labeler to use
 
-        # Handle the interactive labelling of data differently according to the sensor message types.
+        # Handle the interactive labeling of data differently according to the sensor message types.
         # if self.msg_type_str in ['LaserScan'] and self.label_data:
         if self.modality == 'lidar2d' and self.label_data:
             # TODO parameters given from a command line input?
-            self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labelling)
-            self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labelling)
+            self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labeling)
+            self.minimum_range_value = 0.3  # distance to assume range value valid (param only for 2D LIDAR labeling)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled',
                                                              sensor_msgs.msg.PointCloud2,
                                                              queue_size=1)  # publish a point cloud with the points
@@ -259,7 +259,7 @@ class InteractiveDataLabeler:
             raise ValueError('Message type ' + self.modality + ' for topic ' + self.topic + 'is of an unknown type.')
         else:  # label_data is false
             print('Sensor ' + colorama.Fore.BLUE + self.name + colorama.Style.RESET_ALL +
-                  ' labelling ' + colorama.Fore.RED + ' DISABLED' + colorama.Style.RESET_ALL)
+                  ' labeling ' + colorama.Fore.RED + ' DISABLED' + colorama.Style.RESET_ALL)
 
         # Subscribe to the message topic containing sensor data
         # https://github.com/ros/ros_comm/issues/536
@@ -293,18 +293,18 @@ class InteractiveDataLabeler:
         if self.label_data:
             # print(self.name + ' calling label data')
             self.labelData()  # label the data
-            # print('Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
+            # print('labeling data for ' + self.name + ' took ' + str((rospy.Time.now() - now).to_sec()) + ' secs.')
 
         self.lock.release()  # release lock
-        # rospy.loginfo('(With Lock) Labelling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
+        # rospy.loginfo('(With Lock) labeling data for ' + self.name + ' took ' + str((rospy.Time.now() - stamp_before_lock).to_sec()) + ' secs.')
 
     def labelData(self):
-        # print('Labelling data for sensor ' + self.name)
-        # Reset detected and idxs values to make sure we are not using information from a previous labelling
+        # print('labeling data for sensor ' + self.name)
+        # Reset detected and idxs values to make sure we are not using information from a previous labeling
         self.labels['detected'] = False
         self.labels['idxs'] = []
 
-        # Labelling process dependent of the sensor type
+        # labeling process dependent of the sensor type
         # if self.msg_type_str == 'LaserScan':  # 2D LIDARS -------------------------------------
         if self.modality == 'lidar2d':  # 2D LIDARS -------------------------------------
             # For 2D LIDARS the process is the following: First cluster all the range data into clusters. Then,
@@ -415,7 +415,7 @@ class InteractiveDataLabeler:
         # elif self.msg_type_str == 'Image':  # Cameras -------------------------------------------
         elif self.modality == 'rgb':
             # rospy.loginfo(
-            #     'Labelling image for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
+            #     'labeling image for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
 
             # Convert to opencv image and save image to disk
             image = self.bridge.imgmsg_to_cv2(self.msg, "bgr8")
@@ -454,7 +454,7 @@ class InteractiveDataLabeler:
         elif self.modality == 'lidar3d':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
 
             # rospy.loginfo(
-            #     'Labelling PointCloud for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
+            #     'labeling PointCloud for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \

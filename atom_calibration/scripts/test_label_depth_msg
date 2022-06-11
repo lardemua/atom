@@ -45,7 +45,6 @@ def callbackMessageReceived(msg, seed):
                                                          debug=True,
                                                          subsample_solid_points=3, limit_sample_step=1)
 
-
     # bridge = cv_bridge.CvBridge()  # create a cv bridge if none is given
     # image = bridge.imgmsg_to_cv2(msg)  # extract image from ros msg
     # idxs=labels['idxs']
@@ -59,11 +58,11 @@ def callbackMessageReceived(msg, seed):
     #     distance=image[y,x]
     #     if np.isnan(distance):
     #         print("found nan in test_label")
-            # rospy.signal_shutdown("Found NaN")
-        # idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
+    # rospy.signal_shutdown("Found NaN")
+    # idxs = idxs_cols + original_width * idxs_rows  # we will store the linear indices
     # print(idxs)
 
-    rospy.loginfo('Labelling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
+    rospy.loginfo('labeling ended in ' + str((rospy.Time.now() - stamp).to_sec()))
 
     seed['x'] = new_seed_point['x']
     seed['y'] = new_seed_point['y']
@@ -76,7 +75,7 @@ def callbackMessageReceived(msg, seed):
 def main():
     rospy.init_node('test_label_depth_msg', anonymous=False)
 
-    seed = {'x':265*2, 'y':113*2}
+    seed = {'x': 265*2, 'y': 113*2}
     # seed = {'x': 510, 'y': 180}
     # seed = {'x': 600, 'y': 175}
 

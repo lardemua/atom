@@ -546,7 +546,7 @@ if __name__ == "__main__":
         'world_link']  # set fixed frame to world_link
     displays = deepcopy(core_displays)  # start with the core displays
 
-    # Add interactive maker display to handle sensor manual labelling
+    # Add interactive maker display to handle sensor manual labeling
     rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
         c={'Name': 'ManualDataLabeler-InteractiveMarkers',
            'Update_Topic': 'data_labeler/update'}
@@ -586,7 +586,6 @@ if __name__ == "__main__":
             rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
                                                                             'Marker_Topic': sensor_key + '/frustum'})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
-
 
         elif modality == 'depth':
             depth += 1

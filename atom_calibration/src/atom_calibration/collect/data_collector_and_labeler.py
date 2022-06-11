@@ -137,8 +137,8 @@ class DataCollectorAndLabeler:
             print('config = ' + str(self.config))
 
             label_data = True
-            if not args['skip_sensor_labelling'] is None:
-                if args['skip_sensor_labelling'](sensor_key):  # use the lambda expression csf
+            if not args['skip_sensor_labeling'] is None:
+                if args['skip_sensor_labeling'](sensor_key):  # use the lambda expression csf
                     label_data = False
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
                                                     args['marker_size'], self.config['calibration_pattern'],

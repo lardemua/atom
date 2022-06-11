@@ -288,7 +288,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     :param filter_border_edges: Percentage of border that is to be ignored if the chessboard touches that area.
     :param pattern_mask: Mask with the pattern already defined. If not None, skips region growing steps in this function.
     :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
-             gui_image, an image for visualization purposes which shows the result of the labelling.
+             gui_image, an image for visualization purposes which shows the result of the labeling.
              new_seed_point, pixels coordinates of centroid of the pattern area.
     """
 
