@@ -74,7 +74,6 @@ def keyPressedCallback(key, selection, dataset, args):
     # key = str(key)
 
     try:
-        print('alphanumeric key {0} pressed'.format(key.char))
         key_char = key.char
         print(key_char)
         if key_char == 's':  # Saves dataset.
@@ -116,11 +115,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file",
                     help="Json file containing input dataset.", type=str, required=True)
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
-                    help='A string to be evaluated into a lambda function that receives a collection name as input and '
-                         'returns True or False to indicate if the collection should be loaded (and used in the '
-                         'optimization). The Syntax is lambda name: f(x), where f(x) is the function in python '
-                         'language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.')
     ap.add_argument("-ow", "--overwrite",
                     help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
 
@@ -133,6 +127,7 @@ def main():
     args['show_images'] = True
     args['use_incomplete_collections'] = True
     args['remove_partial_detections'] = False
+    args['collection_selection_function'] = None
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
