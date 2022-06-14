@@ -326,6 +326,8 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         image = cv2.pyrDown(image)
         seed_x = int(seed_x / 2)
         seed_y = int(seed_y / 2)
+
+    # print(seed_x, seed_y)
     # -------------------------------------
     # Step 2: Initialization
     # -------------------------------------
