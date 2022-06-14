@@ -498,15 +498,16 @@ class InteractiveDataLabeler:
         elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
             width = self.pinhole_camera_model.fullResolution()[0]
             height = self.pinhole_camera_model.fullResolution()[1]
+            filter_border_edges=0.025
 
             # actual labeling
             self.labels, result_image, new_seed_point = labelDepthMsg(
                 self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False,
-                subsample_solid_points=3, limit_sample_step=1)
+                subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
 
             # print(new_seed_point)
 
-            if 0 < new_seed_point['x'] < width-0.05*width and 0 < new_seed_point['y'] < height-0.05*height:
+            if 0 < new_seed_point['x'] < width-filter_border_edges*width and 0 < new_seed_point['y'] < height-filter_border_edges*height:
                 self.seed['x'] = new_seed_point['x']
                 self.seed['y'] = new_seed_point['y']
                 # print(self.seed)
