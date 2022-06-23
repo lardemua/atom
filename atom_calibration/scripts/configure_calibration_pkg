@@ -389,7 +389,8 @@ if __name__ == "__main__":
                                     'date': dt_string,
                                     'package_name': package_name,
                                     'rviz_collect_data': rviz_collect_data,
-                                    'bag_file': bag_file_rel
+                                    'bag_file': bag_file_rel,
+                                    'config_file': args['config_file']
                                     })
         f.write(output.encode('utf-8'))
 

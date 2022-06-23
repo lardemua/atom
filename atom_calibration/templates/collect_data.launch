@@ -39,7 +39,7 @@
     <arg name="overwrite" default="false"/>
     <!-- overwrite output folder if it exists -->
     <arg name="marker_size" default="0.5"/>
-    <arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
+    <arg name="config_file" default="$(find {{ c.package_name }})/calibration/{{ c.config_file }}"/>
     <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_collect_data }}"/>
     <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
     <!-- arguments to be passed onto playbag.launch  -->
