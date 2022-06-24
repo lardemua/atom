@@ -246,10 +246,7 @@ if __name__ == "__main__":
     od_target = deepcopy(od)
     for collection_source_key, collection_source in od.items():
         e[collection_source_key] = {}  # init the dictionary of errors for this collection
-        od_target.pop(collection_source_key)
         for collection_target_key, collection_target in od_target.items():
-            # collection_target_key = '002'
-            # collection_target = mixed_dataset['collections'][collection_target_key]
             e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
 
             # Read image data
@@ -474,7 +471,6 @@ if __name__ == "__main__":
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
     for collection_source_key, collection_source in od.items():
-        od_target.pop(collection_source_key)
         for collection_target_key, collection_target in od_target.items():
             row = [collection_source_key + '-' + collection_target_key,
                 '%.4f' % e[collection_source_key][collection_target_key]['rms'],
