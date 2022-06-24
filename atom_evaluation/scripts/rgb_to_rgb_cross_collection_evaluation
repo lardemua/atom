@@ -243,9 +243,9 @@ if __name__ == "__main__":
 
     e = {}  # dictionary with all the errors
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        e[collection_key] = {}  # init the dictionary of errors for this collection
-        collection_target_key = '002'
+    for collection_source_key, collection in od.items():
+        e[collection_source_key] = {}  # init the dictionary of errors for this collection
+        collection_target_key = '000'
         collection_target = mixed_dataset['collections'][collection_target_key]
 
         # Read image data
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
         st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
         world_frame = mixed_dataset['calibration_config']['world_link']
-        w_T_ss_cs = getTransform(world_frame, ss_frame, mixed_dataset['collections'][collection_key]['transforms'])
+        w_T_ss_cs = getTransform(world_frame, ss_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
         w_T_st_ct = getTransform(world_frame, st_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
         st_T_p_ct = np.dot(np.linalg.inv(w_T_st_ct), np.dot(w_T_ss_cs, ss_T_p_cs))
 
@@ -359,9 +359,9 @@ if __name__ == "__main__":
                 rms_errors.append(math.sqrt((x_t - x_s_proj_to_t)**2 + (y_t - y_s_proj_to_t)**2))
                 continue
 
-        e[collection_key]['x'] = np.average(x_errors)
-        e[collection_key]['y'] = np.average(y_errors)
-        e[collection_key]['rms'] = rootMeanSquare(rms_errors)
+        e[collection_source_key]['x'] = np.average(x_errors)
+        e[collection_source_key]['y'] = np.average(y_errors)
+        e[collection_source_key]['rms'] = rootMeanSquare(rms_errors)
 
         # -------------------------------------------------------------
         # STEP 9: Compute translation and rotation errors (This is from Eurico, did not change style)
@@ -379,7 +379,7 @@ if __name__ == "__main__":
         pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = getTransform(common_frame, target_frame,
-                           mixed_dataset['collections'][collection_key]['transforms'])
+                           mixed_dataset['collections'][collection_target_key]['transforms'])
 
         pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
@@ -388,7 +388,7 @@ if __name__ == "__main__":
         pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = getTransform(common_frame, source_frame,
-                           mixed_dataset['collections'][collection_key]['transforms'])
+                           mixed_dataset['collections'][collection_source_key]['transforms'])
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
@@ -397,8 +397,8 @@ if __name__ == "__main__":
         deltaT = delta[0:3, 3]
         deltaR = matrixToRodrigues(delta[0:3, 0:3])
 
-        e[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
-        e[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
+        e[collection_source_key]['trans'] = np.linalg.norm(deltaT) * 1000
+        e[collection_source_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
 
         # -------------------------------------------------------------
         # STEP 10: Show projections (optional)
@@ -408,8 +408,8 @@ if __name__ == "__main__":
             height = collection['data'][args['sensor_target']]['height']
             diagonal = math.sqrt(width ** 2 + height ** 2)
 
-            window_name_s = 'Sensor ' + args['sensor_source'] + ' (source) - Collection ' + collection_key
-            window_name_t = 'Sensor ' + args['sensor_target'] + ' (target) - Collection ' + collection_key
+            window_name_s = 'Sensor ' + args['sensor_source'] + ' (source) - Collection ' + collection_source_key
+            window_name_t = 'Sensor ' + args['sensor_target'] + ' (target) - Collection ' + collection_source_key
             cv2.namedWindow(window_name_s, cv2.WINDOW_NORMAL)
             cv2.namedWindow(window_name_t, cv2.WINDOW_NORMAL)
             image_gui_s = deepcopy(image_s)
@@ -451,7 +451,7 @@ if __name__ == "__main__":
             cv2.imshow(window_name_s, image_gui_s)
             cv2.imshow(window_name_t, image_gui_t)
 
-            print('Errors for collection ' + collection_key + ':\n' + str(e[collection_key]))
+            print('Errors for collection ' + collection_source_key + ':\n' + str(e[collection_source_key]))
 
             key = cv2.waitKey(0)
             cv2.destroyWindow(window_name_s)
@@ -468,13 +468,13 @@ if __name__ == "__main__":
     table = PrettyTable(table_header)
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        row = [collection_key,
-               '%.4f' % e[collection_key]['rms'],
-               '%.4f' % e[collection_key]['x'],
-               '%.4f' % e[collection_key]['y'],
-               '%.4f' % e[collection_key]['trans'],
-               '%.4f' % e[collection_key]['rot']]
+    for collection_source_key, collection in od.items():
+        row = [collection_source_key,
+               '%.4f' % e[collection_source_key]['rms'],
+               '%.4f' % e[collection_source_key]['x'],
+               '%.4f' % e[collection_source_key]['y'],
+               '%.4f' % e[collection_source_key]['trans'],
+               '%.4f' % e[collection_source_key]['rot']]
 
         table.add_row(row)
 
