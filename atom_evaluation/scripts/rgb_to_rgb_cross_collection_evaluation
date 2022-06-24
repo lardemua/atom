@@ -250,10 +250,17 @@ if __name__ == "__main__":
     e = {}  # dictionary with all the errors
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
+    non_correspondent_collections = [] # if no correspondence exists between collections
     for collection_source_key, collection_source in od.items():
         e[collection_source_key] = {}  # init the dictionary of errors for this collection
+        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+            od_target.pop(collection_source_key)
         for collection_target_key, collection_target in od_target.items():
             e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
+
+            # Check for same sensor same collection
+            if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
+                continue
 
             # Read image data
             path_s = os.path.dirname(test_json_file) + '/' + collection_source['data'][args['sensor_source']]['data_file']
@@ -346,12 +353,14 @@ if __name__ == "__main__":
             x_errors = []
             y_errors = []
             rms_errors = []
+            number_correspondent_idxs = 0
             for label_s_idx, label_s in enumerate(collection_source['labels'][args['sensor_source']]['idxs']):
                 has_corresponding_id = False
                 # Search for corresponding label id in target sensor?
                 for label_t_idx, label_t in enumerate(collection_target['labels'][args['sensor_target']]['idxs']):
                     if label_s['id'] == label_t['id']:
                         has_corresponding_id = True
+                        number_correspondent_idxs =+ 1
                         break
 
                 if has_corresponding_id:
@@ -363,6 +372,11 @@ if __name__ == "__main__":
                     rms_errors.append(math.sqrt((x_t - x_s_proj_to_t)**2 + (y_t - y_s_proj_to_t)**2))
                     continue
 
+            if number_correspondent_idxs == 0: #TODO #492 change the condition in this if
+                non_correspondent_collections.append((collection_source_key, collection_target_key))
+                continue
+            # print(collection_source_key, collection_target_key)
+            # print(rms_errors)
             e[collection_source_key][collection_target_key]['x'] = np.average(x_errors)
             e[collection_source_key][collection_target_key]['y'] = np.average(y_errors)
             e[collection_source_key][collection_target_key]['rms'] = rootMeanSquare(rms_errors)
@@ -468,13 +482,18 @@ if __name__ == "__main__":
     # -------------------------------------------------------------
     # STEP 11: Print output table
     # -------------------------------------------------------------
-    table_header = ['Collection Pair', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'Trans (mm)', 'Rot (deg)']
+    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'Trans (mm)', 'Rot (deg)']
     table = PrettyTable(table_header)
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
     for collection_source_key, collection_source in od.items():
+        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+            od_target.pop(collection_source_key)
         for collection_target_key, collection_target in od_target.items():
+            if (collection_source_key, collection_target_key) in non_correspondent_collections or (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
+                # Remove every pairing removed in the previous for cycle
+                continue
             row = [collection_source_key + '-' + collection_target_key,
                 '%.4f' % e[collection_source_key][collection_target_key]['rms'],
                 '%.4f' % e[collection_source_key][collection_target_key]['x'],
