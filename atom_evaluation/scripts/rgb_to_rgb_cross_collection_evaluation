@@ -146,6 +146,7 @@ if __name__ == "__main__":
     ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
 
     # parse args
     args = vars(ap.parse_args())
@@ -221,6 +222,11 @@ if __name__ == "__main__":
     K_t[1, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][3:6]
     K_t[2, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][6:9]
     D_t[:, 0] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['D'][0:5]
+
+    # Defining frames
+    ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+    st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+    world_frame = args['world_frame']
 
     # Deleting collections where the pattern is not found by all sensors:
     collections_to_delete = []
@@ -298,9 +304,6 @@ if __name__ == "__main__":
             # print('ss_T_p =\n' + str(ss_T_p))
 
             # STEP 3. Compute transforms
-            ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
-            st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
-            world_frame = mixed_dataset['calibration_config']['world_link']
             w_T_ss_cs = getTransform(world_frame, ss_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
             w_T_st_ct = getTransform(world_frame, st_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
             st_T_p_ct = np.dot(np.linalg.inv(w_T_st_ct), np.dot(w_T_ss_cs, ss_T_p_cs))

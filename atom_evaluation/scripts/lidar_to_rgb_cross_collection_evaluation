@@ -83,6 +83,7 @@ if __name__ == "__main__":
     ap.add_argument("-rs", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--camera_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
 
     args = vars(ap.parse_args())
     show_images = args['show_images']
@@ -123,7 +124,7 @@ if __name__ == "__main__":
 
     camera_frame = mixed_dataset['calibration_config']['sensors'][args['camera_sensor']]['link']
     range_frame = mixed_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
-    world_frame = mixed_dataset['calibration_config']['world_link']
+    world_frame = args['world_frame']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
     e = {}  # dictionary with all the errors
