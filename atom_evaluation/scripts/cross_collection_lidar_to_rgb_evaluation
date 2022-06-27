@@ -137,11 +137,11 @@ if __name__ == "__main__":
             # ---------------------------------------
             w_T_cs_cs = getTransform(world_frame, camera_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
             w_T_rs_ct = getTransform(world_frame, range_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
-            vel2cam = np.dot(np.linalg.inv(w_T_cs_cs), w_T_rs_ct)
+            cs_T_rs = np.dot(np.linalg.inv(w_T_cs_cs), w_T_rs_ct)
             # vel2cam = getTransform(camera_frame, range_frame,
             #                        mixed_dataset['collections'][collection_source_key]['transforms'])
             pts_in_image = rangeToImage(collection_target, args['test_json_file'], args['range_sensor'],
-                                        args['camera_sensor'], vel2cam)
+                                        args['camera_sensor'], cs_T_rs)
 
             # ---------------------------------------
             # --- Get evaluation data for current collection
