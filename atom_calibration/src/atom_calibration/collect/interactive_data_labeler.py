@@ -48,7 +48,7 @@ FIELDS_XYZ = [
     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
 ]
 FIELDS_XYZRGB = FIELDS_XYZ + \
-    [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
+                [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
 
 # Bit operations
 BIT_MOVE_16 = 2 ** 16
@@ -251,7 +251,7 @@ class InteractiveDataLabeler:
             self.seed = {'x': round(width / 2), 'y': round(height / 2)}
             self.pyrdown = 1
 
-            self.subscriber_mouse_click = rospy.Subscriber(self.topic+'/labeled/mouse_click', PointStamped,
+            self.subscriber_mouse_click = rospy.Subscriber(self.topic + '/labeled/mouse_click', PointStamped,
                                                            self.mouseClickReceivedCallback)
 
         elif self.label_data:
@@ -371,7 +371,7 @@ class InteractiveDataLabeler:
             number_of_idxs = len(clusters[idx_closest_cluster].idxs)
             idxs_to_remove = int(percentage_points_to_remove * float(number_of_idxs))
             clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
-                idxs_to_remove:number_of_idxs - idxs_to_remove]
+                                                          idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
 
@@ -383,8 +383,8 @@ class InteractiveDataLabeler:
                 for idx in cluster.idxs:
                     x, y = xs[idx], ys[idx]
                     r, g, b = int(cmap[cluster.cluster_count, 0] * 255.0), \
-                        int(cmap[cluster.cluster_count, 1] * 255.0), \
-                        int(cmap[cluster.cluster_count, 2] * 255.0)
+                              int(cmap[cluster.cluster_count, 1] * 255.0), \
+                              int(cmap[cluster.cluster_count, 2] * 255.0)
                     rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
                     pt = [x, y, z, rgb]
                     points.append(pt)
@@ -458,7 +458,7 @@ class InteractiveDataLabeler:
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
-                self.marker.pose.position.z  # interactive marker pose
+                                           self.marker.pose.position.z  # interactive marker pose
 
             # Extract 3D point from the ros msg
             self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
@@ -496,14 +496,23 @@ class InteractiveDataLabeler:
             # print(colorama.Fore.RED + 'Aborting ' + colorama.Style.RESET_ALL)
             # exit(0)
         elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
+            width = self.pinhole_camera_model.fullResolution()[0]
+            height = self.pinhole_camera_model.fullResolution()[1]
+            filter_border_edges=0.025
 
-           # actual labeling
+            # actual labeling
             self.labels, result_image, new_seed_point = labelDepthMsg(
                 self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False,
-                subsample_solid_points=3, limit_sample_step=1)
+                subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
 
-            self.seed['x'] = new_seed_point['x']
-            self.seed['y'] = new_seed_point['y']
+            # print(new_seed_point)
+
+            if 0 < new_seed_point['x'] < width-filter_border_edges*width and 0 < new_seed_point['y'] < height-filter_border_edges*height:
+                self.seed['x'] = new_seed_point['x']
+                self.seed['y'] = new_seed_point['y']
+                # print(self.seed)
+            else:
+                self.seed = {'x': round(width / 2), 'y': round(height / 2)}
 
             msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp

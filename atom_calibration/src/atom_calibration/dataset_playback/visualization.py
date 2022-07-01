@@ -238,7 +238,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     graphics['ros']['tf_broadcaster'] = tf2_ros.TransformBroadcaster()
 
     # Sleep a litle to make sure the time.now() returns a correct time.
-    rospy.sleep(0.2)
+    # rospy.sleep(0.2)
     now = rospy.Time.now()
 
     graphics['ros']['publisher_models'] = rospy.Publisher(
