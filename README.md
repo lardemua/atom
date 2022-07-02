@@ -6,8 +6,11 @@
 
 
 <p align="center">
-<span style="color:lightgrey">A Calibration Framework using the <br><strong>A</strong>tomic <strong>T</strong>ransformations <strong>O</strong>ptimization <strong>M</strong>ethod </span> 
+A Calibration Framework using the <br><strong><span style="font-size: large">A</span></strong>tomic <strong><span style="font-size: large">T</span></strong>ransformations <strong><span style="font-size: large">O</span></strong>ptimization <strong><span style="font-size: large">M</span></strong>ethod 
 </p>
+
+<!-- Font sizes here -->
+<!-- https://www.freecodecamp.org/news/html-font-size-how-to-change-text-size-using-inline-css-style/ -->
 
 **ATOM** is a set of calibration tools for multi-sensor, multi-modal, robotic systems, based on the optimization of atomic transformations as provided by a ros based robot description. Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure.
 
