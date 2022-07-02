@@ -4,24 +4,15 @@
 <img align="center" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215">  -->
 </p>
 
-
 ###### A Calibration Framework using the **A**tomic **T**ransformations **O**ptimization **M**ethod
 
 **ATOM** is a set of calibration tools for multi-sensor, multi-modal, robotic systems, based on the optimization of atomic transformations as provided by a ros based robot description. Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure.
 
 For instructions on how to install and use, **check the documentation**:
 
-
-<img align="center" width="640" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif">  -->
-<!-- <p align="center">
-<a href="https://lardemua.github.io/atom_documentation/">https://lardemua.github.io/atom_documentation/</a>
-</p> -->
-
-<!-- 
-<figure markdown align=center>
-![](https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif){width="100%" }
-  <figcaption align=center></figcaption>
-</figure> -->
+<p align="center">
+<img align="center" width="640" height="360" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif">  -->
+</p>
 
 Also, you can take a look at the [ATOM youtube playlist](https://www.youtube.com/watch?v=BYs1-H9vh0s&list=PLQN09mzV5mbI4h5IQt3Eu9kugSk-08mnY).
 
