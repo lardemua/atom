@@ -6,7 +6,7 @@
 
 
 <p align="center">
-###### A Calibration Framework using the **A**tomic **T**ransformations **O**ptimization **M**ethod
+<span style="color:lightgrey">A Calibration Framework using the <br><strong>A</strong>tomic <strong>T</strong>ransformations <strong>O</strong>ptimization <strong>M</strong>ethod </span> 
 </p>
 
 **ATOM** is a set of calibration tools for multi-sensor, multi-modal, robotic systems, based on the optimization of atomic transformations as provided by a ros based robot description. Moreover, **ATOM** provides several scripts to facilitate all the steps of a calibration procedure.
