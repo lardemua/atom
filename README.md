@@ -1,11 +1,8 @@
 # ATOM Calibration
 
-<figure markdown align=center>
-![](docs/atom_logo.png){width="100%" }
-  <figcaption align=center></figcaption>
-</figure>
-
-<!-- # <img align="center" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215">  -->
+<p align="center">
+<img align="center" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215">  -->
+</p>
 
 
 ###### A Calibration Framework using the **A**tomic **T**ransformations **O**ptimization **M**ethod
@@ -14,15 +11,17 @@
 
 For instructions on how to install and use, **check the documentation**:
 
-<p align="center">
+
+<img align="center" width="640" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif">  -->
+<!-- <p align="center">
 <a href="https://lardemua.github.io/atom_documentation/">https://lardemua.github.io/atom_documentation/</a>
-</p>
+</p> -->
 
-
+<!-- 
 <figure markdown align=center>
 ![](https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif){width="100%" }
   <figcaption align=center></figcaption>
-</figure>
+</figure> -->
 
 Also, you can take a look at the [ATOM youtube playlist](https://www.youtube.com/watch?v=BYs1-H9vh0s&list=PLQN09mzV5mbI4h5IQt3Eu9kugSk-08mnY).
 
