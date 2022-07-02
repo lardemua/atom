@@ -1,7 +1,7 @@
 # ATOM Calibration
 
 <p align="center">
-<img align="center" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215">  -->
+<img align="center" width="375" height="215" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/atom_logo.png?raw=true/375/215"> 
 </p>
 
 
