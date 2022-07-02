@@ -14,6 +14,11 @@ For instructions on how to install and use, **check the documentation**:
 </p>
 
 
+<figure markdown align=center>
+![](docs/OverviewATOMMMTBot.gif){width="100%" }
+  <figcaption align=center></figcaption>
+</figure>
+
 Also, you can take a look at the [ATOM youtube playlist](https://www.youtube.com/watch?v=BYs1-H9vh0s&list=PLQN09mzV5mbI4h5IQt3Eu9kugSk-08mnY).
 
 
