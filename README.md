@@ -20,7 +20,7 @@ For instructions on how to install and use, **check the documentation**:
 
 
 <figure markdown align=center>
-![](docs/OverviewATOMMMTBot.gif){width="100%" }
+![](https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif){width="100%" }
   <figcaption align=center></figcaption>
 </figure>
 
