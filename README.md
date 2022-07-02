@@ -11,7 +11,7 @@
 For instructions on how to install and use, **check the documentation**:
 
 <p align="center">
-<img align="center" width="640" height="360" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif">  -->
+<img align="center" width="832" height="468" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif"> 
 </p>
 
 Also, you can take a look at the [ATOM youtube playlist](https://www.youtube.com/watch?v=BYs1-H9vh0s&list=PLQN09mzV5mbI4h5IQt3Eu9kugSk-08mnY).
