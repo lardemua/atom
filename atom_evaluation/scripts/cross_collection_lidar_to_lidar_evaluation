@@ -18,6 +18,7 @@ import sys
 
 import numpy as np
 from prettytable import PrettyTable
+
 from scipy.spatial import distance
 from colorama import Style, Fore
 
@@ -74,6 +75,7 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
     # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     # - Save args
@@ -122,80 +124,100 @@ if __name__ == "__main__":
 
     source_frame = mixed_dataset['calibration_config']['sensors'][sensor_source]['link']
     target_frame = mixed_dataset['calibration_config']['sensors'][sensor_target]['link']
+    world_frame = args['world_frame']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    od_target = deepcopy(od)
     e = {}  # dictionary with all the errors
-    for collection_key, collection in od.items():
-        e[collection_key] = {}  # init the dictionary of errors for this collection
+    for collection_source_key, collection_source in od.items():
+        e[collection_source_key] = {}  # init the dictionary of errors for this collection
+        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+            od_target.pop(collection_source_key)
+        for collection_target_key, collection_target in od_target.items():
+            e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
 
-        # ---------------------------------------
-        # --- Range to image projection
-        # ---------------------------------------
-        lidar_target_to_lidar_source = getTransform(target_frame, source_frame,
-                                                       mixed_dataset['collections'][collection_key]['transforms'])
-        lidar_pts_source = rangeToImage(collection, test_json_file, sensor_source)
-        lidar_pts_target = rangeToImage(collection, test_json_file, sensor_target)
-        lidar_pts_source_in_lidar_target = np.dot(lidar_target_to_lidar_source, lidar_pts_source)
-        # ---------------------------------------
-        # --- Get evaluation data for current collection
-        # ---------------------------------------
-        delta_pts = []
-        distances = []
-        for idx in range(lidar_pts_target.shape[1]):
-            lidar_pt = np.reshape(lidar_pts_target[0:3, idx], (1, 3))
-            dist = distance.cdist(lidar_pt, lidar_pts_source_in_lidar_target.transpose()[:, :3], 'euclidean')
-            delta_pts.append((np.min(dist)))
-            coords = np.where(dist == np.min(dist))
-
-            min_dist_pt = lidar_pts_source_in_lidar_target.transpose()[coords[1]][0, :3]
-            dist = abs(lidar_pt - min_dist_pt)
-            distances.append(dist)
-            delta_total.append(dist)
-
-
-        if len(delta_pts) == 0:
-            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
-            continue
-
-        # ---------------------------------------
-        # --- Compute error metrics
-        # ---------------------------------------
-        total_pts = len(delta_pts)
-        delta_pts = np.array(delta_pts, np.float32)
-        # avg_error = np.sum(np.abs(delta_pts)) / total_pts
-        rms = np.sqrt((delta_pts ** 2).mean())
-
-        delta_xy = np.array(distances, np.float32)
-        delta_xy = delta_xy[:, 0]
-        avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
-        avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
-        stdev_xy = np.std(delta_xy, axis=0)
+            # Check for same sensor same collection
+            if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
+                continue
         
+            # ---------------------------------------
+            # --- Range to image projection
+            # ---------------------------------------
+            world_to_lidar_source = getTransform(world_frame, source_frame,
+                                                        mixed_dataset['collections'][collection_source_key]['transforms'])
+            world_to_lidar_target = getTransform(world_frame, source_frame,
+                                                        mixed_dataset['collections'][collection_target_key]['transforms'])
 
-        # Recording the errors
-        e[collection_key]['rms'] = rms
-        # e[collection_key]['avg_error'] = avg_error
-        e[collection_key]['avg_error_x'] = avg_error_x
-        e[collection_key]['avg_error_y'] = avg_error_y
-        e[collection_key]['stdev_x'] = stdev_xy[0]
-        e[collection_key]['stdev_y'] = stdev_xy[1]
-   
+            lidar_target_to_lidar_source = np.dot(np.linalg.inv(world_to_lidar_target), world_to_lidar_source)
+            lidar_pts_source = rangeToImage(collection_source, test_json_file, sensor_source)
+            lidar_pts_target = rangeToImage(collection_target, test_json_file, sensor_target)
+            lidar_pts_source_in_lidar_target = np.dot(lidar_target_to_lidar_source, lidar_pts_source)
+            # ---------------------------------------
+            # --- Get evaluation data for current collection
+            # ---------------------------------------
+            delta_pts = []
+            distances = []
+            for idx in range(lidar_pts_target.shape[1]):
+                lidar_pt = np.reshape(lidar_pts_target[0:3, idx], (1, 3))
+                dist = distance.cdist(lidar_pt, lidar_pts_source_in_lidar_target.transpose()[:, :3], 'euclidean')
+                delta_pts.append((np.min(dist)))
+                coords = np.where(dist == np.min(dist))
+
+                min_dist_pt = lidar_pts_source_in_lidar_target.transpose()[coords[1]][0, :3]
+                dist = abs(lidar_pt - min_dist_pt)
+                distances.append(dist)
+                delta_total.append(dist)
+
+
+            if len(delta_pts) == 0:
+                print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
+                continue
+
+            # ---------------------------------------
+            # --- Compute error metrics
+            # ---------------------------------------
+            total_pts = len(delta_pts)
+            delta_pts = np.array(delta_pts, np.float32)
+            # avg_error = np.sum(np.abs(delta_pts)) / total_pts
+            rms = np.sqrt((delta_pts ** 2).mean())
+
+            delta_xy = np.array(distances, np.float32)
+            delta_xy = delta_xy[:, 0]
+            avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
+            avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
+            stdev_xy = np.std(delta_xy, axis=0)
+            
+
+            # Recording the errors
+            e[collection_source_key][collection_target_key]['rms'] = rms
+            e[collection_source_key][collection_target_key]['avg_error_x'] = avg_error_x
+            e[collection_source_key][collection_target_key]['avg_error_y'] = avg_error_y
+            e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
+            e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
+
    
     # -------------------------------------------------------------
     # Print output table
     # -------------------------------------------------------------
-    table_header = ['Collection #', 'RMS (m)', 'X err (m)', 'Y err (m)', 'X StDev (m)', 'Y StDev (m)']
+    table_header = ['Collection Pair', 'RMS (m)', 'X err (m)', 'Y err (m)', 'X StDev (m)', 'Y StDev (m)']
     table = PrettyTable(table_header)
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        row = [collection_key,
-               '%.4f' % e[collection_key]['rms'],
-               '%.4f' % e[collection_key]['avg_error_x'],
-               '%.4f' % e[collection_key]['avg_error_y'],
-               '%.4f' % e[collection_key]['stdev_x'],
-               '%.4f' % e[collection_key]['stdev_y']]
+    od_target = deepcopy(od)
+    for collection_source_key, collection_source in od.items():
+        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+            od_target.pop(collection_source_key)
+        for collection_target_key, collection_target in od_target.items():
+            if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
+                # Remove every pairing removed in the previous for cycle
+                continue
+            row = [collection_source_key + '-' + collection_target_key,
+                '%.4f' % e[collection_source_key][collection_target_key]['rms'],
+                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
+                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_y'],
+                '%.4f' % e[collection_source_key][collection_target_key]['stdev_x'],
+                '%.4f' % e[collection_source_key][collection_target_key]['stdev_y']]
 
-        table.add_row(row)
+            table.add_row(row)
 
     # Compute averages and add a bottom row
     bottom_row = []  # Compute averages and add bottom row to table
