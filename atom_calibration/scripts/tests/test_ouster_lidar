@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+# stdlib
+import functools
+import sys
+import argparse
+
+# 3rd-party
+import cv2
+import cv_bridge
+import numpy as np
+import rospy
+import ros_numpy
+from sensor_msgs.msg import Image, PointCloud2
+
+# local packages
+from atom_calibration.collect.label_messages import labelDepthMsg, convertDepthImage16UC1to32FC1
+from atom_core.ros_utils import filterLaunchArguments
+from atom_core.config_io import loadConfig
+from atom_calibration.initial_estimate.sensor import Sensor
+from std_msgs.msg import String
+
+
+def callbackOusterMessageReceived(msg):
+    rospy.loginfo('Received ouster lidar msg')
+
+    pc = ros_numpy.numpify(msg)
+    print(pc.shape)
+
+    # Compute number of points by multiplying all the dimensions of the np array.
+    # Must be done because different lidars provide point clouds with different sizes, e.g. velodyne outputs a point cloud of size (npoints,1), whereas ouster lidars output a point cloud of size (npoints_per_layer, nlayers).
+    #More info https://github.com/lardemua/atom/issues/498
+    number_points = 1
+    for value in list(pc.shape):
+        number_points = number_points*value
+
+    print(number_points)
+
+    points = np.zeros((number_points, 3))
+    points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
+    points[:, 1] = pc['y'].flatten()
+    points[:, 2] = pc['z'].flatten()
+
+
+def callbackVelodyneMessageReceived(msg):
+    rospy.loginfo('Received velodyne lidar msg')
+
+    pc = ros_numpy.numpify(msg)
+    print(pc.shape)
+    print(list(pc.shape))
+
+    number_points = 1
+    for value in list(pc.shape):
+        number_points = number_points*value
+
+    print(number_points)
+
+
+    points = np.zeros((number_points, 3))
+    points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
+    points[:, 1] = pc['y'].flatten()
+    points[:, 2] = pc['z'].flatten()
+
+    for idx in range(0,5):
+        print('x=' + str(points[idx,0]) + ', y=' + str(points[idx,1]) + ', z=' + str(points[idx,2]))
+
+
+
+
+def main():
+    rospy.init_node('test_ouster_lidar', anonymous=False)
+
+    rospy.Subscriber('/ouster_cloud_os1_0/points', PointCloud2, callbackOusterMessageReceived)
+    rospy.Subscriber('/lidar_1/velodyne_points', PointCloud2, callbackVelodyneMessageReceived)
+
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()

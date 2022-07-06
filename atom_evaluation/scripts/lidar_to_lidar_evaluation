@@ -14,9 +14,10 @@ import os
 import argparse
 from copy import deepcopy
 from collections import OrderedDict
+import sys
 
 import numpy as np
-import atom_core.atom
+from prettytable import PrettyTable
 from scipy.spatial import distance
 from colorama import Style, Fore
 
@@ -25,8 +26,8 @@ from rospy_message_converter import message_converter
 from ros_numpy import numpify
 
 # Atom imports
-from atom_core.naming import generateKey
 from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd
+from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -71,14 +72,14 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-ld1", "--lidar_sensor_1", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-ld2", "--lidar_sensor_2", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
     # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_args())
-    lidar_sensor_1 = args['lidar_sensor_1']
-    lidar_sensor_2 = args['lidar_sensor_2']
+    sensor_source = args['sensor_source']
+    sensor_target = args['sensor_target']
     # show_images = args['show_images']
 
     # ---------------------------------------
@@ -95,64 +96,61 @@ if __name__ == "__main__":
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
-    # ---------------------------------------
-    # --- INITIALIZATION Read evaluation data from file ---> if desired <---
-    # ---------------------------------------
-    print(Fore.BLUE + '\nStarting evalutation...')
-    print(Fore.WHITE)
-    print(
-        '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
-    print(
-        '{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}{:^25s}'.format('#', 'RMS', 'Avg Error', 'X Error', 'Y Error',
-                                                                   'X Standard Deviation',
-                                                                   'Y Standard Deviation'))
-    print(
-        '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
-
     # Declare output dict to save the evaluation data if desire
     delta_total = []
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
-    from_frame = mixed_dataset['calibration_config']['sensors'][lidar_sensor_1]['link']
-    to_frame = mixed_dataset['calibration_config']['sensors'][lidar_sensor_2]['link']
+    # Deleting collections where the pattern is not found by all sensors:
+    collections_to_delete = []
+    for collection_key, collection in mixed_dataset['collections'].items():
+        for sensor_key, sensor in mixed_dataset['sensors'].items():
+            if (not collection['labels'][sensor_key]['detected'] or len(collection['labels'][sensor_key]['idxs']) == 0) and (
+                    sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
+                print(
+                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+
+                collections_to_delete.append(collection_key)
+                break
+
+    for collection_key in collections_to_delete:
+        del mixed_dataset['collections'][collection_key]
+
+    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
+
+
+    source_frame = mixed_dataset['calibration_config']['sensors'][sensor_source]['link']
+    target_frame = mixed_dataset['calibration_config']['sensors'][sensor_target]['link']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    e = {}  # dictionary with all the errors
     for collection_key, collection in od.items():
-        # if not collection_key=='2':
-        #     continue
-        # if show_images:
-        #     fig = plt.figure()
-        #     ax = fig.add_subplot(projection='3d')
-        # ax.xlim([-5,5])
-        # ax.ylim([-5, 5])
-        # ax.zlim([-5, 5])
+        e[collection_key] = {}  # init the dictionary of errors for this collection
 
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        lidar1_to_lidar2 = atom_core.atom.getTransform(to_frame, from_frame,
+        lidar_target_to_lidar_source = getTransform(target_frame, source_frame,
                                                        mixed_dataset['collections'][collection_key]['transforms'])
-        lidar_pts_1 = rangeToImage(collection, test_json_file, lidar_sensor_1)
-        lidar_pts_2 = rangeToImage(collection, test_json_file, lidar_sensor_2)
-        lidar_pts_1_in_lidar_2 = np.dot(lidar1_to_lidar2, lidar_pts_1)
+        lidar_pts_source = rangeToImage(collection, test_json_file, sensor_source)
+        lidar_pts_target = rangeToImage(collection, test_json_file, sensor_target)
+        lidar_pts_source_in_lidar_target = np.dot(lidar_target_to_lidar_source, lidar_pts_source)
         # ---------------------------------------
         # --- Get evaluation data for current collection
         # ---------------------------------------
         delta_pts = []
         distances = []
-        for idx in range(lidar_pts_2.shape[1]):
-            lidar_pt = np.reshape(lidar_pts_2[0:3, idx], (1, 3))
-            dist = distance.cdist(lidar_pt, lidar_pts_1_in_lidar_2.transpose()[:, :3], 'euclidean')
+        for idx in range(lidar_pts_target.shape[1]):
+            lidar_pt = np.reshape(lidar_pts_target[0:3, idx], (1, 3))
+            dist = distance.cdist(lidar_pt, lidar_pts_source_in_lidar_target.transpose()[:, :3], 'euclidean')
             delta_pts.append((np.min(dist)))
             coords = np.where(dist == np.min(dist))
 
-            min_dist_pt = lidar_pts_1_in_lidar_2.transpose()[coords[1]][0, :3]
+            min_dist_pt = lidar_pts_source_in_lidar_target.transpose()[coords[1]][0, :3]
             dist = abs(lidar_pt - min_dist_pt)
             distances.append(dist)
             delta_total.append(dist)
 
-            # if show_images:
-            #     ax.plot((lidar_pt[0,0],min_dist_pt[0]),(lidar_pt[0,1],min_dist_pt[1]),(lidar_pt[0,2],min_dist_pt[2]), c='y' )
 
         if len(delta_pts) == 0:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
@@ -163,7 +161,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
-        avg_error = np.sum(np.abs(delta_pts)) / total_pts
+        # avg_error = np.sum(np.abs(delta_pts)) / total_pts
         rms = np.sqrt((delta_pts ** 2).mean())
 
         delta_xy = np.array(distances, np.float32)
@@ -171,53 +169,80 @@ if __name__ == "__main__":
         avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
         avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
         stdev_xy = np.std(delta_xy, axis=0)
+        
 
-        print(
-            '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, rms,
-                                                                                 avg_error, avg_error_x,
-                                                                                 avg_error_y,
-                                                                                 stdev_xy[0], stdev_xy[1]))
+        # Recording the errors
+        e[collection_key]['rms'] = rms
+        # e[collection_key]['avg_error'] = avg_error
+        e[collection_key]['avg_error_x'] = avg_error_x
+        e[collection_key]['avg_error_y'] = avg_error_y
+        e[collection_key]['stdev_x'] = stdev_xy[0]
+        e[collection_key]['stdev_y'] = stdev_xy[1]
+   
+   
+    # -------------------------------------------------------------
+    # Print output table
+    # -------------------------------------------------------------
+    table_header = ['Collection #', 'RMS (m)', 'X err (m)', 'Y err (m)', 'X StDev (m)', 'Y StDev (m)']
+    table = PrettyTable(table_header)
 
-        # ---------------------------------------
-        # --- Drawing ...
-        # ---------------------------------------
-        # if show_images:
-        #     for idx in range(0, lidar_pts_1_in_lidar_2.shape[1]):
-        #         ax.scatter(lidar_pts_1_in_lidar_2[0, idx], lidar_pts_1_in_lidar_2[1, idx], lidar_pts_1_in_lidar_2[2,idx], c='r')
-        #     for idx in range(0, lidar_pts_2.shape[1]):
-        #         ax.scatter(lidar_pts_2[0, idx], lidar_pts_2[1, idx],lidar_pts_2[2, idx], c='b')
-        #     plt.show()
+    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
+        row = [collection_key,
+               '%.4f' % e[collection_key]['rms'],
+               '%.4f' % e[collection_key]['avg_error_x'],
+               '%.4f' % e[collection_key]['avg_error_y'],
+               '%.4f' % e[collection_key]['stdev_x'],
+               '%.4f' % e[collection_key]['stdev_y']]
 
-    total_pts = len(delta_total)
-    delta_total = np.array(delta_total, np.float32)
-    avg_error = np.sum(np.abs(delta_total)) / total_pts
-    rms = np.sqrt((delta_total ** 2).mean())
+        table.add_row(row)
 
-    delta_xy = np.array(delta_total, np.float32)
-    delta_xy = delta_xy[:, 0]
-    avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
-    avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
-    stdev_xy = np.std(delta_xy, axis=0)
+    # Compute averages and add a bottom row
+    bottom_row = []  # Compute averages and add bottom row to table
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            continue
 
-    print(
-        '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
-    print(
-        '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', rms,
-                                                                             avg_error, avg_error_x,
-                                                                             avg_error_y,
-                                                                             stdev_xy[0], stdev_xy[1]))
-    print(
-        '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
-    print("Press ESC to quit and close all open windows.")
+        total = 0
+        count = 0
+        for row in table.rows:
+            # if row[col_idx].isnumeric():
+            try:
+                value = float(row[col_idx])
+                total += float(value)
+                count += 1
+            except:
+                pass
 
-    # plt.waitforbuttonpress(0)  # this will wait for indefinite time
-    # plt.close(fig)
+        value = '%.4f' % (total / count)
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
 
-    # while True:
-    #     k = cv2.waitKey(0) & 0xFF
-    #     if k == 27:
-    #         fig.close()
-    #         break
-# Save evaluation data
-# if use_annotation is True:
-#     createJSONFile(eval_file, output_dict)
+    table.add_row(bottom_row)
+
+    # Put larger errors in red per column (per sensor)
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:  # nothing to do
+            continue
+
+        max = 0
+        max_row_idx = 0
+        for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
+            try:
+                value = float(row[col_idx])
+            except:
+                continue
+
+            if value > max:
+                max = value
+                max_row_idx = row_idx
+
+        # set the max column value to red
+        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+
+    table.align = 'c'
+    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+    print(table)
+
+    print('Ending script...')
+    sys.exit()

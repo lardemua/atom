@@ -40,8 +40,15 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     labels = {}
 
     pc = ros_numpy.numpify(msg)
-    points = np.zeros((pc.shape[0], 3))
 
+    # Compute number of points by multiplying all the dimensions of the np array.
+    # Must be done because different lidars provide point clouds with different sizes, e.g. velodyne outputs a point cloud of size (npoints,1), whereas ouster lidars output a point cloud of size (npoints_per_layer, nlayers).
+    #More info https://github.com/lardemua/atom/issues/498
+    number_points = 1
+    for value in list(pc.shape):
+        number_points = number_points*value
+
+    points = np.zeros((number_points, 3))
     points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
     points[:, 1] = pc['y'].flatten()
     points[:, 2] = pc['z'].flatten()
