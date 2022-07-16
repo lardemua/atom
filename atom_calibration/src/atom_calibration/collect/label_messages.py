@@ -79,6 +79,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
+    A,B,C,D = None, None, None, None
     # RANSAC iterations
     for i in range(0, ransac_iterations):
 
@@ -113,18 +114,26 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
         Di = - (Ai * pt1[0] + Bi * pt1[1] + Ci * pt1[2])
         # Compute the distance from all points to the plane
         # from https://www.geeksforgeeks.org/distance-between-a-point-and-a-plane-in-3-d/
-        distances = abs((Ai * pts[:, 0] + Bi * pts[:, 1] + Ci * pts[:, 2] + Di)) / (
-            math.sqrt(Ai * Ai + Bi * Bi + Ci * Ci))
-        # Compute number of inliers for this plane hypothesis.
-        # Inliers are points which have distance to the plane less than a tracker_threshold
-        n_inliers_i = (distances < ransac_threshold).sum()
-        # Store this as the best hypothesis if the number of inliers is larger than the previous max
-        if n_inliers_i > n_inliers:
-            n_inliers = n_inliers_i
-            A = Ai
-            B = Bi
-            C = Ci
-            D = Di
+        denominator = math.sqrt(Ai * Ai + Bi * Bi + Ci * Ci)
+
+        if not denominator == 0:
+            distances = abs((Ai * pts[:, 0] + Bi * pts[:, 1] + Ci * pts[:, 2] + Di)) / denominator
+            # Compute number of inliers for this plane hypothesis.
+            # Inliers are points which have distance to the plane less than a tracker_threshold
+            n_inliers_i = (distances < ransac_threshold).sum()
+            # Store this as the best hypothesis if the number of inliers is larger than the previous max
+            if n_inliers_i > n_inliers:
+                n_inliers = n_inliers_i
+                A = Ai
+                B = Bi
+                C = Ci
+                D = Di
+
+
+    if A is None:
+        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
+        seed_point = [seed_x, seed_y, seed_z]
+        return labels, seed_point, []
 
     # Extract the inliers
     distances = abs((A * pts[:, 0] + B * pts[:, 1] + C * pts[:, 2] + D)) / \
@@ -153,7 +162,8 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     ps = []  # list of points, each containing a dictionary with all the required information.
     for count, idx in enumerate(labels['idxs']):  # iterate all points
-        x, y, z = pc['x'][idx], pc['y'][idx], pc['z'][idx]
+        # x, y, z = pc['x'][idx], pc['y'][idx], pc['z'][idx]
+        x, y, z = points[idx][0], points[idx][1], points[idx][2]
         ps.append({'idx': idx, 'idx_in_labelled': count, 'x': x, 'y': y, 'z': z, 'limit': False})
 
     # STEP 2: Cluster points in pattern into groups using the theta component of the spherical coordinates.
