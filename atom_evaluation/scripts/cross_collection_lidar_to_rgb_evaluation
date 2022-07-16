@@ -9,6 +9,7 @@ Reads the calibration results from a json file and computes the evaluation metri
 # -------------------------------------------------------------------------------
 
 # Standard imports
+from copy import deepcopy
 import json
 import math
 import os
@@ -82,6 +83,7 @@ if __name__ == "__main__":
     ap.add_argument("-rs", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--camera_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
 
     args = vars(ap.parse_args())
     show_images = args['show_images']
@@ -120,101 +122,111 @@ if __name__ == "__main__":
 
     print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
 
-    from_frame = mixed_dataset['calibration_config']['sensors'][args['camera_sensor']]['link']
-    to_frame = mixed_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
+    camera_frame = mixed_dataset['calibration_config']['sensors'][args['camera_sensor']]['link']
+    range_frame = mixed_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
+    world_frame = args['world_frame']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    od_target = deepcopy(od)
     e = {}  # dictionary with all the errors
-    for collection_key, collection in od.items():
-        e[collection_key] = {}  # init the dictionary of errors for this collection
-        # ---------------------------------------
-        # --- Range to image projection
-        # ---------------------------------------
-        vel2cam = getTransform(from_frame, to_frame,
-                               mixed_dataset['collections'][collection_key]['transforms'])
-        pts_in_image = rangeToImage(collection, args['test_json_file'], args['range_sensor'],
-                                    args['camera_sensor'], vel2cam)
+    for collection_source_key, collection_source in od.items():
+        e[collection_source_key] = {}  # init the dictionary of errors for this collection
+        for collection_target_key, collection_target in od_target.items():
+            e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
+            # ---------------------------------------
+            # --- Range to image projection
+            # ---------------------------------------
+            w_T_cs_cs = getTransform(world_frame, camera_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
+            w_T_rs_ct = getTransform(world_frame, range_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
+            cs_T_rs = np.dot(np.linalg.inv(w_T_cs_cs), w_T_rs_ct)
+            # vel2cam = getTransform(camera_frame, range_frame,
+            #                        mixed_dataset['collections'][collection_source_key]['transforms'])
+            pts_in_image = rangeToImage(collection_target, args['test_json_file'], args['range_sensor'],
+                                        args['camera_sensor'], cs_T_rs)
 
-        # ---------------------------------------
-        # --- Get evaluation data for current collection
-        # ---------------------------------------
-        filename = os.path.dirname(args['test_json_file']
-                                   ) + '/' + collection['data'][args['camera_sensor']]['data_file']
-        image = cv2.imread(filename)
+            # ---------------------------------------
+            # --- Get evaluation data for current collection
+            # ---------------------------------------
+            filename = os.path.dirname(args['test_json_file']
+                                    ) + '/' + collection_source['data'][args['camera_sensor']]['data_file']
+            image = cv2.imread(filename)
 
-        if args['show_images']:  # draw all ground truth annotations
-            for side in annotations[collection_key].keys():
-                for x, y in zip(annotations[collection_key][side]['ixs'],
-                                annotations[collection_key][side]['iys']):
-                    cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
+            if args['show_images']:  # draw all ground truth annotations
+                for side in annotations[collection_source_key].keys():
+                    for x, y in zip(annotations[collection_source_key][side]['ixs'],
+                                    annotations[collection_source_key][side]['iys']):
+                        cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
 
-        # ---------------------------------------
-        # --- Evaluation metrics - reprojection error
-        # ---------------------------------------
-        # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
-        x_errors = []
-        y_errors = []
-        errors = []
-        for idx in range(0, pts_in_image.shape[1]):
-            x_proj = pts_in_image[0, idx]
-            y_proj = pts_in_image[1, idx]
+            # ---------------------------------------
+            # --- Evaluation metrics - reprojection error
+            # ---------------------------------------
+            # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+            x_errors = []
+            y_errors = []
+            errors = []
+            for idx in range(0, pts_in_image.shape[1]):
+                x_proj = pts_in_image[0, idx]
+                y_proj = pts_in_image[1, idx]
 
-            # Do not consider points that are re-projected outside of the image
-            if x_proj > image.shape[1] or x_proj < 0 or y_proj > image.shape[0] or y_proj < 0:
+                # Do not consider points that are re-projected outside of the image
+                if x_proj > image.shape[1] or x_proj < 0 or y_proj > image.shape[0] or y_proj < 0:
+                    continue
+
+                min_error = sys.float_info.max  # a very large value
+                x_min = None
+                y_min = None
+                for side in annotations[collection_source_key].keys():
+                    for x, y in zip(annotations[collection_source_key][side]['ixs'],
+                                    annotations[collection_source_key][side]['iys']):
+                        error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
+                        if error < min_error:
+                            min_error = error
+                            x_min = x
+                            y_min = y
+
+                x_errors.append(abs(x_proj - x_min))
+                y_errors.append(abs(y_proj - y_min))
+                errors.append(min_error)
+
+                if args['show_images']:
+                    cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
+                    cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
+                            (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
+
+            if not errors:
+                print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
                 continue
 
-            min_error = sys.float_info.max  # a very large value
-            x_min = None
-            y_min = None
-            for side in annotations[collection_key].keys():
-                for x, y in zip(annotations[collection_key][side]['ixs'],
-                                annotations[collection_key][side]['iys']):
-                    error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
-                    if error < min_error:
-                        min_error = error
-                        x_min = x
-                        y_min = y
-
-            x_errors.append(abs(x_proj - x_min))
-            y_errors.append(abs(y_proj - y_min))
-            errors.append(min_error)
+            e[collection_source_key][collection_target_key]['x'] = np.average(x_errors)
+            e[collection_source_key][collection_target_key]['y'] = np.average(y_errors)
+            e[collection_source_key][collection_target_key]['rms'] = rootMeanSquare(errors)
 
             if args['show_images']:
-                cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
-                cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
-                         (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
-
-        if not errors:
-            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
-            continue
-
-        e[collection_key]['x'] = np.average(x_errors)
-        e[collection_key]['y'] = np.average(y_errors)
-        e[collection_key]['rms'] = rootMeanSquare(errors)
-
-        if args['show_images']:
-            print('Errors collection ' + collection_key + '\n' + str(e[collection_key]))
-            window_name = 'Collection ' + collection_key
-            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-            cv2.imshow(window_name, image)
-            key = cv2.waitKey(0)
-            cv2.destroyWindow(window_name)
-            if key == ord('q') or key == ord('c'):
-                args['show_images'] = False
+                print('Errors collection ' + collection_source_key + '\n' + str(e[collection_source_key]))
+                window_name = 'Collection ' + collection_source_key
+                cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+                cv2.imshow(window_name, image)
+                key = cv2.waitKey(0)
+                cv2.destroyWindow(window_name)
+                if key == ord('q') or key == ord('c'):
+                    args['show_images'] = False
 
     # -------------------------------------------------------------
     # Print output table
     # -------------------------------------------------------------
-    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
+    table_header = ['Collection Pair', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
     table = PrettyTable(table_header)
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        row = [collection_key,
-               '%.4f' % e[collection_key]['rms'],
-               '%.4f' % e[collection_key]['x'],
-               '%.4f' % e[collection_key]['y']]
+    od_target = deepcopy(od)
+    for collection_source_key, collection_source in od.items():
+        for collection_target_key, collection_target in od_target.items():
+            row = [collection_source_key + '-' + collection_target_key,
+                '%.4f' % e[collection_source_key][collection_target_key]['rms'],
+                '%.4f' % e[collection_source_key][collection_target_key]['x'],
+                '%.4f' % e[collection_source_key][collection_target_key]['y']]
 
-        table.add_row(row)
+            table.add_row(row)
+
 
     # Compute averages and add a bottom row
     bottom_row = []  # Compute averages and add bottom row to table

@@ -804,7 +804,7 @@ if __name__ == "__main__":
 
             # Image
             # one image per collection will be published by calibrate, but we only create one Image Display listening to the collection 0 image topic. The user can then change to other collections.
-            labeled_topic = generateLabeledTopic(topic, collection_key='0', type='2d')
+            labeled_topic = generateLabeledTopic(topic, collection_key='000', type='2d')
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
                                                                       'Image_Topic': labeled_topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
@@ -812,7 +812,7 @@ if __name__ == "__main__":
         elif modality == "depth":
 
             # Depth Image with pattern idxs and idxs_limit overlayed
-            labeled_topic = generateLabeledTopic(topic, collection_key='0', type='2d')
+            labeled_topic = generateLabeledTopic(topic, collection_key='000', type='2d')
             rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Labels' + '-Image',
                                                                       'Image_Topic': labeled_topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
