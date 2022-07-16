@@ -10,7 +10,6 @@ pandas
 pynput
 ros_numpy
 scipy
-KeyPressManager
 networkx
 
 
