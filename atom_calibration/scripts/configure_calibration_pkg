@@ -84,18 +84,18 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Read the config.yml file
     # --------------------------------------------------------------------------
-    print(args['config_file'])
     # config_file = package_path + '/calibration/config.yml'
 
-    if not args['config_file']:
-        config_file = package_path + '/calibration/config.yml'
+    if args['config_file'] is None:
+        args['config_file'] = package_path + '/calibration/config.yml'
     else:
-        config_file = package_path + '/calibration/' + args['config_file']
-        if not exists(config_file):
-            config_file = package_path + '/calibration/config.yml'
-    print('Loading config file ' + config_file)
+        args['config_file'] = package_path + '/calibration/' + args['config_file']
+        if not exists(args['config_file']):
+            args['config_file'] = package_path + '/calibration/config.yml'
+    print('Loading config file ' + args['config_file'])
 
-    config = atom_core.config_io.loadConfig(config_file)
+    config = atom_core.config_io.loadConfig(args['config_file'])
+    # print('config_file = ' + str(args['config_file']))
 
     # print('Loading config file ' + config_file)
     # config = atom_core.config_io.loadConfig(config_file)
