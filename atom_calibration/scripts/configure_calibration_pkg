@@ -95,7 +95,7 @@ if __name__ == "__main__":
     print('Loading config file ' + args['config_file'])
 
     config = atom_core.config_io.loadConfig(args['config_file'])
-    # print('config_file = ' + str(args['config_file']))
+    print('config_file = ' + str(args['config_file']))
 
     # print('Loading config file ' + config_file)
     # config = atom_core.config_io.loadConfig(config_file)
@@ -252,7 +252,7 @@ if __name__ == "__main__":
         if not frame in gx:
             raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
                              Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
-                             Fore.BLUE + config_file + Style.RESET_ALL)
+                             Fore.BLUE + args['config_file'] + Style.RESET_ALL)
 
     # Verify that the parent and child links for each sensor are a direct transformation (#316)
     for sensor_key, sensor in config['sensors'].items():
@@ -390,7 +390,7 @@ if __name__ == "__main__":
                                     'package_name': package_name,
                                     'rviz_collect_data': rviz_collect_data,
                                     'bag_file': bag_file_rel,
-                                    'config_file': args['config_file']
+                                    'config_file': os.path.basename(args['config_file'])
                                     })
         f.write(output.encode('utf-8'))
 

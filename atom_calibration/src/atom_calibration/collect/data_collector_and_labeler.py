@@ -73,6 +73,7 @@ class DataCollectorAndLabeler:
         self.bridge = CvBridge()
         self.dataset_version = "2.0"
 
+        # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
         if self.config is None:
             sys.exit(1)  # loadJSON should tell you why.

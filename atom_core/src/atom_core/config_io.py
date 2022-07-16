@@ -96,9 +96,9 @@ def uriReader(resource):
 
 def verifyConfig(config, template_config, upper_key=None):
     missing_keys = []
-    # print(config)
+    print('config is this ' + str(config))
     for key in template_config:
-        # print('Checking key ' + key)
+        print('Checking key ' + key)
         if not key in config:
             if upper_key is None:
                 missing_keys.append(key)
@@ -119,11 +119,13 @@ def verifyConfig(config, template_config, upper_key=None):
 
 def loadConfig(filename, check_paths=True):
     config = loadYMLConfig(filename)
+    if config is None:
+        raise ValueError(Fore.RED + 'Your config file ' + filename +
+                         ' could not be read. Aborting.' + Fore.RESET)
 
     # if "robot_name" not in config.keys():  # in config:
     #     raise ValueError(Fore.RED +
     #         'Error: argument robot_name is missing in config.yaml'+ Style.RESET_ALL)
-    # exit(0)
     # Check if config has all the necessary keys.
     rospack = rospkg.RosPack()
     template_file = rospack.get_path('atom_calibration') + '/templates/config.yml'
