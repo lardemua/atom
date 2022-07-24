@@ -68,13 +68,7 @@ def denseToSparsePointCloud(dense_pc):
 
     return sparse_pc, sparse_idxs
     
-
-def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
-                        ransac_threshold):
-    print('labelPointCloud2Msg called')
-    n_inliers = 0
-    labels = {}
-
+def numpyFromPointCloudMsg(msg):
     pc = ros_numpy.numpify(msg)
 
     # Compute number of points by multiplying all the dimensions of the np array.
@@ -84,11 +78,21 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     for value in list(pc.shape):
         number_points = number_points*value
 
-    points_in = np.zeros((number_points, 3))
-    points_in[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
-    points_in[:, 1] = pc['y'].flatten()
-    points_in[:, 2] = pc['z'].flatten()
+    points = np.zeros((number_points, 3))
+    points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
+    points[:, 1] = pc['y'].flatten()
+    points[:, 2] = pc['z'].flatten()
 
+    return points
+
+
+def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
+                        ransac_threshold):
+    n_inliers = 0
+    labels = {}
+
+    points_in = numpyFromPointCloudMsg(msg)
+   
     # Get only the valid points
     points, points_idxs = denseToSparsePointCloud(points_in)
     # print('Reduced original num points in from ' + str(points_in.shape) + ' to ' + str(points.shape))
@@ -99,7 +103,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     pts = points[np.transpose(dist < threshold)[:, 0], :]
     idx = np.where(np.transpose(dist < threshold)[:, 0])[0]
     npoints_close = len(pts)
-    print('Found ' + str(npoints_close) + ' close to the marker (x=' + str(seed_x) + ' y=' + str(seed_y) + ' z=' + str(seed_z) + ') ')
+    # print('Found ' + str(npoints_close) + ' close to the marker (x=' + str(seed_x) + ' y=' + str(seed_y) + ' z=' + str(seed_z) + ') ')
 
     # Tracker - update seed point with the average of cluster to use in the next
     # iteration
@@ -118,7 +122,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     number_points = pts.shape[0]
     if number_points < 10:
         print('Number of points close to the marker is insufficient. Try moving the marker closer to the pattern.')
-        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
+        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
@@ -175,7 +179,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
 
     if A is None:
-        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
+        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
@@ -202,7 +206,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # STEP 1: Get labelled points into a list of dictionaries format which is suitable for later processing.
     # cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
     # pc = ros_numpy.numpify(cloud_msg)
-    # pc is computed above from the imput ros msg.
+    # pc is computed above from the input ros msg.
 
     ps = []  # list of points, each containing a dictionary with all the required information.
     for count, idx in enumerate(labels['idxs']):  # iterate all points
@@ -246,6 +250,20 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     # Count the number of limit points (just for debug)
     number_of_limit_points = len(labels['idxs_limit_points'])
+
+    # Convert indexation from sparse to dense point cloud
+    dense_idxs = []
+    for idx in labels['idxs']:
+        dense_idxs.append(points_idxs[idx])
+    labels['idxs'] = dense_idxs
+
+    dense_idxs = []
+    for idx in labels['idxs_limit_points']:
+        dense_idxs.append(points_idxs[idx])
+    labels['idxs_limit_points'] = dense_idxs
+
+    # print('Found ' + str(len(labels['idxs'])) + ' pattern points')
+    # print('Found ' + str(len(labels['idxs_limit_points'])) + ' limit points')
 
     return labels, seed_point, inliers
 
