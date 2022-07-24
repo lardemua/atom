@@ -307,7 +307,7 @@ class DataCollectorAndLabeler:
         # Lock the semaphore for all labelers
         self.lockAllLabelers()
 
-        # Analyse message time stamps and decide if collection can be stored
+        # Analyze message time stamps and decide if collection can be stored
         stamps, average_time, max_delta = self.getLabelersTimeStatistics()
 
         if max_delta is not None:  # if max_delta is None (only one sensor), continue
