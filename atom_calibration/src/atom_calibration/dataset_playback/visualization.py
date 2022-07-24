@@ -310,6 +310,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
     graphics['ros']['PubPointCloud'] = dict()
     for sensor_key, sensor in dataset['sensors'].items():
+        print('Sensor ' + sensor_key)
 
         if sensor['modality'] not in ['lidar2d', 'lidar3d', 'depth']:
             continue
@@ -318,9 +319,11 @@ def setupVisualization(dataset, args, selected_collection_key):
         graphics['ros']['sensors'][sensor_key] = {'collections': {}}
 
         for collection_key, collection in dataset['collections'].items():
+            print('Collection ' + collection_key)
 
-            if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
-                continue
+            # Removed because of https://github.com/lardemua/atom/issues/515
+            # if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
+                # continue
 
             graphics['ros']['sensors'][sensor_key]['collections'][collection_key] = {}
 
@@ -395,6 +398,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ------------------------------
             elif sensor['modality'] == 'lidar3d':
 
+                print('Entering modality 3d for sensor ' + sensor_key + ' collection ' + collection_key)
                 # Add labelled points to the marker
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
 
@@ -415,6 +419,16 @@ def setupVisualization(dataset, args, selected_collection_key):
                 graphics['ros']['sensors'][sensor_key]['PubPointCloud'] = rospy.Publisher(
                     labeled_topic, PointCloud2, queue_size=0, latch=True)
                 graphics['ros']['sensors'][sensor_key]['collections'][collection_key]['PointClouds'] = final_pointcloud_msg
+
+
+
+    print('Inspection --------------')
+
+    for sensor_key in graphics['ros']['sensors'].keys():
+        print('sensor ' + sensor_key)
+        for collection_key in graphics['ros']['sensors'][sensor_key]['collections'].keys():
+
+            print('collection ' + collection_key)
 
     # 3D labels for depth sensors ------------------------------------------------------------------------
     # sensor_key + '-Labels-3D'
@@ -604,7 +618,8 @@ def visualizationFunction(models, selection, clicked_points=None):
         if not dataset['sensors'][sensor_key]['modality'] in ['lidar3d']:  # TODO add  lidar2d
             continue
 
-        # Create a new point cloud to publissh which has the new label idxs in green, idxs_limits in dark green.
+
+        # Create a new point cloud to publish which has the new label idxs in green, idxs_limits in dark green.
         # Also, change intensity channel according to the idxs of the sensor
         pointcloud_msg = graphics['ros']['sensors'][sensor_key]['collections'][selected_collection_key]['PointClouds']
         pointcloud_msg.header.stamp = now  # update time stamp.

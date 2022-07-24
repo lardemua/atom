@@ -139,7 +139,7 @@ def main():
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
-    dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
+    # dataset = filterCollectionsFromDataset(dataset, args)  # During dataset review there is no need to filter out collections
     output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
     if os.path.exists(output_file) and args['json_file'] != output_file and not args['overwrite']:
         ans = input('The file dataset_corrected.json already exists.'
