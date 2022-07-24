@@ -254,7 +254,7 @@ if __name__ == "__main__":
                              Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
                              Fore.BLUE + args['config_file'] + Style.RESET_ALL)
 
-    # Verify that the parent and child links for each sensor are a direct transformation (#316)
+    # Verify that the parent and child links for each sensor are a direct transformation (#316).
     for sensor_key, sensor in config['sensors'].items():
         edge_in_config = (config['sensors'][sensor_key]['parent_link'], config['sensors'][sensor_key]['child_link'])
         if not edge_in_config in gx.edges():
@@ -262,6 +262,22 @@ if __name__ == "__main__":
                 'Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
                 edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
                 ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
+
+    # Verify that the frame_id in the calibration.yaml->sensor->link field is the same as in the published messages (#514).
+    print('Checking consistency of configuration tf frames with the messages on corresponding topic ...')
+    print('Loading bagfile ' + bag_file)
+    bag = rosbag.Bag(bag_file)
+    for sensor_key, sensor in config['sensors'].items():
+        frame_in_config = config['sensors'][sensor_key]['link']
+        topic_in_config = config['sensors'][sensor_key]['topic_name']
+
+        for topic, msg, t in bag.read_messages(topics=[topic_in_config]):
+            if not msg.header.frame_id == frame_in_config:
+                print('Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' calibration config defined link ' + Fore.YELLOW + frame_in_config + Fore.BLACK +' but bagfile messages on topic ' + Fore.BLUE + topic_in_config + Fore.BLACK + ' have header.frame_id ' + Fore.YELLOW + msg.header.frame_id + Fore.BLACK + '. These should be the same! Check #514.'+ Style.RESET_ALL)
+                exit(0)
+            break # check consistency only for the first message
+    bag.close()
+
 
     # if nx.is_connected(gx):
     if nx.is_weakly_connected(gx):
