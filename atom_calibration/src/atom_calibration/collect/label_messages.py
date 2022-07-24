@@ -33,12 +33,42 @@ def find_nearest_white(img, target):
     nearest_index = np.argmin(distances)
     return nonzero[nearest_index]
 
+def denseToSparsePointCloud(dense_pc):
+    """Creates a sparse numpy array containing only the points. 
+    
+    Get a list of indices of valid points. Some lidars may be pointing up for example and a lot of points are not valid. These are generally represented as xyz = 0,0,0 
 
-def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
-                        ransac_threshold):
-    n_inliers = 0
-    labels = {}
+    Args:
+        dense_pc (_type_): Numpy array of shape (npoints, 3)
 
+    Returns:
+        _type_: _description_
+    """
+
+    dense_npoints = dense_pc.shape[0]
+    xs = []
+    ys = []
+    zs = []
+    sparse_idxs = []
+
+    for idx in range(0,dense_npoints):
+        x = dense_pc[idx,0]
+        y = dense_pc[idx,1]
+        z = dense_pc[idx,2]
+
+        if x != 0 and y != 0 and z != 0:
+            xs.append(x)
+            ys.append(y)
+            zs.append(z)
+            sparse_idxs.append(idx)
+
+    sparse_npoints = len(sparse_idxs)
+    sparse_pc = np.array([xs,ys,zs]).transpose()
+    sparse_idxs = np.array(sparse_idxs, dtype=np.uint).transpose()
+
+    return sparse_pc, sparse_idxs
+    
+def numpyFromPointCloudMsg(msg):
     pc = ros_numpy.numpify(msg)
 
     # Compute number of points by multiplying all the dimensions of the np array.
@@ -53,11 +83,27 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     points[:, 1] = pc['y'].flatten()
     points[:, 2] = pc['z'].flatten()
 
+    return points
+
+
+def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iterations,
+                        ransac_threshold):
+    n_inliers = 0
+    labels = {}
+
+    points_in = numpyFromPointCloudMsg(msg)
+   
+    # Get only the valid points
+    points, points_idxs = denseToSparsePointCloud(points_in)
+    # print('Reduced original num points in from ' + str(points_in.shape) + ' to ' + str(points.shape))
+
     # Extract the points close to the seed point from the entire PCL
     marker_point = np.array([[seed_x, seed_y, seed_z]])
     dist = scipy.spatial.distance.cdist(marker_point, points, metric='euclidean')
     pts = points[np.transpose(dist < threshold)[:, 0], :]
     idx = np.where(np.transpose(dist < threshold)[:, 0])[0]
+    npoints_close = len(pts)
+    # print('Found ' + str(npoints_close) + ' close to the marker (x=' + str(seed_x) + ' y=' + str(seed_y) + ' z=' + str(seed_z) + ') ')
 
     # Tracker - update seed point with the average of cluster to use in the next
     # iteration
@@ -75,7 +121,8 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # RANSAC - eliminate the tracker outliers
     number_points = pts.shape[0]
     if number_points < 10:
-        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
+        print('Number of points close to the marker is insufficient. Try moving the marker closer to the pattern.')
+        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
@@ -92,6 +139,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
             idx2 = random.randint(0, number_points - 1)
             idx3 = random.randint(0, number_points - 1)
             pt1, pt2, pt3 = pts[[idx1, idx2, idx3], :]
+
             # Compute the norm of position vectors
             ab = np.linalg.norm(pt2 - pt1)
             bc = np.linalg.norm(pt3 - pt2)
@@ -131,7 +179,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
 
     if A is None:
-        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': [], 'idxs_middle_points': []}
+        labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
@@ -158,7 +206,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # STEP 1: Get labelled points into a list of dictionaries format which is suitable for later processing.
     # cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
     # pc = ros_numpy.numpify(cloud_msg)
-    # pc is computed above from the imput ros msg.
+    # pc is computed above from the input ros msg.
 
     ps = []  # list of points, each containing a dictionary with all the required information.
     for count, idx in enumerate(labels['idxs']):  # iterate all points
@@ -203,13 +251,27 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # Count the number of limit points (just for debug)
     number_of_limit_points = len(labels['idxs_limit_points'])
 
+    # Convert indexation from sparse to dense point cloud
+    dense_idxs = []
+    for idx in labels['idxs']:
+        dense_idxs.append(points_idxs[idx])
+    labels['idxs'] = dense_idxs
+
+    dense_idxs = []
+    for idx in labels['idxs_limit_points']:
+        dense_idxs.append(points_idxs[idx])
+    labels['idxs_limit_points'] = dense_idxs
+
+    # print('Found ' + str(len(labels['idxs'])) + ' pattern points')
+    # print('Found ' + str(len(labels['idxs_limit_points'])) + ' limit points')
+
     return labels, seed_point, inliers
 
 
 def imageShowUInt16OrFloat32OrBool(image, window_name, max_value=5000.0):
     """
     Shows uint16 or float32 or bool images by normalizing them before using imshow
-    :param image: np nd array with dtype npuint16 or floar32
+    :param image: np nd array with dtype npuint16 or float32
     :param window_name: highgui window name
     :param max_value: value to use for white color
     """

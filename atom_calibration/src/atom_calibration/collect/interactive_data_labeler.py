@@ -39,7 +39,7 @@ from geometry_msgs.msg import Point, PointStamped
 # local packages
 from atom_calibration.collect import patterns
 from atom_calibration.collect.label_messages import (getFrustumMarkerArray, labelPointCloud2Msg, labelDepthMsg,
-                                                     calculateFrustrum, pixToWorld, worldToPix)
+                                                     calculateFrustrum, numpyFromPointCloudMsg, pixToWorld, worldToPix)
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -465,15 +465,24 @@ class InteractiveDataLabeler:
                                                                    self.tracker_threshold, self.number_iterations,
                                                                    self.ransac_threshold)
 
-            # publish the points that belong to the cluster
+            # publish the points that belong to the cluster (use idxs to show annotations)
+            point_cloud = numpyFromPointCloudMsg(self.msg)
+
+            # Add idxs points
+            r,g,b = int(1 * 255.0), int(1 * 255.0),int(1 * 255.0)
+            a = 200
+            rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
             points = []
-            for i in range(len(inliers)):
-                r = int(1 * 255.0)
-                g = int(1 * 255.0)
-                b = int(1 * 255.0)
-                a = 150
-                rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
-                pt = [inliers[i, 0], inliers[i, 1], inliers[i, 2], rgb]
+            for idx in self.labels['idxs']:
+                pt = [point_cloud[idx, 0], point_cloud[idx, 1], point_cloud[idx, 2], rgb]
+                points.append(pt)
+
+            # Add idx_limit_points (darker)
+            r,g,b = int(1 * 25.0), int(1 * 25.0),int(1 * 25.0)
+            a = 150
+            rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
+            for idx in self.labels['idxs_limit_points']:
+                pt = [point_cloud[idx, 0], point_cloud[idx, 1], point_cloud[idx, 2], rgb]
                 points.append(pt)
 
             fields = [PointField('x', 0, PointField.FLOAT32, 1), PointField('y', 4, PointField.FLOAT32, 1),
