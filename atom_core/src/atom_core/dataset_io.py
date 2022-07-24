@@ -13,6 +13,8 @@ import cv2
 import rospy
 import tf
 import atom_core.pypcd as pypcd
+import sensor_msgs.point_cloud2 as pc2
+from sensor_msgs.msg import PointCloud2, PointField, sensor_msgs
 
 # Atom imports
 from cv_bridge import CvBridge
@@ -21,7 +23,8 @@ from rospy_message_converter import message_converter
 from std_msgs.msg import Header
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
-from atom_calibration.collect.label_messages import convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1
+from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
+                                                     numpyFromPointCloudMsg)
 
 
 def printImageInfo(image, text=None):
@@ -34,12 +37,7 @@ def printImageInfo(image, text=None):
 
 
 def loadResultsJSON(json_file, collection_selection_function=None):
-    # NOTE(eurico): I removed the URI reader because the argument is provided by the command line
-    #   and our guide lines is to use environment variables, which the shell already expands.
-    #   Furthermore, the URI resolver required an import from a `top-level` package which does
-    #   not make sense in a `core` package.
-    # Note(Miguel): but I think the expansion does not work, e.g. you can't do --dataset_folded ~/datasets/...
-    # Also, the utilities are now in core. No dependency on another package anymore. We can discuss this more...
+
     json_file, _, _ = uriReader(json_file)
 
     f = open(json_file, 'r')
@@ -62,8 +60,7 @@ def loadResultsJSON(json_file, collection_selection_function=None):
         for sensor_key, sensor in dataset['sensors'].items():
 
             if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d' or
-                    sensor[
-                        'modality'] == 'depth'):
+                    sensor['modality'] == 'depth'):
                 continue  # only process images or point clouds
 
             # Check if we really need to load the file.
@@ -137,8 +134,7 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 # TODO verify if values in the dataset or ok
                 # exit(0)
 
-            elif load_file and (
-                    sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
+            elif load_file and (sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                 frame_id = str(collection['data'][sensor_key]['header']['frame_id'])
 
@@ -158,14 +154,6 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
 
     print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
-
-    # d= copy.deepcopy(dataset['collections']['0']['data']["depth_camera_1"])
-    # del d['data_file']
-    # msg_33 = message_converter.convert_dictionary_to_ros_message('sensor_msgs/Image', d)
-    # bridge=CvBridge()
-    # image_33=bridge.imgmsg_to_cv2(msg_33, desired_encoding='passthrough')
-    # imageShowUInt16OrFloat32OrBool(image_33, "inside_load_results")
-    # cv2.waitKey(5)
 
     return dataset, json_file
 
@@ -241,6 +229,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         # Save file if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
+            #TODO must remove this or True, just for debugging
             # from: dictionary -> ros_message -> PointCloud2() -> pcd file
             msg = getPointCloudMessageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
             write_pcd(filename, msg)
@@ -440,7 +429,20 @@ def write_pcd(filename, pointcloud, mode='binary'):
     """
 
     print('Reading point cloud from ' + Fore.BLUE + filename + Style.RESET_ALL)
-    pc = pypcd.PointCloud.from_msg(pointcloud)
+
+    # Convert to flattened (height=1) before saving to pcd, because pypcd cannot save non flattened pointclouds to pcd.
+    # https://github.com/lardemua/atom/issues/520
+    pc_np = numpyFromPointCloudMsg(pointcloud)
+    points = []  # Build a list of points.
+    for idx in range(0,pc_np.shape[0]):
+        points.append([pc_np[idx,0], pc_np[idx,1], pc_np[idx,2]])
+
+    fields = [PointField('x', 0, PointField.FLOAT32, 1),
+              PointField('y', 4, PointField.FLOAT32, 1),
+              PointField('z', 8, PointField.FLOAT32, 1)]
+    flattened_point_cloud = pc2.create_cloud(pointcloud.header, fields, points)
+
+    pc = pypcd.PointCloud.from_msg(flattened_point_cloud)
     pc.save_pcd(filename, compression=mode)
 
 

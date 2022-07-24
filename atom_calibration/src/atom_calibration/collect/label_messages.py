@@ -121,7 +121,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # RANSAC - eliminate the tracker outliers
     number_points = pts.shape[0]
     if number_points < 10:
-        print('Number of points close to the marker is insufficient. Try moving the marker closer to the pattern.')
+        # print('Number of points close to the marker is insufficient. Try moving the marker closer to the pattern.')
         labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []

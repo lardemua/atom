@@ -405,6 +405,11 @@ def setupVisualization(dataset, args, selected_collection_key):
                 # Add 3D lidar data
                 original_pointcloud_msg = getPointCloudMessageFromDictionary(
                     dataset['collections'][collection_key]['data'][sensor_key])
+
+                # print('original_pointcloud_msg.width = ' + str(original_pointcloud_msg.width))
+                # print('original_pointcloud_msg.height = ' + str(original_pointcloud_msg.height))
+
+                # exit(0)
                 final_pointcloud_msg = PointCloud2(header=Header(frame_id=frame_id, stamp=now),
                                                    height=original_pointcloud_msg.height,
                                                    width=original_pointcloud_msg.width,
@@ -617,6 +622,9 @@ def visualizationFunction(models, selection, clicked_points=None):
         idxs = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs']
         idxs_limit_points = dataset['collections'][selected_collection_key]['labels'][sensor_key]['idxs_limit_points']
         sensor_idx = list(dataset['collections'][selected_collection_key]['labels'].keys()).index(sensor_key)
+
+        # print('pointcloud_msg.height=' + str(pointcloud_msg.height))
+        # print('pointcloud_msg.width=' + str(pointcloud_msg.width))
 
         points = []  # Build a list of points.
         for idx, point in enumerate(list(pc2.read_points(pointcloud_msg))):
