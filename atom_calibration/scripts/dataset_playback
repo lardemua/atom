@@ -75,7 +75,7 @@ def keyPressedCallback(key, selection, dataset, args):
 
     try:
         key_char = key.char
-        print(key_char)
+        # print(key_char)
         if key_char == 's':  # Saves dataset.
             saveResultsJSON(output_file, dataset, freeze_dataset=True)
             print('A new dataset was saved in ' + output_file)
