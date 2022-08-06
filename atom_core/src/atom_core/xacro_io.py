@@ -6,6 +6,7 @@ from datetime import datetime
 
 # Ros imports
 import rospkg
+import atom_core
 import tf
 
 # Atom imports
@@ -61,7 +62,7 @@ def saveResultsXacro(dataset, selected_collection_key):
     time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     file_name = "optimized_" + time + ".urdf.xacro"
 
-    # TODO we should assume all datasets have a _metadate field.
+    # TODO we should assume all datasets have a _metadata field.
     if "_metadata" not in dataset:
         # if args['output_xacro'] is None:
         filename_results_xacro = "/tmp/" + file_name
@@ -69,16 +70,19 @@ def saveResultsXacro(dataset, selected_collection_key):
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
     else:
-        rospack = rospkg.RosPack()
-        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/optimized/")
+        
+        urdf_file, urdf_full_path, urdf_file_rel = atom_core.config_io.uriReader(dataset['calibration_config']['description_file'])
+        urdf_path = os.path.dirname(urdf_file)
+
+        path_to_file = urdf_path + '/optimized/'
         if not os.path.exists(path_to_file):
             os.mkdir(path_to_file)
         filename_results_xacro = path_to_file + file_name
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-        with open(rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration")
-                  + "/urdf/optimized.urdf.xacro", "w",) as out:
+        optimized_urdf_file = urdf_path + '/optimized.urdf.xacro'
+        with open(optimized_urdf_file, "w",) as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
