@@ -173,6 +173,7 @@ class DataCollectorAndLabeler:
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
 
+
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
 
@@ -377,9 +378,18 @@ class DataCollectorAndLabeler:
         # Get a list of all transforms to collect
         transforms_list = []
 
+        rospy.sleep(0.5)
         now = rospy.Time.now()
 
-        all_frames = self.listener.getFrameStrings()
+        # Error came up in 
+        # https://github.com/miguelriemoliveira/agri-gaia-test/issues/1
+        # Identified that this was deprecated in 
+        # https://answers.ros.org/question/335327/yamlload-is-deprecated-when-source-melodic_wssetupbash-is-executed/
+        # Using solution from 
+        # https://answers.ros.org/question/347857/how-to-get-list-of-all-tf-frames-programatically/
+        # all_frames = self.listener.getFrameStrings()
+        frames_dict = yaml.safe_load(self.listener._buffer.all_frames_as_yaml())
+        all_frames = list(frames_dict.keys())
 
         for frame in all_frames:
             print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
