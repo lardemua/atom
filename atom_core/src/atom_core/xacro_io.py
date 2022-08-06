@@ -71,7 +71,7 @@ def saveResultsXacro(dataset, selected_collection_key):
             out.write(URDF.to_xml_string(xml_robot))
     else:
         
-        urdf_file, urdf_full_path, urdf_file_rel = atom_core.config_io.uriReader(dataset['calibration_config']['description_file'])
+        urdf_file, _, _ = atom_core.config_io.uriReader(dataset['calibration_config']['description_file'])
         urdf_path = os.path.dirname(urdf_file)
 
         path_to_file = urdf_path + '/optimized/'
