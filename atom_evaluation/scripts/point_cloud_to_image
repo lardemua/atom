@@ -84,6 +84,7 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-ls", "--lidar_sensor", help="LiDAR sensor name.", type=str, required=True)
     ap.add_argument("-cs", "--camera_sensor", help="Camera sensor name.", type=str, required=True)
+    ap.add_argument("-md", "--max_depth", help="Max depth to scale color of points.", type=float, default=5.0)
 
     # - Save args
     args = vars(ap.parse_args())
@@ -143,21 +144,19 @@ if __name__ == "__main__":
                                  dataset['collections'][selected_collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
 
-        print(len(points))
-
-        colormap = cm.cool(np.linspace(0, 1, 5000)) # range in millimeters to color
-
-
+        number_colors = int(args['max_depth'] * 1000)
+        colormap = cm.cool(np.linspace(0, 1, number_colors)) # range in millimeters to color
         for idx in range(0, pts_in_image.shape[1]):
             if int(pts_in_image[0, idx]) > 0 and int(pts_in_image[0, idx]) < img_size[1] and \
                     int(pts_in_image[1, idx]) > 0 and int(pts_in_image[1, idx]) < img_size[0]:
-                range = points[idx,0]
+                range_measurement = points[idx,0]
 
-                print(range)
-                color_idx = min(int(range*1000), 4999)
+                color_idx = min(int(range_measurement*1000), number_colors-1)
                 color = 255*colormap[color_idx,:]
-                print(color)
                 image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, color, -1)
 
-        cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
-        cv2.waitKey()
+        win_name = "Lidar to Camera reprojection - collection " + str(collection_key)
+        cv2.namedWindow(win_name)
+        cv2.imshow(win_name, image)
+        cv2.waitKey(0)
+        cv2.destroyWindow(win_name)
