@@ -48,7 +48,7 @@ def rangeToImage(collection, ss, ts, tf, pts):
     # -- Convert limit points from velodyne to camera frame
     points_in_lidar = np.array(
         [[item[0] for item in pts], [item[1] for item in pts], [item[2] for item in pts],
-         [1 for item in pts]], np.float)
+         [1 for item in pts]], float)
 
     points_in_cam = np.dot(tf, points_in_lidar)
 
@@ -61,13 +61,13 @@ def rangeToImage(collection, ss, ts, tf, pts):
     points_in_cam = np.array(
         [[item[0] for item in points_in_cam_], [item[1] for item in points_in_cam_],
          [item[2] for item in points_in_cam_],
-         [1 for item in points_in_cam_]], np.float)
+         [1 for item in points_in_cam_]], float)
 
     # -- Project them to the image
     selected_collection_key = list(dataset['collections'].keys())[0]
     w, h = collection['data'][ts]['width'], dataset['collections'][selected_collection_key]['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
-    D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
+    K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
     pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
