@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Projects a point cloud into an image
@@ -19,6 +19,7 @@ import numpy as np
 
 # ROS imports
 import ros_numpy
+from matplotlib import cm
 
 # Atom imports
 from atom_core.vision import projectToCamera
@@ -106,7 +107,13 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Read point cloud from file
         # ---------------------------------------
-        pcd_filename = os.path.dirname(json_file) + '/' + collection['data'][lidar_sensor]['data_file']
+        if os.path.dirname(json_file) == '':
+            pcd_filename = collection['data'][lidar_sensor]['data_file']
+        else:
+            pcd_filename = os.path.dirname(json_file) + '/' + collection['data'][lidar_sensor]['data_file']
+
+        print(pcd_filename)
+
         frame_id = str(collection['data'][lidar_sensor]['header']['frame_id'])
 
         # Read point cloud
@@ -120,7 +127,11 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Read image from file
         # ---------------------------------------
-        cam_filename = os.path.dirname(json_file) + '/' + collection['data'][camera_sensor]['data_file']
+        if os.path.dirname(json_file) == '':
+            cam_filename = collection['data'][camera_sensor]['data_file']
+        else:
+            cam_filename = os.path.dirname(json_file) + '/' + collection['data'][camera_sensor]['data_file']
+
         image = cv2.imread(cam_filename)
         img_size = image.shape
 
@@ -131,10 +142,22 @@ if __name__ == "__main__":
         lidar2cam = getTransform(from_frame, to_frame,
                                  dataset['collections'][selected_collection_key]['transforms'])
         pts_in_image = rangeToImage(collection, lidar_sensor, camera_sensor, lidar2cam, points)
+
+        print(len(points))
+
+        colormap = cm.cool(np.linspace(0, 1, 5000)) # range in millimeters to color
+
+
         for idx in range(0, pts_in_image.shape[1]):
             if int(pts_in_image[0, idx]) > 0 and int(pts_in_image[0, idx]) < img_size[1] and \
                     int(pts_in_image[1, idx]) > 0 and int(pts_in_image[1, idx]) < img_size[0]:
-                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, (255, 0, 0), -1)
+                range = points[idx,0]
+
+                print(range)
+                color_idx = min(int(range*1000), 4999)
+                color = 255*colormap[color_idx,:]
+                print(color)
+                image = cv2.circle(image, (int(pts_in_image[0, idx]), int(pts_in_image[1, idx])), 2, color, -1)
 
         cv2.imshow("Lidar to Camera reprojection - collection " + str(collection_key), image)
         cv2.waitKey()

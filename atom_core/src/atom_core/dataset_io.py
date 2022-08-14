@@ -422,7 +422,7 @@ def walk(node):
 
 def write_pcd(filename, pointcloud, mode='binary'):
     """
-    This is meant to replace the old read_pcd from Andre which broke when migrating to python3.
+    This is meant to replace the old write_pcd from Andre which broke when migrating to python3.
     :param filename:
     :param cloud_header:
     :return:
@@ -453,8 +453,9 @@ def read_pcd(filename, cloud_header=None, verbose=False):
     :param cloud_header:
     :return:
     """
+
     if not os.path.isfile(filename):
-        raise Exception("[read_pcd] File does not exist.")
+        raise Exception("[read_pcd] File " + filename + " does not exist.")
 
     if verbose:
         print('Reading point cloud from ' + Fore.BLUE + filename + Style.RESET_ALL)
