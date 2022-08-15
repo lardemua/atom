@@ -2,6 +2,7 @@
 
 # stdlib
 import copy
+import os
 
 # 3rd-party
 import atom_msgs.srv
@@ -10,13 +11,15 @@ import numpy as np
 import cv2
 import std_srvs.srv
 import tf
-
+import image_geometry
+from atom_calibration.collect.label_messages import getFrustumMarkerArray
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from tf.listener import TransformListener
+from rospy_message_converter import message_converter
+
 # from transformation_t import TransformationT
 from atom_calibration.initial_estimate.transformation_t import TransformationT
-
 
 # ------------------------
 #      BASE CLASSES      #
@@ -38,7 +41,7 @@ class MarkerPoseC:
 class Sensor:
 
     def __init__(self, name, server, global_menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_sensor,
-                 marker_scale):
+                 sensor_topic, sensor_modality, sensor_color, marker_scale):
         print('Creating a new sensor named ' + name)
         self.name = name
         self.visible = True
@@ -54,6 +57,32 @@ class Sensor:
         self.opt_parent_link = frame_opt_parent
         self.opt_child_link = frame_opt_child
         self.sensor_link = frame_sensor
+
+        # Frustum
+        self.color = sensor_color
+        self.modality = sensor_modality
+        if self.modality in ['rgb', 'depth']:
+            self.topic = sensor_topic
+            self.camera_info_topic = os.path.dirname(self.topic) + '/camera_info'
+            from sensor_msgs.msg import CameraInfo
+            print('Waiting for camera_info message on topic ' + self.camera_info_topic + ' ...')
+            self.camera_info_msg = rospy.wait_for_message(self.camera_info_topic, CameraInfo)
+            print('... received!')
+    
+            self.pinhole_camera_model = image_geometry.PinholeCameraModel()
+            self.pinhole_camera_model.fromCameraInfo(self.camera_info_msg)
+            self.publisher_frustum = rospy.Publisher(self.name + '/frustum', MarkerArray, queue_size=1)
+
+            width = self.pinhole_camera_model.fullResolution()[0]
+            height = self.pinhole_camera_model.fullResolution()[1]
+            f_x = self.pinhole_camera_model.fx()
+            f_y = self.pinhole_camera_model.fy()
+            frame_id = frame_sensor
+
+            self.frustum_marker_array = getFrustumMarkerArray(width, height, f_x, f_y,
+                                                              Z_near=0.3, Z_far=3, frame_id=frame_id, ns=self.name,
+                                                              color=self.color)
+
 
         print('Collecting transforms...')
         self.updateAll()  # update all the transformations
@@ -142,6 +171,10 @@ class Sensor:
         self.br.sendTransform((trans[0], trans[1], trans[2]),
                               (quat[0], quat[1], quat[2], quat[3]),
                               rospy.Time.now(), self.opt_child_link, self.opt_parent_link)
+
+
+        if self.modality in ['rgb', 'depth']:
+            self.publisher_frustum.publish(self.frustum_marker_array)
 
     def markerFeedback(self, feedback):
         # print(' sensor ' + self.name + ' received feedback')

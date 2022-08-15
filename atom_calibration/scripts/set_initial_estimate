@@ -5,11 +5,13 @@ import sys
 import argparse
 import time
 
+import numpy as np
+
 # 3rd-party
 import rospkg
 import rospy
-
 from colorama import Fore, Style
+from matplotlib import cm
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
@@ -63,7 +65,11 @@ class InteractiveFirstGuess(object):
         # Waiting for the loading of the bagfile
         time.sleep(2)
 
+        # Create a colormap so that we have one color per sensor
+        self.cm_sensors = cm.Pastel2(np.linspace(0, 1, len(self.config['sensors'].keys())))
+
         # For each node generate an interactive marker.
+        sensor_idx = 0
         for name, sensor in self.config['sensors'].items():
             print(Fore.BLUE + '\nSensor name is ' + name + Style.RESET_ALL)
             params = {
@@ -71,9 +77,13 @@ class InteractiveFirstGuess(object):
                 "frame_opt_parent": sensor['parent_link'],
                 "frame_opt_child": sensor['child_link'],
                 "frame_sensor": sensor['link'],
+                "sensor_topic": sensor['topic_name'],
+                "sensor_modality": sensor['modality'],
+                "sensor_color": tuple(self.cm_sensors[sensor_idx, :]),
                 "marker_scale": self.args['marker_scale']}
             # Append to the list of sensors
             self.sensors.append(Sensor(name, self.server, self.menu, **params))
+            sensor_idx += 1
             print('... done')
 
         self.server.applyChanges()
