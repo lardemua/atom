@@ -4,7 +4,6 @@ import copy
 import math
 import random
 
-import scipy
 import numpy as np
 import cv2
 
@@ -12,7 +11,7 @@ import cv2
 import cv_bridge
 import rospy
 import ros_numpy
-from scipy import ndimage
+from scipy import ndimage, spatial
 from std_msgs.msg import Header, ColorRGBA
 from cv_bridge import CvBridge
 from visualization_msgs.msg import Marker, MarkerArray
@@ -99,7 +98,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     # Extract the points close to the seed point from the entire PCL
     marker_point = np.array([[seed_x, seed_y, seed_z]])
-    dist = scipy.spatial.distance.cdist(marker_point, points, metric='euclidean')
+    dist = spatial.distance.cdist(marker_point, points, metric='euclidean')
     pts = points[np.transpose(dist < threshold)[:, 0], :]
     idx = np.where(np.transpose(dist < threshold)[:, 0])[0]
     npoints_close = len(pts)

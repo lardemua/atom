@@ -527,6 +527,12 @@ if __name__ == "__main__":
                                                                        'Image_Topic': topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
+            # Frustum
+            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
+                                                                            'Marker_Topic': sensor_key + '/frustum'})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+
         # elif msg_type == 'sensor_msgs/LaserScan':
         elif modality == 'lidar2d':
             # Raw data
@@ -599,10 +605,6 @@ if __name__ == "__main__":
                                                                        'Image_Topic': topic})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            # Frustum
-            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
-                                                                            'Marker_Topic': sensor_key + '/frustum'})
-            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'depth':
             depth += 1
@@ -619,11 +621,6 @@ if __name__ == "__main__":
                 c={'Name': sensor_key + '-ManualDataLabeler-InteractiveMarkers',
                    'Update_Topic': sensor_key + '/data_labeler/update'}
             )
-            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
-
-            # Frustum
-            rendered = env.get_template('/rviz/MarkerArray.rviz').render(c={'Name': sensor_key + '-Frustum',
-                                                                            'Marker_Topic': sensor_key + '/frustum'})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         # elif msg_type == 'sensor_msgs/LaserScan':
@@ -643,7 +640,7 @@ if __name__ == "__main__":
                                                                             'Alpha': 0.05})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
-            # # TODO Add markers to display data clusters
+            # TODO Add markers to display data clusters
 
             rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
                 c={'Name': sensor_key + '-ManualDataLabeler-InteractiveMarkers',
