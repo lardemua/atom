@@ -39,11 +39,21 @@ def errorReport(dataset, residuals, normalizer):
     from prettytable import PrettyTable
     table_header = ['Collection']
 
+
     for sensor_key, sensor in dataset['sensors'].items():
-        if sensor_key == dataset['calibration_config']['anchored_sensor']:
-            table_header.append(Fore.YELLOW + sensor_key + Style.RESET_ALL)
+
+        # Define units
+        if sensor['modality'] in ['lidar3d']:
+            units = ' (m)' 
+        elif sensor['modality'] in ['rgb', 'depth']:
+            units = ' (px)' 
         else:
-            table_header.append(sensor_key)
+            units = ''
+
+        if sensor_key == dataset['calibration_config']['anchored_sensor']:
+            table_header.append(Fore.YELLOW + sensor_key + Style.RESET_ALL + units)
+        else:
+            table_header.append(sensor_key + units)
 
     table = PrettyTable(table_header)
 
