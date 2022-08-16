@@ -109,9 +109,9 @@ def selectedPointsClearAllCallback(selected_point_cloud, selection, dataset):
     Callback function to remove all points of the selected sensor from the dataset.
     """
 
+    collection_key = selection['collection_key']
     print('Clearing all labels of collection ' + collection_key + ' ...')
 
-    collection_key = selection['collection_key']
     # Extract xyz coordinates from the selected points
     points_selected = pc2.read_points(selected_point_cloud)
     gen_selected_points = list(points_selected)
