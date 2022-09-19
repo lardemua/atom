@@ -184,11 +184,11 @@ if __name__ == "__main__":
     print('Running verifications ... please wait ...')
 
     # Verify if the standard atom_calibration directories exist, if not create them (#401)
-    checkDirectoryExistence('calibration', package_name)
-    checkDirectoryExistence('launch', package_name)
-    checkDirectoryExistence('rviz', package_name)
-    checkDirectoryExistence('scripts', package_name)
-    checkDirectoryExistence('urdf', package_name)
+    checkDirectoryExistence('calibration', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('launch', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('rviz', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('scripts', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('urdf', package_name, create_if_nonexistent=True)
 
     # If anchored sensor exists, it must be one of the existing sensors
     if config['anchored_sensor'] != '' and \

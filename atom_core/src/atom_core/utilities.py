@@ -15,6 +15,7 @@ from signal import setitimer, signal, SIGALRM, ITIMER_REAL
 import readchar
 import rospkg
 from colorama import Fore, Style
+from atom_core.config_io import execute
 
 # 3rd-party
 from rospy_message_converter import message_converter
@@ -116,12 +117,17 @@ def laser_scan_data_to_xy(data):
     return x, y
 
 
-def checkDirectoryExistence(directory, package_name):
+def checkDirectoryExistence(directory, package_name, create_if_nonexistent=False):
     package_path = rospkg.RosPack().get_path(package_name)  # full path to the package, including its name.
 
     if not os.path.exists(package_path + '/' + directory):
-        print(Fore.RED + directory + Style.RESET_ALL + ' directory does not exist. Package ' + Fore.BLUE + package_name +
-              Style.RESET_ALL + ' may be corrupted. You should create a new calibration package')
+        if create_if_nonexistent:
+            print(Fore.YELLOW + directory + Style.RESET_ALL + ' directory does not exist. Created a new one.')
+            execute('mkdir ' + package_path + '/' + directory)
+            return True
+        else:
+            print(Fore.RED + directory + Style.RESET_ALL + ' directory does not exist.')
+            return False
 
 
 def rootMeanSquare(errors):
