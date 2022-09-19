@@ -73,6 +73,13 @@ if __name__ == "__main__":
     calibrate_launch_file = package_path + '/launch/calibrate.launch'
     dataset_playback_launch_file = package_path + '/launch/dataset_playback.launch'
 
+    # Verify if the standard atom_calibration directories exist, if not create them (#401)
+    checkDirectoryExistence('calibration', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('launch', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('rviz', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('scripts', package_name, create_if_nonexistent=True)
+    checkDirectoryExistence('urdf', package_name, create_if_nonexistent=True)
+
     # Template engine1 setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
     env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
@@ -107,6 +114,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     description_file, _, _ = atom_core.config_io.uriReader(config['description_file'])
     description_file_out_initial_estimate = package_path + '/urdf/initial_estimate.urdf.xacro'
+    print('description file = ' + description_file)
     atom_core.config_io.execute('cp ' + description_file + ' ' + description_file_out_initial_estimate,
                                 verbose=False)  # Copy the xacro to the initial_estimate file
 
@@ -183,12 +191,6 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Running verifications ... please wait ...')
 
-    # Verify if the standard atom_calibration directories exist, if not create them (#401)
-    checkDirectoryExistence('calibration', package_name, create_if_nonexistent=True)
-    checkDirectoryExistence('launch', package_name, create_if_nonexistent=True)
-    checkDirectoryExistence('rviz', package_name, create_if_nonexistent=True)
-    checkDirectoryExistence('scripts', package_name, create_if_nonexistent=True)
-    checkDirectoryExistence('urdf', package_name, create_if_nonexistent=True)
 
     # If anchored sensor exists, it must be one of the existing sensors
     if config['anchored_sensor'] != '' and \
