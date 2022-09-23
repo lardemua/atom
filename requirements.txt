@@ -11,6 +11,10 @@ pynput
 scipy
 networkx
 prettytable
+readchar
+urdf-parser-py
+SQLAlchemy
+open3d
 
 
 
