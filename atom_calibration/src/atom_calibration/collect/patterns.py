@@ -80,7 +80,7 @@ class CharucoPattern(object):
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
         self.dictionary = cv2.aruco.getPredefinedDictionary(cdictionary)
-        self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
+        self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length, self.dictionary)
 
     def detect(self, image, equalize_histogram=False):
 
@@ -93,7 +93,7 @@ class CharucoPattern(object):
             gray = cv2.equalizeHist(gray)
 
         # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
-        params = cv2.aruco.DetectorParameters_create()
+        params = cv2.aruco.DetectorParameters()
 
         # setup initial data
         params.adaptiveThreshConstant = 2
@@ -109,13 +109,22 @@ class CharucoPattern(object):
         params.maxErroneousBitsInBorderRate = .15
         params.errorCorrectionRate = .6
 
+        # More info in https://docs.opencv.org/4.7.0/d5/d09/structcv_1_1aruco_1_1RefineParameters.html#a0e5a0079a09f5b29d5b2d8224db63b7f
+        # refine_params = cv2.aruco.RefineParams(errorCorrectionRate=-1, )
+        refine_params = cv2.aruco.RefineParameters()
+
+        charuco_params = cv2.aruco.CharucoParameters()
+
+        detector = cv2.aruco.CharucoDetector(self.board, charuco_params, params, refine_params)
+        corners, ids, rejected = detector.detectMarkers(gray)
         # param.doCornerRefinement = False
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
+        # corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
         # print('corners = ' + str(corners))
-        corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
+        corners, ids, rejected, _ = detector.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
 
         if len(corners) > 4:
-            ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
+            # ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
+            ret, ccorners, cids = detector.detectBoard(corners, ids, gray, self.board)
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
             # TODO is it 5x5 or 3x3 ...
