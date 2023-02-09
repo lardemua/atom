@@ -1,5 +1,5 @@
 rospy_message_converter
-opencv-contrib-python
+opencv-contrib-python==4.6.0.66
 JSON-minify
 jinja2
 alphashape
