@@ -334,9 +334,17 @@ def main():
                 continue
 
             # Sensor related parameters
-            sensors_transform_key = generateKey(
-                sensor["calibration_parent"], sensor["calibration_child"])
-            params = opt.getParamsContainingPattern(sensors_transform_key)
+            # sensors_transform_key = generateKey(
+            #     sensor["calibration_parent"], sensor["calibration_child"])
+            # params = opt.getParamsContainingPattern(sensors_transform_key)
+
+            # Issue #543: Create the list of transformations that influence this residual by analyzing the transformation chain.
+            params = []
+            transforms_list = list(transforms_set) # because I am not sure that I can use a set for some of the next steps
+            for transform_in_chain in sensor['chain']:
+                transform_key = generateKey(transform_in_chain["parent"], transform_in_chain["child"])
+                if transform_key in transforms_list:
+                    params.extend(opt.getParamsContainingPattern(transform_key))
 
             # Intrinsics parameters
             if sensor["modality"] == "rgb" and args["optimize_intrinsics"]:
