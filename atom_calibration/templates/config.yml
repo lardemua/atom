@@ -33,7 +33,7 @@
 description_file: "package://your_package/urdf/description.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/data.bag"
+bag_file: "$ROS_BAGS/data.bag" 
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
