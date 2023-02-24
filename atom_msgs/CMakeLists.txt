@@ -61,6 +61,8 @@ add_service_files(
   FILES
   SetSensorInteractiveMarker.srv
   GetSensorInteractiveMarker.srv
+  SetAdditionalTfsInteractiveMarker.srv
+  GetAdditionalTfsInteractiveMarker.srv
   GetDataset.srv
   SaveCollection.srv
   DeleteCollection.srv
