@@ -199,6 +199,19 @@ def main():
         transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
         transforms_set.add(transform_key)
 
+    ##################################################
+    if 'additional_tfs' in dataset['calibration_config']:
+        if dataset['calibration_config']['additional_tfs'] != "":
+            for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+                # print("PASSOU AQUI")
+                transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+                transforms_set.add(transform_key)
+                # print(transform_key)
+
+            # print(transforms_set)
+            
+    ##################################################
+
     for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
         initial_transform = getterTransform(dataset, transform_key=transform_key,
                                             collection_name=selected_collection_key)
@@ -434,7 +447,7 @@ def main():
     options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'o
+    # options = {'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8, 'diff_step': None, 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:
