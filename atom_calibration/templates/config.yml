@@ -90,6 +90,23 @@ sensors:
     throttle: 10
     modality: rgb
 
+# ATOM will calibrate the extrinsic parameters of your links.
+# In this section you should discriminate the additional transformations that will be part of the calibrations.
+# NOTE: Delete the "" after additional_tfs to prevent the error 'All mapping items must start at the same column YAML'
+additional_tfs: ""
+  # Each key will define a transformations and its name, which will be use throughout the calibration.
+  # Each additional transformations definition must have the following properties:
+  #
+  #       parent_link:
+  #           The parent link of the transformation (i.e. link) to be calibrated.
+  #
+  #       child_link:
+  #           This is the transformation (i.e. link) that we be optimized.
+  #
+  # EXAMPLE:
+  # base_footprint_to_base_link:
+  #   parent_link: "base_footprint"
+  #   child_link: "base_link"
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
