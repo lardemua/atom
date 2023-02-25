@@ -28,16 +28,21 @@ def readXacroFile(description_file):
     return xml_robot
 
 
-def saveResultsXacro(dataset, selected_collection_key):
+def saveResultsXacro(dataset, selected_collection_key, transforms_list):
     # Cycle all sensors in calibration config, and for each replace the optimized transform in the original xacro
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset["calibration_config"]["description_file"])
     xml_robot = readXacroFile(description_file)
 
-    for sensor_key in dataset["calibration_config"]["sensors"]:
-        child = dataset["calibration_config"]["sensors"][sensor_key]["child_link"]
-        parent = dataset["calibration_config"]["sensors"][sensor_key]["parent_link"]
-        transform_key = generateKey(parent, child)
+    # for sensor_key in dataset["calibration_config"]["sensors"]:
+    #     child = dataset["calibration_config"]["sensors"][sensor_key]["child_link"]
+    #     parent = dataset["calibration_config"]["sensors"][sensor_key]["parent_link"]
+    #     transform_key = generateKey(parent, child)
+
+    for transform_key in transforms_list:
+
+        parent = transform_key.split('-')[0]
+        child = transform_key.split('-')[1]
 
         trans = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["trans"])
         quat = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["quat"])
