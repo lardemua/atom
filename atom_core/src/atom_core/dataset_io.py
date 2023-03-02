@@ -633,7 +633,6 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_trans = args['noisy_initial_guess'][0]
     nig_rot = args['noisy_initial_guess'][1]
 
-    ##########################################################
     # add noise to additional tfs for simulation
     if 'additional_tfs' in dataset['calibration_config']:
         if dataset['calibration_config']['additional_tfs'] != "":
@@ -642,6 +641,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
                 calibration_parent = additional_tf['parent_link']
                 addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot) 
 
+    # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
         # if sensor_key == dataset['calibration_config']['anchored_sensor']:
         #     continue
@@ -658,13 +658,9 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
     quat = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
     translation = dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
 
-    # print('Init vals')
-    # print(translation)
-    # print(quat)
-
     euler_angles = tf.transformations.euler_from_quaternion(quat)
 
-     # Add noise to the 6 pose parameters
+    # Add noise to the 6 pose parameters
     v = np.random.uniform(-1.0, 1.0, 3)
     v = v / np.linalg.norm(v)
     new_translation = translation + v * nig_trans
@@ -683,10 +679,6 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
             dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
         dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
             dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
-                
-    # print('Final vals')
-    # print(new_translation)
-    # print(new_quat)
 
 def getMixedDataset(train_dataset, test_dataset):
     """Creates a mixed dataset from the train and test datasets.
