@@ -26,7 +26,6 @@ from atom_core.naming import generateKey
 from atom_core.drawing import drawCross2D, drawSquare2D
 
 
-
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -42,12 +41,16 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing test input dataset.", type=str,
                     required=True)
+
     ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=False)
+    
+    # to use with additional transformations
+    ap.add_argument('-at', '--additional_tfs', help='Source transformation link.', type=str, required=False)
+    
     ap.add_argument("-tf", "--target_frame", help="Target transformation frame.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
-    # to use with additional transformations
-    ap.add_argument('-at', '--additional_tfs', help='Source transformation link.', type=str, required=False)
+   
 
     # parse args
     args = vars(ap.parse_args())
