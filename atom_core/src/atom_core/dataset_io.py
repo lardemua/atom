@@ -633,6 +633,51 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_trans = args['noisy_initial_guess'][0]
     nig_rot = args['noisy_initial_guess'][1]
 
+    ##########################################################3
+    # add noise to additional tfs for simulation
+    if 'additional_tfs' in dataset['calibration_config']:
+        if dataset['calibration_config']['additional_tfs'] != "":
+            for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+                calibration_child = additional_tf['child_link']
+                calibration_parent = additional_tf['parent_link']
+                tf_link = generateKey(calibration_parent, calibration_child, suffix='')
+
+                # Get original transformation
+                quat = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
+                translation = dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
+
+                # print('Init vals')
+                # print(translation)
+                # print(quat)
+
+                euler_angles = tf.transformations.euler_from_quaternion(quat)
+
+                 # Add noise to the 6 pose parameters
+                v = np.random.uniform(-1.0, 1.0, 3)
+                v = v / np.linalg.norm(v)
+                new_translation = translation + v * nig_trans
+
+                v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+                new_angles = euler_angles + v
+
+                # Replace the original atomic transformations by the new noisy ones
+                new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+                dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat'] = new_quat
+                dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans'] = list(new_translation)
+
+                # Copy randomized transform to all collections
+                for collection_key, collection in dataset['collections'].items():
+                    dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = \
+                        dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
+                    dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
+                        dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
+                
+                # print('Final vals')
+                # print(new_translation)
+                # print(new_quat)
+
+    ##########################################################   
+
     for sensor_key, sensor in dataset['sensors'].items():
         # if sensor_key == dataset['calibration_config']['anchored_sensor']:
         #     continue
