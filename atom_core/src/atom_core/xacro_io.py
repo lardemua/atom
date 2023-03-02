@@ -34,13 +34,9 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
     description_file, _, _ = uriReader(dataset["calibration_config"]["description_file"])
     xml_robot = readXacroFile(description_file)
 
-    # for sensor_key in dataset["calibration_config"]["sensors"]:
-    #     child = dataset["calibration_config"]["sensors"][sensor_key]["child_link"]
-    #     parent = dataset["calibration_config"]["sensors"][sensor_key]["parent_link"]
-    #     transform_key = generateKey(parent, child)
-
     for transform_key in transforms_list:
 
+        # NOTE This is only valid if the generateTransformKey was called with argument separator='-'
         parent = transform_key.split('-')[0]
         child = transform_key.split('-')[1]
 
