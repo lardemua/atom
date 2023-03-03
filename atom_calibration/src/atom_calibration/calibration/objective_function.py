@@ -136,8 +136,8 @@ def errorReport(dataset, residuals, normalizer, args):
           'not detected as \"---\")' + Style.RESET_ALL)
     print(table)
 
-    # save results in csv file
-    if args['save_file_results'] != None:
+    # save results in csv file 
+    if args['save_file_results'] != None: 
         with open(args['save_file_results'] + 'calibration_results.csv', 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
 
