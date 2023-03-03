@@ -112,9 +112,9 @@ if __name__ == "__main__":
                 e[additional_tf_key]['x'] = round(abs(link_calibrated_trans[0] - link_init_trans[0]) * 1000, 2)
                 e[additional_tf_key]['y'] = round(abs(link_calibrated_trans[1] - link_init_trans[1]) * 1000, 2)
                 e[additional_tf_key]['z'] = round(abs(link_calibrated_trans[2] - link_init_trans[2]) * 1000, 2)
-                e[additional_tf_key]['roll'] = round(abs(r_cal - r_ini), 1) * 180.0 / np.pi
-                e[additional_tf_key]['pitch'] = round(abs(p_cal - p_ini), 1) * 180.0 / np.pi
-                e[additional_tf_key]['yaw'] = round(abs(p_cal - p_ini), 1) * 180.0 / np.pi
+                e[additional_tf_key]['roll'] = round(abs(r_cal - r_ini), 2) * 180.0 / np.pi
+                e[additional_tf_key]['pitch'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
+                e[additional_tf_key]['yaw'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
     
     for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
         transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
