@@ -91,6 +91,9 @@ def main():
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
     ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
                     type=str, required=False, default=None)
+    
+    # save results of calibration in a csv file
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored", type=str, required=False)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -457,7 +460,7 @@ def main():
         waitForKeyPress2(opt.callObjectiveFunction, timeout=0.1,
                          message=Fore.BLUE + "Optimization finished" + Style.RESET_ALL)
     # Final error report
-    errorReport(dataset=dataset, residuals=objectiveFunction(opt.data_models), normalizer=normalizer)
+    errorReport(dataset=dataset, residuals=objectiveFunction(opt.data_models), normalizer=normalizer, args=args)
 
     # ---------------------------------------
     # --- Save updated JSON file
