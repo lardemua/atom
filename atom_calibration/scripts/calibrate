@@ -338,7 +338,7 @@ def main():
 
             # Issue #543: Create the list of transformations that influence this residual by analyzing the transformation chain.
             params = []
-            transforms_list = list(transforms_set) # because I am not sure that I can use a set for some of the next steps
+            transforms_list = list(transforms_set) # because not sure if we can use a set for some of the next steps
             for transform_in_chain in sensor['chain']:
                 transform_key = generateKey(transform_in_chain["parent"], transform_in_chain["child"])
                 if transform_key in transforms_list:
