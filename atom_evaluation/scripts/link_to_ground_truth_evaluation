@@ -149,7 +149,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------
     # STEP 2: Print output table
     # -------------------------------------------------------------
-    table_header = ['Link #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 'Roll_cal-Roll_gt (deg)', 'Pitch_call-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)']
+    table_header = ['Link #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 'Roll_cal-Roll_gt (deg)', 'Pitch_cal-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)']
     table = PrettyTable(table_header)
     table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
