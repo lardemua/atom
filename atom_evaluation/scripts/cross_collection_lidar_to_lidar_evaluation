@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored", type=str, required=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
 
     # - Save args
     args = vars(ap.parse_args())

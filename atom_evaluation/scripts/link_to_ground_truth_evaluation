@@ -96,10 +96,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-train_json", "--train_json_file", help="Json file containing train input dataset.", type=str,
                     required=True)
-    ap.add_argument("-sl", "--source_link", help="Source transformation link. If no link is provided, computes all estimated links", type=str, required=False)
+    ap.add_argument("-sl", "--source_link", help="Source transformation link. If no link is provided, computes all estimated links.", type=str, required=False)
 
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored", type=str, required=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
     
     # parse args
     args = vars(ap.parse_args())
@@ -122,13 +122,12 @@ if __name__ == "__main__":
         if source_link in train_dataset['calibration_config']['additional_tfs']:
             transform_key = generateKey(train_dataset['calibration_config']['additional_tfs'][source_link]['parent_link'], 
                                         train_dataset['calibration_config']['additional_tfs'][source_link]['child_link'])
-            saveToDict(transform_key, args['source_link'], e)
+            saveToDict(transform_key, source_link, e)
     
         if source_link in train_dataset['calibration_config']['sensors']:
             transform_key = generateKey(train_dataset['calibration_config']['sensors'][source_link]['parent_link'], 
                                         train_dataset['calibration_config']['sensors'][source_link]['child_link'])
-            saveToDict(transform_key, args['source_link'], e)
-            print(args['source_link'])
+            saveToDict(transform_key, source_link, e)
 
         else:
             print('Source link ' + Fore.RED + source_link + Style.RESET_ALL + ' in not a known link!')
