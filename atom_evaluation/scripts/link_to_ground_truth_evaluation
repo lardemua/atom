@@ -38,27 +38,56 @@ from atom_core.drawing import drawCross2D, drawSquare2D
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 def eulerFromQuaternion(q1, q2, q3, w):
-        """
-        Convert a quaternion into euler angles (roll, pitch, yaw)
-        roll is rotation around x in radians (counterclockwise)
-        pitch is rotation around y in radians (counterclockwise)
-        yaw is rotation around z in radians (counterclockwise)
-        adapted from: https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
-        """
-        t0 = +2.0 * (w * q1 + q2 * q3)
-        t1 = +1.0 - 2.0 * (q1 * q1 + q2 * q2)
-        roll_x = math.atan2(t0, t1)
+    """
+    Convert a quaternion into euler angles (roll, pitch, yaw)
+    roll is rotation around x in radians (counterclockwise)
+    pitch is rotation around y in radians (counterclockwise)
+    yaw is rotation around z in radians (counterclockwise)
+    adapted from: https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
+    """
+    t0 = +2.0 * (w * q1 + q2 * q3)
+    t1 = +1.0 - 2.0 * (q1 * q1 + q2 * q2)
+    roll_x = math.atan2(t0, t1)
      
-        t2 = +2.0 * (w * q2 - q3 * q1)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        pitch_y = math.asin(t2)
+    t2 = +2.0 * (w * q2 - q3 * q1)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch_y = math.asin(t2)
      
-        t3 = +2.0 * (w * q3 + q1 * q2)
-        t4 = +1.0 - 2.0 * (q2 * q2 + q3 * q3)
-        yaw_z = math.atan2(t3, t4)
+    t3 = +2.0 * (w * q3 + q1 * q2)
+    t4 = +1.0 - 2.0 * (q2 * q2 + q3 * q3)
+    yaw_z = math.atan2(t3, t4)
      
-        return roll_x, pitch_y, yaw_z # in radians
+    return roll_x, pitch_y, yaw_z # in radians
+
+def saveToDict(transform_key, link_key, dict):
+    ######################### calibrated links #########################
+    # get calibrated links values
+    link_calibrated_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['trans']
+    link_calibrated_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['quat']
+
+    # convert quaternion into euler angles
+    r_cal, p_cal, y_cal = eulerFromQuaternion(link_calibrated_quat[0],link_calibrated_quat[1],link_calibrated_quat[2],link_calibrated_quat[3])
+        
+    ######################### ground truth links #########################
+    # get original links values
+    link_init_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['trans']
+    link_init_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['quat']
+
+    # convert quaternion into euler angles
+    r_ini, p_ini, y_ini = eulerFromQuaternion(link_init_quat[0],link_init_quat[1],link_init_quat[2],link_init_quat[3])
+
+    ######################### saves error values #########################
+    dict[link_key] = {} # init the dictionary of errors for this transformation
+    dict[link_key]['x'] = round(abs(link_calibrated_trans[0] - link_init_trans[0]) * 1000, 2)
+    dict[link_key]['y'] = round(abs(link_calibrated_trans[1] - link_init_trans[1]) * 1000, 2)
+    dict[link_key]['z'] = round(abs(link_calibrated_trans[2] - link_init_trans[2]) * 1000, 2)
+    dict[link_key]['roll'] = round(abs(r_cal - r_ini), 2) * 180.0 / np.pi
+    dict[link_key]['pitch'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
+    dict[link_key]['yaw'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
+    dict[link_key]['Average - Trans'] = (e[link_key]['x']+e[link_key]['y']+e[link_key]['z'])/3
+    dict[link_key]['Average - Rot'] = (e[link_key]['roll']+e[link_key]['pitch']+e[link_key]['yaw'])/3
+
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -67,6 +96,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-train_json", "--train_json_file", help="Json file containing train input dataset.", type=str,
                     required=True)
+    ap.add_argument("-sl", "--source_link", help="Source transformation link. If no link is provided, computes all estimated links", type=str, required=False)
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored", type=str, required=False)
@@ -86,91 +116,68 @@ if __name__ == "__main__":
     # --- STEP 1: Calculate error values and append into a dict
     # ---------------------------------------
     e = {} # dictionary with all the errors
-    if 'additional_tfs' in train_dataset['calibration_config']:
-        if train_dataset['calibration_config']['additional_tfs'] != "":
-            for additional_tf_key, additional_tf in train_dataset['calibration_config']['additional_tfs'].items():
-                transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
-                
-                ######################### calibrated links #########################
-                # get calibrated links values
-                link_calibrated_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['trans']
-                link_calibrated_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['quat']
+    if args['source_link'] != None: # show for a selected link
+        source_link = str(args['source_link'])
 
-                # convert quaternion into euler angles
-                r_cal, p_cal, y_cal = eulerFromQuaternion(link_calibrated_quat[0],link_calibrated_quat[1],link_calibrated_quat[2],link_calibrated_quat[3])
+        if source_link in train_dataset['calibration_config']['additional_tfs']:
+            transform_key = generateKey(train_dataset['calibration_config']['additional_tfs'][source_link]['parent_link'], 
+                                        train_dataset['calibration_config']['additional_tfs'][source_link]['child_link'])
+            saveToDict(transform_key, args['source_link'], e)
     
-                ######################### ground truth links #########################
-                # get original links values
-                link_init_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['trans']
-                link_init_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['quat']
+        if source_link in train_dataset['calibration_config']['sensors']:
+            transform_key = generateKey(train_dataset['calibration_config']['sensors'][source_link]['parent_link'], 
+                                        train_dataset['calibration_config']['sensors'][source_link]['child_link'])
+            saveToDict(transform_key, args['source_link'], e)
+            print(args['source_link'])
 
-                # convert quaternion into euler angles
-                r_ini, p_ini, y_ini = eulerFromQuaternion(link_init_quat[0],link_init_quat[1],link_init_quat[2],link_init_quat[3])
-
-                ######################### saves error values #########################
-                e[additional_tf_key] = {} # init the dictionary of errors for this transformation
-                e[additional_tf_key]['x'] = round(abs(link_calibrated_trans[0] - link_init_trans[0]) * 1000, 2)
-                e[additional_tf_key]['y'] = round(abs(link_calibrated_trans[1] - link_init_trans[1]) * 1000, 2)
-                e[additional_tf_key]['z'] = round(abs(link_calibrated_trans[2] - link_init_trans[2]) * 1000, 2)
-                e[additional_tf_key]['roll'] = round(abs(r_cal - r_ini), 2) * 180.0 / np.pi
-                e[additional_tf_key]['pitch'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
-                e[additional_tf_key]['yaw'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
-    
-    for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
-        transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
-
-        ######################### calibrated links #########################
-        # get calibrated links values
-        link_calibrated_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['trans']
-        link_calibrated_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['quat']
-
-        # convert quaternion into euler angles
-        r_cal, p_cal, y_cal = eulerFromQuaternion(link_calibrated_quat[0],link_calibrated_quat[1],link_calibrated_quat[2],link_calibrated_quat[3])
+        else:
+            print('Source link ' + Fore.RED + source_link + Style.RESET_ALL + ' in not a known link!')
         
-        ######################### ground truth links #########################
-        # get original links values
-        link_init_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['trans']
-        link_init_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['quat']
-
-        # convert quaternion into euler angles
-        r_ini, p_ini, y_ini = eulerFromQuaternion(link_init_quat[0],link_init_quat[1],link_init_quat[2],link_init_quat[3])
-
-        ######################### saves error values #########################
-        e[sensor_key] = {} # init the dictionary of errors for this transformation
-        e[sensor_key]['x'] = round(abs(link_calibrated_trans[0] - link_init_trans[0]) * 1000, 2)
-        e[sensor_key]['y'] = round(abs(link_calibrated_trans[1] - link_init_trans[1]) * 1000, 2)
-        e[sensor_key]['z'] = round(abs(link_calibrated_trans[2] - link_init_trans[2]) * 1000, 2)
-        e[sensor_key]['roll'] = round(abs(r_cal - r_ini), 2) * 180.0 / np.pi
-        e[sensor_key]['pitch'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
-        e[sensor_key]['yaw'] = round(abs(p_cal - p_ini), 2) * 180.0 / np.pi
+    else: # show for all links estimated in the calibration
+        if 'additional_tfs' in train_dataset['calibration_config']:
+            if train_dataset['calibration_config']['additional_tfs'] != "":
+                for additional_tf_key, additional_tf in train_dataset['calibration_config']['additional_tfs'].items():
+                    transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+                    saveToDict(transform_key, additional_tf_key, e)
+        
+        for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
+            transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
+            saveToDict(transform_key, sensor_key, e)
     
     # print(e)
 
     # -------------------------------------------------------------
     # STEP 2: Print output table
     # -------------------------------------------------------------
-    table_header = ['Link #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 'Roll_cal-Roll_gt (deg)', 'Pitch_cal-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)']
-    table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
-
-    for link_key, link in e.items():
-        row = [link_key, 
-               '%.2f' % e[link_key]['x'],
-               '%.2f' % e[link_key]['y'],
-               '%.2f' % e[link_key]['z'],
-               '%.2f' % e[link_key]['roll'],
-               '%.2f' % e[link_key]['pitch'],
-               '%.2f' % e[link_key]['yaw']]
+    if e:
+        table_header = ['Link #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 
+                        'Roll_cal-Roll_gt (deg)', 'Pitch_cal-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)', 
+                        'Average - Trans', 'Average - Rot']
         
-        table.add_row(row)
-        table_to_save.add_row(row)
+        table = PrettyTable(table_header)
+        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
-    table.align = 'c'
-    table_to_save.align = 'c'
-    print(Style.BRIGHT + 'Errors per link' + Style.RESET_ALL)
-    print(table)
+        for link_key, link in e.items():
+            row = [link_key, 
+                '%.2f' % e[link_key]['x'],
+                '%.2f' % e[link_key]['y'],
+                '%.2f' % e[link_key]['z'],
+                '%.2f' % e[link_key]['roll'],
+                '%.2f' % e[link_key]['pitch'],
+                '%.2f' % e[link_key]['yaw'],
+                '%.2f' % e[link_key]['Average - Trans'],
+                '%.2f' % e[link_key]['Average - Rot']
+                ]
+            
+            table.add_row(row)
+            table_to_save.add_row(row)
 
-    # save results in csv file 
-    if args['save_file_results'] != None: 
-        with open(args['save_file_results'] + 'link_to_ground_truth_results.csv', 'w', newline='') as f_output:
-            f_output.write(table_to_save.get_csv_string())
+        table.align = 'c'
+        table_to_save.align = 'c'
+        print(Style.BRIGHT + 'Errors per link' + Style.RESET_ALL)
+        print(table)
+
+        # save results in csv file 
+        if args['save_file_results'] != None: 
+            with open(args['save_file_results'] + 'link_to_ground_truth_results.csv', 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
