@@ -158,15 +158,15 @@ if __name__ == "__main__":
 
         for link_key, link in e.items():
             row = [link_key, 
-                '%.2f' % e[link_key]['x'],
-                '%.2f' % e[link_key]['y'],
-                '%.2f' % e[link_key]['z'],
-                '%.2f' % e[link_key]['roll'],
-                '%.2f' % e[link_key]['pitch'],
-                '%.2f' % e[link_key]['yaw'],
-                '%.2f' % e[link_key]['Average - Trans'],
-                '%.2f' % e[link_key]['Average - Rot']
-                ]
+                   '%.2f' % e[link_key]['x'],
+                   '%.2f' % e[link_key]['y'],
+                   '%.2f' % e[link_key]['z'],
+                   '%.2f' % e[link_key]['roll'],
+                   '%.2f' % e[link_key]['pitch'],
+                   '%.2f' % e[link_key]['yaw'],
+                   '%.2f' % e[link_key]['Average - Trans'],
+                   '%.2f' % e[link_key]['Average - Rot']
+                   ]
             
             table.add_row(row)
             table_to_save.add_row(row)
