@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+
+"""
+Reads the calibration results from two json files and computes the evaluation metrics.
+
+Get the values x,y,z,roll,pitch and yaw from transforms (values from calibrated URDF).
+Get the values x,y,z,roll,pitch and yaw from the transforms_ini (values from original URDF).
+
+Computes the different between them in millimeters and degrees.
+e = |calibrated_frame - ground_truth_frame|
+
+Get the transformation chain from the target_frame to the calibrated frame in the train json 
+and in the test json and computes the average translation and rotation.
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+# Standard imports
+import argparse
+import os
+import math
+import json
+from collections import OrderedDict
+from copy import deepcopy
+
+# ROS imports
+import cv2
+import numpy as np
+from matplotlib import cm
+from colorama import Style, Fore
+from prettytable import PrettyTable
+from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
+
+# Atom imports
+from atom_core.atom import getTransform
+from atom_core.utilities import rootMeanSquare
+from atom_core.naming import generateKey
+from atom_core.drawing import drawCross2D, drawSquare2D
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+def eulerFromQuaternion(q1, q2, q3, w):
+    """
+    Convert a quaternion into euler angles (roll, pitch, yaw)
+    roll is rotation around x in radians (counterclockwise)
+    pitch is rotation around y in radians (counterclockwise)
+    yaw is rotation around z in radians (counterclockwise)
+    adapted from: https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
+    """
+    t0 = +2.0 * (w * q1 + q2 * q3)
+    t1 = +1.0 - 2.0 * (q1 * q1 + q2 * q2)
+    roll_x = math.atan2(t0, t1)
+     
+    t2 = +2.0 * (w * q2 - q3 * q1)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch_y = math.asin(t2)
+     
+    t3 = +2.0 * (w * q3 + q1 * q2)
+    t4 = +1.0 - 2.0 * (q2 * q2 + q3 * q3)
+    yaw_z = math.atan2(t3, t4)
+     
+    return roll_x, pitch_y, yaw_z # in radians
+
+def saveToDict(transform_key, frame_key, source_child, target_frame, dict):
+   
+    # Get calibrated frames values
+    frame_calibrated_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['trans']
+    frame_calibrated_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'][transform_key]['quat']
+
+    # Convert quaternion into euler angles
+    r_cal, p_cal, y_cal = eulerFromQuaternion(frame_calibrated_quat[0],frame_calibrated_quat[1],frame_calibrated_quat[2],frame_calibrated_quat[3])
+        
+    # get original frames values
+    frame_init_trans = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['trans']
+    frame_init_quat = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms_ini'][transform_key]['quat']
+
+    # Convert quaternion into euler angles
+    r_ini, p_ini, y_ini = eulerFromQuaternion(frame_init_quat[0],frame_init_quat[1],frame_init_quat[2],frame_init_quat[3])
+
+    # Compute translation and rotation errors (This is from Eurico, did not change style)
+    train_transform = getTransform(target_frame, source_child, train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'])
+    test_transform = getTransform(target_frame, source_child, test_dataset['collections'][list(test_dataset['collections'].keys())[0]]['transforms'])
+
+    delta = np.dot(np.linalg.inv(train_transform), test_transform)
+
+    deltaT = delta[0:3, 3]
+    deltaR = matrixToRodrigues(delta[0:3, 0:3])
+
+    # Saves error values
+    dict[frame_key] = {} # init the dictionary of errors for this transformation
+    dict[frame_key]['x'] = abs(frame_calibrated_trans[0] - frame_init_trans[0]) * 1000
+    dict[frame_key]['y'] = abs(frame_calibrated_trans[1] - frame_init_trans[1]) * 1000
+    dict[frame_key]['z'] = abs(frame_calibrated_trans[2] - frame_init_trans[2]) * 1000
+    dict[frame_key]['roll'] = abs(r_cal - r_ini) * 180.0 / np.pi
+    dict[frame_key]['pitch'] = abs(p_cal - p_ini) * 180.0 / np.pi
+    dict[frame_key]['yaw'] = abs(p_cal - p_ini) * 180.0 / np.pi
+    dict[frame_key]['Average - Trans'] = np.linalg.norm(deltaT) * 1000
+    dict[frame_key]['Average - Rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-train_json", "--train_json_file", help="Json file containing train input dataset.", type=str,
+                    required=True)
+    ap.add_argument("-test_json", "--test_json_file", help="Json file containing test input dataset.", type=str,
+                    required=True)
+    ap.add_argument("-tf", "--target_frame", help="Target transformation frame.", type=str, required=False)
+
+    ap.add_argument("-sf", "--source_frame", help="Source transformation frame. If no frame is provided, computes all estimated frames.", type=str, required=False)
+
+    # save results in a csv file
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    
+    # parse args
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read calibration data from file
+    # ---------------------------------------
+    # Loads the train json file containing the calibration results
+    train_json_file = args['train_json_file']
+    f = open(train_json_file, 'r')
+    train_dataset = json.load(f)
+
+    # Loads the test json file containing a set of collections to evaluate the calibration
+    test_json_file = args['test_json_file']
+    f = open(test_json_file, 'r')
+    test_dataset = json.load(f)
+
+    # ---------------------------------------
+    # --- STEP 1: Calculate error values and append into a dict
+    # ---------------------------------------
+    e = {} # dictionary with all the errors
+
+    if args['target_frame'] == None:
+        # find the parent of the first frame in the first collection (e.g. base_link)
+        transforms = train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms']
+        for transform in transforms:
+            if 'parent' in transforms[transform]:
+                target_frame = transforms[transform]['parent']
+                break
+        else:
+            target_frame = None
+    else:
+        target_frame = args['target_frame']
+
+    if args['source_frame'] != None: # show for a selected frame
+        source_frame = str(args['source_frame'])
+
+        if source_frame in train_dataset['calibration_config']['additional_tfs']:
+            transform_key = generateKey(train_dataset['calibration_config']['additional_tfs'][source_frame]['parent_link'], 
+                                        train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link'])
+            source_child = train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link']
+            saveToDict(transform_key, source_frame, source_child, target_frame, e)
+    
+        if source_frame in train_dataset['calibration_config']['sensors']:
+            transform_key = generateKey(train_dataset['calibration_config']['sensors'][source_frame]['parent_link'], 
+                                        train_dataset['calibration_config']['sensors'][source_frame]['child_link'])
+            source_child = train_dataset['calibration_config']['sensors'][source_frame]['child_link']
+            saveToDict(transform_key, source_frame, source_child, target_frame, e)
+
+        else:
+            print('Source frame ' + Fore.RED + source_frame + Style.RESET_ALL + ' in not a known frame!')
+        
+    else: # show for all frames estimated in the calibration
+        if 'additional_tfs' in train_dataset['calibration_config']:
+            if train_dataset['calibration_config']['additional_tfs'] != "":
+                for additional_tf_key, additional_tf in train_dataset['calibration_config']['additional_tfs'].items():
+                    transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+                    source_child = additional_tf['child_link']
+                    saveToDict(transform_key, additional_tf_key, source_child, target_frame, e)
+        
+        for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
+            transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
+            source_child = sensor['child_link']
+            saveToDict(transform_key, sensor_key, source_child, target_frame, e)
+
+    # -------------------------------------------------------------
+    # STEP 2: Print output table
+    # -------------------------------------------------------------
+    if e:
+        table_header = ['frame #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 
+                        'Roll_cal-Roll_gt (deg)', 'Pitch_cal-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)', 
+                        'Average - Trans', 'Average - Rot']
+        
+        table = PrettyTable(table_header)
+        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+
+        for frame_key, frame in e.items():
+            row = [frame_key, 
+                   '%.4f' % e[frame_key]['x'],
+                   '%.4f' % e[frame_key]['y'],
+                   '%.4f' % e[frame_key]['z'],
+                   '%.4f' % e[frame_key]['roll'],
+                   '%.4f' % e[frame_key]['pitch'],
+                   '%.4f' % e[frame_key]['yaw'],
+                   '%.4f' % e[frame_key]['Average - Trans'],
+                   '%.4f' % e[frame_key]['Average - Rot']
+                   ]
+            
+            table.add_row(row)
+            table_to_save.add_row(row)
+
+        table.align = 'c'
+        table_to_save.align = 'c'
+        print(Style.BRIGHT + 'Errors per frame' + Style.RESET_ALL)
+        print(table)
+
+        # save results in csv file 
+        if args['save_file_results'] != None: 
+            with open(args['save_file_results'] + 'ground_truth_frame_results.csv', 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
+
