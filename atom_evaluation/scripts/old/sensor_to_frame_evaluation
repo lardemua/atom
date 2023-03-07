@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+# Standard imports
+import argparse
+import os
+import math
+import json
+from collections import OrderedDict
+from copy import deepcopy
+
+# ROS imports
+import cv2
+import numpy as np
+from matplotlib import cm
+from colorama import Style, Fore
+from prettytable import PrettyTable
+from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
+
+# Atom imports
+from atom_core.atom import getTransform
+from atom_core.utilities import rootMeanSquare
+from atom_core.naming import generateKey
+from atom_core.drawing import drawCross2D, drawSquare2D
+
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-train_json", "--train_json_file", help="Json file containing train input dataset.", type=str,
+                    required=True)
+    ap.add_argument("-test_json", "--test_json_file", help="Json file containing test input dataset.", type=str,
+                    required=True)
+
+    ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=False)
+    
+    # to use with additional transformations
+    ap.add_argument('-at', '--additional_tfs', help='Source transformation link.', type=str, required=False)
+    
+    ap.add_argument("-tf", "--target_frame", help="Target transformation frame.", type=str, required=True)
+    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+
+    # save results in a csv file
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+
+    # parse args
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read calibration data from files
+    # ---------------------------------------
+    # Loads the train json file containing the calibration results
+    train_json_file = args['train_json_file']
+    f = open(train_json_file, 'r')
+    train_dataset = json.load(f)
+
+    # Loads the test json file containing a set of collections to evaluate the calibration
+    test_json_file = args['test_json_file']
+    f = open(test_json_file, 'r')
+    test_dataset = json.load(f)
+    
+    # ---------------------------------------
+    # --- STEP 1 Retrieve transform from train dataset
+    # ---------------------------------------
+    if args['additional_tfs'] != None:
+        source_frame = train_dataset['calibration_config']['additional_tfs'][args['additional_tfs']]['child_link']
+    else:
+        source_frame = train_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+
+    train_transform = getTransform(args['target_frame'], source_frame,
+                                    train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'])
+   
+    # ---------------------------------------
+    # --- STEP 2 Retrieve transform_ini from test_dataset
+    # ---------------------------------------
+    e = {}  # dictionary with all the errors
+    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
+        e[collection_key] = {}  # init the dictionary of errors for this collection
+        test_transform = getTransform(args['target_frame'], source_frame,
+                                        collection['transforms'])
+        
+        # -------------------------------------------------------------
+        # STEP 3: Compute translation and rotation errors (This is from Eurico, did not change style)
+        # -------------------------------------------------------------
+
+        delta = np.dot(np.linalg.inv(train_transform), test_transform)
+
+        deltaT = delta[0:3, 3]
+        deltaR = matrixToRodrigues(delta[0:3, 0:3])
+
+        e[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
+        e[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
+
+
+    # -------------------------------------------------------------
+    # STEP 4: Print output table
+    # -------------------------------------------------------------
+    table_header = ['Collection #', 'Trans (mm)', 'Rot (deg)']
+    table = PrettyTable(table_header)
+    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+
+    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    for collection_key, collection in od.items():
+        row = [collection_key,
+               '%.4f' % e[collection_key]['trans'],
+               '%.4f' % e[collection_key]['rot']]
+
+        table.add_row(row)
+        table_to_save.add_row(row)
+
+    # Compute averages and add a bottom row
+    bottom_row = []  # Compute averages and add bottom row to table
+    bottom_row_save = []
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            bottom_row_save.append('Averages')
+            continue
+
+        total = 0
+        count = 0
+        for row in table.rows:
+            # if row[col_idx].isnumeric():
+            try:
+                value = float(row[col_idx])
+                total += float(value)
+                count += 1
+            except:
+                pass
+
+        value = '%.4f' % (total / count)
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+        bottom_row_save.append(value)
+
+    table.add_row(bottom_row)
+    table_to_save.add_row(bottom_row_save)
+
+    # Put larger errors in red per column (per sensor)
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:  # nothing to do
+            continue
+
+        max = 0
+        max_row_idx = 0
+        for row_idx, row in enumerate(table.rows[:-1]):  # ignore bottom row
+            try:
+                value = float(row[col_idx])
+            except:
+                continue
+
+            if value > max:
+                max = value
+                max_row_idx = row_idx
+
+        # set the max column value to red
+        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+
+    table.align = 'c'
+    table_to_save.align = 'c'
+    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+    print(table)
+
+    # save results in csv file 
+    if args['save_file_results'] != None: 
+        with open(args['save_file_results'] + 'sensor_to_frame_results.csv', 'w', newline='') as f_output:
+            f_output.write(table_to_save.get_csv_string())
