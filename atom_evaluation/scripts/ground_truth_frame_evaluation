@@ -11,6 +11,10 @@ e = |calibrated_frame - ground_truth_frame|
 
 Get the transformation chain from the target_frame to the calibrated frame in the train json 
 and in the test json and computes the average translation and rotation.
+
+Notes: 
+If no target frame were provided, the transformation chain starts on the first frame after the reference frame.
+If no source frame were provided, computes the values to all estimated frames during the calibration process  
 """
 
 # -------------------------------------------------------------------------------
