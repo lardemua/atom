@@ -86,12 +86,30 @@ def saveToDict(transform_key, frame_key, source_child, target_frame, dict):
 
     # Compute translation and rotation errors (This is from Eurico, did not change style)
     train_transform = getTransform(target_frame, source_child, train_dataset['collections'][list(train_dataset['collections'].keys())[0]]['transforms'])
-    test_transform = getTransform(target_frame, source_child, test_dataset['collections'][list(test_dataset['collections'].keys())[0]]['transforms'])
+    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    values_per_collection = {}
+    for collection_key, collection in od.items():
+        values_per_collection[collection_key] = {}
+        
+        test_transform = getTransform(target_frame, source_child, collection['transforms'])
 
-    delta = np.dot(np.linalg.inv(train_transform), test_transform)
+        delta = np.dot(np.linalg.inv(train_transform), test_transform)
 
-    deltaT = delta[0:3, 3]
-    deltaR = matrixToRodrigues(delta[0:3, 0:3])
+        deltaT = delta[0:3, 3]
+        deltaR = matrixToRodrigues(delta[0:3, 0:3])
+
+        values_per_collection[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
+        values_per_collection[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
+
+    # compute average trans and rot
+    # total = 0
+    # count = 0
+    # for collection_key, collection in values_per_collection.items():
+    #     value = float(collection)
+    #     total += float(value)
+    #     count += 1
+    average_trans = sum(values_per_collection[collection_key]['trans'] for collection_key in values_per_collection) / len(values_per_collection)
+    average_rot = sum(values_per_collection[collection_key]['rot'] for collection_key in values_per_collection) / len(values_per_collection)
 
     # Saves error values
     dict[frame_key] = {} # init the dictionary of errors for this transformation
@@ -101,8 +119,8 @@ def saveToDict(transform_key, frame_key, source_child, target_frame, dict):
     dict[frame_key]['roll'] = abs(r_cal - r_ini) * 180.0 / np.pi
     dict[frame_key]['pitch'] = abs(p_cal - p_ini) * 180.0 / np.pi
     dict[frame_key]['yaw'] = abs(p_cal - p_ini) * 180.0 / np.pi
-    dict[frame_key]['Average - Trans'] = np.linalg.norm(deltaT) * 1000
-    dict[frame_key]['Average - Rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
+    dict[frame_key]['Trans'] = average_trans
+    dict[frame_key]['Rot'] = average_rot
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -190,7 +208,7 @@ if __name__ == "__main__":
     if e:
         table_header = ['frame #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 
                         'Roll_cal-Roll_gt (deg)', 'Pitch_cal-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)', 
-                        'Average - Trans', 'Average - Rot']
+                        'Trans (mm)', 'Rot (deg)']
         
         table = PrettyTable(table_header)
         table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
@@ -203,8 +221,8 @@ if __name__ == "__main__":
                    '%.4f' % e[frame_key]['roll'],
                    '%.4f' % e[frame_key]['pitch'],
                    '%.4f' % e[frame_key]['yaw'],
-                   '%.4f' % e[frame_key]['Average - Trans'],
-                   '%.4f' % e[frame_key]['Average - Rot']
+                   '%.4f' % e[frame_key]['Trans'],
+                   '%.4f' % e[frame_key]['Rot']
                    ]
             
             table.add_row(row)
