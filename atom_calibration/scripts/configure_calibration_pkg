@@ -248,7 +248,6 @@ if __name__ == "__main__":
         for frame in ['child_link', 'parent_link', 'link']:
             frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
 
-    ##################################################################
     # Verify if exist additional tfs to be estimated
     if 'additional_tfs' in config: 
         if config['additional_tfs'] != '':
@@ -291,7 +290,6 @@ if __name__ == "__main__":
                 at = at[:-2]
                 at += ']'
                 print(at)
-    ##################################################################
 
     print('Checking if all tf frames exist ...')
     print(frames_to_verify)
@@ -395,15 +393,13 @@ if __name__ == "__main__":
                 label += 'To be calibrated\n'
                 rgb = matplotlib.colors.rgb2hex([0, 0, 1])
 
-        ##################################################################
         if 'additional_tfs' in config: 
             if config['additional_tfs'] != '':
                 for additional_tfs_key, additional_tfs in config['additional_tfs'].items():
                     if additional_tfs['parent_link'] == parent and additional_tfs['child_link'] == child:
                         label += 'To be calibrated\n'
                         rgb = matplotlib.colors.rgb2hex([0, 0, 1])
-        ##################################################################
-
+                        
         label += type
 
         g.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor': rgb},
