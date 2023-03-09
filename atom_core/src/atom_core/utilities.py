@@ -138,3 +138,12 @@ def rootMeanSquare(errors):
     """
 
     return math.sqrt(mean([e**2 for e in errors]))
+
+def checkAdditionalTfs(dataset):
+    if 'additional_tfs' in dataset['calibration_config']:
+        if dataset['calibration_config']['additional_tfs'] != "":
+            return True
+        else:
+            return False
+
+

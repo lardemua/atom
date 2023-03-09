@@ -26,7 +26,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabel
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import waitForKeyPress2
+from atom_core.utilities import waitForKeyPress2, checkAdditionalTfs
 from atom_core.xacro_io import saveResultsXacro
 
 
@@ -202,11 +202,10 @@ def main():
         transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
         transforms_set.add(transform_key)
 
-    if 'additional_tfs' in dataset['calibration_config']:
-        if dataset['calibration_config']['additional_tfs'] != "":
-            for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
-                transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
-                transforms_set.add(transform_key)            
+    if checkAdditionalTfs(dataset):
+        for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+            transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+            transforms_set.add(transform_key)            
 
     for transform_key in transforms_set:  # push six parameters for each transform to be optimized.
         initial_transform = getterTransform(dataset, transform_key=transform_key,

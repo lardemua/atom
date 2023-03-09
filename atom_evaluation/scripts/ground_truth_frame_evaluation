@@ -40,7 +40,7 @@ from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.utilities import rootMeanSquare
+from atom_core.utilities import rootMeanSquare, checkAdditionalTfs
 from atom_core.naming import generateKey
 from atom_core.drawing import drawCross2D, drawSquare2D
 
@@ -248,14 +248,13 @@ if __name__ == "__main__":
         final_dict.saveToDict()
         
     else: # compute for all frames estimated in the calibration
-        if 'additional_tfs' in train_dataset['calibration_config']:
-            if train_dataset['calibration_config']['additional_tfs'] != "":
-                for additional_tf_key, additional_tf in train_dataset['calibration_config']['additional_tfs'].items():
-                    transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
-                    source_child = additional_tf['child_link']
-                    evaluateTargetFrame(target_frame, source_child)
-                    final_dict = FinalDictionary(train_dataset,test_dataset,transform_key,target_frame,additional_tf_key,source_child,errors_dict)
-                    final_dict.saveToDict()
+        if checkAdditionalTfs(train_dataset):
+            for additional_tf_key, additional_tf in train_dataset['calibration_config']['additional_tfs'].items():
+                transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+                source_child = additional_tf['child_link']
+                evaluateTargetFrame(target_frame, source_child)
+                final_dict = FinalDictionary(train_dataset,test_dataset,transform_key,target_frame,additional_tf_key,source_child,errors_dict)
+                final_dict.saveToDict()
 
         for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
             transform_key = generateKey(sensor['parent_link'], sensor['child_link'])

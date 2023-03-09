@@ -25,6 +25,8 @@ from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)
+from atom_core.utilities import checkAdditionalTfs
+
 
 
 def printImageInfo(image, text=None):
@@ -634,12 +636,11 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_rot = args['noisy_initial_guess'][1]
 
     # add noise to additional tfs for simulation
-    if 'additional_tfs' in dataset['calibration_config']:
-        if dataset['calibration_config']['additional_tfs'] != "":
-            for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
-                calibration_child = additional_tf['child_link']
-                calibration_parent = additional_tf['parent_link']
-                addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot) 
+    if checkAdditionalTfs(dataset):
+        for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+            calibration_child = additional_tf['child_link']
+            calibration_parent = additional_tf['parent_link']
+            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot) 
 
     # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
