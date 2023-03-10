@@ -304,14 +304,14 @@ if __name__ == "__main__":
                 transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
                 source_child = additional_tf['child_link']
                 evaluateTargetFrame(target_frame, source_child)
-                errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,additional_tf_key,source_child,errors_dict,compute_all_transformations)
+                errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,transform_key,source_child,errors_dict,compute_all_transformations)
                 errors.saveToDict()
 
         for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
             transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
             source_child = sensor['child_link']
             evaluateTargetFrame(target_frame, source_child)
-            errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,sensor_key,source_child,errors_dict,compute_all_transformations)
+            errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,transform_key,source_child,errors_dict,compute_all_transformations)
             errors.saveToDict()
     
     # -------------------------------------------------------------
