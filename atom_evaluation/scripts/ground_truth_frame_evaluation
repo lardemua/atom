@@ -157,20 +157,28 @@ class ErrorsDictionary:
         train_od = OrderedDict(sorted(self.train_dataset['collections'].items(), key=lambda t: int(t[0])))
         test_od = OrderedDict(sorted(self.test_dataset['collections'].items(), key=lambda t: int(t[0])))
         self.values_per_collection = {}
+        saved_collections = 0
         for collection_key, collection in test_od.items():
             self.values_per_collection[collection_key] = {}
-            try:
+            # here we check if the collection from the test dataset is in the train dataset
+            # with atom, we may want to remove some collections during the calibration
+            # this if prevent those mismatches
+            if collection_key in train_od:
                 train_transform = getTransform(self.target_frame, self.source_child, train_od[collection_key]['transforms'])          
                 test_transform = getTransform(self.target_frame, self.source_child, collection['transforms'])
                 delta = np.dot(np.linalg.inv(train_transform), test_transform)
                 self.deltaT.append(delta[0:3, 3])
                 self.deltaR.append(matrixToRodrigues(delta[0:3, 0:3]))
-                self.values_per_collection[collection_key]['trans'] = np.linalg.norm(self.deltaT[int(collection_key)]) * 1000
-                self.values_per_collection[collection_key]['rot'] = np.linalg.norm(self.deltaR[int(collection_key)]) * 180.0 / np.pi
-            except:
-                print(f'{Fore.RED}Train_json{Style.RESET_ALL} and {Fore.RED}test_json{Style.RESET_ALL} have different number of collections.')
-                self.values_per_collection.pop(collection_key)
-      
+                # if len(self.deltaT) > int(collection_key):
+                self.values_per_collection[collection_key]['trans'] = np.linalg.norm(self.deltaT[saved_collections]) * 1000
+                self.values_per_collection[collection_key]['rot'] = np.linalg.norm(self.deltaR[saved_collections]) * 180.0 / np.pi
+                saved_collections +=1
+
+        # Find empty keys {} and remove them
+        for key in list(self.values_per_collection.keys()):
+            if not self.values_per_collection[key]:
+                del self.values_per_collection[key]
+
     def computeFinalValues(self) -> None:
         if self.comput_all_trans:
             self.saveAllTrans()
