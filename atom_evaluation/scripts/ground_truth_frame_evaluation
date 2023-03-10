@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Reads the calibration results from two json files and computes the evaluation metrics.
-
-Get the values x,y,z,roll,pitch and yaw from transforms (values from calibrated URDF).
-Get the values x,y,z,roll,pitch and yaw from the transforms_ini (values from original URDF).
-
-Computes the different between them in millimeters and degrees.
-e = |calibrated_frame - ground_truth_frame|
-
-Get the transformation chain from the target_frame to the calibrated frame in the train json 
-and in the test json and computes the average translation and rotation.
-
-Notes: 
-If no target frame were provided, the transformation chain starts on the first frame after the reference frame.
-If no source frame were provided, computes the values to all estimated frames during the calibration process  
+Reads the calibration results from two json files and computes the evaluation metrics. 
 """
 
 # -------------------------------------------------------------------------------
@@ -22,12 +9,14 @@ If no source frame were provided, computes the values to all estimated frames du
 # -------------------------------------------------------------------------------
 # Standard imports
 import argparse
+import copy
 import os
 import math
 import json
 from collections import OrderedDict
 from copy import deepcopy
 import sys
+import time
 from typing import List
 
 # ROS imports
@@ -48,50 +37,96 @@ from atom_core.drawing import drawCross2D, drawSquare2D
 # --- OBJECTS 
 # -------------------------------------------------------------------------------
 class Table:
-    def __init__(self, dict, arg) -> None:
+    def __init__(self, dict, arg, comput_all_trans) -> None:
         self.dict = dict
-        self.header = ['frame #', 'Xcal-Xgt (mm)', 'Ycal-Ygt (mm)', 'Zcal-Zgt (mm)', 
-                    'Roll_cal-Roll_gt (deg)', 'Pitch_cal-Pitch_gt (deg)', 'Yaw_cal-Yaw_gt (deg)', 
-                    'Trans (mm)', 'Rot (deg)']
+        self.comput_all_trans = comput_all_trans
+        self.arg = arg
+
+    def generateHeader(self) -> None:
+        if self.comput_all_trans:
+            self.header = ['Transformation #', 'X (mm)', 'Y (mm)', 'Z (mm)', 
+                        'Roll (deg)', 'Pitch (deg)', 'Yaw (deg)', 
+                        'Trans (mm)', 'Rot (deg)']
+        else:
+            self.header = ['Collection #', 'X (mm)', 'Y (mm)', 'Z (mm)', 
+                        'Roll (deg)', 'Pitch (deg)', 'Yaw (deg)', 
+                        'Trans (mm)', 'Rot (deg)']
+            
         self.table = PrettyTable(self.header)
         self.table_to_save = PrettyTable(self.header)
-        self.arg = arg
-        if arg != None: 
+
+    def isToSaveCSV(self) -> None:
+        if self.arg != None: 
             self.save_to_csv = True
         else:
             self.save_to_csv = False
 
     def adding_rows(self) -> None:
-        for frame_key, frame in self.dict.items():
-            row = [frame_key, 
-                '%.4f' % self.dict[frame_key]['x'],
-                '%.4f' % self.dict[frame_key]['y'],
-                '%.4f' % self.dict[frame_key]['z'],
-                '%.4f' % self.dict[frame_key]['roll'],
-                '%.4f' % self.dict[frame_key]['pitch'],
-                '%.4f' % self.dict[frame_key]['yaw'],
-                '%.4f' % self.dict[frame_key]['Trans'],
-                '%.4f' % self.dict[frame_key]['Rot']
-                ]
-                   
-            self.table.add_row(row)
-            self.table_to_save.add_row(row)
-    
+        if self.comput_all_trans:
+            for frame_key, frame in self.dict.items():
+                row = [frame_key, 
+                    '%.4f' % self.dict[frame_key]['x'],
+                    '%.4f' % self.dict[frame_key]['y'],
+                    '%.4f' % self.dict[frame_key]['z'],
+                    '%.4f' % self.dict[frame_key]['roll'],
+                    '%.4f' % self.dict[frame_key]['pitch'],
+                    '%.4f' % self.dict[frame_key]['yaw'],
+                    '%.4f' % self.dict[frame_key]['Trans'],
+                    '%.4f' % self.dict[frame_key]['Rot']
+                    ]
+                    
+                self.table.add_row(row)
+                self.table_to_save.add_row(row)
+        else:
+            rows_dict = copy.deepcopy(self.dict)
+            rows_dict.pop('Averages')
+            for frame_key, frame in rows_dict.items():
+                row = [frame_key, 
+                    '%.4f' % self.dict[frame_key]['x'],
+                    '%.4f' % self.dict[frame_key]['y'],
+                    '%.4f' % self.dict[frame_key]['z'],
+                    '%.4f' % self.dict[frame_key]['roll'],
+                    '%.4f' % self.dict[frame_key]['pitch'],
+                    '%.4f' % self.dict[frame_key]['yaw'],
+                    '%.4f' % self.dict[frame_key]['Trans'],
+                    '%.4f' % self.dict[frame_key]['Rot']
+                    ]
+                    
+                self.table.add_row(row)
+                self.table_to_save.add_row(row)
+        
     def table_to_csv(self) -> None:
         if self.save_to_csv:
             with open(self.arg + 'ground_truth_frame_results.csv', 'w', newline='') as f_output:
                 f_output.write(self.table_to_save.get_csv_string())
     
-    def print_table(self) -> None:
+    def addAverages(self) -> None:
+        bottom_row = []
+        bottom_row_save = []
+        bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+        bottom_row_save.append('Averages')
+        for avg_key, avg in self.dict['Averages'].items():
+            value = '%.4f' % avg
+            bottom_row.append(Fore.BLUE + str(value) + Fore.BLACK)
+            bottom_row_save.append(value)
+
+        self.table.add_row(bottom_row)
+        self.table_to_save.add_row(bottom_row_save)
+
+    def printTable(self) -> None:
+        self.generateHeader()
         self.adding_rows()
         self.table.align ='c'
         self.table_to_save.align ='c'
+        self.isToSaveCSV()
+        if not self.comput_all_trans:
+            self.addAverages()
         print(Style.BRIGHT + 'Errors per frame' + Style.RESET_ALL)
         print(self.table)
         self.table_to_csv()
 
-class FinalDictionary:
-    def __init__(self, train_dataset, test_dataset, transform_key, target_frame, source_frame, source_child, dict) -> None:
+class ErrorsDictionary:
+    def __init__(self, train_dataset, test_dataset, transform_key, target_frame, source_frame, source_child, dict, comput_all_trans) -> None:
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
         self.transform_key = transform_key
@@ -99,76 +134,90 @@ class FinalDictionary:
         self.source_frame = source_frame
         self.source_child = source_child
         self.dict = dict
+        self.comput_all_trans = comput_all_trans
 
-    def getCalibratedFrames(self) -> None:
-        self.frame_calibrated_trans = self.train_dataset['collections'][list(self.train_dataset['collections'].keys())[0]]['transforms'][self.transform_key]['trans']
-        self.frame_calibrated_quat = self.train_dataset['collections'][list(self.train_dataset['collections'].keys())[0]]['transforms'][self.transform_key]['quat'] 
+        self.rpy_cal = []
+        self.rpy_init = []
 
-    def getInitFrames(self) -> None:
-        self.frame_init_trans = self.train_dataset['collections'][list(self.train_dataset['collections'].keys())[0]]['transforms_ini'][self.transform_key]['trans']
-        self.frame_init_quat = self.train_dataset['collections'][list(self.train_dataset['collections'].keys())[0]]['transforms_ini'][self.transform_key]['quat']
+        self.deltaT = []
+        self.deltaR = []
+        
+    def computeFrameAverages(self)-> None:
+        self.avg_frame_trans_x = np.mean(np.array([abs(x[0]) for x in self.deltaT]))
+        self.avg_frame_trans_y = np.mean(np.array([abs(y[1]) for y in self.deltaT]))
+        self.avg_frame_trans_z = np.mean(np.array([abs(z[2]) for z in self.deltaT]))
+        self.avg_frame_rot_r = np.mean(np.array([r[0] for r in self.deltaR]))
+        self.avg_frame_rot_p = np.mean(np.array([p[1] for p in self.deltaR]))
+        self.avg_frame_rot_y = np.mean(np.array([y[2] for y in self.deltaR]))
+
+        self.average_trans = sum(self.values_per_collection[collection_key]['trans'] for collection_key in self.values_per_collection) / len(self.values_per_collection)
+        self.average_rot = sum(self.values_per_collection[collection_key]['rot'] for collection_key in self.values_per_collection) / len(self.values_per_collection)
 
     def computeTransRot(self) -> None:
-        # Compute translation and rotation errors (This is from Eurico, did not change style)
-        self.train_transform = getTransform(self.target_frame, self.source_child, self.train_dataset['collections'][list(self.train_dataset['collections'].keys())[0]]['transforms'])
-        od = OrderedDict(sorted(self.test_dataset['collections'].items(), key=lambda t: int(t[0])))
-        values_per_collection = {}
-        for collection_key, collection in od.items():
-            values_per_collection[collection_key] = {}
-            
-            test_transform = getTransform(self.target_frame, self.source_child, collection['transforms'])
-
-            delta = np.dot(np.linalg.inv(self.train_transform), test_transform)
-
-            deltaT = delta[0:3, 3]
-            deltaR = matrixToRodrigues(delta[0:3, 0:3])
-
-            values_per_collection[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
-            values_per_collection[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
-
-        self.average_trans = sum(values_per_collection[collection_key]['trans'] for collection_key in values_per_collection) / len(values_per_collection)
-        self.average_rot = sum(values_per_collection[collection_key]['rot'] for collection_key in values_per_collection) / len(values_per_collection)
-
+        train_od = OrderedDict(sorted(self.train_dataset['collections'].items(), key=lambda t: int(t[0])))
+        test_od = OrderedDict(sorted(self.test_dataset['collections'].items(), key=lambda t: int(t[0])))
+        self.values_per_collection = {}
+        for collection_key, collection in test_od.items():
+            self.values_per_collection[collection_key] = {}
+            try:
+                train_transform = getTransform(self.target_frame, self.source_child, train_od[collection_key]['transforms'])          
+                test_transform = getTransform(self.target_frame, self.source_child, collection['transforms'])
+                delta = np.dot(np.linalg.inv(train_transform), test_transform)
+                self.deltaT.append(delta[0:3, 3])
+                self.deltaR.append(matrixToRodrigues(delta[0:3, 0:3]))
+                self.values_per_collection[collection_key]['trans'] = np.linalg.norm(self.deltaT[int(collection_key)]) * 1000
+                self.values_per_collection[collection_key]['rot'] = np.linalg.norm(self.deltaR[int(collection_key)]) * 180.0 / np.pi
+            except:
+                print(f'{Fore.RED}Train_json{Style.RESET_ALL} and {Fore.RED}test_json{Style.RESET_ALL} have different number of collections.')
+                self.values_per_collection.pop(collection_key)
+      
     def computeFinalValues(self) -> None:
+        if self.comput_all_trans:
+            self.saveAllTrans()
+        else:
+            self.saveSourceTrans()
+
+    def saveAllTrans(self) -> None:
         self.dict[self.source_frame] = {} # init the dictionary of errors for this transformation
-        self.dict[self.source_frame]['x'] = abs(self.frame_calibrated_trans[0] - self.frame_init_trans[0]) * 1000
-        self.dict[self.source_frame]['y'] = abs(self.frame_calibrated_trans[1] - self.frame_init_trans[1]) * 1000
-        self.dict[self.source_frame]['z'] = abs(self.frame_calibrated_trans[2] - self.frame_init_trans[2]) * 1000
-        self.dict[self.source_frame]['roll'] = abs(self.r_cal - self.r_ini) * 180.0 / np.pi
-        self.dict[self.source_frame]['pitch'] = abs(self.p_cal - self.p_ini) * 180.0 / np.pi
-        self.dict[self.source_frame]['yaw'] = abs(self.p_cal - self.p_ini) * 180.0 / np.pi
+        self.dict[self.source_frame]['x'] = abs(self.avg_frame_trans_x) * 1000
+        self.dict[self.source_frame]['y'] = abs(self.avg_frame_trans_y ) * 1000
+        self.dict[self.source_frame]['z'] = abs(self.avg_frame_trans_z) * 1000
+        self.dict[self.source_frame]['roll'] = abs(self.avg_frame_rot_r) * 180.0 / np.pi
+        self.dict[self.source_frame]['pitch'] = abs(self.avg_frame_rot_p ) * 180.0 / np.pi
+        self.dict[self.source_frame]['yaw'] = abs(self.avg_frame_rot_y) * 180.0 / np.pi
         self.dict[self.source_frame]['Trans'] = self.average_trans
         self.dict[self.source_frame]['Rot'] = self.average_rot
 
-    def eulerFromQuaternion(self, qx, qy, qz, qw) -> List[float]:
-        """
-        Convert a quaternion into euler angles (roll, pitch, yaw)
-        roll is rotation around x in radians (counterclockwise)
-        pitch is rotation around y in radians (counterclockwise)
-        yaw is rotation around z in radians (counterclockwise)
-        adapted from: https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
-        """
-        t0 = +2.0 * (qw * qx + qy * qz)
-        t1 = +1.0 - 2.0 * (qx * qx + qy * qy)
-        roll_x = math.atan2(t0, t1)
-        
-        t2 = +2.0 * (qw * qy - qz * qx)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        pitch_y = math.asin(t2)
-        
-        t3 = +2.0 * (qw * qz + qx * qy)
-        t4 = +1.0 - 2.0 * (qy * qy + qz * qz)
-        yaw_z = math.atan2(t3, t4)
-     
-        return roll_x, pitch_y, yaw_z # in radians
+    def saveSourceTrans(self) -> None:
+        for collection_key, collection in OrderedDict(sorted(self.train_dataset['collections'].items(), key=lambda t: int(t[0]))).items():
+            self.dict[collection_key] = {}  # init the dictionary of errors for this collection
+            j=int(collection_key)
+            try:
+                self.dict[collection_key]['x'] = abs(self.deltaT[j][0]) * 1000
+                self.dict[collection_key]['y'] = abs(self.deltaT[j][1]) * 1000
+                self.dict[collection_key]['z'] = abs(self.deltaT[j][2]) * 1000
+                self.dict[collection_key]['roll'] = abs(self.deltaR[j][0]) * 180.0 / np.pi
+                self.dict[collection_key]['pitch'] = abs(self.deltaR[j][1]) * 180.0 / np.pi
+                self.dict[collection_key]['yaw'] = abs(self.deltaR[j][2]) * 180.0 / np.pi
+                self.dict[collection_key]['Trans'] = self.values_per_collection[collection_key]['trans']
+                self.dict[collection_key]['Rot'] = self.values_per_collection[collection_key]['rot']
+            except:
+                print(f'Collection {Fore.RED}{collection_key}{Style.RESET_ALL} discarded due to differences in datasets lengths.')
+                self.dict.pop(collection_key)
 
-    def saveToDict(self):
-        self.getCalibratedFrames()
-        self.r_cal, self.p_cal, self.y_cal = self.eulerFromQuaternion(self.frame_calibrated_quat[0],self.frame_calibrated_quat[1],self.frame_calibrated_quat[2],self.frame_calibrated_quat[3])
-        self.getInitFrames()
-        self.r_ini, self.p_ini, self.y_ini = self.eulerFromQuaternion(self.frame_init_quat[0],self.frame_init_quat[1],self.frame_init_quat[2],self.frame_init_quat[3])
+        self.dict['Averages'] = {}
+        self.dict['Averages']['x'] = abs(self.avg_frame_trans_x) * 1000
+        self.dict['Averages']['y'] = abs(self.avg_frame_trans_y ) * 1000
+        self.dict['Averages']['z'] = abs(self.avg_frame_trans_z) * 1000
+        self.dict['Averages']['roll'] = abs(self.avg_frame_rot_r) * 180.0 / np.pi
+        self.dict['Averages']['pitch'] = abs(self.avg_frame_rot_p ) * 180.0 / np.pi
+        self.dict['Averages']['yaw'] = abs(self.avg_frame_rot_y) * 180.0 / np.pi
+        self.dict['Averages']['Trans'] = self.average_trans
+        self.dict['Averages']['Rot'] = self.average_rot
+
+    def saveToDict(self) -> None:
         self.computeTransRot()
+        self.computeFrameAverages()
         self.computeFinalValues()
 
 # -------------------------------------------------------------------------------
@@ -238,14 +287,16 @@ if __name__ == "__main__":
     # --- STEP 1: Calculate error values and append into a dict
     # ---------------------------------------
     errors_dict = {} # dictionary with all the errors
+    compute_all_transformations = True
     target_frame = argToTargetFrame(args['target_frame'],train_dataset)
 
     if args['source_frame'] != None: # compute for a selected source frame
         source_frame = args['source_frame']
+        compute_all_transformations = False
         transform_key, source_child = evaluateSourceFrame(source_frame, train_dataset)
         evaluateTargetFrame(target_frame, source_child)
-        final_dict = FinalDictionary(train_dataset,test_dataset,transform_key,target_frame,source_frame,source_child,errors_dict)
-        final_dict.saveToDict()
+        errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,source_frame,source_child,errors_dict,compute_all_transformations)
+        errors.saveToDict()
         
     else: # compute for all frames estimated in the calibration
         if checkAdditionalTfs(train_dataset):
@@ -253,21 +304,21 @@ if __name__ == "__main__":
                 transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
                 source_child = additional_tf['child_link']
                 evaluateTargetFrame(target_frame, source_child)
-                final_dict = FinalDictionary(train_dataset,test_dataset,transform_key,target_frame,additional_tf_key,source_child,errors_dict)
-                final_dict.saveToDict()
+                errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,additional_tf_key,source_child,errors_dict,compute_all_transformations)
+                errors.saveToDict()
 
         for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
             transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
             source_child = sensor['child_link']
             evaluateTargetFrame(target_frame, source_child)
-            final_dict = FinalDictionary(train_dataset,test_dataset,transform_key,target_frame,sensor_key,source_child,errors_dict)
-            final_dict.saveToDict()
-
+            errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,sensor_key,source_child,errors_dict,compute_all_transformations)
+            errors.saveToDict()
+    
     # -------------------------------------------------------------
     # STEP 2: Print output table
     # -------------------------------------------------------------
     if errors_dict:
-        table = Table(errors_dict, args['save_file_results'])
-        table.print_table()
+        table = Table(errors_dict, args['save_file_results'], compute_all_transformations)
+        table.printTable()
         
 
