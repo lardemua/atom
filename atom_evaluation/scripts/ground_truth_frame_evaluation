@@ -336,5 +336,7 @@ if __name__ == "__main__":
     if errors_dict:
         table = Table(errors_dict, args['save_file_results'], compute_all_transformations, target_frame, source_child)
         table.printTable()
+    else:
+        print(f'Nothing to output. Please verify the commands')
         
 
