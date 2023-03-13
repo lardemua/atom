@@ -1,0 +1,2 @@
+# Camera topic for the autonomous pattern
+camera_topic: /camera_right/rgb/image_raw

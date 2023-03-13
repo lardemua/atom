@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Gazebo -->
+    <arg name="world_name" default="$(find atom_worlds)/worlds/larcc.world" />
+    <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
+    <arg name="gui" default="False" doc="Starts gazebo gui" />
+
+    <!-- Start autonomous pattern -->
+    <arg name="autonomous_pattern" default="false" doc="Start autonomous pattern node" />
+    <rosparam file="$(find atom_worlds)/config/camera.yaml" />
+
+    <!-- Start interactive pattern -->
+    <arg name="interactive_pattern" default="false" doc="Start autonomous pattern node" />
+
+    <!-- Rviz  -->
+    <arg name="launch_rviz" default="true" doc="Whether to launch RViz or not" />
+    <arg name="rviz_config" default="$(find atom_worlds)/config/config.rviz"
+        doc="RViz configuration file" />
+
+    <!-- Start autonomous pattern -->
+    <group if="$(arg autonomous_pattern)">
+        <node name="autonomous_pattern" pkg="atom_worlds" type="autonomous_pattern"
+            output="screen">
+        </node>
+    </group>
+
+    <!-- Start interactive pattern -->
+    <group if="$(arg interactive_pattern)">
+        <node name="interactive_pattern" pkg="atom_worlds" type="interactive_pattern"
+            output="screen" />
+    </group>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_name)" />
+        <arg name="paused" value="$(arg paused)" />
+        <arg name="use_sim_time" value="true" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="headless" value="false" />
+        <arg name="debug" value="false" />
+    </include>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" if="$(arg launch_rviz)" />
+
+    <!-- You can include your robot file here -->
+    <!-- <include file="$(find your_robot_bringup)/launch/spawn.launch" /> -->
+    <!-- <include file="$(find t2rgb_bringup)/launch/spawn.launch" /> -->
+
+</launch>

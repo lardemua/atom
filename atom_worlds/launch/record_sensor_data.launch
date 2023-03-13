@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- EDIT: 
+    create a folder in HOME: 'bagfiles' bag will be recorded there
+    add to .bashrc: 'export ROS_BAGS="$HOME/bagfiles"' -->
+
+    <!-- if BAG FILE IN /tmp
+    run on terminal:
+    nautilus /tmp -->
+
+    <!--arguments-->
+    <arg name="only_raw_data" default="true"/>
+    <!--Whether or not to record only raw data-->
+    <arg name="bag" default="$(env ROS_BAGS)/data.bag"/>
+    <arg name="simulation" default="true"/>
+
+    <param name="/use_sim_time" value="$(arg simulation)"/>
+
+    <!--To record only raw data-->
+    <group if="$(arg only_raw_data)">
+        <node name="rosbag_record" pkg="rosbag" type="record" output="screen" args="
+            /tf
+            /tf_static
+            /joint_states
+
+            /camera/rgb/image_raw/compressed
+            /camera/rgb/camera_info
+
+            -o $(arg bag)">
+        </node>
+
+        <!-- # Must include topics
+        - /tf
+        - /tf_static
+        - /joint_states -->
+        
+        <!-- # RGB camera topics
+        - /camera_right/rgb/image_raw/compressed
+        - /camera_right/rgb/camera_info -->
+        
+        <!-- # Lidar topics
+         - /velodyne_points -->
+        
+        <!-- # Depth cameras topics
+         - /camera/depth/image_raw
+         - /camera/depth/camera_info -->
+        
+        <!-- Odom topics
+         - /odom
+         - /cmd_vel -->
+
+<!--        http://wiki.ros.org/openni_launch/Tutorials/BagRecordingPlayback-->
+    </group>
+</launch>
