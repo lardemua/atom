@@ -37,10 +37,10 @@ from atom_core.drawing import drawCross2D, drawSquare2D
 # --- CLASSES 
 # -------------------------------------------------------------------------------
 class Table:
-    def __init__(self, dict, arg, comput_all_trans, target_frame, source_child) -> None:
+    def __init__(self, dict, args, comput_all_trans, target_frame, source_child) -> None:
         self.dict = dict
         self.comput_all_trans = comput_all_trans
-        self.arg = arg
+        self.arg = args
         self.target_frame = target_frame
         self.source_child = source_child
 
@@ -63,7 +63,7 @@ class Table:
             self.table.title = f'{self.target_frame} to {self.source_child}'
 
     def isToSaveCSV(self) -> None:
-        if self.arg != None: 
+        if self.arg['save_file_results'] != None: 
             self.save_to_csv = True
         else:
             self.save_to_csv = False
@@ -84,7 +84,7 @@ class Table:
                     
                 self.table.add_row(row)
                 self.table_to_save.add_row(row)
-        else:
+        elif args['show_all_collections'] == True:
             rows_dict = copy.deepcopy(self.dict)
             rows_dict.pop('Averages')
             for frame_key, frame in rows_dict.items():
@@ -101,6 +101,7 @@ class Table:
                     
                 self.table.add_row(row)
                 self.table_to_save.add_row(row)
+
         
     def table_to_csv(self) -> None:
         if self.save_to_csv:
@@ -291,6 +292,7 @@ if __name__ == "__main__":
     ap.add_argument("-sf", "--source_frame", help="Source transformation frame. If no frame is provided, the errors will be computed for all estimated frames.", type=str, required=False)
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sac", "--show_all_collections", help="In the outputted table, it displays the result for every collections, as opposed to the averages.", required=False, action="store_true", default=False)
     args = vars(ap.parse_args())
 
     # ---------------------------------------
@@ -334,7 +336,7 @@ if __name__ == "__main__":
     # STEP 2: Print output table
     # -------------------------------------------------------------
     if errors_dict:
-        table = Table(errors_dict, args['save_file_results'], compute_all_transformations, target_frame, source_child)
+        table = Table(errors_dict, args, compute_all_transformations, target_frame, source_child)
         table.printTable()
     else:
         print(f'Nothing to output. Please verify the commands')
