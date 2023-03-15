@@ -267,17 +267,26 @@ def argToTargetFrame(arg, train_dataset):
     return target_frame
 
 def evaluateSourceFrame(source_frame, train_dataset):
-    if source_frame in train_dataset['calibration_config']['additional_tfs']:
-        transform_key = generateKey(train_dataset['calibration_config']['additional_tfs'][source_frame]['parent_link'], 
-                                    train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link'])
-        source_child = train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link']
-
-    elif source_frame in train_dataset['calibration_config']['sensors']:
-        transform_key = generateKey(train_dataset['calibration_config']['sensors'][source_frame]['parent_link'], 
-                                    train_dataset['calibration_config']['sensors'][source_frame]['child_link'])
-        source_child = train_dataset['calibration_config']['sensors'][source_frame]['child_link']
+    if checkAdditionalTfs(train_dataset):
+        if source_frame in train_dataset['calibration_config']['additional_tfs']:
+            transform_key = generateKey(train_dataset['calibration_config']['additional_tfs'][source_frame]['parent_link'], 
+                                        train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link'])
+            source_child = train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link']
+        elif source_frame in train_dataset['calibration_config']['sensors']:
+            transform_key = generateKey(train_dataset['calibration_config']['sensors'][source_frame]['parent_link'], 
+                                        train_dataset['calibration_config']['sensors'][source_frame]['child_link'])
+            source_child = train_dataset['calibration_config']['sensors'][source_frame]['child_link']
+        else:
+            print(f'Source frame {Fore.RED}{source_frame}{Style.RESET_ALL} in not a known frame. Use names matching the ones on the {Fore.RED}config.yaml{Style.RESET_ALL} calibration file')
+            sys.exit()
     else:
-        print(f'Source frame {Fore.RED}{source_frame}{Style.RESET_ALL} in not a known frame!')
+        if source_frame in train_dataset['calibration_config']['sensors']:
+            transform_key = generateKey(train_dataset['calibration_config']['sensors'][source_frame]['parent_link'], 
+                                        train_dataset['calibration_config']['sensors'][source_frame]['child_link'])
+            source_child = train_dataset['calibration_config']['sensors'][source_frame]['child_link']
+        else:
+            print(f'Source frame {Fore.RED}{source_frame}{Style.RESET_ALL} in not a known frame. Use names matching the ones on the {Fore.RED}config.yaml{Style.RESET_ALL} calibration file')
+            sys.exit()
 
     return transform_key, source_child
 
