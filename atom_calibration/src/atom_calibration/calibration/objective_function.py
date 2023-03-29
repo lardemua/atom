@@ -138,7 +138,7 @@ def getPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
     return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
                      [item['y'] for item in pts_in_pattern_list],
                      [0 for _ in pts_in_pattern_list],
-                     [1 for _ in pts_in_pattern_list]], np.float)
+                     [1 for _ in pts_in_pattern_list]], float)
 
 
 @Cache(args_to_ignore=['_dataset'])
@@ -152,7 +152,7 @@ def getDepthPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
     return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
                      [item['y'] for item in pts_in_pattern_list],
                      [0 for _ in pts_in_pattern_list],
-                     [1 for _ in pts_in_pattern_list]], np.float)
+                     [1 for _ in pts_in_pattern_list]], float)
 
 
 @Cache(args_to_ignore=['_dataset'])
@@ -160,7 +160,7 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _sensor_key, _dataset):
     return np.array(
         [[item['x'] for item in _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']],
          [item['y'] for item in _dataset['collections'][_collection_key]['labels'][_sensor_key]['idxs']]],
-        dtype=np.float)
+        dtype=float)
 
 
 @Cache(args_to_ignore=['_dataset'])
@@ -387,8 +387,8 @@ def objectiveFunction(data):
 
                 # Project points to the image of the sensor ------------------------------------------------------------
                 w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
-                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
-                D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
+                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
+                D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
 
                 pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 
@@ -452,7 +452,7 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['right'])
                 pts.extend(patterns['frame']['lines_sampled']['top'])
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
-                pts_canvas_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+                pts_canvas_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
 
                 # pts_canvas_in_chessboard = patterns['limit_points'][0:2, :].transpose()
 
@@ -476,7 +476,7 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['right'])
                 pts.extend(patterns['frame']['lines_sampled']['top'])
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
-                pts_inner_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], np.float)
+                pts_inner_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
                 # pts_inner_in_chessboard = patterns['inner_points'][0:2, :].transpose()
                 edges2d_in_chessboard = pts_in_chessboard[0:2, collection['labels'][sensor_key]['edge_idxs']]  # this
                 # is a longitudinal residual, so ignore z values.
@@ -499,24 +499,24 @@ def objectiveFunction(data):
 
                 # Compute p0 and p1: p1 will be all the lidar data points, i.e., pts_in_laser, p0 will be the origin
                 # of the laser sensor. Compute the p0_in_laser (p0)
-                p0_in_laser = np.array([[0], [0], [0], [1]], np.float)
+                p0_in_laser = np.array([[0], [0], [0], [1]], float)
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']
                 laser_to_chessboard = getTransform(from_frame, to_frame, collection['transforms'])
 
-                p_co_in_chessboard = np.array([[0], [0], [0], [1]], np.float)
+                p_co_in_chessboard = np.array([[0], [0], [0], [1]], float)
                 p_co_in_laser = np.dot(laser_to_chessboard, p_co_in_chessboard)
 
                 # Compute p_no. First compute an aux point (p_caux) and then use the vector from p_co to p_caux.
-                p_caux_in_chessboard = np.array([[0], [0], [1], [1]], np.float)  # along the zz axis (plane normal)
+                p_caux_in_chessboard = np.array([[0], [0], [1], [1]], float)  # along the zz axis (plane normal)
                 p_caux_in_laser = np.dot(laser_to_chessboard, p_caux_in_chessboard)
 
                 p_no_in_laser = np.array([[p_caux_in_laser[0] - p_co_in_laser[0]],
                                           [p_caux_in_laser[1] - p_co_in_laser[1]],
                                           [p_caux_in_laser[2] - p_co_in_laser[2]],
-                                          [1]], np.float)  # plane normal
+                                          [1]], float)  # plane normal
 
                 if args['ros_visualization']:
                     marker = [x for x in dataset_graphics['ros']['MarkersLaserBeams'].markers if
@@ -582,7 +582,7 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['top'])
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
-                                                                np.float)
+                                                                float)
 
                 # Compute and save residuals
                 for idx in range(detected_limit_points_in_pattern.shape[1]):
@@ -650,7 +650,7 @@ def objectiveFunction(data):
                 pts.extend(patterns['frame']['lines_sampled']['top'])
                 pts.extend(patterns['frame']['lines_sampled']['bottom'])
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
-                                                                np.float)
+                                                                float)
                 now = datetime.now()
                 # print("objective function: ", detected_limit_points_in_pattern.shape[1])
                 # Compute and save residuals
@@ -672,8 +672,8 @@ def objectiveFunction(data):
                 pts_in_pattern = getDepthPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
 
                 w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
-                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=np.float)
-                D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=np.float)
+                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
+                D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
 
                 from_frame = sensor['parent']
                 to_frame = dataset['calibration_config']['calibration_pattern']['link']

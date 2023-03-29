@@ -10,6 +10,7 @@ A set of utilities to be used in the optimization algorithms
 
 # Standard imports
 import os
+
 import cv2
 import open3d as o3d
 import numpy as np
@@ -48,7 +49,7 @@ def projectToCamera(intrinsic_matrix, distortion, width, height, pts):
 
     # Project the 3D points in the camera's frame to image pixels
     # From https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
-    pixs = np.zeros((2, n_pts), dtype=np.float)
+    pixs = np.zeros((2, n_pts), dtype=float)
 
     k1, k2, p1, p2, k3 = distortion
     # fx, _, cx, _, fy, cy, _, _, _ = intrinsic_matrix
@@ -93,7 +94,7 @@ def projectWithoutDistortion(intrinsic_matrix, width, height, pts):
 
     # Project the 3D points in the camera's frame to image pixels without considering the distorcion
     # From https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
-    pixs = np.zeros((2, n_pts), dtype=np.float)
+    pixs = np.zeros((2, n_pts), dtype=float)
 
     # fx, _, cx, _, fy, cy, _, _, _ = intrinsic_matrix
 

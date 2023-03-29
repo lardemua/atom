@@ -225,7 +225,7 @@ if __name__ == "__main__":
         delta_pts = []
         distances = []
         # lidar_points_xy = np.array([[pt['x'] for pt in lidar_points_in_pattern], [pt['y'] for pt in lidar_points_in_pattern]],
-        #                                                 np.float)
+        #                                                 float)
         for idx in range(depth_points_in_pattern.shape[1]):
             m_pt = np.reshape(depth_points_in_pattern[0:2, idx], (1, 2))
             # print(m_pt.shape, lidar_points_in_pattern.transpose()[:, :2].shape)

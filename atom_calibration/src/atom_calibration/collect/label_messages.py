@@ -591,7 +591,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     # cv2.imshow('Canny', pattern_edges_mask)
     # cv2.imshow('Canny Edges After Contouring', pattern_edges_mask)
     # print(image.dtype)
-    # # image2 = np.zeros(image.shape, dtype=np.float)
+    # # image2 = np.zeros(image.shape, dtype=float)
     # image2 = image.copy()
     # cv2.drawContours(image2, contours, -1, (0, 255, 0), 3)
     # cv2.imshow('Contours', image2)

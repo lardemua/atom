@@ -2,20 +2,17 @@
 
 import argparse
 import json
+from collections import OrderedDict
+from itertools import permutations
 
 import cv2
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
-from collections import OrderedDict
-
 from OptimizationUtils.tf import TFTree, Transform
 from OptimizationUtils.utilities import matrixToRodrigues
 from OptimizationUtils import utilities
 
-from itertools import permutations
 
 def load_data(jsonfile):
     try:
@@ -36,7 +33,7 @@ def load_data(jsonfile):
         dx = dataset['calibration_config']['calibration_pattern']['dimension']["x"]
         dy = dataset['calibration_config']['calibration_pattern']['dimension']["y"]
         size = dataset['calibration_config']['calibration_pattern']['size']
-        grid = np.zeros((dx * dy, 4), np.float)
+        grid = np.zeros((dx * dy, 4), float)
         grid[:, :2] = size * np.mgrid[0:dx, 0:dy].T.reshape(-1, 2)
         grid[:, 3] = 1
         dataset['grid'] = grid.T
@@ -62,10 +59,10 @@ def calc_projection_errors(axis, dataset, from_sensor, to_sensor):
         labels = collection['labels'][from_sensor]
 
         # 1. Calculate pattern to sensor transformation.
-        K = np.ndarray((3, 3), dtype=np.float, buffer=np.array(dataset['sensors'][from_sensor]['camera_info']['K']))
-        D = np.ndarray((5, 1), dtype=np.float, buffer=np.array(dataset['sensors'][from_sensor]['camera_info']['D']))
+        K = np.ndarray((3, 3), dtype=float, buffer=np.array(dataset['sensors'][from_sensor]['camera_info']['K']))
+        D = np.ndarray((5, 1), dtype=float, buffer=np.array(dataset['sensors'][from_sensor]['camera_info']['D']))
 
-        corners = np.zeros((3, len(labels['idxs'])), dtype=np.float)
+        corners = np.zeros((3, len(labels['idxs'])), dtype=float)
         ids = [0] * len(labels['idxs'])
         for idx, point in enumerate(labels['idxs']):
             corners[0, idx] = point['x']
@@ -90,11 +87,11 @@ def calc_projection_errors(axis, dataset, from_sensor, to_sensor):
             sTc = np.dot(x2, x1);
 
         # 3. Transform the corners to the destination sensor
-        K2 = np.ndarray((3, 3), dtype=np.float, buffer=np.array(dataset['sensors'][to_sensor]['camera_info']['K']))
-        D2 = np.ndarray((5, 1), dtype=np.float, buffer=np.array(dataset['sensors'][to_sensor]['camera_info']['D']))
+        K2 = np.ndarray((3, 3), dtype=float, buffer=np.array(dataset['sensors'][to_sensor]['camera_info']['K']))
+        D2 = np.ndarray((5, 1), dtype=float, buffer=np.array(dataset['sensors'][to_sensor]['camera_info']['D']))
 
         labels = collection['labels'][to_sensor]
-        corners2 = np.zeros((2, len(labels['idxs'])), dtype=np.float)
+        corners2 = np.zeros((2, len(labels['idxs'])), dtype=float)
         ids2 = [0] * len(labels['idxs'])
         for idx, point in enumerate(labels['idxs']):
             corners2[0, idx] = point['x']

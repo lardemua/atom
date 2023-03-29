@@ -29,7 +29,7 @@ def sampleLineSegment(p0, p1, step):
     vector_x = p1['x'] - p0['x']
     vector_y = p1['y'] - p0['y']
     pts = []
-    for alfa in np.linspace(0, 1, num=n, endpoint=True, retstep=False, dtype=np.float):
+    for alfa in np.linspace(0, 1, num=n, endpoint=True, retstep=False, dtype=float):
         x = p0['x'] + vector_x * alfa
         y = p0['y'] + vector_y * alfa
         pts.append({'x': x, 'y': y})
@@ -202,14 +202,14 @@ def createPatternLabels(args, dataset, step=0.02):
 
             # change accordingly to the first camera to give chessboard first poses
             if sensor['modality'] == 'rgb':
-                K = np.ndarray((3, 3), dtype=np.float, buffer=np.array(sensor['camera_info']['K']))
-                D = np.ndarray((5, 1), dtype=np.float, buffer=np.array(sensor['camera_info']['D']))
+                K = np.ndarray((3, 3), dtype=float, buffer=np.array(sensor['camera_info']['K']))
+                D = np.ndarray((5, 1), dtype=float, buffer=np.array(sensor['camera_info']['D']))
 
                 # TODO should we not read these from the dictionary?
                 objp = np.zeros((nx * ny, 3), np.float32)
                 objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
                 # Build a numpy array with the chessboard corners
-                corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=np.float)
+                corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=float)
                 ids = list(range(0, len(collection['labels'][sensor_key]['idxs'])))
                 for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
                     corners[idx, 0, 0] = point['x']
@@ -257,31 +257,31 @@ def createPatternLabels(args, dataset, step=0.02):
     # x = -square
     # y0 = -square
     # y1 = ny * square
-    # for y in list(np.linspace(y0, y1, num=int(abs(y1 - y0) / step), dtype=np.float)):
+    # for y in list(np.linspace(y0, y1, num=int(abs(y1 - y0) / step), dtype=float)):
     #     pts[0].append(x), pts[1].append(y)
     #
     # # Right vertical line
     # x = nx * square
     # y0 = -square
     # y1 = ny * square
-    # for y in list(np.linspace(y0, y1, num=int(abs(y1 - y0) / step), dtype=np.float)):
+    # for y in list(np.linspace(y0, y1, num=int(abs(y1 - y0) / step), dtype=float)):
     #     pts[0].append(x), pts[1].append(y)
     #
     # # Top horizontal line
     # # x0 = -square
     # # x1 = nx * square
     # # y = -square
-    # # for x in list(np.linspace(x0, x1, num=int(abs(x1 - x0) / step), dtype=np.float)):
+    # # for x in list(np.linspace(x0, x1, num=int(abs(x1 - x0) / step), dtype=float)):
     # #     pts[0].append(x), pts[1].append(y)
     #
     # # Bottom horizontal line
     # # x0 = -square
     # # x1 = nx * square
     # # y = ny * square
-    # # for x in list(np.linspace(x0, x1, num=int(abs(x1 - x0) / step), dtype=np.float)):
+    # # for x in list(np.linspace(x0, x1, num=int(abs(x1 - x0) / step), dtype=float)):
     # #     pts[0].append(x), pts[1].append(y)
     #
-    # pts = np.array(pts, np.float)  # convert list to numpy array
+    # pts = np.array(pts, float)  # convert list to numpy array
     # pts = np.vstack((pts, np.zeros((1, pts.shape[1]))))  # add z = 0 coordinates to all points
     # pts = np.vstack((pts, np.ones((1, pts.shape[1]))))  # homogenize all points
     #
@@ -296,17 +296,17 @@ def createPatternLabels(args, dataset, step=0.02):
     # for x in [x * square for x in range(0, nx)]:
     #     y0 = 0
     #     y1 = (ny - 1) * square
-    #     for y in list(np.linspace(y0, y1, num=int(abs(y1 - y0) / step), dtype=np.float)):
+    #     for y in list(np.linspace(y0, y1, num=int(abs(y1 - y0) / step), dtype=float)):
     #         pts[0].append(x), pts[1].append(y)
     #
     # # Horizontal lines
     # # for y in [y * square for y in range(0, ny)]:
     # #     x0 = 0
     # #     x1 = (nx-1) * square
-    # #     for x in list(np.linspace(x0, x1, num=int(abs(x1 - x0) / step), dtype=np.float)):
+    # #     for x in list(np.linspace(x0, x1, num=int(abs(x1 - x0) / step), dtype=float)):
     # #         pts[0].append(x), pts[1].append(y)
     #
-    # pts = np.array(pts, np.float)  # convert list to numpy array
+    # pts = np.array(pts, float)  # convert list to numpy array
     # pts = np.vstack((pts, np.zeros((1, pts.shape[1]))))  # add z = 0 coordinates to all points
     # pts = np.vstack((pts, np.ones((1, pts.shape[1]))))  # homogenize all points
     # dataset_chessboards['inner_points'] = pts
@@ -442,7 +442,7 @@ def createPatternLabels(args, dataset, step=0.02):
     # objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
     # chessboard_points = np.transpose(objp)
     # chessboard_points = np.vstack(
-    #     (chessboard_points, np.ones((1, nx * ny), dtype=np.float)))
+    #     (chessboard_points, np.ones((1, nx * ny), dtype=float)))
     #
     # pts_l_chess = np.zeros((3, l_counter), np.float32)
     # for i in range(0, l_counter):
@@ -455,7 +455,7 @@ def createPatternLabels(args, dataset, step=0.02):
     #     pts_i_chess[1, i] = chessboard_inner_points[1, i]
     #
     # # homogenize points
-    # pts_l_chess = np.vstack((pts_l_chess, np.ones((1, pts_l_chess.shape[1]), dtype=np.float)))
+    # pts_l_chess = np.vstack((pts_l_chess, np.ones((1, pts_l_chess.shape[1]), dtype=float)))
     #
     # dataset_chessboard_points = {'points': chessboard_points, 'l_points': pts_l_chess, 'i_points': pts_i_chess}
     #
@@ -470,14 +470,14 @@ def createPatternLabels(args, dataset, step=0.02):
     #         # change accordingly to the first camera to give chessboard first poses
     #         if (sensor['msg_type'] == 'Image'):
     #
-    #             K = np.ndarray((3, 3), dtype=np.float, buffer=np.array(sensor['camera_info']['K']))
-    #             D = np.ndarray((5, 1), dtype=np.float, buffer=np.array(sensor['camera_info']['D']))
+    #             K = np.ndarray((3, 3), dtype=float, buffer=np.array(sensor['camera_info']['K']))
+    #             D = np.ndarray((5, 1), dtype=float, buffer=np.array(sensor['camera_info']['D']))
     #
     #             # TODO should we not read these from the dictionary?
     #             objp = np.zeros((nx * ny, 3), np.float32)
     #             objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
     #             # Build a numpy array with the chessboard corners
-    #             corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=np.float)
+    #             corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=float)
     #             ids = range(0, len(collection['labels'][sensor_key]['idxs']))
     #             for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
     #                 corners[idx, 0, 0] = point['x']
