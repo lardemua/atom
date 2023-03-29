@@ -42,7 +42,7 @@ def getAggregateTransform(chain, transforms):
     @param transforms: a pool of transformations
     @return: the global transformation (4x4 homogeneous)
     """
-    transform = np.eye(4, dtype=np.float)
+    transform = np.eye(4, dtype=float)
 
     for link in chain:
 

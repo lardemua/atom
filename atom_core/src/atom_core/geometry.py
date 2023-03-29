@@ -93,14 +93,14 @@ def matrixToRodrigues(T):
 
 
 def rodriguesToMatrix(r):
-    rod = np.array(r, dtype=np.float)
+    rod = np.array(r, dtype=float)
     matrix = cv2.Rodrigues(rod)
     return matrix[0]
 
 
 def traslationRodriguesToTransform(translation, rodrigues):
     R = rodriguesToMatrix(rodrigues)
-    T = np.zeros((4, 4), dtype=np.float)
+    T = np.zeros((4, 4), dtype=float)
     T[0:3, 0:3] = R
     T[0, 3] = translation[0]
     T[1, 3] = translation[1]

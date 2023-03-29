@@ -481,7 +481,7 @@ class Optimizer:
         if x is None:
             x = self.x
 
-        return x * np.array([random.uniform(1 - noise, 1 + noise) for _ in xrange(len(x))], dtype=np.float)
+        return x * np.array([random.uniform(1 - noise, 1 + noise) for _ in xrange(len(x))], dtype=float)
 
     def getParameters(self):
         """ Gets all the existing parameters

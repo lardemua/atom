@@ -166,7 +166,7 @@ def setterPatternRotation(data, value, collection_key):
     assert len(value) == 3, "value must be a list with length 3."
 
     matrix = rodriguesToMatrix(value)
-    hmatrix = np.identity(4).astype(np.float)
+    hmatrix = np.identity(4).astype(float)
     hmatrix[0:3, 0:3] = matrix
     quat = transformations.quaternion_from_matrix(hmatrix)
     data['patterns']['collections'][collection_key]['quat'] = quat

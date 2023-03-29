@@ -111,8 +111,8 @@ def depthToImage(collection, json_file, ss, ts, tf, pinhole_camera_model):
 
     # -- Project them to the image
     w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=np.float)
-    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=np.float)
+    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
     pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
@@ -237,7 +237,7 @@ if __name__ == "__main__":
         delta_pts = []
         distances = []
         # lidar_points_xy = np.array([[pt['x'] for pt in lidar_points_in_pattern], [pt['y'] for pt in lidar_points_in_pattern]],
-        #                                                 np.float)
+        #                                                 float)
         for idx in range(depth_pts_in_depth_img_2.shape[1]):
             lidar_pt = np.reshape(depth_pts_in_depth_img_2[0:2, idx], (1, 2))
             delta_pts.append(np.min(distance.cdist(lidar_pt, depth_pts_in_depth_img_1.transpose()[:, :2], 'euclidean')))

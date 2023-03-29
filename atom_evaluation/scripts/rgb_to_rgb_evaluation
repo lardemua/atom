@@ -72,7 +72,7 @@ from atom_core.drawing import drawCross2D, drawSquare2D
 
 
 def homographyFromTransform(T):
-    H = np.zeros((3, 3), np.float)
+    H = np.zeros((3, 3), float)
 
     H[0, 0] = T[0, 0]
     H[0, 1] = T[0, 1]

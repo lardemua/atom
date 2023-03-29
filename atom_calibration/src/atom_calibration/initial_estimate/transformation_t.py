@@ -7,11 +7,9 @@ import copy
 import numpy as np
 import cv2
 import tf
-
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from tf.listener import TransformListener
-
 
 # ------------------------
 #      BASE CLASSES      #
@@ -24,7 +22,7 @@ class TransformationT():
     def __init__(self, parent_frame_id, frame_id):
         self.parent_frame_id = parent_frame_id
         self.frame_id = frame_id
-        self.matrix = np.identity(4, dtype=np.float)
+        self.matrix = np.identity(4, dtype=float)
 
         self.stamp = rospy.Time.now()
 
@@ -84,7 +82,7 @@ class TransformationT():
         return rodrigues
 
     def rodriguesToMatrix(self, r):
-        rod = np.array(r, dtype=np.float)
+        rod = np.array(r, dtype=float)
         matrix = cv2.Rodrigues(rod)
         return matrix[0]
 
