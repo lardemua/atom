@@ -10,6 +10,7 @@ import atom_core
 import tf
 
 # Atom imports
+from urdf_parser_py.urdf import Pose as URDFPose
 from urdf_parser_py.urdf import URDF
 from atom_core.config_io import execute, uriReader
 from atom_core.naming import generateKey
@@ -46,7 +47,11 @@ def saveResultsXacro(dataset, selected_collection_key):
         for joint in xml_robot.joints:
             if joint.parent == parent and joint.child == child:
                 found = True
-                # print("Found joint: " + str(joint.name))
+
+                # if origin is None create a new URDFPose.
+                # See https://github.com/lardemua/atom/issues/559
+                if joint.origin is None: # 
+                    joint.origin = URDFPose()
 
                 # print("Replacing xyz = " + str(joint.origin.xyz) + " by " + str(trans))
                 joint.origin.xyz = trans
