@@ -30,9 +30,14 @@ Also, you can take a look at the [ATOM youtube playlist](https://www.youtube.com
 
 ## Support
 
-If this work is helpful for you please cite our papers:
+If this work is helpful for you please cite our paper:
 
   - Oliveira, M., E. Pedrosa, A. Aguiar, D. Rato, F. Santos, P. Dias, V. Santos, ATOM: A general calibration framework for multi-modal, multi-sensor systems, **Expert Systems with Applications (2022)**, 118000, ISSN 0957-4174, [https://doi.org/10.1016/j.eswa.2022.118000](https://doi.org/10.1016/j.eswa.2022.118000). [Bibtex](docs/bibtexs/Oliveira2022ESWA.bib).<br>
+
+or any other that is more adequate:
+
+
+  - Gomes, M. M. Oliveira, V. Santos, ATOM Calibration Framework: Interaction and Visualization Functionalities, **Sensors (2023)**, 23, 936. https://doi.org/10.3390/s23020936. [Bibtex](docs/bibtexs/GomesSensors2023.bib). <br>
 
   - Rato, D., M. Oliveira, V. Santos, M. Gomes, A. Sappa, A sensor-to-pattern calibration framework for multi-modal industrial collaborative cells,
 **Journal of Manufacturing Systems (2022)**, Volume 64, Pages 497-507, ISSN 0278-6125, [https://doi.org/10.1016/j.jmsy.2022.07.006](https://doi.org/10.1016/j.jmsy.2022.07.006). [Bibtex](docs/bibtexs/RatoJMS2022.bib). <br>
@@ -52,10 +57,10 @@ If this work is helpful for you please cite our papers:
 * Tiago Madeira - University of Aveiro
 * André Aguiar - INESC TEC
 * Daniela Rato - University of Aveiro
+* Manuel Gomes - University of Aveiro
 
 ## Maintainers
 
 * Miguel Riem Oliveira - University of Aveiro
-* Daniela Rato - University of Aveiro
 * Manuel Gomes - University of Aveiro
 
