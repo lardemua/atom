@@ -16,6 +16,7 @@ from interactive_markers.interactive_marker_server import InteractiveMarkerServe
 from interactive_markers.menu_handler import MenuHandler
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
 from urdf_parser_py.urdf import URDF
+from urdf_parser_py.urdf import Pose as URDFPose
 
 # local packages
 from atom_core.ros_utils import filterLaunchArguments
@@ -96,6 +97,12 @@ class InteractiveFirstGuess(object):
                 if sensor.opt_child_link == joint.child and sensor.opt_parent_link == joint.parent:
                     trans = sensor.optT.getTranslation()
                     euler = sensor.optT.getEulerAngles()
+
+                    # if origin is None create a new URDFPose.
+                    # See https://github.com/lardemua/atom/issues/559
+                    if joint.origin is None: # 
+                        joint.origin = URDFPose()
+
                     joint.origin.xyz = list(trans)
                     joint.origin.rpy = list(euler)
 
