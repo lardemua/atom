@@ -1,0 +1,5 @@
+bool visible
+float32 scale
+---
+bool success
+string message

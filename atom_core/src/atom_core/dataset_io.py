@@ -25,6 +25,8 @@ from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)
+from atom_core.utilities import checkAdditionalTfs
+
 
 
 def printImageInfo(image, text=None):
@@ -633,6 +635,14 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_trans = args['noisy_initial_guess'][0]
     nig_rot = args['noisy_initial_guess'][1]
 
+    # add noise to additional tfs for simulation
+    if checkAdditionalTfs(dataset):
+        for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+            calibration_child = additional_tf['child_link']
+            calibration_parent = additional_tf['parent_link']
+            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot) 
+
+    # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
         # if sensor_key == dataset['calibration_config']['anchored_sensor']:
         #     continue
@@ -640,33 +650,36 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         if sensor_key != dataset['calibration_config']['anchored_sensor']:
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
-            tf_link = generateKey(calibration_parent, calibration_child, suffix='')
+            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
 
-            # Get original transformation
-            quat = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
-            translation = dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
-            euler_angles = tf.transformations.euler_from_quaternion(quat)
+def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
+    tf_link = generateKey(calibration_parent, calibration_child, suffix='')
 
-            # Add noise to the 6 pose parameters
-            v = np.random.uniform(-1.0, 1.0, 3)
-            v = v / np.linalg.norm(v)
-            new_translation = translation + v * nig_trans
+    # Get original transformation
+    quat = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
+    translation = dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
 
-            v = np.random.choice([-1.0, 1.0], 3) * nig_rot
-            new_angles = euler_angles + v
+    euler_angles = tf.transformations.euler_from_quaternion(quat)
 
-            # Replace the original atomic transformations by the new noisy ones
-            new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
-            dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat'] = new_quat
-            dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans'] = list(new_translation)
+    # Add noise to the 6 pose parameters
+    v = np.random.uniform(-1.0, 1.0, 3)
+    v = v / np.linalg.norm(v)
+    new_translation = translation + v * nig_trans
 
-            # Copy randomized transform to all collections
-            for collection_key, collection in dataset['collections'].items():
-                dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = \
-                    dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
-                dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
-                    dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
+    v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+    new_angles = euler_angles + v
 
+    # Replace the original atomic transformations by the new noisy ones
+    new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+    dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat'] = new_quat
+    dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans'] = list(new_translation)
+
+    # Copy randomized transform to all collections
+    for collection_key, collection in dataset['collections'].items():
+        dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = \
+            dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
+        dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
+            dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
 
 def getMixedDataset(train_dataset, test_dataset):
     """Creates a mixed dataset from the train and test datasets.

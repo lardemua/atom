@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+
+import argparse
+import copy
+from functools import partial
+import secrets
+import rospy
+from geometry_msgs.msg import Pose, Vector3
+from gazebo_msgs.srv import SetModelState, GetModelState, SetModelStateRequest
+from interactive_markers.menu_handler import *
+from interactive_markers.interactive_marker_server import *
+from visualization_msgs.msg import *
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
+from std_msgs.msg import Header, ColorRGBA
+from euler_to_quaternion import euler_to_quaternion
+from pattern import detect_pattern, draw_keypoints
+
+def initialize():
+    rospy.init_node('autonomous_pattern')
+    current_pose = Pose()
+    current_pose.orientation.w = 1
+    set_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    model_name = 'charuco_800x600'
+    server = InteractiveMarkerServer('interactive_pattern')
+    menu_handler = MenuHandler()
+    bridge = CvBridge()
+    camera_node = rospy.get_param('/camera_topic')
+    new_pose_xyz = 0.01
+    inc_xyz = 0.01
+    new_pose_r = new_pose_p = new_pose_y = 0.01
+    inc_r = inc_p = inc_y = 0.01
+    init_pattern_pose = [-1, 1.5, 1]
+    r, p, y = -1.57, 0, 0
+    qx, qy, qz, qw = euler_to_quaternion(r, p, y)
+
+    return {'current_pose': current_pose,
+            'set_state_service': set_state_service,
+            'model_name': model_name,
+            'server': server,
+            'menu_handler': menu_handler,
+            'bridge': bridge,
+            'camera_node': camera_node,
+            'new_pose_xyz': new_pose_xyz,
+            'inc_xyz': inc_xyz,
+            'new_pose_rpy': {'new_pose_r': new_pose_r,
+                             'new_pose_p': new_pose_p,
+                             'new_pose_y': new_pose_y},
+            'inc_rpy': {'inc_r': inc_r,
+                        'inc_p': inc_p,
+                        'inc_y': inc_y},
+            'init_pattern_pose': init_pattern_pose,
+            'quat': {'qx': qx,
+                     'qy': qy,
+                     'qz': qz,
+                     'qw': qw}
+            }
+
+def makeBox(msg, pose, init_params):
+    marker = Marker(header=Header(frame_id="world", stamp=rospy.Time.now()),
+                    ns=init_params['model_name'], id=0, frame_locked=False,
+                    type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(
+                        0),
+                    pose=pose,
+                    scale=Vector3(x=1.0, y=1.0, z=1.0),
+                    color=ColorRGBA(r=1, g=1, b=1, a=1))
+    marker.mesh_resource = 'package://atom_worlds/pattern/meshes/charuco_800x600/charuco_800x600.dae'
+    marker.mesh_use_embedded_materials = True
+    return marker
+
+def makeBoxControl(msg, pose, init_params):
+    control = InteractiveMarkerControl()
+    control.always_visible = True
+    control.markers.append(makeBox(msg, pose, init_params))
+    msg.controls.append(control)
+    return control
+
+def make6DofMarker(fixed, interaction_mode, pose, init_params, show_6dof=False):
+    int_marker = InteractiveMarker()
+    int_marker.header.frame_id = "world"
+    int_marker.pose = pose
+    int_marker.scale = 0.01
+    int_marker.name = "simple_6dof"
+    int_marker.description = "Simple 6-DOF Control"
+    makeBoxControl(int_marker, pose, init_params)
+    int_marker.controls[0].interaction_mode = interaction_mode
+
+    if fixed:
+        int_marker.name += "_fixed"
+        int_marker.description += "\n(fixed orientation)"
+
+    if interaction_mode != InteractiveMarkerControl.NONE:
+        control_modes_dict = {
+            InteractiveMarkerControl.MOVE_3D: "MOVE_3D",
+            InteractiveMarkerControl.ROTATE_3D: "ROTATE_3D",
+            InteractiveMarkerControl.MOVE_ROTATE_3D: "MOVE_ROTATE_3D"}
+        int_marker.name += "_" + control_modes_dict[interaction_mode]
+        int_marker.description = "3D Control"
+        if show_6dof:
+            int_marker.description += " + 6-DOF controls"
+        int_marker.description += "\n" + control_modes_dict[interaction_mode]
+
+    if show_6dof:
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "rotate_x"
+        control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+        if fixed:
+            control.orientation_mode = InteractiveMarkerControl.FIXED
+        int_marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "move_x"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        if fixed:
+            control.orientation_mode = InteractiveMarkerControl.FIXED
+        int_marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.name = "rotate_z"
+        control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+        if fixed:
+            control.orientation_mode = InteractiveMarkerControl.FIXED
+        int_marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.name = "move_z"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        if fixed:
+            control.orientation_mode = InteractiveMarkerControl.FIXED
+        int_marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 0
+        control.orientation.z = 1
+        control.name = "rotate_y"
+        control.interaction_mode = InteractiveMarkerControl.ROTATE_AXIS
+        if fixed:
+            control.orientation_mode = InteractiveMarkerControl.FIXED
+        int_marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 0
+        control.orientation.z = 1
+        control.name = "move_y"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        if fixed:
+            control.orientation_mode = InteractiveMarkerControl.FIXED
+        int_marker.controls.append(control)
+
+    init_params['server'].insert(int_marker, processFeedback)
+    init_params['menu_handler'].apply(init_params['server'], int_marker.name)
+
+def processFeedback(feedback):
+    s = "feedback from marker '" + feedback.marker_name
+    s += "' / control '" + feedback.control_name + "'"
+
+    if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
+        rospy.loginfo(s + ": pose changed")
+        print('new pose = ' + str(feedback.pose))
+
+        print('feedback = \n' + str(feedback))
+        init_params['pose'].position.x = feedback.pose.position.x
+        init_params['pose'].position.y = feedback.pose.position.y
+        init_params['pose'].position.z = feedback.pose.position.z
+        init_params['pose'].orientation.x = feedback.pose.orientation.x
+        init_params['pose'].orientation.y = feedback.pose.orientation.y
+        init_params['pose'].orientation.z = feedback.pose.orientation.z
+        init_params['pose'].orientation.w = feedback.pose.orientation.w
+
+        req = SetModelStateRequest()
+        req.model_state.model_name = init_params['model_name']
+        req.model_state.pose.position.x = init_params['pose'].position.x
+        req.model_state.pose.position.y = init_params['pose'].position.y
+        req.model_state.pose.position.z = init_params['pose'].position.z
+        req.model_state.pose.orientation.x = init_params['pose'].orientation.x
+        req.model_state.pose.orientation.y = init_params['pose'].orientation.y
+        req.model_state.pose.orientation.z = init_params['pose'].orientation.z
+        req.model_state.pose.orientation.w = init_params['pose'].orientation.w
+        req.model_state.reference_frame = 'world'
+
+        result = init_params['set_state_service'](req.model_state)
+
+        print(result)
+        init_params['server'].applyChanges()
+
+def move_xyz(init_params, detected_point):
+    if init_params['new_pose_xyz'] >= 0.4:
+        init_params['inc_xyz'] = -secrets.randbits(9)/ 10000 + 0.01
+        if detected_point > 40:
+            rospy.sleep(5)
+    elif init_params['new_pose_xyz'] >= 0.3 and init_params['new_pose_xyz'] < 0.31:
+        if detected_point > 40:
+            rospy.sleep(5)
+    elif init_params['new_pose_xyz'] >= 0.21 and init_params['new_pose_xyz'] < 0.21:
+        if detected_point > 40:
+            rospy.sleep(5)
+    elif init_params['new_pose_xyz'] >= 0.1 and init_params['new_pose_xyz'] < 0.11:
+        if detected_point > 40:
+            rospy.sleep(5)
+    elif init_params['new_pose_xyz'] <= -0.1:
+        init_params['inc_xyz'] = secrets.randbits(9)/ 10000 + 0.01
+        if detected_point > 40:
+            rospy.sleep(5)
+    return init_params
+
+def move_rpy(init_params):
+    if init_params['new_pose_rpy']['new_pose_r'] >= 0.2:
+        init_params['inc_rpy']['inc_r'] = -secrets.randbits(9)/ 10000 + 0.01
+    elif init_params['new_pose_rpy']['new_pose_r'] <= -0.2:
+        init_params['inc_rpy']['inc_r'] = secrets.randbits(9)/ 10000 + 0.01
+
+    if init_params['new_pose_rpy']['new_pose_p'] >= 0.2:
+        init_params['inc_rpy']['inc_p'] = -secrets.randbits(9)/ 10000 + 0.01
+    elif init_params['new_pose_rpy']['new_pose_p'] <= -0.2:
+        init_params['inc_rpy']['inc_p'] = secrets.randbits(9)/ 10000 + 0.01
+
+    if init_params['new_pose_rpy']['new_pose_y'] >= 0.2:
+        init_params['inc_rpy']['inc_y'] = -secrets.randbits(9)/ 10000 + 0.01
+    elif init_params['new_pose_rpy']['new_pose_y'] <= -0.2:
+        init_params['inc_rpy']['inc_y'] = secrets.randbits(9)/ 10000 + 0.01
+    return init_params
+
+def update_poses(init_params, req):
+    qx = init_params['quat']['qx']
+    qy = init_params['quat']['qy']
+    qz = init_params['quat']['qz']
+    qw = init_params['quat']['qw']
+
+    req.model_state.pose.position.x = init_params['init_pattern_pose'][0] + init_params['new_pose_xyz'] + 0.5
+    req.model_state.pose.position.y = init_params['new_pose_xyz'] - init_params['init_pattern_pose'][1]
+    req.model_state.pose.position.z = init_params['new_pose_xyz'] + init_params['init_pattern_pose'][2]
+    req.model_state.pose.orientation.x = qx+init_params['new_pose_rpy']['new_pose_r']
+    req.model_state.pose.orientation.y = qy+init_params['new_pose_rpy']['new_pose_p']
+    req.model_state.pose.orientation.z = qz+init_params['new_pose_rpy']['new_pose_y']
+    req.model_state.pose.orientation.w = qw
+    req.model_state.reference_frame = 'world'
+
+    rospy.sleep(0.2)
+    init_params['new_pose_xyz'] += init_params['inc_xyz']
+    init_params['new_pose_rpy']['new_pose_r'] += init_params['inc_rpy']['inc_r']
+    init_params['new_pose_rpy']['new_pose_p'] += init_params['inc_rpy']['inc_p']
+    init_params['new_pose_rpy']['new_pose_y'] += init_params['inc_rpy']['inc_y']
+
+    result = init_params['set_state_service'](req.model_state)
+    init_params['server'].applyChanges()
+    init_params['pose'].position.x = req.model_state.pose.position.x
+    init_params['pose'].position.y = req.model_state.pose.position.y
+    init_params['pose'].position.z = req.model_state.pose.position.z
+    init_params['pose'].orientation.x = req.model_state.pose.orientation.x
+    init_params['pose'].orientation.y = req.model_state.pose.orientation.y
+    init_params['pose'].orientation.z = req.model_state.pose.orientation.z
+    init_params['pose'].orientation.w = req.model_state.pose.orientation.w
+    
+    return init_params
+
+def move_pattern(init_params, detected_point):
+    req = SetModelStateRequest()
+    req.model_state.model_name = init_params['model_name']
+    init_params = move_xyz(init_params, detected_point)
+    init_params = move_rpy(init_params)
+    init_params = update_poses(init_params, req)
+    make6DofMarker(True, InteractiveMarkerControl.MOVE_3D, init_params['pose'], init_params, True)
+
+def camera_feedback(data, init_params):
+    try:
+        img = init_params['bridge'].imgmsg_to_cv2(data, desired_encoding='bgr8')
+        result = detect_pattern(img, equalize_histogram=False)
+        detected_point = draw_keypoints(img, result)
+
+        if init_params['args']['view_image'] == True:
+            cv2.imshow("image", img)
+            k = cv2.waitKey(1) & 0xFF
+
+        move_pattern(init_params, detected_point)
+
+    except CvBridgeError as e:
+        print(e)
+
+def parse_args():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-vi', '--view_image', help='Output main camera image with pattern detections', action='store_true', default=False, required=False)
+    args = vars(ap.parse_args())
+    return args
+
+def main(args):
+    rospy.wait_for_service('/gazebo/set_model_state')
+    get_model_state_service = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+    pose_gazebo = get_model_state_service(init_params['model_name'], 'world')
+    pose = copy.deepcopy(pose_gazebo.pose)
+    init_params['pose'] = pose
+    init_params['args'] = args
+    rospy.Subscriber(init_params['camera_node'], Image, camera_feedback, callback_args=init_params)
+    init_params['server'].applyChanges()
+    rospy.spin()
+
+if __name__ == "__main__":
+    init_params = initialize()
+    args = parse_args()
+    main(args)

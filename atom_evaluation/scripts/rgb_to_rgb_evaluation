@@ -146,6 +146,9 @@ if __name__ == "__main__":
     ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
+    # save results in a csv file
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+
     # parse args
     args = vars(ap.parse_args())
 
@@ -457,6 +460,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------
     table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'Trans (mm)', 'Rot (deg)']
     table = PrettyTable(table_header)
+    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
@@ -468,12 +472,15 @@ if __name__ == "__main__":
                '%.4f' % e[collection_key]['rot']]
 
         table.add_row(row)
+        table_to_save.add_row(row)
 
     # Compute averages and add a bottom row
     bottom_row = []  # Compute averages and add bottom row to table
+    bottom_row_save = []
     for col_idx, _ in enumerate(table_header):
         if col_idx == 0:
             bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            bottom_row_save.append('Averages')
             continue
 
         total = 0
@@ -489,8 +496,10 @@ if __name__ == "__main__":
 
         value = '%.4f' % (total / count)
         bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+        bottom_row_save.append(value)
 
     table.add_row(bottom_row)
+    table_to_save.add_row(bottom_row_save)
 
     # Put larger errors in red per column (per sensor)
     for col_idx, _ in enumerate(table_header):
@@ -513,5 +522,11 @@ if __name__ == "__main__":
         table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
 
     table.align = 'c'
+    table_to_save.align = 'c'
     print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
     print(table)
+
+    # save results in csv file 
+    if args['save_file_results'] != None: 
+        with open(args['save_file_results'] + 'rgb_to_rgb_results.csv', 'w', newline='') as f_output:
+            f_output.write(table_to_save.get_csv_string())

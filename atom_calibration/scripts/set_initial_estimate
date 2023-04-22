@@ -22,6 +22,8 @@ from urdf_parser_py.urdf import Pose as URDFPose
 from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
 from atom_calibration.initial_estimate.sensor import Sensor
+from atom_calibration.initial_estimate.additional_tf import Additional_tf
+
 
 
 class InteractiveFirstGuess(object):
@@ -31,6 +33,7 @@ class InteractiveFirstGuess(object):
         self.args = args  # command line arguments
         self.config = None  # calibration config
         self.sensors = []  # sensors
+        self.additional_tfs = []  # additional_tfs
         self.urdf = None  # robot URDF
         self.server = None  # interactive markers server
         self.menu = None
@@ -54,13 +57,30 @@ class InteractiveFirstGuess(object):
 
         print('Number of sensors: ' + str(len(self.config['sensors'])))
 
+        if self.checkAdditionalTfs():
+            print('Number of additional_tfs: ' +
+                str(len(self.config['additional_tfs'])))
+
         # Init interaction
         self.server = InteractiveMarkerServer('set_initial_estimate')
         self.menu = MenuHandler()
 
         self.createInteractiveMarker(self.config['world_link'])
-        self.menu.insert("Save sensors configuration", callback=self.onSaveInitialEstimate)
-        self.menu.insert("Reset all sensors to initial configuration", callback=self.onResetAll)
+
+        if self.checkAdditionalTfs():
+            # sensors and additional tfs to be calibrated
+            self.menu.insert("Save sensors and additional transformations configuration",
+                            callback=self.onSaveInitialEstimate)
+            self.menu.insert(
+                    "Reset all sensors and additional transformations to initial configuration", callback=self.onResetAll)
+                
+        else:
+            # only sensors to be calibrated
+            self.menu.insert("Save sensors configuration",
+                callback=self.onSaveInitialEstimate)
+            self.menu.insert(
+                "Reset all sensors to initial configuration", callback=self.onResetAll)
+
         self.menu.reApply(self.server)
 
         # Waiting for the loading of the bagfile
@@ -68,6 +88,11 @@ class InteractiveFirstGuess(object):
 
         # Create a colormap so that we have one color per sensor
         self.cm_sensors = cm.Pastel2(np.linspace(0, 1, len(self.config['sensors'].keys())))
+
+        # Create a colormap so that we have one color per additional_tfs
+        if self.checkAdditionalTfs():
+            self.cm_additional_tf = cm.Pastel2(np.linspace(
+                0, 1, len(self.config['additional_tfs'].keys())))
 
         # For each node generate an interactive marker.
         sensor_idx = 0
@@ -86,6 +111,24 @@ class InteractiveFirstGuess(object):
             self.sensors.append(Sensor(name, self.server, self.menu, **params))
             sensor_idx += 1
             print('... done')
+
+        # For each node generate an interactive marker.
+        if self.checkAdditionalTfs():
+            additional_tf_idx = 0
+            for name, additional_tf in self.config['additional_tfs'].items():
+                print(Fore.BLUE + '\nAdditional_tfs name is ' +
+                    name + Style.RESET_ALL)
+                params = {
+                    "frame_world": self.config['world_link'],
+                    "frame_opt_parent": additional_tf['parent_link'],
+                    "frame_opt_child": additional_tf['child_link'],
+                    "frame_additional_tf": additional_tf['child_link'],
+                    "additional_tf_color": tuple(self.cm_additional_tf[additional_tf_idx, :]),
+                    "marker_scale": self.args['marker_scale']}
+                # Append to the list of additional_tfs
+                self.additional_tfs.append(Additional_tf(name, self.server, self.menu, **params))
+                additional_tf_idx += 1
+                print('... done')
 
         self.server.applyChanges()
 
@@ -115,9 +158,32 @@ class InteractiveFirstGuess(object):
             print("Writing fist guess urdf to '{}'".format(outfile))
             out.write(self.urdf.to_xml_string())
 
+        if self.checkAdditionalTfs():
+            for additional_tfs in self.additional_tfs:
+                # find corresponding joint for this additional_tfs
+                for joint in self.urdf.joints:
+                    if additional_tfs.opt_child_link == joint.child and additional_tfs.opt_parent_link == joint.parent:
+                        trans = additional_tfs.optT.getTranslation()
+                        euler = additional_tfs.optT.getEulerAngles()
+                        joint.origin.xyz = list(trans)
+                        joint.origin.rpy = list(euler)
+
+            # Write the urdf file with atom_calibration's
+            # source path as base directory.
+            rospack = rospkg.RosPack()
+            # outfile = rospack.get_path('atom_calibration') + os.path.abspath('/' + self.args['filename'])
+            outfile = self.args['filename']
+            with open(outfile, 'w') as out:
+                print("Writing fist guess urdf to '{}'".format(outfile))
+                out.write(self.urdf.to_xml_string())
+
     def onResetAll(self, feedback):
         for sensor in self.sensors:
             sensor.resetToInitalPose()
+
+        if self.checkAdditionalTfs():
+            for additional_tfs in self.additional_tfs:
+                additional_tfs.resetToInitalPose()
 
     def createInteractiveMarker(self, world_link):
         marker = InteractiveMarker()
@@ -186,8 +252,19 @@ class InteractiveFirstGuess(object):
         marker.controls.append(control)
 
         self.server.insert(marker, self.onSaveInitialEstimate)
+
+        if self.checkAdditionalTfs():
+            self.server.insert(marker, self.onSaveInitialEstimate)
+        
+
         self.menu.apply(self.server, marker.name)
 
+    def checkAdditionalTfs(self):
+        if 'additional_tfs' in self.config: 
+            if self.config['additional_tfs'] != '':
+                return True
+            else:
+                return False
 
 if __name__ == "__main__":
     # Parse command line arguments

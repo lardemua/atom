@@ -34,7 +34,7 @@ from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
-def errorReport(dataset, residuals, normalizer):
+def errorReport(dataset, residuals, normalizer, args):
 
     from prettytable import PrettyTable
     table_header = ['Collection']
@@ -56,11 +56,13 @@ def errorReport(dataset, residuals, normalizer):
             table_header.append(sensor_key + units)
 
     table = PrettyTable(table_header)
+    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
     # Build each row in the table
     keys = sorted(dataset['collections'].keys(), key=lambda x: int(x))
     for collection_key in keys:
         row = [collection_key]
+        row_save = [collection_key]
         v = []
         for sensor_key, sensor in dataset['sensors'].items():
             keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
@@ -68,16 +70,21 @@ def errorReport(dataset, residuals, normalizer):
             if v:
                 value = '%.4f' % np.mean(v)
                 row.append(value)
+                row_save.append(value)
             else:
                 row.append(Fore.LIGHTBLACK_EX + '---' + Style.RESET_ALL)
+                row_save.append('---')
 
         table.add_row(row)
+        table_to_save.add_row(row)
 
     # Compute averages and add a bottom row
     bottom_row = []  # Compute averages and add bottom row to table
+    bottom_row_save = []
     for col_idx, _ in enumerate(table_header):
         if col_idx == 0:
             bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            bottom_row_save.append('Averages')
             continue
 
         total = 0
@@ -97,8 +104,10 @@ def errorReport(dataset, residuals, normalizer):
             value = '---'
 
         bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+        bottom_row_save.append(value)
 
     table.add_row(bottom_row)
+    table_to_save.add_row(bottom_row_save)
 
     # Put larger errors in red per column (per sensor)
     for col_idx, _ in enumerate(table_header):
@@ -121,10 +130,16 @@ def errorReport(dataset, residuals, normalizer):
         table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
 
     table.align = 'c'
+    table_to_save.align = 'c'
     print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL + ' (' + Fore.YELLOW + 'anchored sensor' +
           Fore.BLACK + ', ' + Fore.RED + ' max error per sensor' + Fore.BLACK + ', ' + Fore.LIGHTBLACK_EX +
           'not detected as \"---\")' + Style.RESET_ALL)
     print(table)
+
+    # save results in csv file 
+    if args['save_file_results'] != None: 
+        with open(args['save_file_results'] + 'calibration_results.csv', 'w', newline='') as f_output:
+            f_output.write(table_to_save.get_csv_string())
 
 
 @Cache(args_to_ignore=['_dataset'])
@@ -694,6 +709,6 @@ def objectiveFunction(data):
                 raise ValueError("Unknown sensor msg_type or modality")
 
     if args['verbose'] and data['status']['is_iteration']:
-        errorReport(dataset=dataset, residuals=r, normalizer=normalizer)
+        errorReport(dataset=dataset, residuals=r, normalizer=normalizer, args=args)
 
     return r  # Return the residuals
