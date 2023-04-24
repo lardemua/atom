@@ -47,10 +47,16 @@ class SimplePatternDetector:
         self.bridge = CvBridge()
         self.image_pub = rospy.Publisher(args['topic_name'] + '/labeled', Image, queue_size=1)
 
+
     def onImageReceived(self, image_msg):
 
         image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+
+        print('Line 50')
         result = self.pattern.detect(image, equalize_histogram=False)
+
+
+        print('Line 50')
         self.pattern.drawKeypoints(image, result)
         # print(result)
 
