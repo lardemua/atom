@@ -52,20 +52,20 @@ class WindowManager:
 
         self.mpl_pressed_key = None
         while True:
-            key = cv2.waitKey(5)
+            key = cv2.waitKey(1)
 
             if not self.figs is None:
                 for fig in self.figs:
                     fig.canvas.flush_events()
                     fig.canvas.draw()
-                    plt.waitforbuttonpress(0.005)
+                    plt.waitforbuttonpress(0.00001)
 
             if key == ord('c') or self.mpl_pressed_key == 'c':
                 print('Pressed "c". Continuing.')
                 return False
             elif key == ord('q') or self.mpl_pressed_key == 'q':
                 print('Pressed "q". Aborting.')
-                # exit(0)
+                exit(0)
             elif key == ord('x') or self.mpl_pressed_key == 'x':
                 print('Pressed "x". Returning with code x.')
                 return 'x'

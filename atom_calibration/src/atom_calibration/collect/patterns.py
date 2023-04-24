@@ -80,7 +80,7 @@ class CharucoPattern(object):
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
         self.dictionary = cv2.aruco.getPredefinedDictionary(cdictionary)
-        self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
+        self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length, self.dictionary)
 
     def detect(self, image, equalize_histogram=False):
 
@@ -93,7 +93,7 @@ class CharucoPattern(object):
             gray = cv2.equalizeHist(gray)
 
         # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
-        params = cv2.aruco.DetectorParameters_create()
+        params = cv2.aruco.DetectorParameters()
 
         # setup initial data
         params.adaptiveThreshConstant = 2
