@@ -94,13 +94,13 @@ class CharucoPattern(object):
         if equalize_histogram:  # equalize image histogram
             gray = cv2.equalizeHist(gray)
 
-        print('Line 95')
+        # print('Line 95')
         # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
         # params = cv2.aruco.DetectorParameters()
         params = cv2.aruco.DetectorParameters_create()
 
-        print(params)
-        print('Line 98')
+        # print(params)
+        # print('Line 98')
 
         # setup initial data
         params.adaptiveThreshConstant = 2
@@ -118,7 +118,7 @@ class CharucoPattern(object):
 
         # param.doCornerRefinement = False
 
-        print('Line 115')
+        # print('Line 115')
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
         # print('corners = ' + str(corners))
         corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
