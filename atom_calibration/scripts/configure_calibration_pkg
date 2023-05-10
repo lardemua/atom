@@ -152,6 +152,34 @@ if __name__ == "__main__":
         raise ValueError('Could not parse description file ' + description_file)
 
     # --------------------------------------------------------------------------
+    # Check if modalities are properly created
+    # --------------------------------------------------------------------------
+    # TODO change lidar to lidar3d and lidar2d to lidar2d; change modality to modality
+    for sensor_key in config['sensors']:
+        topic = config['sensors'][sensor_key]['topic_name']
+        topic_compressed = topic + '/compressed'
+        if topic in bag_topics:
+            msg_type = bag_info[1][topic].msg_type
+        elif topic_compressed in bag_topics:
+            msg_type = bag_info[1][topic_compressed].msg_type
+        if ('modality' not in config['sensors'][sensor_key]) or (
+                config['sensors'][sensor_key]['modality'] not in ['rgb', 'depth', 'lidar3d', 'lidar2d']):
+            print(
+                Fore.YELLOW + 'Warning: Sensor ID not properly identified for sensor ' + sensor_key + ' with topic '
+                + topic + "Sensor will be identified by message type." + Style.RESET_ALL)
+            if msg_type == 'sensor_msgs/CompressedImage' or \
+                    msg_type == 'sensor_msgs/Image':
+                config['sensors'][sensor_key]['modality'] = 'rgb'
+            elif msg_type == 'sensor_msgs/LaserScan':
+                config['sensors'][sensor_key]['modality'] = 'lidar2d'
+            elif msg_type == 'sensor_msgs/PointCloud2':
+                config['sensors'][sensor_key]['modality'] = 'lidar3d'
+            else:
+                raise ValueError(
+                    Fore.RED + 'Error: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
+                    + topic + Style.RESET_ALL)
+
+    # --------------------------------------------------------------------------
     # Create a tf graph to support verifications
     # --------------------------------------------------------------------------
     gx = nx.DiGraph()
@@ -197,8 +225,8 @@ if __name__ == "__main__":
             not config['anchored_sensor'] in list(config['sensors'].keys()):
         raise ValueError('Anchored sensor must be empty string or one of the configured sensors.')
 
+    # Check if config sensor topics exist in the bag file (also check for compressed topics)
     compressed_topics = {}  # a list of compressed topics to decompress in the launch file
-    # Check if config sensor topics exist in the bag file
     for sensor_key in config['sensors']:
         topic = config['sensors'][sensor_key]['topic_name']
         if topic not in bag_topics:
@@ -220,6 +248,7 @@ if __name__ == "__main__":
                 raise ValueError(Fore.RED + ' Topic ' + topic + ' (from sensor ' + sensor_key +
                                  ') does not exist in the bag file.' + Style.RESET_ALL)
 
+    # Check if throttled topics exist
     throttle_topics = {}
     use_throttle_topics = {}
     for sensor_key in config['sensors']:
@@ -240,6 +269,18 @@ if __name__ == "__main__":
 
         throttle_topics[topic] = {'throttled_topic': topic, 'sensor_key': sensor_key, 'use_throttle': use_throttle,
                                   'throttle_hz': throttle}
+
+
+    # For rgb and depth sensors, check that the camera_info topic exists in the bag file
+    for sensor_key in config['sensors']:
+        if not config['sensors'][sensor_key]['modality'] == 'rgb' and not config['sensors'][sensor_key]['modality'] == 'depth': # no need to check for other modalities
+            continue
+
+        topic = config['sensors'][sensor_key]['topic_name']
+        camera_info_topic = os.path.dirname(topic) + '/camera_info'
+        if camera_info_topic not in bag_topics:
+            raise ValueError(Fore.RED + ' Topic ' + camera_info_topic + ' (from sensor ' + sensor_key +
+                                 ') does not exist in the bag file. This topic must exist. Aborting configuration!' + Style.RESET_ALL)
 
     # Verify the existence of all tf frames in the config
     frames_to_verify = {'world_link': config['world_link'],
@@ -491,34 +532,7 @@ if __name__ == "__main__":
                                     'rviz_dataset_playback': rviz_dataset_playback
                                     })
         f.write(output.encode('utf-8'))
-    # --------------------------------------------------------------------------
-    # Check if modalities are properly created
-    # --------------------------------------------------------------------------
-    # TODO change lidar to lidar3d and lidar2d to lidar2d; change modality to modality
-    for sensor_key in config['sensors']:
-        topic = config['sensors'][sensor_key]['topic_name']
-        topic_compressed = topic + '/compressed'
-        if topic in bag_topics:
-            msg_type = bag_info[1][topic].msg_type
-        elif topic_compressed in bag_topics:
-            msg_type = bag_info[1][topic_compressed].msg_type
-        if ('modality' not in config['sensors'][sensor_key]) or (
-                config['sensors'][sensor_key]['modality'] not in ['rgb', 'depth', 'lidar3d', 'lidar2d']):
-            print(
-                Fore.YELLOW + 'Warning: Sensor ID not properly identified for sensor ' + sensor_key + ' with topic '
-                + topic + "Sensor will be identified by message type." + Style.RESET_ALL)
-            if msg_type == 'sensor_msgs/CompressedImage' or \
-                    msg_type == 'sensor_msgs/Image':
-                config['sensors'][sensor_key]['modality'] = 'rgb'
-            elif msg_type == 'sensor_msgs/LaserScan':
-                config['sensors'][sensor_key]['modality'] = 'lidar2d'
-            elif msg_type == 'sensor_msgs/PointCloud2':
-                config['sensors'][sensor_key]['modality'] = 'lidar3d'
-            else:
-                raise ValueError(
-                    Fore.RED + 'Error: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
-                    + topic + Style.RESET_ALL)
-
+   
     # --------------------------------------------------------------------------
     # Create the rviz config core displays (used in several rviz config files)
     # --------------------------------------------------------------------------
