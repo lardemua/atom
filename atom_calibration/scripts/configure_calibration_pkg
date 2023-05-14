@@ -22,6 +22,7 @@ import rosbag
 import jinja2
 import matplotlib.pyplot as plt
 import networkx as nx
+from pytictoc import TicToc
 
 # local packages
 from atom_core.utilities import checkDirectoryExistence
@@ -48,6 +49,9 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Initial setup
     # --------------------------------------------------------------------------
+    tictoc = TicToc()
+    tictoc.tic()
+
     package_name = os.path.basename(args['name'])
     rospack = rospkg.RosPack()
     atom_calibration_path = rospack.get_path('atom_calibration')
@@ -925,8 +929,7 @@ if __name__ == "__main__":
     print(
         '\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n'
         + package_path + '/calibration/summary.pdf')
-    print('\nSuccessfully configured calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL +
-          '. You can use the launch files:')
+    print('\nSuccessfully configured calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' in ' + str(round(tictoc.tocvalue(),2)) + ' seconds.\nYou can use the launch files:')
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(playbag_launch_file) + Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(set_initial_estimate_launch_file) +
           Style.RESET_ALL)
