@@ -127,15 +127,11 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     bag_file, _, bag_file_rel = atom_core.config_io.uriReader(config['bag_file'])
     print('Loading bagfile ' + bag_file)
-    bag = rosbag.Bag(bag_file)
+    bag = rosbag.Bag(bag_file) # load the bag file
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
     bag_topics = bag_info[1]
     # print('\n' + str(bag_topics))
-
-    # for topic, msg, t in bag.read_messages(topics=['chatter', 'numbers']):
-    #     print(msg)
-    bag.close()
 
     # --------------------------------------------------------------------------
     # Read the description.urdf.xacro file
@@ -201,9 +197,7 @@ if __name__ == "__main__":
     else:
         print('Creating transformation tree using the tfs in the bagfile ...')
 
-        print('Loading bagfile ' + bag_file)
-        bag = rosbag.Bag(bag_file)
-
+        
         for topic, msg, t in bag.read_messages(topics=['/tf']):
             for transform in msg.transforms:
                 if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
@@ -214,7 +208,6 @@ if __name__ == "__main__":
                 if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
                     gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='static')
 
-        bag.close()
         # nx.draw(gx, with_labels=True)
         # plt.show()
 
@@ -355,8 +348,6 @@ if __name__ == "__main__":
 
     # Verify that the frame_id in the calibration.yaml->sensor->link field is the same as in the published messages (#514).
     print('Checking consistency of configuration tf frames with the messages on corresponding topic ...')
-    print('Loading bagfile ' + bag_file)
-    bag = rosbag.Bag(bag_file)
     for sensor_key, sensor in config['sensors'].items():
         frame_in_config = config['sensors'][sensor_key]['link']
         topic_in_config = config['sensors'][sensor_key]['topic_name']
@@ -366,8 +357,6 @@ if __name__ == "__main__":
                 print('Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' calibration config defined link ' + Fore.YELLOW + frame_in_config + Fore.BLACK +' but bagfile messages on topic ' + Fore.BLUE + topic_in_config + Fore.BLACK + ' have header.frame_id ' + Fore.YELLOW + msg.header.frame_id + Fore.BLACK + '. These should be the same! Check #514.'+ Style.RESET_ALL)
                 exit(0)
             break # check consistency only for the first message
-    bag.close()
-
 
     # if nx.is_connected(gx):
     if nx.is_weakly_connected(gx):
@@ -925,10 +914,10 @@ if __name__ == "__main__":
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_calibrate, 'w'))
 
+    bag.close() # close the bag file.
+
     # Print final report
-    print(
-        '\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n'
-        + package_path + '/calibration/summary.pdf')
+    print('\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n' + package_path + '/calibration/summary.pdf')
     print('\nSuccessfully configured calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' in ' + str(round(tictoc.tocvalue(),2)) + ' seconds.\nYou can use the launch files:')
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(playbag_launch_file) + Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(set_initial_estimate_launch_file) +
