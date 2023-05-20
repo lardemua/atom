@@ -143,13 +143,21 @@ if __name__ == "__main__":
         os.remove(urdf_file)
 
     print('Parsing description file ' + description_file)
-    atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file, verbose=True)  # create tmp urdf file
-    try:
-        description = URDF.from_xml_file(urdf_file)  # read the urdf file
-    except:
-        atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file,
-                                    verbose=True)  # print xacro parsing
-        raise ValueError('Could not parse description file ' + description_file)
+    xacro_cmd = 'xacro ' + description_file + ' -o ' + urdf_file
+    atom_core.config_io.execute(xacro_cmd, verbose=True)  # create tmp urdf file
+
+    if not os.path.exists(urdf_file):
+        raise ValueError(Fore.RED + 'Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' + Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
+
+    description = URDF.from_xml_file(urdf_file)  # read the urdf file
+
+
+    # try:
+    #     description = URDF.from_xml_file(urdf_file)  # read the urdf file
+    # except:
+    #     atom_core.config_io.execute('xacro ' + description_file + ' -o ' + urdf_file,
+    #                                 verbose=True)  # print xacro parsing
+    #     raise ValueError('Could not parse description file ' + description_file)
 
     # --------------------------------------------------------------------------
     # Check if modalities are properly created
