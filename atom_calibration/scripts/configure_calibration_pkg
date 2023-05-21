@@ -198,13 +198,11 @@ if __name__ == "__main__":
             for transform in msg.transforms:
                 if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
                     gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='dynamic')
-                    print('Dynamic: ' + transform.header.frame_id + ' to ' + transform.child_frame_id)
 
         for topic, msg, t in bag.read_messages(topics=['/tf_static']):
             for transform in msg.transforms:
                 if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
                     gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='static')
-                    print('Static: ' + transform.header.frame_id + ' to ' + transform.child_frame_id)
 
     # nx.draw(gx, with_labels=True)
     # plt.show()
