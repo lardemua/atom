@@ -23,7 +23,7 @@ from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
 from atom_calibration.initial_estimate.sensor import Sensor
 from atom_calibration.initial_estimate.additional_tf import Additional_tf
-
+from tf.listener import TransformListener
 
 
 class InteractiveFirstGuess(object):
@@ -44,6 +44,8 @@ class InteractiveFirstGuess(object):
             rospy.logerr("Parameter '/robot_description' must exist to continue")
             sys.exit(1)
 
+
+        self.listener = TransformListener()
         # Load the urdf from /robot_description
         self.urdf = URDF.from_parameter_server()
 
@@ -106,7 +108,8 @@ class InteractiveFirstGuess(object):
                 "sensor_topic": sensor['topic_name'],
                 "sensor_modality": sensor['modality'],
                 "sensor_color": tuple(self.cm_sensors[sensor_idx, :]),
-                "marker_scale": self.args['marker_scale']}
+                "marker_scale": self.args['marker_scale'],
+                "listener": self.listener}
             # Append to the list of sensors
             self.sensors.append(Sensor(name, self.server, self.menu, **params))
             sensor_idx += 1
@@ -124,13 +127,15 @@ class InteractiveFirstGuess(object):
                     "frame_opt_child": additional_tf['child_link'],
                     "frame_additional_tf": additional_tf['child_link'],
                     "additional_tf_color": tuple(self.cm_additional_tf[additional_tf_idx, :]),
-                    "marker_scale": self.args['marker_scale']}
+                    "marker_scale": self.args['marker_scale'],
+                    "listener": self.listener}
                 # Append to the list of additional_tfs
                 self.additional_tfs.append(Additional_tf(name, self.server, self.menu, **params))
                 additional_tf_idx += 1
                 print('... done')
 
         self.server.applyChanges()
+
 
     def onSaveInitialEstimate(self, feedback):
         print('onSaveInitialEstimate')

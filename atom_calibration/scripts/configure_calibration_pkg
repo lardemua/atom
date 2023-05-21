@@ -40,9 +40,7 @@ if __name__ == "__main__":
     ap.add_argument("-utf", "--use_tfs", action="store_true",
                     help='Use transformations in the bag file instead of generating new tfs from the xacro, '
                          'joint_state_msgs and robot state publisher.')
-    ap.add_argument(
-        "-cfg", "--config_file",
-        help='Specify if you want to configure the calibration package with a specific configutation file. If this flag is not given, the standard config.yml ill be used.',
+    ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
         type=str, required=False)
     args = vars(ap.parse_args())
 
@@ -196,7 +194,6 @@ if __name__ == "__main__":
                 gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
     else:
         print('Creating transformation tree using the tfs in the bagfile ...')
-
         
         for topic, msg, t in bag.read_messages(topics=['/tf']):
             for transform in msg.transforms:
@@ -845,12 +842,12 @@ if __name__ == "__main__":
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     # Check if 2d lidars exist, if so add laser beams marker
-    modalitys = []
+    modalities = []
     for idx, sensor_key in enumerate(config['sensors']):
         modality = config['sensors'][sensor_key]['modality']
-        modalitys.append(modality)
+        modalities.append(modality)
 
-    if 'lidar2d' in modalitys:  # we have 2D lidar data, add laser beams marker
+    if 'lidar2d' in modalities:  # we have 2D lidar data, add laser beams marker
         # Add interactive maker display for showing laser beams
         rendered = env.get_template('/rviz/MarkerArray.rviz').render(
             c={'Name': 'LaserBeams-MarkerArray',
