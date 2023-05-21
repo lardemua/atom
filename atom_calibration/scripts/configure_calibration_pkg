@@ -185,7 +185,6 @@ if __name__ == "__main__":
         print('Creating transformation tree using the urdf robot description ...')
         for link in description.links:  # A graph node for each link in the urdf
             gx.add_node(link.name)
-            print(link.name)
 
         for joint in description.joints:  # atomic transformations are given by the joints
             if joint.type == 'fixed':
@@ -199,15 +198,16 @@ if __name__ == "__main__":
             for transform in msg.transforms:
                 if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
                     gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='dynamic')
+                    print('Dynamic: ' + transform.header.frame_id + ' to ' + transform.child_frame_id)
 
         for topic, msg, t in bag.read_messages(topics=['/tf_static']):
             for transform in msg.transforms:
                 if not gx.has_edge(transform.header.frame_id, transform.child_frame_id):
                     gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='static')
+                    print('Static: ' + transform.header.frame_id + ' to ' + transform.child_frame_id)
 
-        # nx.draw(gx, with_labels=True)
-        # plt.show()
-
+    # nx.draw(gx, with_labels=True)
+    # plt.show()
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
     # --------------------------------------------------------------------------
@@ -259,7 +259,6 @@ if __name__ == "__main__":
             print('Sensor ' + sensor_key + ' does not have throttle')
             throttle = None
             use_throttle = False
-        # else:
 
         throttle_topics[topic] = {'throttled_topic': topic, 'sensor_key': sensor_key, 'use_throttle': use_throttle,
                                   'throttle_hz': throttle}
@@ -283,7 +282,7 @@ if __name__ == "__main__":
         for frame in ['child_link', 'parent_link', 'link']:
             frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
 
-    # Verify if exist additional tfs to be estimated
+    # Search for additional tfs to be estimated
     if 'additional_tfs' in config: 
         if config['additional_tfs'] != '':
             # Check if link, child_link and parent_link exist in the bagfile.
@@ -306,8 +305,7 @@ if __name__ == "__main__":
             for additional_tf_key, additional_tf in config['additional_tfs'].items():
                 # path between root and additional_tfs data frame
                 paths = nx.shortest_path(gx, config['world_link'], additional_tf['child_link'])
-                print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET + ' to additional_tfs ' + Fore.LIGHTMAGENTA_EX +
-                    additional_tf_key + Fore.RESET + ':')
+                print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET + ' to additional_tfs ' + Fore.LIGHTMAGENTA_EX + additional_tf_key + Fore.RESET + ':')
                 at = '['
                 for path in paths:
                     if path == config['world_link']:
@@ -327,7 +325,6 @@ if __name__ == "__main__":
                 print(at)
 
     print('Checking if all tf frames exist ...')
-    print(frames_to_verify)
     for key, frame in frames_to_verify.items():
         if not frame in gx:
             raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
@@ -396,6 +393,26 @@ if __name__ == "__main__":
         s += ']'
         print(s)
 
+    # Verify that the transformations selected to be optimized are indeed static (#581)
+    for sensor_key, sensor in config['sensors'].items():
+        parent = sensor['parent_link']
+        child = sensor['child_link']
+        edge = gx.get_edge_data(parent,child)
+
+        if not edge['type'] == 'static':
+            print('Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent + ' to ' + child + Style.RESET_ALL +' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
+            exit(0)
+
+    if 'additional_tfs' in config: 
+        for additional_tf_key, additional_tf in config['additional_tfs'].items():
+            parent = additional_tf['parent_link']
+            child = additional_tf['child_link']
+            edge = gx.get_edge_data(parent,child)
+
+            if not edge['type'] == 'static':
+                print('Error: additional_tf  ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent + ' to ' + child + Style.RESET_ALL+ ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
+                exit(0)
+
     # --------------------------------------------------------------------------
     # Create dot calibration graph (used for printing out a summary)
     # --------------------------------------------------------------------------
@@ -426,8 +443,8 @@ if __name__ == "__main__":
 
         if 'additional_tfs' in config: 
             if config['additional_tfs'] != '':
-                for additional_tfs_key, additional_tfs in config['additional_tfs'].items():
-                    if additional_tfs['parent_link'] == parent and additional_tfs['child_link'] == child:
+                for additional_tf_key, additional_tf in config['additional_tfs'].items():
+                    if additional_tf['parent_link'] == parent and additional_tf['child_link'] == child:
                         label += 'To be calibrated\n'
                         rgb = matplotlib.colors.rgb2hex([0, 0, 1])
                         
