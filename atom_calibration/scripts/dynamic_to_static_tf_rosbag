@@ -59,10 +59,8 @@ if __name__ == "__main__":
         if not topic == '/tf':
             bag_out.write(topic, msg, stamp)
         else:
-
             idxs_to_remove = []
             for transform_idx, transform in enumerate(msg.transforms): # iterate all transforms
-
                 if transform.header.frame_id == args['parent'] and transform.child_frame_id == args['child']: 
 
                     # Set a new transform value for rotation
