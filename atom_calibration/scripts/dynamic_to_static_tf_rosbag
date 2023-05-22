@@ -2,6 +2,7 @@
 
 # stdlib
 import argparse
+from copy import deepcopy
 
 # 3rd-party
 import rosbag
@@ -50,39 +51,58 @@ if __name__ == "__main__":
     print('Converting bagfile. Please wait.')
     found_one = False
     num_found = 0
+    transform_value = None
+    stop_loop = False
     for topic, msg, stamp in tqdm(bag.read_messages(), total=bag.get_message_count(), desc='Processing bag messages'):
         mission_time = (stamp - initial_stamp)
 
         # if mission_time.to_sec() > 30: # just for testing fast, analyze messages only until 10 secs mission time.
             # break
         
-        if not topic == '/tf':
+        if topic == '/tf':
+            for transform_idx, transform in enumerate(msg.transforms): # iterate all transforms
+                if transform.header.frame_id == args['parent'] and transform.child_frame_id == args['child']: 
+                    # Set a new transform value for rotation
+                    print('Got transform in msg on topic ' + topic + ' with parent ' + transform.header.frame_id + ' and child ' + transform.child_frame_id  + ' at time ' + str((stamp-initial_stamp).to_sec()))
+ 
+                    transform_value = deepcopy(transform)
+                    stop_loop = True
+                    found_one = True
+                    break
+
+        if stop_loop:
+            break
+
+    if not found_one:
+        print('Error: Did not find transform ' + args['parent'] + ' to ' + args['child'] + ' in bagfile') 
+        exit(0)
+
+    for topic, msg, stamp in tqdm(bag.read_messages(), total=bag.get_message_count(), desc='Processing bag messages'):
+        mission_time = (stamp - initial_stamp)
+
+        # if mission_time.to_sec() > 30: # just for testing fast, analyze messages only until 10 secs mission time.
+            # break
+        
+        if not topic == '/tf' and not topic=='/tf_static':
             bag_out.write(topic, msg, stamp)
-        else:
+        elif topic == '/tf':
             idxs_to_remove = []
             for transform_idx, transform in enumerate(msg.transforms): # iterate all transforms
                 if transform.header.frame_id == args['parent'] and transform.child_frame_id == args['child']: 
 
-                    # Set a new transform value for rotation
-                    # print('Got transform in msg on topic ' + topic + ' with parent ' + transform.header.frame_id + ' and child ' + transform.child_frame_id  + ' at time ' + str((stamp-initial_stamp).to_sec()))
+                   idxs_to_remove.append(transform_idx) # should remove this transform from the tf msg
+                   num_found += 1
  
-                    idxs_to_remove.append(transform_idx) # should remove this transform from the tf msg
-                    num_found += 1
-
-                    # publish static transform if haven't do so before
-                    if not found_one:
-                        tf_static_msg = TFMessage() # publish this transform on topic /tf_static
-                        tf_static_msg.transforms.append(transform)
-                        bag_out.write('/tf_static', tf_static_msg, stamp)
-                        found_one = True
-
-
             idxs_to_remove.reverse()
             for idx_to_remove in idxs_to_remove: # remove transform from tf message
                 msg.transforms.pop(idx_to_remove)
 
             if len(msg.transforms) > 0: # after removing the transformation, there are still some in the message
                 bag_out.write('/tf', msg, stamp)
+
+        elif topic == '/tf_static':
+            msg.transforms.append(transform_value)
+            bag_out.write(topic, msg, stamp)
 
 
     bag.close() # close the bag file.
