@@ -41,7 +41,7 @@ if __name__ == "__main__":
                     help='Use transformations in the bag file instead of generating new tfs from the xacro, '
                          'joint_state_msgs and robot state publisher.')
     ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
-        type=str, required=False)
+        type=str, required=False, default=None)
     args = vars(ap.parse_args())
 
     # --------------------------------------------------------------------------
@@ -101,10 +101,9 @@ if __name__ == "__main__":
         args['config_file'] = package_path + '/calibration/' + args['config_file']
         if not exists(args['config_file']):
             args['config_file'] = package_path + '/calibration/config.yml'
-    print('Loading config file ' + args['config_file'])
 
+    print('Loading config_file ' + Fore.BLUE + str(args['config_file']) + Style.RESET_ALL)
     config = atom_core.config_io.loadConfig(args['config_file'])
-    print('config_file = ' + str(args['config_file']))
 
     # print('Loading config file ' + config_file)
     # config = atom_core.config_io.loadConfig(config_file)

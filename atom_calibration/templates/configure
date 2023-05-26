@@ -59,7 +59,7 @@ def main():
     stderr_output = result.stderr
     print(stderr_output)
 
-    if not result.returncode:
+    if result.returncode !=0:
         print( 'exit status:', result.returncode )
 
 if __name__ == '__main__':
