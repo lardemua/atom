@@ -142,6 +142,7 @@ def loadConfig(filename, check_paths=True):
                             ' rosrun <my_robot>_calibration configure' + Fore.RESET)
 
     # Check if description file is ok
+    print(config['description_file'])
     fullpath, name, uri = uriReader(config['description_file'])
 
     # Check if bag_file is ok

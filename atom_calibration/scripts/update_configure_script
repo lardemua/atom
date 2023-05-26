@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+# stdlib
+import os
+import argparse
+import subprocess
+from datetime import datetime
+
+import jinja2
+
+# 3rd-party
+import rospy
+import rospkg
+from jinja2 import Environment, FileSystemLoader
+from colorama import Style, Fore
+
+# local packages
+from atom_core.config_io import execute, resolvePath
+
+if __name__ == "__main__":
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-n", "--name", help='package_name', type=str, required=True)
+    args = vars(ap.parse_args())
+
+    # Initial setup
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    rospack = rospkg.RosPack()
+    print('Searching for ros package ' + Fore.BLUE + args['name'] + Style.RESET_ALL)
+    package_path = rospack.get_path(args['name'])  # full path to the package, including its name.
+    print('Found on ' + Fore.BLUE + package_path + Style.RESET_ALL)
+
+    atom_calibration_path = rospack.get_path('atom_calibration')
+
+    # Add configure.py script
+    configure_file = package_path + '/scripts/configure'
+    print(configure_file)
+    
+    # Template jinja engine setup
+    file_loader = FileSystemLoader(atom_calibration_path + '/templates')
+    env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
+    env.add_extension('jinja2.ext.do')
+
+    template = env.get_template('configure')
+    with open(configure_file, 'wb') as f:
+        output = template.render(c={'date': dt_string,
+                                    'package_name': args['name']})
+        f.write(output.encode('utf-8'))
+
+    execute('chmod +x ' + configure_file)  # make file executable
+
+    # Print final report
+    print('\n\nUpdated configure script in calibration package ' + Fore.BLUE + args['name'] + Style.RESET_ALL + ' in ' + package_path + '.')

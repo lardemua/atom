@@ -4,13 +4,15 @@
 import os
 import argparse
 import subprocess
+from datetime import datetime
+
+import jinja2
 
 # 3rd-party
 import rospy
 import rospkg
-
+from jinja2 import Environment, FileSystemLoader
 from colorama import Style, Fore
-from datetime import datetime
 
 # local packages
 from atom_core.config_io import execute, resolvePath
@@ -25,6 +27,7 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
 
     # Initial setup
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     package_path = resolvePath(args['name'])  # full path to the package, including its name.
     package_name = os.path.basename(package_path)
     package_base_path = os.path.dirname(package_path) # parent path where the package is located
@@ -55,41 +58,21 @@ if __name__ == "__main__":
     execute('mkdir ' + package_path + '/urdf/optimized')
     execute('mkdir ' + package_path + '/scripts')
 
+
+    # Template jinja engine setup
+    file_loader = FileSystemLoader(atom_calibration_path + '/templates')
+    env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
+    env.add_extension('jinja2.ext.do')
+
     # Add configure.py script
     configure_file = package_path + '/scripts/configure'
-    with open(configure_file, 'w') as f:
-        f.write('#!/bin/sh')  # shebang
-        f.write('\n# Auto generated on ' + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-        f.write('\n#      ATOMIC Framework')
-        f.write('\n')
-        f.write('\nhelpFunction()')
-        f.write('\n{')
-        f.write('\n   echo ""')
-        f.write('\n   echo "Usage: $0 -c config_file.yml"')
-        f.write('\n   echo -e "\t-c Name of specific configuration file that must be inside the package_calibration/calibration/ folder."')
-        f.write('\n   exit 1')
-        f.write('\n}')
-        f.write('\nwhile getopts "c:h" flag')
-        f.write('\ndo')
-        f.write('\n    case "${flag}" in')
-        f.write('\n        c ) configfile="$OPTARG" ;;')
-        f.write('\n        h ) helpFunction;;')
-        f.write('\n    esac')
-        f.write('\ndone')
-        f.write('\n')
-        f.write('\nif test -z "$configfile"')
-        f.write('\nthen')
-        if not args['use_tfs']:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name)
-        else:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + ' --use_tfs')
-        f.write('\nelse')
-        if not args['use_tfs']:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + ' -cfg $configfile')
-        else:
-            f.write('\nrosrun atom_calibration configure_calibration_pkg -n ' + package_name + ' --use_tfs -cfg $configfile')
-        f.write('\nfi')
-        f.close()
+    
+    template = env.get_template('configure')
+    with open(configure_file, 'wb') as f:
+        output = template.render(c={'date': dt_string,
+                                    'package_name': package_name})
+        f.write(output.encode('utf-8'))
+
     execute('chmod +x ' + configure_file)  # make file executable
 
     # Add template config.json
