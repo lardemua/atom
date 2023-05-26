@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+"""       █████╗ ████████╗ ██████╗ ███╗   ███╗
+         ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║
+         ███████║   ██║   ██║   ██║██╔████╔██║
+         ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║
+  __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _
+ / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |
+ | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __
+ |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+ | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <
+ |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
+ https://github.com/lardemua/atom
+
+WARNING WARNING WARNING WARNING
+Auto-generated file on {{ c.date }}
+Only modify this file if you know what you are doing!
+"""
+
+import argparse
+import subprocess
+
+
+def main():
+
+    # ---------------------------------------------------
+    # Handle command line arguments
+    # ---------------------------------------------------
+    parser = argparse.ArgumentParser(description='Configure {{ c.package_name }} calibration package. See  https://lardemua.github.io/atom_documentation/procedures/#configure-a-calibration-package for more info.')
+
+    parser.add_argument('-utf', '--use_tfs', action='store_true', help='ATOM will use the transforms on /tf and /tf_static topics. See https://lardemua.github.io/atom_documentation/procedures/#using-tfs-instead-of-the-xacro-file for more info.')
+
+    parser.add_argument('-cfg', '--config_file', type=str, help='Uses a custom calibration config.yml file.', default=None)
+
+    args = vars(parser.parse_args())
+
+    # ---------------------------------------------------
+    # Prepare command to run
+    # ---------------------------------------------------
+    command = 'rosrun atom_calibration configure_calibration_pkg -n {{ c.package_name }}'
+
+    if args['use_tfs']: # Add -utf flag if that's the case
+        command += ' --use_tfs'
+
+    if args['config_file'] is not None: # Add custom config file if needed
+        command += ' --config_file ' + args['config_file']
+
+    # ---------------------------------------------------
+    # Execute command
+    # ---------------------------------------------------
+    result = subprocess.run(command.split(), capture_output=True, text=True)
+
+    # ---------------------------------------------------
+    # Capture output and print
+    # ---------------------------------------------------
+    stdout_output = result.stdout
+    print(stdout_output)
+
+    stderr_output = result.stderr
+    print(stderr_output)
+
+    if not result.returncode:
+        print( 'exit status:', result.returncode )
+
+if __name__ == '__main__':
+    main()
