@@ -400,7 +400,7 @@ if __name__ == "__main__":
             print('Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent + ' to ' + child + Style.RESET_ALL +' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
             exit(0)
 
-    if 'additional_tfs' in config: 
+    if 'additional_tfs' in config and config['additional_tfs']: # must exist and not be null 
         for additional_tf_key, additional_tf in config['additional_tfs'].items():
             parent = additional_tf['parent_link']
             child = additional_tf['child_link']
