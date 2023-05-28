@@ -25,7 +25,7 @@ import networkx as nx
 from pytictoc import TicToc
 
 # local packages
-from atom_core.utilities import checkDirectoryExistence
+from atom_core.utilities import checkDirectoryExistence, atomError
 from atom_core.naming import generateLabeledTopic
 from colorama import Style, Fore
 from graphviz import Digraph
@@ -55,6 +55,9 @@ if __name__ == "__main__":
     atom_calibration_path = rospack.get_path('atom_calibration')
 
     # Check if package is under $ROS_PACKAGE_PATH, abort if not
+    if not package_name in rospack.list():
+        atomError('ROS package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' not found under ROS. Are you sure the package in under a directory listed in $ROS_PACKAGE_PATH? Can you run:\n\n' + Fore.BLUE+ 'roscd ' + package_name + Style.RESET_ALL + '\n\nPlease fix this before running your package configuration.')
+
     assert (package_name in rospack.list()), \
         Fore.YELLOW + package_name + ' not found under ROS. Are you sure the path you gave in under your ' \
                                      '$ROS_PACKAGE_PATH? Calibration package will not work if it is not under the ' \

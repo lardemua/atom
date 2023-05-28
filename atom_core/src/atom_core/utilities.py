@@ -147,3 +147,6 @@ def checkAdditionalTfs(dataset):
             return False
 
 
+def atomError(message):
+    print(Fore.RED + 'ATOM Error: ' + Style.RESET_ALL + message)
+    exit(0)
