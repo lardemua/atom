@@ -25,7 +25,7 @@ import networkx as nx
 from pytictoc import TicToc
 
 # local packages
-from atom_core.utilities import checkDirectoryExistence, atomError
+from atom_core.utilities import atomPrintOK, checkDirectoryExistence, atomError, atomStartupPrint
 from atom_core.naming import generateLabeledTopic
 from colorama import Style, Fore
 from graphviz import Digraph
@@ -51,18 +51,13 @@ if __name__ == "__main__":
     tictoc.tic()
 
     package_name = os.path.basename(args['name'])
+    atomStartupPrint('Configuring calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL)
+
     rospack = rospkg.RosPack()
     atom_calibration_path = rospack.get_path('atom_calibration')
 
-    # Check if package is under $ROS_PACKAGE_PATH, abort if not
-    if not package_name in rospack.list():
+    if not package_name in rospack.list(): # Check if package is under $ROS_PACKAGE_PATH, abort if not
         atomError('ROS package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' not found under ROS. Are you sure the package in under a directory listed in $ROS_PACKAGE_PATH? Can you run:\n\n' + Fore.BLUE+ 'roscd ' + package_name + Style.RESET_ALL + '\n\nPlease fix this before running your package configuration.')
-
-    assert (package_name in rospack.list()), \
-        Fore.YELLOW + package_name + ' not found under ROS. Are you sure the path you gave in under your ' \
-                                     '$ROS_PACKAGE_PATH? Calibration package will not work if it is not under the ' \
-                                     '$ROS_PACKAGE_PATH. Please fix this before running the package configuration. ' \
-        + Style.RESET_ALL
 
     package_path = rospack.get_path(package_name)  # full path to the package, including its name.
     package_base_path = os.path.dirname(package_path)  # parent path where the package is located
@@ -96,8 +91,6 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Read the config.yml file
     # --------------------------------------------------------------------------
-    # config_file = package_path + '/calibration/config.yml'
-
     if args['config_file'] is None:
         args['config_file'] = package_path + '/calibration/config.yml'
     else:
@@ -108,25 +101,14 @@ if __name__ == "__main__":
     print('Loading config_file ' + Fore.BLUE + str(args['config_file']) + Style.RESET_ALL)
     config = atom_core.config_io.loadConfig(args['config_file'])
 
-    # print('Loading config file ' + config_file)
-    # config = atom_core.config_io.loadConfig(config_file)
-
     # Sensors colormap. Access with:  color_map_sensors[idx, :]
     cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
-    # --------------------------------------------------------------------------
-    # Setup the description file
-    # --------------------------------------------------------------------------
-    description_file, _, _ = atom_core.config_io.uriReader(config['description_file'])
-    description_file_out_initial_estimate = package_path + '/urdf/initial_estimate.urdf.xacro'
-    print('description file = ' + description_file)
-    atom_core.config_io.execute('cp ' + description_file + ' ' + description_file_out_initial_estimate,
-                                verbose=False)  # Copy the xacro to the initial_estimate file
 
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
     bag_file, _, bag_file_rel = atom_core.config_io.uriReader(config['bag_file'])
-    print('Loading bagfile ' + bag_file)
+    print('Loading bagfile ' + Fore.BLUE + bag_file + Style.RESET_ALL)
     bag = rosbag.Bag(bag_file) # load the bag file
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
@@ -134,20 +116,25 @@ if __name__ == "__main__":
     # print('\n' + str(bag_topics))
 
     # --------------------------------------------------------------------------
-    # Read the description.urdf.xacro file
+    # Setup the description file
     # --------------------------------------------------------------------------
+    description_file, _, _ = atom_core.config_io.uriReader(config['description_file'])
+    description_file_out_initial_estimate = package_path + '/urdf/initial_estimate.urdf.xacro'
+    atom_core.config_io.execute('cp ' + description_file + ' ' + description_file_out_initial_estimate,
+                                verbose=False)  # Copy the xacro to the initial_estimate file
+
     # Check the description file
     urdf_file = '/tmp/description.urdf'
     if os.path.exists(urdf_file):
-        print('Deleting temporary file ' + urdf_file)
+        # print('Deleting temporary file ' + urdf_file)
         os.remove(urdf_file)
 
-    print('Parsing description file ' + description_file)
+    print('Parsing description file ' + Fore.BLUE + description_file + Style.RESET_ALL)
     xacro_cmd = 'xacro ' + description_file + ' -o ' + urdf_file
     atom_core.config_io.execute(xacro_cmd, verbose=True)  # create tmp urdf file
 
     if not os.path.exists(urdf_file):
-        raise ValueError(Fore.RED + 'Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' + Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
+        atomError('Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' + Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
 
     description = URDF.from_xml_file(urdf_file)  # read the urdf file
 
@@ -164,20 +151,16 @@ if __name__ == "__main__":
             msg_type = bag_info[1][topic_compressed].msg_type
         if ('modality' not in config['sensors'][sensor_key]) or (
                 config['sensors'][sensor_key]['modality'] not in ['rgb', 'depth', 'lidar3d', 'lidar2d']):
-            print(
-                Fore.YELLOW + 'Warning: Sensor ID not properly identified for sensor ' + sensor_key + ' with topic '
+            print(Fore.YELLOW + 'Warning: Sensor ID not properly identified for sensor ' + sensor_key + ' with topic '
                 + topic + "Sensor will be identified by message type." + Style.RESET_ALL)
-            if msg_type == 'sensor_msgs/CompressedImage' or \
-                    msg_type == 'sensor_msgs/Image':
+            if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':
                 config['sensors'][sensor_key]['modality'] = 'rgb'
             elif msg_type == 'sensor_msgs/LaserScan':
                 config['sensors'][sensor_key]['modality'] = 'lidar2d'
             elif msg_type == 'sensor_msgs/PointCloud2':
                 config['sensors'][sensor_key]['modality'] = 'lidar3d'
             else:
-                raise ValueError(
-                    Fore.RED + 'Error: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
-                    + topic + Style.RESET_ALL)
+                atomError('Cannot generate rviz configuration for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' with topic ' + Fore.BLUE+ topic + Style.RESET_ALL)
 
     # --------------------------------------------------------------------------
     # Create a tf graph to support verifications
@@ -211,15 +194,18 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
     # --------------------------------------------------------------------------
-    print('Running verifications ... please wait ...')
-
+    print('Running several verifications ... please wait ...')
 
     # If anchored sensor exists, it must be one of the existing sensors
-    if config['anchored_sensor'] != '' and \
-            not config['anchored_sensor'] in list(config['sensors'].keys()):
-        raise ValueError('Anchored sensor must be empty string or one of the configured sensors.')
+    print('Checking if anchored sensor ' + Fore.BLUE + str(config['anchored_sensor']) + Style.RESET_ALL + ' is valid ... '+ Style.RESET_ALL, end='')
+
+    if config['anchored_sensor'] != '' and not config['anchored_sensor'] in list(config['sensors'].keys()):
+        atomError('Anchored sensor ' + Fore.BLUE + config['anchored_sensor'] + Style.RESET_ALL+ ' must be empty string or one of the configured sensors.')
+
+    atomPrintOK()
 
     # Check if config sensor topics exist in the bag file (also check for compressed topics)
+    print('Checking for compressed image topics ... ')
     compressed_topics = {}  # a list of compressed topics to decompress in the launch file
     for sensor_key in config['sensors']:
         topic = config['sensors'][sensor_key]['topic_name']
@@ -231,18 +217,15 @@ if __name__ == "__main__":
                 if msg_type == 'sensor_msgs/CompressedImage':  # Check if the topic of correct msg_type
                     compressed_topics[topic] = {'topic_compressed': topic_compressed, 'msg_type': msg_type,
                                                 'sensor_key': sensor_key}
-                    print(Fore.BLUE + 'Topic ' + topic + ' is in compressed format (' + topic_compressed +
-                          '). Will setup a decompressor.' + Style.RESET_ALL)
+                    print('Topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' is in compressed format (' + topic_compressed + '). Will setup a decompressor.' )
                 else:
-                    raise ValueError(Fore.RED + ' Topic ' + topic + ' (from sensor ' + sensor_key +
-                                     ') exists in compressed format in the bag file, but is not of msg_type '
-                                     '"sensor_msgs/CompressedImage"' + Style.RESET_ALL)
+                    atomError('Topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' (from sensor ' + Fore.BLUE + sensor_key + ') exists in compressed format in the bag file, but is not of msg_type "sensor_msgs/CompressedImage"' + Style.RESET_ALL)
             else:
+                raise atomError('Topic ' + Fore.BLUE + topic + Style.RESET_ALL +' (from sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ') does not exist in the bag file.' + Style.RESET_ALL)
 
-                raise ValueError(Fore.RED + ' Topic ' + topic + ' (from sensor ' + sensor_key +
-                                 ') does not exist in the bag file.' + Style.RESET_ALL)
 
     # Check if throttled topics exist
+    print('Checking for throttled topics ... ')
     throttle_topics = {}
     use_throttle_topics = {}
     for sensor_key in config['sensors']:
@@ -252,19 +235,17 @@ if __name__ == "__main__":
             topic = topic_compressed
         if 'throttle' in config['sensors'][sensor_key]:
             throttle = config['sensors'][sensor_key]['throttle']
-            print('Sensor ' + sensor_key + ' has throttle')
-
+            print('Sensor ' + sensor_key + ' throttled to ' + Fore.BLUE + str(config['sensors'][sensor_key]['throttle']) + Style.RESET_ALL + ' Hz.')
             use_throttle = True
         else:
-            print('Sensor ' + sensor_key + ' does not have throttle')
             throttle = None
             use_throttle = False
 
         throttle_topics[topic] = {'throttled_topic': topic, 'sensor_key': sensor_key, 'use_throttle': use_throttle,
                                   'throttle_hz': throttle}
 
-
     # For rgb and depth sensors, check that the camera_info topic exists in the bag file
+    print('Checking for camera_info topic in bagfile ... ', end='')
     for sensor_key in config['sensors']:
         if not config['sensors'][sensor_key]['modality'] == 'rgb' and not config['sensors'][sensor_key]['modality'] == 'depth': # no need to check for other modalities
             continue
@@ -272,10 +253,12 @@ if __name__ == "__main__":
         topic = config['sensors'][sensor_key]['topic_name']
         camera_info_topic = os.path.dirname(topic) + '/camera_info'
         if camera_info_topic not in bag_topics:
-            raise ValueError(Fore.RED + ' Topic ' + camera_info_topic + ' (from sensor ' + sensor_key +
-                                 ') does not exist in the bag file. This topic must exist. Aborting configuration!' + Style.RESET_ALL)
+            atomError('Topic ' + Fore.BLUE + camera_info_topic + Style.RESET_ALL + ' (from sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ') does not exist in the bag file. This topic must exist. Aborting configuration!' + Style.RESET_ALL)
 
-    # Verify the existence of all tf frames in the config
+    atomPrintOK()
+
+    # Verify the existence of all tf frames referred in the config file
+    print('Checking if coordinate frames from config.yml exist in bagfile ... ', end='')
     frames_to_verify = {'world_link': config['world_link'],
                         'calibration_pattern.pattern_link': config['calibration_pattern']['parent_link']}
     for sensor_key in config['sensors']:  # Check if link, child_link and parent_link exist in the bagfile.
@@ -288,8 +271,7 @@ if __name__ == "__main__":
             # Check if link, child_link and parent_link exist in the bagfile.
             for additional_tf_key in config['additional_tfs']:
                 for frame in ['child_link', 'parent_link']:
-                    frames_to_verify[additional_tf_key + '.' +
-                                    frame] = config['additional_tfs'][additional_tf_key][frame]
+                    frames_to_verify[additional_tf_key + '.' + frame] = config['additional_tfs'][additional_tf_key][frame]
 
             # Verify that the parent and child links for each additional_tfs are a direct transformation
             for additional_tf_key, additional_tf in config['additional_tfs'].items():
@@ -297,10 +279,7 @@ if __name__ == "__main__":
                                 config['additional_tfs'][additional_tf_key]['child_link'])
 
                 if not edge_in_config in gx.edges():
-                    raise ValueError(
-                        'Error: additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
-                        edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
-                        ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
+                    atomError('Additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK + ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
 
             for additional_tf_key, additional_tf in config['additional_tfs'].items():
                 # path between root and additional_tfs data frame
@@ -324,14 +303,16 @@ if __name__ == "__main__":
                 at += ']'
                 print(at)
 
-    print('Checking if all tf frames exist ...')
+    # Checking if all tf frames exist 
     for key, frame in frames_to_verify.items():
         if not frame in gx:
-            raise ValueError('Error: frame ' + Fore.RED + frame + Style.RESET_ALL + ' given in config file for ' +
+            atomError('Frame ' + Fore.BLUE + frame + Style.RESET_ALL + ' given in config file for ' +
                              Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
                              Fore.BLUE + args['config_file'] + Style.RESET_ALL)
+    atomPrintOK()
 
     # Verify that the parent and child links for each sensor are a direct transformation (#316).
+    print('Checking if transforms in config.yml are direct transformations ... ', end='')
     for sensor_key, sensor in config['sensors'].items():
         edge_in_config = (config['sensors'][sensor_key]['parent_link'], config['sensors'][sensor_key]['child_link'])
         if not edge_in_config in gx.edges():
@@ -339,22 +320,24 @@ if __name__ == "__main__":
                 'Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
                 edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
                 ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
+    atomPrintOK()
 
     # Verify that the frame_id in the calibration.yaml->sensor->link field is the same as in the published messages (#514).
-    print('Checking consistency of configuration tf frames with the messages on corresponding topic ...')
+    print('Checking consistency of configuration tf frames with the messages on corresponding topic ...', end='')
     for sensor_key, sensor in config['sensors'].items():
         frame_in_config = config['sensors'][sensor_key]['link']
         topic_in_config = config['sensors'][sensor_key]['topic_name']
 
         for topic, msg, t in bag.read_messages(topics=[topic_in_config]):
             if not msg.header.frame_id == frame_in_config:
-                print('Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' calibration config defined link ' + Fore.YELLOW + frame_in_config + Fore.BLACK +' but bagfile messages on topic ' + Fore.BLUE + topic_in_config + Fore.BLACK + ' have header.frame_id ' + Fore.YELLOW + msg.header.frame_id + Fore.BLACK + '. These should be the same! Check #514.'+ Style.RESET_ALL)
+                atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' calibration config defined link ' + Fore.YELLOW + frame_in_config + Fore.BLACK +' but bagfile messages on topic ' + Fore.BLUE + topic_in_config + Fore.BLACK + ' have header.frame_id ' + Fore.YELLOW + msg.header.frame_id + Fore.BLACK + '. These should be the same! Check #514.'+ Style.RESET_ALL)
                 exit(0)
             break # check consistency only for the first message
+    atomPrintOK()
 
     # if nx.is_connected(gx):
     if nx.is_weakly_connected(gx):
-        print('TF tree is connected.')
+        print('Checking if TF tree is connected ... ', end='')
     else:
         pos = nx.random_layout(gx)
         edges, weights = zip(*nx.get_edge_attributes(gx, 'weight').items())
@@ -362,6 +345,8 @@ if __name__ == "__main__":
         nx.draw(gx, with_labels=True)
         plt.show()
         raise ValueError('TF tree is not connected. Aborting.')
+
+    atomPrintOK()
 
     # Pretty print of transformation chains
     # TODO How to detect a dynamic transformation using the information in the bagfile's tfs?
@@ -460,7 +445,7 @@ if __name__ == "__main__":
     # Create the playback launch file
     # --------------------------------------------------------------------------
     launch_file = playbag_launch_file
-    print('Setting up ' + playbag_launch_file + ' ...')
+    print('Setting up ' + Fore.BLUE + playbag_launch_file + Style.RESET_ALL +  ' ...')
 
     template = env.get_template('playbag.launch')
     with open(launch_file, 'wb') as f:
@@ -480,7 +465,7 @@ if __name__ == "__main__":
     # Create the set_initial_estimate launch file
     # --------------------------------------------------------------------------
     launch_file = set_initial_estimate_launch_file
-    print('Setting up ' + launch_file + ' ...')
+    print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'wb') as f:
@@ -497,7 +482,7 @@ if __name__ == "__main__":
     # Create the data collection launch file
     # --------------------------------------------------------------------------
     launch_file = data_collection_launch_file
-    print('Setting up ' + launch_file + ' ...')
+    print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'wb') as f:
@@ -514,7 +499,7 @@ if __name__ == "__main__":
     # Create the calibrate launch file
     # --------------------------------------------------------------------------
     launch_file = calibrate_launch_file
-    print('Setting up ' + launch_file + ' ...')
+    print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'wb') as f:
@@ -528,7 +513,7 @@ if __name__ == "__main__":
     # Create the dataset playback launch file
     # --------------------------------------------------------------------------
     launch_file = dataset_playback_launch_file
-    print('Setting up ' + launch_file + ' ...')
+    print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'wb') as f:
@@ -559,7 +544,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the rviz config file for the set_initial_estimate
     # --------------------------------------------------------------------------
-    print('Setting up ' + rviz_set_initial_estimate + ' ...')
+    print('Setting up ' + Fore.BLUE + rviz_set_initial_estimate + Style.RESET_ALL + ' ...')
+
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
     rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
         'world_link']  # set fixed frame to world_link
@@ -583,7 +569,7 @@ if __name__ == "__main__":
         #     msg_type = bag_info[1][topic_compressed].msg_type
         modality = config['sensors'][sensor_key]['modality']
 
-        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + modality + ')')
+        print('\tGenerating rviz displays for sensor ' + Fore.BLUE + sensor_key  + Style.RESET_ALL+ ' with topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' (' + Fore.CYAN +  modality + Style.RESET_ALL + ')')
 
         # if msg_type == 'sensor_msgs/CompressedImage' or \
         #         msg_type == 'sensor_msgs/Image':  # add displays for camera sensor
@@ -627,7 +613,7 @@ if __name__ == "__main__":
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         else:
-            print(Fore.YELLOW + 'Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
+            atomError('Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
                   + topic + ' (' + modality + ')' + Style.RESET_ALL)
 
     rviz['Visualization Manager']['Displays'] = displays
@@ -636,7 +622,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the rviz config file for the collect_data
     # --------------------------------------------------------------------------
-    print('Setting up ' + rviz_collect_data + ' ...')
+    print('Setting up ' + Fore.BLUE + rviz_collect_data + Style.RESET_ALL + ' ...')
+
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
     rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
         'world_link']  # set fixed frame to world_link
@@ -644,9 +631,7 @@ if __name__ == "__main__":
 
     # Add interactive maker display to handle sensor manual labeling
     rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(
-        c={'Name': 'ManualDataLabeler-InteractiveMarkers',
-           'Update_Topic': 'data_labeler/update'}
-    )
+        c={'Name': 'ManualDataLabeler-InteractiveMarkers','Update_Topic': 'data_labeler/update'})
     displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
     # TODO this will be the menu (only one)
 
@@ -663,7 +648,7 @@ if __name__ == "__main__":
         #     msg_type = bag_info[1][topic_compressed].msg_type
         modality = config['sensors'][sensor_key]['modality']
 
-        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + modality + ')')
+        print('\tGenerating rviz displays for sensor ' + Fore.BLUE + sensor_key  + Style.RESET_ALL+ ' with topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' (' + Fore.CYAN +  modality + Style.RESET_ALL + ')')
 
         # if msg_type == 'sensor_msgs/CompressedImage' or msg_type == 'sensor_msgs/Image':  # displays for camera sensor
         # TODO check if depth should be here or separated
@@ -767,7 +752,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the rviz config file for the dataset_playback
     # --------------------------------------------------------------------------
-    print('Setting up ' + rviz_dataset_playback + ' ...')
+    print('Setting up ' + Fore.BLUE + rviz_dataset_playback + Style.RESET_ALL + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
     rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
         'world_link']  # set fixed frame to world_link
@@ -784,7 +769,7 @@ if __name__ == "__main__":
         topic = config['sensors'][sensor_key]['topic_name']
         modality = config['sensors'][sensor_key]['modality']
 
-        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + modality + ')')
+        print('\tGenerating rviz displays for sensor ' + Fore.BLUE + sensor_key  + Style.RESET_ALL+ ' with topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' (' + Fore.CYAN +  modality + Style.RESET_ALL + ')')
 
         if modality == 'rgb':
             # Raw image
@@ -833,7 +818,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create the rviz config file for the calibrate
     # --------------------------------------------------------------------------
-    print('Setting up ' + rviz_calibrate + ' ...')
+    print('Setting up ' + Fore.BLUE + rviz_calibrate + Style.RESET_ALL + ' ...')
     rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
     rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config[
         'world_link']  # set fixed frame to world_link
@@ -884,7 +869,8 @@ if __name__ == "__main__":
         #     msg_type = bag_info[1][topic_compressed].msg_type
         modality = config['sensors'][sensor_key]['modality']
 
-        print('\tGenerating rviz displays for sensor ' + sensor_key + ' with topic ' + topic + ' (' + modality + ')')
+        print('\tGenerating rviz displays for sensor ' + Fore.BLUE + sensor_key  + Style.RESET_ALL+ ' with topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' (' + Fore.CYAN +  modality + Style.RESET_ALL + ')')
+
         # TODO check if depth should be here or separated
         if modality == 'rgb':  # displays for camera sensor
 
@@ -931,7 +917,7 @@ if __name__ == "__main__":
     bag.close() # close the bag file.
 
     # Print final report
-    print('\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n' + package_path + '/calibration/summary.pdf')
+    print('\nCreated a calibration configuration summary. Use it to see if the calibration is well set up. Located at:\n' + Fore.BLUE + package_path  + '/calibration/summary.pdf'+ Style.RESET_ALL)
     print('\nSuccessfully configured calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' in ' + str(round(tictoc.tocvalue(),2)) + ' seconds.\nYou can use the launch files:')
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(playbag_launch_file) + Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(set_initial_estimate_launch_file) +

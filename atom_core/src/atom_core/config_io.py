@@ -96,9 +96,8 @@ def uriReader(resource):
 
 def verifyConfig(config, template_config, upper_key=None):
     missing_keys = []
-    print('config is this ' + str(config))
     for key in template_config:
-        print('Checking key ' + key)
+        # print('Checking key ' + key)
         if not key in config:
             if upper_key is None:
                 missing_keys.append(key)
@@ -131,10 +130,10 @@ def loadConfig(filename, check_paths=True):
     template_file = rospack.get_path('atom_calibration') + '/templates/config.yml'
     template_config = loadYMLConfig(template_file)
     missing_parameters = verifyConfig(config, template_config)
-    print(missing_parameters)
+    # print(missing_parameters)
 
     if missing_parameters:  # list is not empty
-        # TODO: find another way to resolve this
+        # TODO: #589 find another way to resolve this
         if missing_parameters != ['additional_tfs']: # I added this line to run old config.yml files, but here the 'additional_tfs' key don't raise an error if missing.
             raise ValueError(Fore.RED + 'Your config file ' + filename +
                             ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
@@ -142,7 +141,7 @@ def loadConfig(filename, check_paths=True):
                             ' rosrun <my_robot>_calibration configure' + Fore.RESET)
 
     # Check if description file is ok
-    print(config['description_file'])
+    # print(config['description_file'])
     fullpath, name, uri = uriReader(config['description_file'])
 
     # Check if bag_file is ok

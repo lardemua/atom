@@ -11,6 +11,7 @@ import jinja2
 # 3rd-party
 import rospy
 import rospkg
+from atom_core.utilities import atomStartupPrint
 from jinja2 import Environment, FileSystemLoader
 from colorama import Style, Fore
 
@@ -30,6 +31,9 @@ if __name__ == "__main__":
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     package_path = resolvePath(args['name'])  # full path to the package, including its name.
     package_name = os.path.basename(package_path)
+
+    atomStartupPrint('Creating calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL)
+
     package_base_path = os.path.dirname(package_path) # parent path where the package is located
     rospack = rospkg.RosPack()
     atom_calibration_path = rospack.get_path('atom_calibration')

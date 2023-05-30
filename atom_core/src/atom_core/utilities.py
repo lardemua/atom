@@ -148,5 +148,24 @@ def checkAdditionalTfs(dataset):
 
 
 def atomError(message):
-    print(Fore.RED + 'ATOM Error: ' + Style.RESET_ALL + message)
+    print(Fore.RED + '\nATOM Error: ' + Style.RESET_ALL + message)
     exit(0)
+
+def atomPrintOK(message=''):
+    print(message + Fore.GREEN + '[OK]' + Style.RESET_ALL)
+
+def atomStartupPrint(message=''):
+    print('_______________________________________________________')
+    print("\n \
+          █████╗ ████████╗ ██████╗ ███╗   ███╗ \n \
+         ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║ \n \
+         ███████║   ██║   ██║   ██║██╔████╔██║ \n \
+         ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║ \n \
+  __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _  \n\
+ / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |    \n\
+ | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __ \n\
+ |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ / \n\
+ | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <  \n\
+ |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\ \n\
+ " + Fore.BLUE + "https://github.com/lardemua/atom\n" + Style.RESET_ALL + '\n' + message)
+    print('_______________________________________________________\n')
