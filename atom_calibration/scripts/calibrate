@@ -26,7 +26,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabel
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import waitForKeyPress2, checkAdditionalTfs
+from atom_core.utilities import waitForKeyPress2, checkAdditionalTfs, atomStartupPrint
 from atom_core.xacro_io import saveResultsXacro
 
 
@@ -99,6 +99,7 @@ def main():
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
     args = vars(ap.parse_args(args=arglist))
 
+    atomStartupPrint('Starting calibration')
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
