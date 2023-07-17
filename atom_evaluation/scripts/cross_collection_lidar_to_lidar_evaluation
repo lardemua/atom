@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
     # save results in csv file 
     if args['save_file_results'] != None: 
-        with open(args['save_file_results'] + 'cross_collection_lidar_to_lidar_results.csv', 'w', newline='') as f_output:
+        with open(args['save_file_results'] + f'cross_collections_{args["sensor_source"]}_{args["sensor_target"]}_results.csv', 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')

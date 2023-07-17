@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
     # save results in csv file 
     if args['save_file_results'] != None: 
-        with open(args['save_file_results'] + 'lidar_to_rgb_results.csv', 'w', newline='') as f_output:
+        with open(args['save_file_results'] + f'{args["range_sensor"]}_to_{args["camera_sensor"]}_results.csv', 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
