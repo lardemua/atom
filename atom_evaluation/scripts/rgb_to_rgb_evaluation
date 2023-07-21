@@ -54,6 +54,7 @@ from matplotlib import cm
 from colorama import Style, Fore
 from prettytable import PrettyTable
 from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
+from atom_core.dataset_io import loadResultsJSON, filterCollectionsFromDataset
 
 # Atom imports
 from atom_core.atom import getTransform
@@ -145,6 +146,15 @@ if __name__ == "__main__":
     ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help="A string to be evaluated into a lambda function that receives a collection name as input and "
+                    "returns True or False to indicate if the collection should be loaded (and used in the "
+                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
+                    help="Remove any collection which does not have a detection for all sensors.", )
+    ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
+                            "Used or the Charuco.", action="store_true", default=False)
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
@@ -161,9 +171,13 @@ if __name__ == "__main__":
     train_dataset = json.load(f)
 
     # Loads the test json file containing a set of collections to evaluate the calibration
-    test_json_file = args['test_json_file']
-    f = open(test_json_file, 'r')
-    test_dataset = json.load(f)
+    test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])
+
+    # ---------------------------------------
+    # --- Filter some collections and / or sensors from the dataset
+    # ---------------------------------------
+    test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
+
 
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -479,7 +493,7 @@ if __name__ == "__main__":
     bottom_row_save = []
     for col_idx, _ in enumerate(table_header):
         if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
             bottom_row_save.append('Averages')
             continue
 
@@ -495,7 +509,7 @@ if __name__ == "__main__":
                 pass
 
         value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
         bottom_row_save.append(value)
 
     table.add_row(bottom_row)
