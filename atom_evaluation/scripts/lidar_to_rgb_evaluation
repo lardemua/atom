@@ -94,6 +94,8 @@ if __name__ == "__main__":
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
+                   "Default: {name_of_dataset}_{range_sensor}_to_{camera_sensor}_results.csv", type=str, required=False)
 
     args = vars(ap.parse_args())
     show_images = args['show_images']
@@ -290,8 +292,13 @@ if __name__ == "__main__":
 
     # save results in csv file 
     if args['save_file_results'] != None: 
-        with open(args['save_file_results'] + f'{args["range_sensor"]}_to_{args["camera_sensor"]}_results.csv', 'w', newline='') as f_output:
-            f_output.write(table_to_save.get_csv_string())
+        if args['save_file_results_name'] is None:
+            dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
+            with open(args['save_file_results'] + f'{dataset_name}_{args["range_sensor"]}_to_{args["camera_sensor"]}_results.csv', 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
+        else: 
+            with open(args['save_file_results'] + args['save_file_results_name'], 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
     sys.exit()

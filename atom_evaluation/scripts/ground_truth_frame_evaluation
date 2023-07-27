@@ -105,8 +105,15 @@ class Table:
         
     def table_to_csv(self) -> None:
         if self.save_to_csv:
-            with open(self.arg + 'ground_truth_frame_results.csv', 'w', newline='') as f_output:
+            with open(self.arg['save_file_results'] + 'ground_truth_frame_results.csv', 'w', newline='') as f_output:
                 f_output.write(self.table_to_save.get_csv_string())
+            if args['save_file_results_name'] is None:
+                dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
+                with open(self.arg['save_file_results'] + f'{dataset_name}_ground_truth_frame_results.csv', 'w', newline='') as f_output:
+                    f_output.write(self.table_to_save.get_csv_string())
+            else: 
+                with open(args['save_file_results'] + args['save_file_results_name'], 'w', newline='') as f_output:
+                    f_output.write(self.table_to_save.get_csv_string())
     
     def addAverages(self) -> None:
         bottom_row = []
@@ -300,8 +307,10 @@ if __name__ == "__main__":
     ap.add_argument("-tf", "--target_frame", help="Target transformation frame. If no frame is provided, the first link in the calibration chain after the reference frame will be assigned.", type=str, required=False)
     ap.add_argument("-sf", "--source_frame", help="Source transformation frame. If no frame is provided, the errors will be computed for all estimated frames.", type=str, required=False)
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
     ap.add_argument("-sac", "--show_all_collections", help="In the outputted table, it displays the result for every collections, as opposed to the averages.", required=False, action="store_true", default=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
+                   "Default: {name_of_dataset}_ground_truth_frame_results.csv", type=str, required=False)
     args = vars(ap.parse_args())
 
     # ---------------------------------------
