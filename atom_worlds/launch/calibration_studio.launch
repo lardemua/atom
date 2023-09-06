@@ -2,7 +2,7 @@
 <launch>
 
     <!-- Gazebo -->
-    <arg name="world_name" default="$(find atom_worlds)/worlds/larcc.world" />
+    <arg name="world_name" default="$(find atom_worlds)/worlds/calibration_studio.world" />
     <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
     <arg name="gui" default="False" doc="Starts gazebo gui" />
 
@@ -11,7 +11,7 @@
     <rosparam file="$(find atom_worlds)/config/camera.yaml" />
 
     <!-- Start interactive pattern -->
-    <arg name="interactive_pattern" default="false" doc="Start autonomous pattern node" />
+    <arg name="interactive_pattern" default="false" doc="Start interactive pattern node" />
 
     <!-- Rviz  -->
     <arg name="launch_rviz" default="true" doc="Whether to launch RViz or not" />
