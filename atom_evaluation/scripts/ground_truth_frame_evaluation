@@ -25,13 +25,14 @@ import numpy as np
 from matplotlib import cm
 from colorama import Style, Fore
 from prettytable import PrettyTable
-from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
 
 # Atom imports
 from atom_core.atom import getTransform
 from atom_core.utilities import rootMeanSquare, checkAdditionalTfs
 from atom_core.naming import generateKey
 from atom_core.drawing import drawCross2D, drawSquare2D
+from atom_core.dataset_io import getMixedDataset
+from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
 
 # -------------------------------------------------------------------------------
 # --- CLASSES 
@@ -142,8 +143,8 @@ class Table:
         self.table_to_csv()
 
 class ErrorsDictionary:
-    def __init__(self, train_dataset, test_dataset, transform_key, target_frame, source_frame, source_child, dict, comput_all_trans) -> None:
-        self.train_dataset = train_dataset
+    def __init__(self, mixed_dataset, test_dataset, transform_key, target_frame, source_frame, source_child, dict, comput_all_trans) -> None:
+        self.mixed_dataset = mixed_dataset
         self.test_dataset = test_dataset
         self.transform_key = transform_key
         self.target_frame = target_frame
@@ -170,7 +171,7 @@ class ErrorsDictionary:
         self.average_rot = sum(self.values_per_collection[collection_key]['rot'] for collection_key in self.values_per_collection) / len(self.values_per_collection)
 
     def computeTransRot(self) -> None:
-        train_od = OrderedDict(sorted(self.train_dataset['collections'].items(), key=lambda t: int(t[0])))
+        train_od = OrderedDict(sorted(self.mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
         test_od = OrderedDict(sorted(self.test_dataset['collections'].items(), key=lambda t: int(t[0])))
         self.values_per_collection = {}
         saved_collections = 0
@@ -213,7 +214,7 @@ class ErrorsDictionary:
         self.dict[self.source_frame]['Rot'] = self.average_rot
 
     def saveSourceTrans(self) -> None:
-        for collection_key, collection in OrderedDict(sorted(self.train_dataset['collections'].items(), key=lambda t: int(t[0]))).items():
+        for collection_key, collection in OrderedDict(sorted(self.mixed_dataset['collections'].items(), key=lambda t: int(t[0]))).items():
             self.dict[collection_key] = {}  # init the dictionary of errors for this collection
             j=int(collection_key)
             try:
@@ -318,36 +319,38 @@ if __name__ == "__main__":
     # ---------------------------------------
     train_dataset = loadArgJson(args['train_json_file'])
     test_dataset = loadArgJson(args['test_json_file'])
+    # --- Get mixed json (calibrated transforms from train and the rest from test)
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
     # ---------------------------------------
     # --- STEP 1: Calculate error values and append into a dict
     # ---------------------------------------
     errors_dict = {} # dictionary with all the errors
     compute_all_transformations = True
-    target_frame = argToTargetFrame(args['target_frame'],train_dataset)
+    target_frame = argToTargetFrame(args['target_frame'],mixed_dataset)
 
     if args['source_frame'] != None: # compute for a selected source frame
         source_frame = args['source_frame']
         compute_all_transformations = False
-        transform_key, source_child = evaluateSourceFrame(source_frame, train_dataset)
+        transform_key, source_child = evaluateSourceFrame(source_frame, mixed_dataset)
         evaluateTargetFrame(target_frame, source_child)
-        errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,source_frame,source_child,errors_dict,compute_all_transformations)
+        errors = ErrorsDictionary(mixed_dataset,test_dataset,transform_key,target_frame,source_frame,source_child,errors_dict,compute_all_transformations)
         errors.saveToDict()
         
     else: # compute for all frames estimated in the calibration
-        if checkAdditionalTfs(train_dataset):
-            for additional_tf_key, additional_tf in train_dataset['calibration_config']['additional_tfs'].items():
+        if checkAdditionalTfs(mixed_dataset):
+            for additional_tf_key, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
                 transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
                 source_child = additional_tf['child_link']
                 evaluateTargetFrame(target_frame, source_child)
-                errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,transform_key,source_child,errors_dict,compute_all_transformations)
+                errors = ErrorsDictionary(mixed_dataset,test_dataset,transform_key,target_frame,transform_key,source_child,errors_dict,compute_all_transformations)
                 errors.saveToDict()
 
-        for sensor_key, sensor in train_dataset['calibration_config']['sensors'].items():
+        for sensor_key, sensor in mixed_dataset['calibration_config']['sensors'].items():
             transform_key = generateKey(sensor['parent_link'], sensor['child_link'])
             source_child = sensor['child_link']
             evaluateTargetFrame(target_frame, source_child)
-            errors = ErrorsDictionary(train_dataset,test_dataset,transform_key,target_frame,transform_key,source_child,errors_dict,compute_all_transformations)
+            errors = ErrorsDictionary(mixed_dataset,test_dataset,transform_key,target_frame,transform_key,source_child,errors_dict,compute_all_transformations)
             errors.saveToDict()
     
     # -------------------------------------------------------------
