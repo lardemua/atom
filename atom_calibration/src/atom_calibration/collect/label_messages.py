@@ -559,7 +559,9 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
 
     # Create a convex hull of the contours
     # https://theailearner.com/2020/11/03/opencv-minimum-area-rectangle/
-    pattern_edges_mask = cv2.Sobel(src=pattern_solid_mask, ddepth=cv2.CV_8UC1, dx=1, dy=1, ksize=3)
+    pattern_edges_mask_64f = cv2.Sobel(src=pattern_solid_mask, ddepth=cv2.CV_64F, dx=2, dy=2, ksize=5)
+    abs_pattern_edges_mask_64f = np.absolute(pattern_edges_mask_64f)
+    pattern_edges_mask = np.uint8(abs_pattern_edges_mask_64f)
     point_coordinates = np.argwhere(pattern_edges_mask == 255)
     convex_hull_points = cv2.convexHull(point_coordinates)
 
@@ -591,7 +593,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     # cv2.imshow('Canny', pattern_edges_mask)
     # cv2.imshow('Canny Edges After Contouring', pattern_edges_mask)
     # print(image.dtype)
-    # # image2 = np.zeros(image.shape, dtype=float)
+    # image2 = np.zeros(image.shape, dtype=float)
     # image2 = image.copy()
     # cv2.drawContours(image2, contours, -1, (0, 255, 0), 3)
     # cv2.imshow('Contours', image2)
