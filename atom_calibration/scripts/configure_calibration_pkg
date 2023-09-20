@@ -25,7 +25,7 @@ import networkx as nx
 from pytictoc import TicToc
 
 # local packages
-from atom_core.utilities import atomPrintOK, checkDirectoryExistence, atomError, atomStartupPrint
+from atom_core.utilities import atomPrintOK, checkDirectoryExistence, atomError, atomStartupPrint, verifyAnchoredSensor
 from atom_core.naming import generateLabeledTopic
 from colorama import Style, Fore
 from graphviz import Digraph
@@ -197,10 +197,7 @@ if __name__ == "__main__":
     print('Running several verifications ... please wait ...')
 
     # If anchored sensor exists, it must be one of the existing sensors
-    print('Checking if anchored sensor ' + Fore.BLUE + str(config['anchored_sensor']) + Style.RESET_ALL + ' is valid ... '+ Style.RESET_ALL, end='')
-
-    if config['anchored_sensor'] != '' and not config['anchored_sensor'] in list(config['sensors'].keys()):
-        atomError('Anchored sensor ' + Fore.BLUE + config['anchored_sensor'] + Style.RESET_ALL+ ' must be empty string or one of the configured sensors.')
+    verifyAnchoredSensor(config['anchored_sensor'], config['sensors'])
 
     atomPrintOK()
 

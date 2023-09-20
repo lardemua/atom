@@ -169,3 +169,11 @@ def atomStartupPrint(message=''):
  |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\ \n\
  " + Fore.BLUE + "https://github.com/lardemua/atom\n" + Style.RESET_ALL + '\n' + message)
     print('_______________________________________________________\n')
+
+
+def verifyAnchoredSensor(anchored_sensor, sensors):
+    # If anchored sensor exists, it must be one of the existing sensors
+    print('Checking if anchored sensor ' + Fore.BLUE + str(anchored_sensor) + Style.RESET_ALL + ' is valid ... '+ Style.RESET_ALL, end='')
+
+    if anchored_sensor != '' and not anchored_sensor in list(sensors.keys()):
+        atomError('Anchored sensor ' + Fore.BLUE + anchored_sensor + Style.RESET_ALL+ ' must be empty string or one of the configured sensors.')
