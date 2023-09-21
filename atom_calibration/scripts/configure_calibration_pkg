@@ -471,7 +471,8 @@ if __name__ == "__main__":
                                     'package_name': package_name,
                                     'rviz_set_initial_estimate': rviz_set_initial_estimate,
                                     'bag_file': bag_file_rel,
-                                    'marker_size': 0.5
+                                    'marker_size': 0.5,
+                                    'config_file': os.path.basename(args['config_file'])
                                     })
         f.write(output.encode('utf-8'))
 
