@@ -451,14 +451,14 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             n = 10
             thetas = np.linspace(0, 2 * math.pi, n)
             r = scatter_seed_radius
-            initial_seeds = np.zeros((2, n), dtype=np.int)
+            initial_seeds = np.zeros((2, n), dtype=int)
             for col in range(0, n):
                 x = seed_x + r * math.cos(thetas[col])
                 y = seed_y + r * math.sin(thetas[col])
                 initial_seeds[0, col] = x
                 initial_seeds[1, col] = y
         else:
-            initial_seeds = np.array([[seed_x], [seed_y]], dtype=np.int)
+            initial_seeds = np.array([[seed_x], [seed_y]], dtype=int)
 
         to_visit_mask = np.ones(image.shape, dtype=bool)
         seeds_mask = np.zeros(image.shape, dtype=bool)
