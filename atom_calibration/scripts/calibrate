@@ -51,6 +51,8 @@ def main():
     ap = addArguments(ap)
     ap.add_argument("-json", "--json_file", type=str, required=True, help="Json file containing input dataset.", )
     ap.add_argument("-v", "--verbose", help="Be verbose", action="store_true", default=False)
+    ap.add_argument("-snv", "--show_normalized_values", action="store_true", default=False,
+                    help="In the output table, shows normalized residuals alongside the original values.")
     ap.add_argument("-rv", "--ros_visualization", help="Publish ros visualization markers.", action="store_true")
     ap.add_argument("-si", "--show_images", action="store_true", default=False, help="shows images for each camera")
     ap.add_argument("-oi", "--optimize_intrinsics", action="store_true", default=False,
@@ -441,8 +443,8 @@ def main():
                 values += [residuals[k] for k in residuals.keys() if sensor_key in k]
 
         # If the normalizer is to big, the residuals may loose their influence when close to zero.
-        normalizer[modality] = np.abs(np.log(np.mean(values)))
-        # normalizer[modality] = np.log(1 + np.mean(values))
+        normalizer[modality] = np.mean(values)
+        print(f'Normalizer for {modality}: {normalizer[modality]}')
 
     # ---------------------------------------
     # --- Start Optimization

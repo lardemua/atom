@@ -11,6 +11,7 @@ import math
 import copy
 from datetime import datetime
 
+import re
 import numpy as np
 import ros_numpy
 from colorama import Fore, Style
@@ -35,7 +36,6 @@ from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 def errorReport(dataset, residuals, normalizer, args):
-
     from prettytable import PrettyTable
     table_header = ['Collection']
 
@@ -43,18 +43,18 @@ def errorReport(dataset, residuals, normalizer, args):
     for sensor_key, sensor in dataset['sensors'].items():
 
         # Define units
-        if sensor['modality'] in ['lidar3d']:
-            units = ' (m)' 
-        elif sensor['modality'] in ['rgb', 'depth']:
-            units = ' (px)' 
+        if sensor['modality'] in ['lidar3d', 'depth']:
+            units = ' [m]' 
+        elif sensor['modality'] in ['rgb']:
+            units = ' [px]' 
         else:
             units = ''
-
+        
         if sensor_key == dataset['calibration_config']['anchored_sensor']:
             table_header.append(Fore.YELLOW + sensor_key + Style.RESET_ALL + units)
         else:
             table_header.append(sensor_key + units)
-
+        
     table = PrettyTable(table_header)
     table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
@@ -68,7 +68,11 @@ def errorReport(dataset, residuals, normalizer, args):
             keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
             v = [residuals[k] * normalizer[sensor['modality']] for k in keys if residuals[k]]
             if v:
-                value = '%.4f' % np.mean(v)
+                if args['show_normalized_values']:
+                    normal_v = [residuals[k] for k in keys if residuals[k]]
+                    value = f'{np.mean(v):.4f} ({np.mean(normal_v):.4f})'
+                else:
+                    value = '%.4f' % np.mean(v)
                 row.append(value)
                 row_save.append(value)
             else:
@@ -78,32 +82,46 @@ def errorReport(dataset, residuals, normalizer, args):
         table.add_row(row)
         table_to_save.add_row(row)
 
+    if args['show_normalized_values']:
+        # Regular expression pattern to match floats
+        pattern = r'\d+\.\d+'
+
     # Compute averages and add a bottom row
     bottom_row = []  # Compute averages and add bottom row to table
     bottom_row_save = []
     for col_idx, _ in enumerate(table_header):
         if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.RESET_ALL)
             bottom_row_save.append('Averages')
             continue
 
         total = 0
+        normal_total = 0
         count = 0
         for row in table.rows:
             # if row[col_idx].isnumeric():
             try:
-                value = float(row[col_idx])
-                total += float(value)
+                if args['show_normalized_values']:
+                    floats = re.findall(pattern, row[col_idx])
+                    value = float(floats[0])
+                    normal_value = float(floats[1])
+                    total += float(value)
+                    normal_total += float(normal_value)
+                else:
+                    value = float(row[col_idx])
+                    total += float(value)
                 count += 1
             except:
                 pass
 
         if count > 0:
             value = '%.4f' % (total / count)
+            if args['show_normalized_values']:
+                value += ' (' + '%.4f' % (normal_total / count) + ')'
         else:
             value = '---'
 
-        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK + Style.RESET_ALL)
         bottom_row_save.append(value)
 
     table.add_row(bottom_row)
