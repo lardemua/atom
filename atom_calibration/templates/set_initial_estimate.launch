@@ -32,7 +32,7 @@
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Parameters-->
-    <arg name="config_file" default="$(find {{ c.package_name }})/calibration/config.yml"/>
+    <arg name="config_file" default="$(find {{ c.package_name }})/calibration/{{ c.config_file }}"/>
     <arg name="output_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"/>
     <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
     <!-- arguments to be passed onto playbag.launch  -->
