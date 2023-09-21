@@ -199,6 +199,18 @@ if __name__ == "__main__":
     # If anchored sensor exists, it must be one of the existing sensors
     verifyAnchoredSensor(config['anchored_sensor'], config['sensors'])
 
+    # Check if sensor names are valid:
+    sensor_keys = list(config['sensors'].keys())
+
+    for i in range(len(sensor_keys)):
+        for j in range(i + 1, len(sensor_keys)):
+            key1 = sensor_keys[i]
+            key2 = sensor_keys[j]
+            if key1 in key2:
+                atomError(f"'{key1}' is a string subset of '{key2}', please rename them")
+            elif key2 in key1:
+                atomError(f"'{key2}' is a string subset of '{key1}', please rename them")
+
     atomPrintOK()
 
     # Check if config sensor topics exist in the bag file (also check for compressed topics)
