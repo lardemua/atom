@@ -300,6 +300,7 @@ if __name__ == "__main__":
             print('Saving annotations ...')
             createJSONFile(annotation_file, annotations)
             break
+
         elif key == ord('q'):  # quit without saving.
             print('Quitting ...')
             break
