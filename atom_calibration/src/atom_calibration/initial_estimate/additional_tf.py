@@ -40,7 +40,7 @@ class MarkerPoseC:
 
 class Additional_tf:
 
-    def __init__(self, name, server, global_menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_additional_tf, additional_tf_color, marker_scale):
+    def __init__(self, name, server, global_menu_handler, frame_world, frame_opt_parent, frame_opt_child, frame_additional_tf, additional_tf_color, marker_scale, listener=None):
         print('Creating a new additional_tfs named ' + name)
         self.name = name
         self.visible = True
@@ -48,7 +48,10 @@ class Additional_tf:
         # self.global_menu_handler = global_menu_handler
 
         self.menu_handler = MenuHandler()
-        self.listener = TransformListener()
+        if listener is not None:
+            self.listener = listener
+        else:
+            self.listener = TransformListener()
         self.br = tf.TransformBroadcaster()
         self.marker_scale = marker_scale
         # transforms

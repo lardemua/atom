@@ -57,7 +57,7 @@
         <range>1000</range>
         <constant>0.9</constant>
         <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
+        <quadraic>0.001</quadraic>
       </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
       <spot>
@@ -132,7 +132,7 @@
       </camera>
     </gui>
     <state world_name='default'>
-      <sim_time>830 318000000</sim_time>
+      <sim_time>0</sim_time>
       <real_time>214 175274448</real_time>
       <wall_time>1651740140 988331282</wall_time>
       <iterations>190110</iterations>

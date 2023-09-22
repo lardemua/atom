@@ -681,6 +681,35 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
         dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
             dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
 
+def copyTFToDataset(calibration_parent, calibration_child, source_dataset, target_dataset):
+    """
+    Copy optimized transformations from a source dataset to a target dataset.
+
+    It identifies the optimized transformation on the source dataset and copies it
+    to all collections in the target dataset.
+
+    :param calibration_parent: The calibration parent identifier.
+    :param calibration_child: The calibration child identifier.
+    :param source_dataset: The source dataset containing the optimized transformation.
+    :param target_dataset: The target dataset where the optimized transformation will be copied.
+    """
+    
+    # Generate a key for the transformation based on calibration parameters
+    transform_name = generateKey(calibration_parent, calibration_child)
+
+    # We can only optimize fixed transformations, so the optimized transform should be the same for all
+    # collections. We select the first collection (selected_collection_key) and retrieve the optimized
+    # transformation for that.
+    selected_collection_key = list(source_dataset['collections'].keys())[0]
+    optimized_transform = source_dataset['collections'][selected_collection_key]['transforms'][transform_name]
+
+    # Iterate through all collections of the target dataset and replace the optimized transformation
+    for collection_key, collection in target_dataset['collections'].items():
+        collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
+        collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
+
+
+
 def getMixedDataset(train_dataset, test_dataset):
     """Creates a mixed dataset from the train and test datasets.
 
@@ -695,21 +724,12 @@ def getMixedDataset(train_dataset, test_dataset):
     mixed_dataset = copy.deepcopy(test_dataset)
 
     # Replace optimized transformations in the test dataset copying from the train dataset
-    for sensor_key, sensor in train_dataset['sensors'].items():
-        calibration_parent = sensor['calibration_parent']
-        calibration_child = sensor['calibration_child']
-        transform_name = generateKey(calibration_parent, calibration_child)
-
-        # We can only optimize fixed transformations, so the optimized transform should be the same for all
-        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
-        # transformation for that.
-        selected_collection_key = list(train_dataset['collections'].keys())[0]
-        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
-
-        # iterate all collections of the test dataset and replace the optimized transformation
-        for collection_key, collection in mixed_dataset['collections'].items():
-            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
-            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
+    for _, sensor in train_dataset['sensors'].items():
+        copyTFToDataset(sensor['calibration_parent'], sensor['calibration_child'], train_dataset, mixed_dataset)
+    if checkAdditionalTfs(train_dataset):
+        for _, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
+            copyTFToDataset(additional_tf['parent_link'], additional_tf['child_link'], train_dataset, mixed_dataset)
+        
 
     # Copy intrinsic parameters for cameras from train to mixed dataset.
     for train_sensor_key, train_sensor in train_dataset['sensors'].items():

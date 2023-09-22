@@ -3,6 +3,7 @@
 # stdlib
 import sys
 import argparse
+import time
 
 # 3rd-party
 import rospkg
@@ -42,7 +43,7 @@ def makeBox( msg, pose):
                    pose=pose,
                    scale=Vector3(x=1.0, y=1.0, z=1.0),
                    color=ColorRGBA(r=1, g=1, b=1, a=1))
-    marker.mesh_resource = 'package://ur_e_description/meshes/charuco_800x600/charuco_800x600.dae'
+    marker.mesh_resource = 'package://atom_worlds/pattern/models/charuco_800x600/charuco_800x600.dae'
     marker.mesh_use_embedded_materials = True
     return marker
 

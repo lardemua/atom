@@ -26,7 +26,7 @@ from urdf_parser_py.urdf import URDF
 
 # local packages
 from atom_core.naming import generateKey
-from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime
+from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
 from atom_core.config_io import execute, loadConfig
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 
@@ -290,8 +290,8 @@ class DataCollectorAndLabeler:
 
         max_delta = getMaxTimeDelta(stamps)
         # TODO : this is because of Andre's bag file problem. We should go back to the getAverageTime
-        # average_time = getAverageTime(stamps)  # For looking up transforms use average time of all sensor msgs
-        average_time = getMaxTime(stamps)  # For looking up transforms use average time of all sensor msgs
+        average_time = getAverageTime(stamps)  # For looking up transforms use average time of all sensor msgs
+        # average_time = getMaxTime(stamps)  # For looking up transforms use average time of all sensor msgs
 
         print('Times:')
         for stamp, sensor_name in zip(stamps, self.sensors):
@@ -321,6 +321,7 @@ class DataCollectorAndLabeler:
                 rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
 
         # collect all the transforms
+        print('average_time=' + str(average_time))
         transforms = self.getTransforms(self.abstract_transforms, average_time)  # use average time of sensor msgs
         printRosTime(average_time, "Collected transforms for time ")
 

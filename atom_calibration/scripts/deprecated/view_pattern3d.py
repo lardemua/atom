@@ -51,21 +51,23 @@ class SimplePatternDetector:
     def onImageReceived(self, image_msg):
 
         image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
-
-        print('Line 50')
-        result = self.pattern.detect(image, equalize_histogram=False)
-
-
-        print('Line 50')
-        self.pattern.drawKeypoints(image, result)
-        # print(result)
-
         nx = self.args['num_x']
         ny = self.args['num_y']
         square = self.args['length']
         K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
         D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
  
+
+        print('Line 50')
+        result = self.pattern.detect(image, equalize_histogram=False)
+        # print(result)
+
+        print('Line 50')
+        self.pattern.drawKeypoints(image, result)
+
+
+
+
         objp = np.zeros((nx * ny, 3), np.float32)
         objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
@@ -87,12 +89,52 @@ class SimplePatternDetector:
 
         ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
 
+        print(ids)
+        np_ids = np.array(ids, dtype=int)
+        print(np_ids)
+
+        # alternative using estimatePoseBoard
+        print('Before')
+        print('rvecs = ' + str(rvecs))
+        print('tvecs = ' + str(tvecs))
+        # tvecs = tvecs*2
+        # rvecs = rvecs*2
+        ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                                np_ids,
+                                                                self.pattern.board,
+                                                                K,
+                                                                D,
+                                                                rvecs, tvecs)
+
+        print('After')
+        print('rvecs = ' + str(rvecs))
+        print('tvecs = ' + str(tvecs))
+#         if p_rvec is None or p_tvec is None:
+#             return None
+#         if np.isnan(p_rvec).any() or np.isnan(p_tvec).any():
+#             return None
+#         cv2.aruco.drawAxis(frame,
+#                         camera_matrix,
+#                         dist_coeff,
+#                         p_rvec,
+#                         p_tvec,
+#                         0.1)
+# 
+
+
         sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
         trans = list(sensor_T_chessboard[0: 3, 3])
         quat = list(transformations.quaternion_from_matrix(sensor_T_chessboard)) 
 
         self.broadcaster.sendTransform(trans, quat, rospy.Time.now(), 
                                        'pattern', image_msg.header.frame_id)
+
+
+        
+        # Try to draw frame on the image
+        cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.5)
+        # https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html
+
 
         image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
         self.image_pub.publish(image_msg_out)

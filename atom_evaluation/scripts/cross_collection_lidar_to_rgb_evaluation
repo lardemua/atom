@@ -29,7 +29,7 @@ from rospy_message_converter import message_converter
 # Atom imports
 from atom_core.naming import generateKey
 from atom_core.vision import projectToCamera
-from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, readAnnotationFile
+from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, readAnnotationFile, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.atom import getTransform
 from atom_core.utilities import rootMeanSquare
 
@@ -84,9 +84,20 @@ if __name__ == "__main__":
     ap.add_argument("-cs", "--camera_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help="A string to be evaluated into a lambda function that receives a collection name as input and "
+                    "returns True or False to indicate if the collection should be loaded (and used in the "
+                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
+                    help="Remove any collection which does not have a detection for all sensors.", )
+    ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
+                            "Used or the Charuco.", action="store_true", default=False)
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
+                   "Default: {name_of_dataset}_cross_collection_{range_sensor}_to_{camera_sensor}_results.csv", type=str, required=False)
 
     args = vars(ap.parse_args())
     show_images = args['show_images']
@@ -98,7 +109,12 @@ if __name__ == "__main__":
     # ---------------------------------------
     # Loads a json file containing the calibration
     train_dataset = json.load(open(args['train_json_file'], 'r'))
-    test_dataset = json.load(open(args['test_json_file'], 'r'))
+    test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])
+
+    # ---------------------------------------
+    # --- Filter some collections and / or sensors from the dataset
+    # ---------------------------------------
+    test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
     annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['camera_sensor'])
 
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -237,7 +253,7 @@ if __name__ == "__main__":
     bottom_row_save = []
     for col_idx, _ in enumerate(table_header):
         if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
             bottom_row_save.append('Averages')
             continue
 
@@ -253,7 +269,7 @@ if __name__ == "__main__":
                 pass
 
         value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Fore.BLACK)
+        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
         bottom_row_save.append(value)
 
     table.add_row(bottom_row)
@@ -286,8 +302,13 @@ if __name__ == "__main__":
 
     # save results in csv file 
     if args['save_file_results'] != None: 
-        with open(args['save_file_results'] + 'cross_collection_lidar_to_rgb_results.csv', 'w', newline='') as f_output:
-            f_output.write(table_to_save.get_csv_string())
+        if args['save_file_results_name'] is None:
+            dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
+            with open(args['save_file_results'] + f'{dataset_name}_cross_collection_{args["range_sensor"]}_to_{args["camera_sensor"]}_results.csv', 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
+        else: 
+            with open(args['save_file_results'] + args['save_file_results_name'], 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
     sys.exit()
