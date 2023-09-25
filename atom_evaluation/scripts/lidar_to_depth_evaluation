@@ -100,15 +100,15 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-ld", "--lidar_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-rd", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--depth_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     ap.add_argument("-bt", "--border_tolerance", help="Define the percentage of pixels to use to create a border. Lidar points outside that border will not count for the error calculations",
                                                  type=float, default=0.025)
 
     # - Save args
-    args = vars(ap.parse_args())
-    lidar_sensor = args['lidar_sensor']
+    args = vars(ap.parse_known_args()[0])
+    range_sensor = args['range_sensor']
     depth_sensor = args['depth_sensor']
     show_images = args['show_images']
     border_tolerance = args['border_tolerance']
@@ -180,7 +180,7 @@ if __name__ == "__main__":
                                                             train_dataset['sensors'][depth_sensor]['camera_info']))
 
     from_frame = test_dataset['calibration_config']['sensors'][depth_sensor]['link']
-    to_frame = test_dataset['calibration_config']['sensors'][lidar_sensor]['link']
+    to_frame = test_dataset['calibration_config']['sensors'][range_sensor]['link']
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
 
     for collection_key, collection in od.items():
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         # --- Range to image projection
         # ---------------------------------------
         vel2cam = getTransform(from_frame, to_frame, test_dataset['collections'][collection_key]['transforms'])
-        lidar_pts_in_img = rangeToImage(collection, test_json_file, lidar_sensor, depth_sensor, vel2cam)
+        lidar_pts_in_img = rangeToImage(collection, test_json_file, range_sensor, depth_sensor, vel2cam)
 
         # ---------------------------------------
         # --- Get evaluation data for current collection

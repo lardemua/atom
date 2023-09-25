@@ -129,12 +129,12 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-ds2", "--depth_sensor_2", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-ds1", "--depth_sensor_1", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
 
     # - Save args
-    args = vars(ap.parse_args())
+    args= vars(ap.parse_known_args()[0])
     depth_sensor_2 = args['depth_sensor_2']
     depth_sensor_1 = args['depth_sensor_1']
     show_images = args['show_images']

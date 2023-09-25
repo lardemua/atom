@@ -20,6 +20,7 @@ import rospy
 import rospkg
 import rosbag
 import jinja2
+import itertools
 import matplotlib.pyplot as plt
 import networkx as nx
 from pytictoc import TicToc
@@ -32,6 +33,11 @@ from graphviz import Digraph
 from urdf_parser_py.urdf import URDF
 from matplotlib import cm
 from jinja2 import Environment, FileSystemLoader
+
+def getModalityEvaluation(sensor):
+    # Helper function to simplify modality extraction
+    return 'lidar' if sensor['modality'] == 'lidar3d' else sensor['modality']
+
 
 if __name__ == "__main__":
     # Parse command line arguments
@@ -72,6 +78,7 @@ if __name__ == "__main__":
     data_collection_launch_file = package_path + '/launch/collect_data.launch'
     calibrate_launch_file = package_path + '/launch/calibrate.launch'
     dataset_playback_launch_file = package_path + '/launch/dataset_playback.launch'
+    full_evaluation_launch_file = package_path + '/launch/full_evaluation.launch'
 
     # Verify if the standard atom_calibration directories exist, if not create them (#401)
     checkDirectoryExistence('calibration', package_name, create_if_nonexistent=True)
@@ -532,6 +539,85 @@ if __name__ == "__main__":
                                     'package_name': package_name,
                                     'bag_file': bag_file_rel,
                                     'rviz_dataset_playback': rviz_dataset_playback
+                                    })
+        f.write(output.encode('utf-8'))
+
+    # --------------------------------------------------------------------------
+    # Create the full evaluation launch file
+    # --------------------------------------------------------------------------
+    launch_file = full_evaluation_launch_file
+    print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
+
+    # Finding every sensor combination
+    sensor_combinations_list = list(itertools.combinations(config['sensors'].keys(), 2))
+    sensor_combinations_dict = dict()
+
+    modality_to_filename = {
+        ('rgb', 'lidar'): 'lidar_to_rgb',
+        ('depth', 'lidar'): 'lidar_to_depth',
+        ('rgb', 'depth'): 'rgb_to_depth',
+    }
+
+    modality_to_args = {
+        ('rgb', 'depth'): '-cs {} -ds {}',
+        ('depth', 'rgb'): '-ds {} -ss {}',
+        ('rgb', 'lidar'): '-cs {} -rs {}',
+        ('lidar', 'rgb'): '-rs {} -cs {}',
+        ('depth', 'lidar'): '-ds {} -rs {}',
+        ('lidar', 'depth'): '-rs {} -ds {}',
+    }
+
+
+    for source, target in sensor_combinations_list:
+        evaluation_description = {
+            'filename': None,
+            'args': None,
+        }
+        source_modality = getModalityEvaluation(config['sensors'][source])
+        target_modality = getModalityEvaluation(config['sensors'][target])
+        modality_combination = (source_modality, target_modality)
+
+        if modality_combination in modality_to_filename:
+            evaluation_description['filename'] = modality_to_filename[modality_combination]
+        else:
+            # Handle the case where the combination is not found
+            evaluation_description['filename'] = '{}_to_{}'.format(source_modality, target_modality)
+
+        if source_modality == target_modality:
+            evaluation_description['args'] = f'-ss {source} -st {target}'
+        else:
+            evaluation_description['args'] = modality_to_args[modality_combination].format(source, target)
+
+        sensor_combinations_dict[source + '_to_' + target] = evaluation_description
+
+        inter_collection_evaluation_description = {
+            'filename': None,
+            'args': None,
+        }
+        
+        inter_collection_evaluation_description['filename'] = 'inter_collection_' + evaluation_description['filename']
+        inter_collection_evaluation_description['args'] = evaluation_description['args'] + ' -wf ' + config['world_link']
+
+        sensor_combinations_dict['inter_collection_' + source + '_to_' + target] = inter_collection_evaluation_description
+    
+    for sensor in config['sensors'].keys():
+        modality = getModalityEvaluation(config['sensors'][sensor])
+        evaluation_description = {
+            'filename': None,
+            'args': None,
+        }
+
+        evaluation_description['filename'] = 'inter_collection_' + modality + '_to_' + modality
+        evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
+
+        sensor_combinations_dict[sensor + '_to_' + sensor] = evaluation_description
+
+
+    template = env.get_template(os.path.basename(launch_file))
+    with open(launch_file, 'wb') as f:
+        output = template.render(c={'filename': os.path.basename(launch_file),
+                                    'date': dt_string,
+                                    'sensor_combinations': sensor_combinations_dict,
                                     })
         f.write(output.encode('utf-8'))
    

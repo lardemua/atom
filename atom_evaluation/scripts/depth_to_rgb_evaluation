@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
 
-    args = vars(ap.parse_args())
+    args= vars(ap.parse_known_args()[0])
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
