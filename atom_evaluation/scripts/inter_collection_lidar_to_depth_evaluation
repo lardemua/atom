@@ -11,55 +11,27 @@ Reads the calibration results from a json file and computes the evaluation metri
 # Standard imports
 import json
 import os
+
 import argparse
-import sys
-from copy import deepcopy
 from collections import OrderedDict
-
+import sys
 import numpy as np
-from prettytable import PrettyTable
+import cv2
 from scipy.spatial import distance
-from colorama import Style, Fore
+from colorama import Fore, Style
+from prettytable import PrettyTable
+from copy import deepcopy
 
-# ROS imports
-from rospy_message_converter import message_converter
-from ros_numpy import numpify
 
 # Atom imports
-from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, loadResultsJSON, filterCollectionsFromDataset
+from atom_core.vision import depthInImage, rangeToImage
+from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.atom import getTransform
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
-
-def rangeToImage(collection, json_file, ss):
-    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
-    msg = read_pcd(filename)
-    collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
-
-    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
-    # idxs = collection['labels'][ss]['idxs_limit_points']
-    idxs = collection['labels'][ss]['idxs']
-
-    pc = numpify(cloud_msg)[idxs]
-    points_in_vel = np.zeros((4, pc.shape[0]))
-    points_in_vel[0, :] = pc['x']
-    points_in_vel[1, :] = pc['y']
-    points_in_vel[2, :] = pc['z']
-    points_in_vel[3, :] = 1
-
-    # points_in_cam = np.dot(tf, points_in_vel)
-
-    # # -- Project them to the image
-    # w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    # K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
-    # D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
-    #
-    # lidar_pts_in_img, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
-
-    return points_in_vel
 
 
 # -------------------------------------------------------------------------------
@@ -72,9 +44,12 @@ if __name__ == "__main__":
                     required=True)
     ap.add_argument("-test_json", "--test_json_file", help="Json file containing input testing dataset.", type=str,
                     required=True)
-    ap.add_argument("-ss", "--sensor_source", help="Source transformation sensor.", type=str, required=True)
-    ap.add_argument("-st", "--sensor_target", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-rs", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
+    ap.add_argument("-ds", "--depth_sensor", help="Target transformation sensor.", type=str, required=True)
+    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
+    ap.add_argument("-bt", "--border_tolerance", help="Define the percentage of pixels to use to create a border. Lidar points outside that border will not count for the error calculations",
+                                                 type=float, default=0.025)
     ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help="A string to be evaluated into a lambda function that receives a collection name as input and "
                     "returns True or False to indicate if the collection should be loaded (and used in the "
@@ -84,23 +59,23 @@ if __name__ == "__main__":
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
-    # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
-
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                   "Default: -test_json/results/{name_of_dataset}_inter_collection_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+                   "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
 
     # - Save args
     args = vars(ap.parse_known_args()[0])
-    sensor_source = args['sensor_source']
-    sensor_target = args['sensor_target']
-    # show_images = args['show_images']
+    range_sensor = args['range_sensor']
+    depth_sensor = args['depth_sensor']
+    show_images = args['show_images']
+    border_tolerance = args['border_tolerance']
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
     # Loads a json file containing the calibration
+    # Loads the train json file containing the calibration results
     train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
     # Loads the test json file containing a set of collections to evaluate the calibration
@@ -111,81 +86,79 @@ if __name__ == "__main__":
     # ---------------------------------------
     test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
 
+    # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
+    # ---------------------------------------
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read evaluation data from file ---> if desired <---
+    # ---------------------------------------
+    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
 
     # Declare output dict to save the evaluation data if desire
     delta_total = []
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
-    # Deleting collections where the pattern is not found by all sensors:
-    collections_to_delete = []
-    for collection_key, collection in mixed_dataset['collections'].items():
-        for sensor_key, sensor in mixed_dataset['sensors'].items():
-            if (not collection['labels'][sensor_key]['detected'] or len(collection['labels'][sensor_key]['idxs']) == 0) and (
-                    sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
-                print(
-                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
-
-                collections_to_delete.append(collection_key)
-                break
-
-    for collection_key in collections_to_delete:
-        del mixed_dataset['collections'][collection_key]
-
-    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
-
-
-    source_frame = mixed_dataset['calibration_config']['sensors'][sensor_source]['link']
-    target_frame = mixed_dataset['calibration_config']['sensors'][sensor_target]['link']
+    source_frame = mixed_dataset['calibration_config']['sensors'][range_sensor]['link']
+    target_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor]['link']
     world_frame = args['world_frame']
+
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
     e = {}  # dictionary with all the errors
     for collection_source_key, collection_source in od.items():
         e[collection_source_key] = {}  # init the dictionary of errors for this collection
-        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
-            od_target.pop(collection_source_key)
         for collection_target_key, collection_target in od_target.items():
             e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
-
-            # Check for same sensor same collection
-            if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
-                continue
-        
             # ---------------------------------------
-            # --- Range to image projection
+            # --- Range to depth projection
             # ---------------------------------------
-            world_to_lidar_source = getTransform(world_frame, source_frame,
-                                                        mixed_dataset['collections'][collection_source_key]['transforms'])
-            world_to_lidar_target = getTransform(world_frame, source_frame,
-                                                        mixed_dataset['collections'][collection_target_key]['transforms'])
+            lidar2world_cs = getTransform(world_frame, source_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
+            world2depth_ct = getTransform(target_frame, world_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
+            lidar2depth = np.dot(world2depth_ct, lidar2world_cs)
 
-            lidar_target_to_lidar_source = np.dot(np.linalg.inv(world_to_lidar_target), world_to_lidar_source)
-            lidar_pts_source = rangeToImage(collection_source, test_json_file, sensor_source)
-            lidar_pts_target = rangeToImage(collection_target, test_json_file, sensor_target)
-            lidar_pts_source_in_lidar_target = np.dot(lidar_target_to_lidar_source, lidar_pts_source)
+            lidar_pts_in_img = rangeToImage(mixed_dataset, collection_source, test_json_file, range_sensor, depth_sensor, lidar2depth)
+
             # ---------------------------------------
             # --- Get evaluation data for current collection
             # ---------------------------------------
+            filename = os.path.dirname(test_json_file) + '/' + collection_target['data'][depth_sensor]['data_file']
+            image = cv2.imread(filename)
+            depth_pts_in_depth_img = depthInImage(mixed_dataset, collection_target_key, depth_sensor)
+
+            # Clear image annotations
+            image = cv2.imread(filename)
+
             delta_pts = []
             distances = []
-            for idx in range(lidar_pts_target.shape[1]):
-                lidar_pt = np.reshape(lidar_pts_target[0:3, idx], (1, 3))
-                dist = distance.cdist(lidar_pt, lidar_pts_source_in_lidar_target.transpose()[:, :3], 'euclidean')
-                delta_pts.append((np.min(dist)))
-                coords = np.where(dist == np.min(dist))
+            w, h = collection_target['data'][depth_sensor]['width'], collection_target['data'][depth_sensor]['height']
+            for idx in range(lidar_pts_in_img.shape[1]):
+                x = lidar_pts_in_img[0][idx]
+                y = lidar_pts_in_img[1][idx]
+                
+                # If the points are near or surpassing the image limits, do not count them for the errors
+                if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
+                    y > h * (1 - border_tolerance) or y < h * border_tolerance:
+                    continue
 
-                min_dist_pt = lidar_pts_source_in_lidar_target.transpose()[coords[1]][0, :3]
+                lidar_pt = np.reshape(lidar_pts_in_img[0:2, idx], (1, 2))
+                delta_pts.append(np.min(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
+                coords = np.where(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean') == np.min(
+                    distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
+                min_dist_pt = depth_pts_in_depth_img.transpose()[coords[1]][0]
+                # print(min_dist_pt)
                 dist = abs(lidar_pt - min_dist_pt)
                 distances.append(dist)
                 delta_total.append(dist)
 
+                if show_images:
+                    image = cv2.line(image, (int(lidar_pt.transpose()[0]), int(lidar_pt.transpose()[1])),
+                                    (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 2)
 
             if len(delta_pts) == 0:
-                print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
+                print('No LiDAR point mapped into the image for collection ' + str((collection_source_key, collection_target_key)))
                 continue
 
             # ---------------------------------------
@@ -193,7 +166,6 @@ if __name__ == "__main__":
             # ---------------------------------------
             total_pts = len(delta_pts)
             delta_pts = np.array(delta_pts, np.float32)
-            # avg_error = np.sum(np.abs(delta_pts)) / total_pts
             rms = np.sqrt((delta_pts ** 2).mean())
 
             delta_xy = np.array(distances, np.float32)
@@ -201,7 +173,6 @@ if __name__ == "__main__":
             avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
             avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
             stdev_xy = np.std(delta_xy, axis=0)
-            
 
             # Recording the errors
             e[collection_source_key][collection_target_key]['rms'] = rms
@@ -210,23 +181,32 @@ if __name__ == "__main__":
             e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
             e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
 
-   
+            # ---------------------------------------
+            # --- Drawing ...
+            # ---------------------------------------
+            if show_images is True:
+
+                for idx in range(0, lidar_pts_in_img.shape[1]):
+                    image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(
+                        lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
+                for idx in range(0, depth_pts_in_depth_img.shape[1]):
+                    image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(
+                        depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255), -1)
+                win_name = "Lidar to Depth reprojection - collection " + str((collection_source_key, collection_target_key))
+                cv2.imshow(win_name, image)
+                cv2.waitKey()
+                cv2.destroyWindow(winname=win_name)
+
     # -------------------------------------------------------------
     # Print output table
     # -------------------------------------------------------------
-    table_header = ['Collection Pair', 'RMS (m)', 'X err (m)', 'Y err (m)', 'X StDev (m)', 'Y StDev (m)']
+    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'X StDev (pix)', 'Y StDev (pix)']
     table = PrettyTable(table_header)
     table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
     for collection_source_key, collection_source in od.items():
-        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
-            od_target.pop(collection_source_key)
         for collection_target_key, collection_target in od_target.items():
-            if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
-                # Remove every pairing removed in the previous for cycle
-                continue
             row = [collection_source_key + '-' + collection_target_key,
                 '%.4f' % e[collection_source_key][collection_target_key]['rms'],
                 '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
@@ -296,7 +276,7 @@ if __name__ == "__main__":
             last_slash_index = args['test_json_file'].rfind('/')
             # Remove everything after the last '/'
             folder_name = args['test_json_file'][:last_slash_index]
-            with open(folder_name + '/results/'+ f'{dataset_name}_inter_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv', 'w', newline='') as f_output:
+            with open(folder_name + '/results/'+ f'{dataset_name}_inter_collection_{args["range_sensor"]}_to_{args["depth_sensor"]}_results.csv', 'w', newline='') as f_output:
                 f_output.write(table_to_save.get_csv_string())
         else: 
             with open(args['save_file_results_name'], 'w', newline='') as f_output:

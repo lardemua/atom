@@ -54,7 +54,7 @@ from matplotlib import cm
 from colorama import Style, Fore
 from prettytable import PrettyTable
 from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
-from atom_core.dataset_io import loadResultsJSON, filterCollectionsFromDataset
+from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset
 
 # Atom imports
 from atom_core.atom import getTransform
@@ -168,9 +168,7 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read calibration data from files
     # ---------------------------------------
     # Loads the train json file containing the calibration results
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
+    train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
     # Loads the test json file containing a set of collections to evaluate the calibration
     test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])
@@ -180,43 +178,10 @@ if __name__ == "__main__":
     # ---------------------------------------
     test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
 
-
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    # test_dataset = test_dataset
-    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
-
-    # Replace optimized transformations in the test dataset copying from the train dataset
-    for sensor_key, sensor in train_dataset['sensors'].items():
-        calibration_parent = sensor['calibration_parent']
-        calibration_child = sensor['calibration_child']
-        transform_name = generateKey(calibration_parent, calibration_child)
-
-        # We can only optimized fixed transformations, so the optimized transform should be the same for all
-        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
-        # transformation for that.
-        selected_collection_key = list(train_dataset['collections'].keys())[0]
-        optimized_transform = train_dataset['collections'][selected_collection_key]['transforms'][transform_name]
-
-        # iterate all collections of the test dataset and replace the optimized transformation
-        for collection_key, collection in test_dataset['collections'].items():
-            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
-            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
-
-    # Copy intrinsic parameters for cameras from train to test dataset.
-    for train_sensor_key, train_sensor in train_dataset['sensors'].items():
-        if train_sensor['msg_type'] == 'Image':
-            test_dataset['sensors'][train_sensor_key]['camera_info']['D'] = train_sensor['camera_info']['D']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
-            test_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
-
-    f = open('test.json', 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print(json.dumps(test_dataset, indent=2, sort_keys=True), file=f)
-    f.close()
-    # exit(0)
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors
@@ -224,23 +189,27 @@ if __name__ == "__main__":
     # Source sensor
     K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
-    K_s[0, :] = test_dataset['sensors'][args['sensor_source']]['camera_info']['K'][0:3]
-    K_s[1, :] = test_dataset['sensors'][args['sensor_source']]['camera_info']['K'][3:6]
-    K_s[2, :] = test_dataset['sensors'][args['sensor_source']]['camera_info']['K'][6:9]
-    D_s[:, 0] = test_dataset['sensors'][args['sensor_source']]['camera_info']['D'][0:5]
+    K_s[0, :] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][0:3]
+    K_s[1, :] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][3:6]
+    K_s[2, :] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][6:9]
+    D_s[:, 0] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['D'][0:5]
 
     # Target sensor
     K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
-    K_t[0, :] = test_dataset['sensors'][args['sensor_target']]['camera_info']['K'][0:3]
-    K_t[1, :] = test_dataset['sensors'][args['sensor_target']]['camera_info']['K'][3:6]
-    K_t[2, :] = test_dataset['sensors'][args['sensor_target']]['camera_info']['K'][6:9]
-    D_t[:, 0] = test_dataset['sensors'][args['sensor_target']]['camera_info']['D'][0:5]
+    K_t[0, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][0:3]
+    K_t[1, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][3:6]
+    K_t[2, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][6:9]
+    D_t[:, 0] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['D'][0:5]
+
+    # Defining frames
+    ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+    st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
     # Deleting collections where the pattern is not found by all sensors:
     collections_to_delete = []
-    for collection_key, collection in test_dataset['collections'].items():
-        for sensor_key, sensor in test_dataset['sensors'].items():
+    for collection_key, collection in mixed_dataset['collections'].items():
+        for sensor_key, sensor in mixed_dataset['sensors'].items():
             if not collection['labels'][sensor_key]['detected'] and (
                     sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
                 print(
@@ -251,13 +220,13 @@ if __name__ == "__main__":
                 break
 
     for collection_key in collections_to_delete:
-        del test_dataset['collections'][collection_key]
+        del mixed_dataset['collections'][collection_key]
 
     # Reprojection error graphics definitions
-    colors = cm.tab20b(np.linspace(0, 1, len(test_dataset['collections'].items())))
+    colors = cm.tab20b(np.linspace(0, 1, len(mixed_dataset['collections'].items())))
 
     e = {}  # dictionary with all the errors
-    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         e[collection_key] = {}  # init the dictionary of errors for this collection
 

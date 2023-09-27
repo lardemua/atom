@@ -38,44 +38,44 @@ from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
 # --- CLASSES 
 # -------------------------------------------------------------------------------
 class Table:
-    def __init__(self, dict, args, comput_all_trans, target_frame, source_child) -> None:
+    def __init__(self, dict, args, compute_all_trans, target_frame, source_child) -> None:
         self.dict = dict
-        self.comput_all_trans = comput_all_trans
+        self.compute_all_trans = compute_all_trans
         self.arg = args
         self.target_frame = target_frame
         self.source_child = source_child
 
     def generateHeader(self) -> None:
-        if self.comput_all_trans:
-            self.header = ['Transformation #', 'X (mm)', 'Y (mm)', 'Z (mm)', 
-                        'Roll (deg)', 'Pitch (deg)', 'Yaw (deg)', 
-                        'Trans (mm)', 'Rot (deg)']
+        if self.compute_all_trans:
+            self.header = ['Transformation #',  'Trans (m)', 'Rot (rad)',
+                        'X (m)', 'Y (m)', 'Z (m)', 
+                        'Roll (rad)', 'Pitch (rad)', 'Yaw (rad)']
         else:
-            self.header = ['Collection #', 'X (mm)', 'Y (mm)', 'Z (mm)', 
-                        'Roll (deg)', 'Pitch (deg)', 'Yaw (deg)', 
-                        'Trans (mm)', 'Rot (deg)']
+            self.header = ['Collection #', 'Trans (m)', 'Rot (rad)',
+                        'X (m)', 'Y (m)', 'Z (m)', 
+                        'Roll (rad)', 'Pitch (rad)', 'Yaw (rad)']
             
             
         self.table = PrettyTable(self.header)
         self.table_to_save = PrettyTable(self.header)
 
     def generateTitle(self):
-        if not self.comput_all_trans:
+        if not self.compute_all_trans:
             self.table.title = f'{self.target_frame} to {self.source_child}'
 
 
     def adding_rows(self) -> None:
-        if self.comput_all_trans:
+        if self.compute_all_trans:
             for frame_key, frame in self.dict.items():
                 row = [frame_key, 
+                    '%.4f' % self.dict[frame_key]['Trans'],
+                    '%.4f' % self.dict[frame_key]['Rot'],
                     '%.4f' % self.dict[frame_key]['x'],
                     '%.4f' % self.dict[frame_key]['y'],
                     '%.4f' % self.dict[frame_key]['z'],
                     '%.4f' % self.dict[frame_key]['roll'],
                     '%.4f' % self.dict[frame_key]['pitch'],
-                    '%.4f' % self.dict[frame_key]['yaw'],
-                    '%.4f' % self.dict[frame_key]['Trans'],
-                    '%.4f' % self.dict[frame_key]['Rot']
+                    '%.4f' % self.dict[frame_key]['yaw']
                     ]
                     
                 self.table.add_row(row)
@@ -85,14 +85,14 @@ class Table:
             rows_dict.pop('Averages')
             for frame_key, frame in rows_dict.items():
                 row = [frame_key, 
+                    '%.4f' % self.dict[frame_key]['Trans'],
+                    '%.4f' % self.dict[frame_key]['Rot'],
                     '%.4f' % self.dict[frame_key]['x'],
                     '%.4f' % self.dict[frame_key]['y'],
                     '%.4f' % self.dict[frame_key]['z'],
                     '%.4f' % self.dict[frame_key]['roll'],
                     '%.4f' % self.dict[frame_key]['pitch'],
-                    '%.4f' % self.dict[frame_key]['yaw'],
-                    '%.4f' % self.dict[frame_key]['Trans'],
-                    '%.4f' % self.dict[frame_key]['Rot']
+                    '%.4f' % self.dict[frame_key]['yaw']
                     ]
                     
                 self.table.add_row(row)
@@ -131,7 +131,7 @@ class Table:
         self.adding_rows()
         self.table.align ='c'
         self.table_to_save.align ='c'
-        if not self.comput_all_trans:
+        if not self.compute_all_trans:
             self.addAverages()
         print(Style.BRIGHT + 'Errors per frame' + Style.RESET_ALL)
         print(self.table)
@@ -182,8 +182,8 @@ class ErrorsDictionary:
                 self.deltaT.append(delta[0:3, 3])
                 self.deltaR.append(matrixToRodrigues(delta[0:3, 0:3]))
                 # if len(self.deltaT) > int(collection_key):
-                self.values_per_collection[collection_key]['trans'] = np.linalg.norm(self.deltaT[saved_collections]) * 1000
-                self.values_per_collection[collection_key]['rot'] = np.linalg.norm(self.deltaR[saved_collections]) * 180.0 / np.pi
+                self.values_per_collection[collection_key]['trans'] = np.linalg.norm(self.deltaT[saved_collections])
+                self.values_per_collection[collection_key]['rot'] = np.linalg.norm(self.deltaR[saved_collections])
                 saved_collections +=1
 
         # Find empty keys {} and remove them
@@ -199,12 +199,12 @@ class ErrorsDictionary:
 
     def saveAllTrans(self) -> None:
         self.dict[self.source_frame] = {} # init the dictionary of errors for this transformation
-        self.dict[self.source_frame]['x'] = abs(self.avg_frame_trans_x) * 1000
-        self.dict[self.source_frame]['y'] = abs(self.avg_frame_trans_y ) * 1000
-        self.dict[self.source_frame]['z'] = abs(self.avg_frame_trans_z) * 1000
-        self.dict[self.source_frame]['roll'] = abs(self.avg_frame_rot_r) * 180.0 / np.pi
-        self.dict[self.source_frame]['pitch'] = abs(self.avg_frame_rot_p ) * 180.0 / np.pi
-        self.dict[self.source_frame]['yaw'] = abs(self.avg_frame_rot_y) * 180.0 / np.pi
+        self.dict[self.source_frame]['x'] = abs(self.avg_frame_trans_x)
+        self.dict[self.source_frame]['y'] = abs(self.avg_frame_trans_y)
+        self.dict[self.source_frame]['z'] = abs(self.avg_frame_trans_z)
+        self.dict[self.source_frame]['roll'] = abs(self.avg_frame_rot_r)
+        self.dict[self.source_frame]['pitch'] = abs(self.avg_frame_rot_p)
+        self.dict[self.source_frame]['yaw'] = abs(self.avg_frame_rot_y)
         self.dict[self.source_frame]['Trans'] = self.average_trans
         self.dict[self.source_frame]['Rot'] = self.average_rot
 
@@ -213,12 +213,12 @@ class ErrorsDictionary:
             self.dict[collection_key] = {}  # init the dictionary of errors for this collection
             j=int(collection_key)
             try:
-                self.dict[collection_key]['x'] = abs(self.deltaT[j][0]) * 1000
-                self.dict[collection_key]['y'] = abs(self.deltaT[j][1]) * 1000
-                self.dict[collection_key]['z'] = abs(self.deltaT[j][2]) * 1000
-                self.dict[collection_key]['roll'] = abs(self.deltaR[j][0]) * 180.0 / np.pi
-                self.dict[collection_key]['pitch'] = abs(self.deltaR[j][1]) * 180.0 / np.pi
-                self.dict[collection_key]['yaw'] = abs(self.deltaR[j][2]) * 180.0 / np.pi
+                self.dict[collection_key]['x'] = abs(self.deltaT[j][0])
+                self.dict[collection_key]['y'] = abs(self.deltaT[j][1])
+                self.dict[collection_key]['z'] = abs(self.deltaT[j][2])
+                self.dict[collection_key]['roll'] = abs(self.deltaR[j][0])
+                self.dict[collection_key]['pitch'] = abs(self.deltaR[j][1])
+                self.dict[collection_key]['yaw'] = abs(self.deltaR[j][2])
                 self.dict[collection_key]['Trans'] = self.values_per_collection[collection_key]['trans']
                 self.dict[collection_key]['Rot'] = self.values_per_collection[collection_key]['rot']
             except:
@@ -226,12 +226,12 @@ class ErrorsDictionary:
                 self.dict.pop(collection_key)
 
         self.dict['Averages'] = {}
-        self.dict['Averages']['x'] = abs(self.avg_frame_trans_x) * 1000
-        self.dict['Averages']['y'] = abs(self.avg_frame_trans_y ) * 1000
-        self.dict['Averages']['z'] = abs(self.avg_frame_trans_z) * 1000
-        self.dict['Averages']['roll'] = abs(self.avg_frame_rot_r) * 180.0 / np.pi
-        self.dict['Averages']['pitch'] = abs(self.avg_frame_rot_p ) * 180.0 / np.pi
-        self.dict['Averages']['yaw'] = abs(self.avg_frame_rot_y) * 180.0 / np.pi
+        self.dict['Averages']['x'] = abs(self.avg_frame_trans_x)
+        self.dict['Averages']['y'] = abs(self.avg_frame_trans_y)
+        self.dict['Averages']['z'] = abs(self.avg_frame_trans_z)
+        self.dict['Averages']['roll'] = abs(self.avg_frame_rot_r)
+        self.dict['Averages']['pitch'] = abs(self.avg_frame_rot_p)
+        self.dict['Averages']['yaw'] = abs(self.avg_frame_rot_y)
         self.dict['Averages']['Trans'] = self.average_trans
         self.dict['Averages']['Rot'] = self.average_rot
 

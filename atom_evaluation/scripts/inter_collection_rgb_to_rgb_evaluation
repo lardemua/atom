@@ -169,9 +169,7 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read calibration data from files
     # ---------------------------------------
     # Loads the train json file containing the calibration results
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
+    train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
     # Loads the test json file containing a set of collections to evaluate the calibration
     test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])
@@ -181,45 +179,10 @@ if __name__ == "__main__":
     # ---------------------------------------
     test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
 
-    # Retrieving mixed_dataset
-    mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
-
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    # test_dataset = test_dataset
-    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
-
-    # Replace optimized transformations in the test dataset copying from the train dataset
-    for sensor_key, sensor in mixed_dataset['sensors'].items():
-        calibration_parent = sensor['calibration_parent']
-        calibration_child = sensor['calibration_child']
-        transform_name = generateKey(calibration_parent, calibration_child)
-
-        # We can only optimized fixed transformations, so the optimized transform should be the same for all
-        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
-        # transformation for that.
-        selected_collection_key = list(mixed_dataset['collections'].keys())[0]
-        optimized_transform = mixed_dataset['collections'][selected_collection_key]['transforms'][transform_name]
-
-        # iterate all collections of the test dataset and replace the optimized transformation
-        for collection_key, collection in mixed_dataset['collections'].items():
-            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
-            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
-
-    # Copy intrinsic parameters for cameras from train to test dataset.
-    for sensor_key, sensor in mixed_dataset['sensors'].items():
-        if sensor['msg_type'] == 'Image':
-            mixed_dataset['sensors'][sensor_key]['camera_info']['D'] = sensor['camera_info']['D']
-            mixed_dataset['sensors'][sensor_key]['camera_info']['K'] = sensor['camera_info']['K']
-            mixed_dataset['sensors'][sensor_key]['camera_info']['P'] = sensor['camera_info']['P']
-            mixed_dataset['sensors'][sensor_key]['camera_info']['R'] = sensor['camera_info']['R']
-
-    f = open('test.json', 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print(json.dumps(mixed_dataset, indent=2, sort_keys=True), file=f)
-    f.close()
-    # exit(0)
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors

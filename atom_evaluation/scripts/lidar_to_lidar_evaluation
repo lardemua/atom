@@ -100,9 +100,7 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
     # Loads a json file containing the calibration
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
+    train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
     # Loads the test json file containing a set of collections to evaluate the calibration
     test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])

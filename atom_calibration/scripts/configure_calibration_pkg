@@ -548,19 +548,22 @@ if __name__ == "__main__":
     launch_file = full_evaluation_launch_file
     print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
 
-    # Finding every sensor combination
+    # Create a list of all possible combinations of sensor pairs
     sensor_combinations_list = list(itertools.combinations(config['sensors'].keys(), 2))
+    # Initialize a dictionary to store sensor combination descriptions
     sensor_combinations_dict = dict()
 
+
+    # Define mappings for filenames and argumets based on sensor modalities
     modality_to_filename = {
         ('rgb', 'lidar'): 'lidar_to_rgb',
         ('depth', 'lidar'): 'lidar_to_depth',
-        ('rgb', 'depth'): 'rgb_to_depth',
+        ('rgb', 'depth'): 'depth_to_rgb',
     }
 
     modality_to_args = {
         ('rgb', 'depth'): '-cs {} -ds {}',
-        ('depth', 'rgb'): '-ds {} -ss {}',
+        ('depth', 'rgb'): '-ds {} -cs {}',
         ('rgb', 'lidar'): '-cs {} -rs {}',
         ('lidar', 'rgb'): '-rs {} -cs {}',
         ('depth', 'lidar'): '-ds {} -rs {}',
@@ -569,18 +572,21 @@ if __name__ == "__main__":
 
 
     for source, target in sensor_combinations_list:
+        # Initialize a description for the evaluation
         evaluation_description = {
             'filename': None,
             'args': None,
         }
+        
+        # Determine the modalities of the source and target sensors
         source_modality = getModalityEvaluation(config['sensors'][source])
         target_modality = getModalityEvaluation(config['sensors'][target])
         modality_combination = (source_modality, target_modality)
 
+        # Set the filename and args based on the modality combination
         if modality_combination in modality_to_filename:
             evaluation_description['filename'] = modality_to_filename[modality_combination]
         else:
-            # Handle the case where the combination is not found
             evaluation_description['filename'] = '{}_to_{}'.format(source_modality, target_modality)
 
         if source_modality == target_modality:
@@ -588,18 +594,23 @@ if __name__ == "__main__":
         else:
             evaluation_description['args'] = modality_to_args[modality_combination].format(source, target)
 
+        # Store the evaluation description in the sensor_combinations_dict
         sensor_combinations_dict[source + '_to_' + target] = evaluation_description
 
+        # Create an inter-collection evaluation description
         inter_collection_evaluation_description = {
             'filename': None,
             'args': None,
         }
         
+        # Set the filename and arguments for inter-collection evaluation
         inter_collection_evaluation_description['filename'] = 'inter_collection_' + evaluation_description['filename']
         inter_collection_evaluation_description['args'] = evaluation_description['args'] + ' -wf ' + config['world_link']
 
+        # Store the inter-collection evaluation description in the sensor_combinations_dict
         sensor_combinations_dict['inter_collection_' + source + '_to_' + target] = inter_collection_evaluation_description
     
+    # Create evaluation descriptions for sensors against themselves
     for sensor in config['sensors'].keys():
         modality = getModalityEvaluation(config['sensors'][sensor])
         evaluation_description = {
@@ -610,7 +621,7 @@ if __name__ == "__main__":
         evaluation_description['filename'] = 'inter_collection_' + modality + '_to_' + modality
         evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
 
-        sensor_combinations_dict[sensor + '_to_' + sensor] = evaluation_description
+        sensor_combinations_dict['inter_collection_' + sensor + '_to_' + sensor] = evaluation_description
 
 
     template = env.get_template(os.path.basename(launch_file))
