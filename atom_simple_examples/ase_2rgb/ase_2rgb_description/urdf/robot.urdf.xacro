@@ -34,7 +34,7 @@
             <geometry>
                 <mesh filename="package://ase_2rgb_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
             </geometry>
-            <material name="grey" />
+            <material name="grey"/>
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
