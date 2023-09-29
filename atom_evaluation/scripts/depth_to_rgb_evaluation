@@ -204,7 +204,7 @@ if __name__ == "__main__":
                 value = float(row[col_idx])
                 if not np.isnan(value):
                     total += float(value)
-                count += 1
+                    count += 1
             except:
                 pass
 
