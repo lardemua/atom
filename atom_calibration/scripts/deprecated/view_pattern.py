@@ -35,9 +35,13 @@ class SimplePatternDetector:
 
         image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
         result = self.pattern.detect(image, equalize_histogram=False)
+
+
+
+
         self.pattern.drawKeypoints(image, result)
 
-        image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
+        image_msg_out = self.bridge.cv2_to_imgmsg(image, 'passthrough')
         self.image_pub.publish(image_msg_out)
 
         cv2.namedWindow(self.options['topic'], cv2.WINDOW_NORMAL)

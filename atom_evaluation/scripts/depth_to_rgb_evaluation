@@ -150,6 +150,9 @@ if __name__ == "__main__":
 
         if not errors:
             print('No Depth point mapped into the image for collection ' + str(collection_key))
+            e[collection_key]['x'] = float("nan")
+            e[collection_key]['y'] = float("nan")
+            e[collection_key]['rms'] = float("nan")
             continue
 
         e[collection_key]['x'] = np.average(x_errors)
@@ -198,7 +201,9 @@ if __name__ == "__main__":
             # if row[col_idx].isnumeric():
             try:
                 value = float(row[col_idx])
-                total += float(value)
+                if not np.isnan(value):
+                    print(value)
+                    total += float(value)
                 count += 1
             except:
                 pass
