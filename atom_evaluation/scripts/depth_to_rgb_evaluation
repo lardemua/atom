@@ -34,7 +34,6 @@ from atom_core.naming import generateKey
 from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
 from atom_core.vision import depthToImage, projectToCamera
 
-
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
@@ -58,9 +57,10 @@ if __name__ == "__main__":
     ap.add_argument("-ds", "--depth_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-cs", "--rgb_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
-    
+
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str,
+                    required=False)
 
     args = vars(ap.parse_args())
 
@@ -133,7 +133,7 @@ if __name__ == "__main__":
             for side in annotations[collection_key].keys():
                 for x, y in zip(annotations[collection_key][side]['ixs'],
                                 annotations[collection_key][side]['iys']):
-                    error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
+                    error = math.sqrt((x_proj - x) ** 2 + (y_proj - y) ** 2)
                     if error < min_error:
                         min_error = error
                         x_min = x
@@ -174,7 +174,8 @@ if __name__ == "__main__":
     # -------------------------------------------------------------
     table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
     table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+    table_to_save = PrettyTable(
+        table_header)  # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
     od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
@@ -202,7 +203,6 @@ if __name__ == "__main__":
             try:
                 value = float(row[col_idx])
                 if not np.isnan(value):
-                    print(value)
                     total += float(value)
                 count += 1
             except:
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     print(table)
 
     # save results in csv file 
-    if args['save_file_results'] != None: 
+    if args['save_file_results'] != None:
         with open(args['save_file_results'] + 'depth_to_rgb_results.csv', 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
 
