@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <gazebo reference="tripod">
+        <material>Gazebo/Grey</material>
+        <mu1>50.0</mu1>
+        <mu2>50.0</mu2>
+        <kp>1000000.0</kp>
+        <kd>1.0</kd>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+
+
+</robot>
