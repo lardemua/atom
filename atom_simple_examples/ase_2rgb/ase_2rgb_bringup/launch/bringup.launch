@@ -1,0 +1,16 @@
+<launch>
+
+<!--Load robot xacro into robot_description ros parameter.-->
+<include file="$(find ase_2rgb_description)/launch/upload.launch">
+</include>
+
+<!--Load robot xacro into robot_description ros parameter.-->
+<include file="$(find ase_2rgb_gazebo)/launch/spawn.launch">
+</include>
+
+<include file="$(find ase_2rgb_bringup)/launch/visualize.launch">
+</include>
+
+<node name="interactive_pattern" pkg="atom_worlds" type="interactive_pattern" output="screen" />
+
+</launch>
