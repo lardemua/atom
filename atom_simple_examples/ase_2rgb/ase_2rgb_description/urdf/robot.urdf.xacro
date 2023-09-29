@@ -3,20 +3,21 @@
 
     <!-- ase_2rgb is a simple robotic system containing two rgb cameras on top of a tripop.  -->
     <xacro:property name="M_PI" value="3.1415926535897931" />
+    <material name="Orange">
+        <color rgba="1.0 0.4 0.0 1.0"/>
+    </material>
 
     <!-- testing adding a sensor camera -->
     <xacro:include filename="$(find ase_2rgb_description)/urdf/rgbd_camera.urdf.xacro" />
 
-    <!-- Right Camera -->
-    <xacro:rgbd_camera parent="tripod_right_support" prefix="rgb_right">
-        <origin xyz="0 0.05 0.015"
-            rpy="0 0 0" />
-    </xacro:rgbd_camera>
- 
     <!-- Left Camera -->
-    <xacro:rgbd_camera parent="tripod_left_support" prefix="rgb_left">
-        <origin xyz="0 0.075 0.015"
-            rpy="0 0 0" />
+    <xacro:rgbd_camera parent="tripod_left_support" prefix="rgb_left" color="red">
+        <origin xyz="0 0.075 0.015" rpy="0 0 0"/> 
+    </xacro:rgbd_camera>
+
+    <!-- Right Camera -->
+    <xacro:rgbd_camera parent="tripod_right_support" prefix="rgb_right" color="green">
+        <origin xyz="0 0.05 0.015" rpy="0 0 0"/>
     </xacro:rgbd_camera>
 
     <material name="grey">
