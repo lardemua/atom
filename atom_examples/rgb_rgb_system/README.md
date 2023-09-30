@@ -2,7 +2,7 @@
 
 The **rgb_rgb_system** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
 
-![gazebo](docs/rgb_rgb_system.png)
+![gazebo](docs/system.png)
 
 The system is composed of two rgb cameras mounted on a tripod.
 Cameras are called **rgb_left** (red) and **rgb_right** (green).
