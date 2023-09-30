@@ -1,7 +1,0 @@
-<launch>
-
-        <!-- Launch rviz, loading configuration file -->
-        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ase_2rgb_bringup)/config/config.rviz" required="true">
-        </node>
-
-</launch>

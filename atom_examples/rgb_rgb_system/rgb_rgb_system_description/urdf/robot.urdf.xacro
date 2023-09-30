@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <robot name="robot" xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <!-- ase_2rgb is a simple robotic system containing two rgb cameras on top of a tripop.  -->
+    <!-- rgb_rgb_system is a simple robotic system containing two rgb cameras on top of a tripop.  -->
     <xacro:property name="M_PI" value="3.1415926535897931" />
     <material name="Orange">
         <color rgba="1.0 0.4 0.0 1.0"/>
     </material>
 
     <!-- testing adding a sensor camera -->
-    <xacro:include filename="$(find ase_2rgb_description)/urdf/rgbd_camera.urdf.xacro" />
+    <xacro:include filename="$(find rgb_rgb_system_description)/urdf/rgbd_camera.urdf.xacro" />
 
     <!-- Left Camera -->
     <xacro:rgbd_camera parent="tripod_left_support" prefix="rgb_left" color="red">
@@ -32,14 +32,14 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://ase_2rgb_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
+                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
             </geometry>
             <material name="grey"/>
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://ase_2rgb_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
+                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
             </geometry>
         </collision>
         <inertial>

@@ -1,26 +1,21 @@
-# ASE_2RGB
+# RGB_RGB_SYSTEM
 
-Atom Simple Experiments 2 RGB (ase_2rgb) is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
+The **rgb_rgb_system** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
 
 ![gazebo](docs/zoom_in.png)
 
 The system is composed of two rgb cameras mounted on a tripod.
-The system contains the following sensors:
-- **rgbd_cameras** - Two RGB-D cameras mounted on the tripod,facing the front.
-
 Cameras are called **rgb_left** (red) and **rgb_right** (green).
 The system contains the following topics:
 
-```
-/rgb_left/rgb/camera_info
-/rgb_left/rgb/image_raw
-/rgb_right/rgb/camera_info
-/rgb_right/rgb/image_raw
-/tf
-/tf_static
-```
+  - /rgb_left/rgb/camera_info (10Hz)
+  - /rgb_left/rgb/image_raw (10Hz)
+  - /rgb_right/rgb/camera_info (10Hz)
+  - /rgb_right/rgb/image_raw (10Hz)
+  - /tf
+  - /tf_static
 
-This is a simulated system which can be seen in gazebo:
+This is a simulated system, which can be seen in gazebo:
 
 ![gazebo](docs/gazebo.png)
 
@@ -32,15 +27,15 @@ This is a simulated system which can be seen in gazebo:
 
 First launch the gazebo simulation:
 
-    roslaunch ase_2rgb_gazebo gazebo.launch
+    roslaunch rgb_rgb_system_gazebo gazebo.launch
 
 Then you can bringup the system:
 
-    roslaunch ase_2rgb_bringup bringup.launch
+    roslaunch rgb_rgb_system_bringup bringup.launch
 
 You can record a bag file using:
 
-    roslaunch ase_2rgb_bringup record.launch
+    roslaunch rgb_rgb_system_bringup record.launch
 
 This will put the bag file into your $ROS_BAGS folder. 
 

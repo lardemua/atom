@@ -21,19 +21,19 @@
         <geometry>
 
         <xacro:if value="${color == 'red'}">
-          <mesh filename="package://ase_2rgb_description/meshes/rgbd_camera/rgbd_camera_red.dae" scale="1 1 1"/>
+          <mesh filename="package://rgb_rgb_system_description/meshes/rgbd_camera/rgbd_camera_red.dae" scale="1 1 1"/>
         </xacro:if>
 
         <xacro:if value="${color == 'green'}">
-          <mesh filename="package://ase_2rgb_description/meshes/rgbd_camera/rgbd_camera_green.dae" scale="1 1 1"/>
+          <mesh filename="package://rgb_rgb_system_description/meshes/rgbd_camera/rgbd_camera_green.dae" scale="1 1 1"/>
         </xacro:if>
 
         <xacro:if value="${color == 'black'}">
-          <mesh filename="package://ase_2rgb_description/meshes/rgbd_camera/rgbd_camera.dae" scale="1 1 1"/>
+          <mesh filename="package://rgb_rgb_system_description/meshes/rgbd_camera/rgbd_camera.dae" scale="1 1 1"/>
         </xacro:if>
 
         <xacro:if value="${color != 'red' and color != 'green' and color != 'black'}">
-          <mesh filename="package://ase_2rgb_description/meshes/rgbd_camera/rgbd_camera.dae" scale="1 1 1"/>
+          <mesh filename="package://rgb_rgb_system_description/meshes/rgbd_camera/rgbd_camera.dae" scale="1 1 1"/>
         </xacro:if>
 
 
