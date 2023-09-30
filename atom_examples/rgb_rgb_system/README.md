@@ -2,19 +2,20 @@
 
 The **rgb_rgb_system** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
 
-![gazebo](docs/zoom_in.png)
+![gazebo](docs/rgb_rgb_system.png)
 
 The system is composed of two rgb cameras mounted on a tripod.
 Cameras are called **rgb_left** (red) and **rgb_right** (green).
 The system contains the following topics:
 
-  - /rgb_left/rgb/camera_info (10Hz)
-  - /rgb_left/rgb/image_raw (10Hz)
-  - /rgb_right/rgb/camera_info (10Hz)
-  - /rgb_right/rgb/image_raw (10Hz)
+  - /rgb_left/rgb/camera_info 
+  - /rgb_left/rgb/image_raw 
+  - /rgb_right/rgb/camera_info
+  - /rgb_right/rgb/image_raw 
   - /tf
   - /tf_static
 
+Since this is a systems to test calibration, where frame rate is not a critical issue, we restrained images topics to 10Hz. 
 This is a simulated system, which can be seen in gazebo:
 
 ![gazebo](docs/gazebo.png)
