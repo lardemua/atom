@@ -1,7 +1,7 @@
 <launch>
 
         <!-- Launch rviz, loading configuration file -->
-        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rgb_rgb_system_bringup)/config/config.rviz" required="true">
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rgb_rgb_system_bringup)/config/config.rviz" required="true" output="screen">
         </node>
 
 </launch>

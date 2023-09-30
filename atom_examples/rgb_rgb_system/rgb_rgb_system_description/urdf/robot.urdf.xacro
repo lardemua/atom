@@ -4,24 +4,26 @@
     <!-- rgb_rgb_system is a simple robotic system containing two rgb cameras on top of a tripop.  -->
     <xacro:property name="M_PI" value="3.1415926535897931" />
     <material name="Orange">
-        <color rgba="1.0 0.4 0.0 1.0"/>
+        <color rgba="1.0 0.4 0.0 1.0" />
     </material>
+
+    <xacro:include filename="$(find rgb_rgb_system_description)/urdf/robot.gazebo.xacro" />
 
     <!-- testing adding a sensor camera -->
     <xacro:include filename="$(find rgb_rgb_system_description)/urdf/rgbd_camera.urdf.xacro" />
 
     <!-- Left Camera -->
     <xacro:rgbd_camera parent="tripod_left_support" prefix="rgb_left" color="red">
-        <origin xyz="0 0.075 0.015" rpy="0 0 0"/> 
+        <origin xyz="0 0.075 0.015" rpy="0 0 0" />
     </xacro:rgbd_camera>
 
     <!-- Right Camera -->
     <xacro:rgbd_camera parent="tripod_right_support" prefix="rgb_right" color="green">
-        <origin xyz="0 0.05 0.015" rpy="0 0 0"/>
+        <origin xyz="0 0.05 0.015" rpy="0 0 0" />
     </xacro:rgbd_camera>
 
-    <material name="grey">
-        <color rgba="0.7 0.7 0.7 1.0" />
+    <material name="tripod_color">
+        <color rgba="0.21 0.21 .21 1" />
     </material>
 
     <!-- Define links and joints -->
@@ -32,14 +34,16 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
+                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.stl"
+                    scale="0.04 0.04 0.04" />
             </geometry>
-            <material name="grey"/>
+            <material name="tripod_color" />
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.dae" scale="0.04 0.04 0.04" />
+                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.stl"
+                    scale="0.04 0.04 0.04" />
             </geometry>
         </collision>
         <inertial>
@@ -49,21 +53,21 @@
         </inertial>
     </link>
 
-      <!-- parent to tripod -->
+
+    <!-- parent to tripod -->
     <joint name="world_to_tripod" type="fixed">
         <parent link="world" />
         <child link="tripod" />
-        <!-- <xacro:insert_block name="origin" /> -->
         <origin xyz="0 0 0" rpy="0 0 0" />
     </joint>
 
-       <link name="tripod_plate">
+    <link name="tripod_plate">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
                 <box size="0.04 0.4 0.015" />
             </geometry>
-            <material name="grey" />
+            <material name="tripod_color" />
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
@@ -78,7 +82,7 @@
         </inertial>
     </link>
 
-       <!-- tripod to tripod plate-->
+    <!-- tripod to tripod plate-->
     <joint name="tripod_to_tripod_plate" type="fixed">
         <parent link="tripod" />
         <child link="tripod_plate" />
@@ -105,5 +109,4 @@
         <origin xyz="0 -0.18 0.0075" rpy="0 0 0" />
     </joint>
 
-    <!-- </xacro:macro> -->
 </robot>
