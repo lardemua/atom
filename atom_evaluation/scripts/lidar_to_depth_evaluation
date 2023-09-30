@@ -171,6 +171,14 @@ if __name__ == "__main__":
 
     # Declare output dict to save the evaluation data if desire
     delta_total = []
+    rms_total=[]
+    delta_xy_total=[]
+    avg_error_total=[]
+    avg_error_x_total = []
+    avg_error_y_total = []
+    stdev_xy_0_total = []
+    stdev_xy_1_total = []
+    n_collections=0
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
@@ -198,6 +206,9 @@ if __name__ == "__main__":
         image = cv2.imread(filename)
         depth_pts_in_depth_img = depthInImage(collection, test_json_file, depth_sensor, pinhole_camera_model)
 
+        if len(depth_pts_in_depth_img[0]) == 0:
+            print('No Depth point mapped into the image for collection ' + str(collection_key))
+            continue
         # Clear image annotations
         image = cv2.imread(filename)
 
@@ -243,12 +254,21 @@ if __name__ == "__main__":
         delta_pts = np.array(delta_pts, np.float32)
         avg_error = np.sum(np.abs(delta_pts)) / total_pts
         rms = np.sqrt((delta_pts ** 2).mean())
+        rms_total.append(rms)
 
         delta_xy = np.array(distances, np.float32)
         delta_xy = delta_xy[:, 0]
         avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
         avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
         stdev_xy = np.std(delta_xy, axis=0)
+
+        delta_xy_total.append(delta_xy)
+        avg_error_total.append(avg_error)
+        avg_error_x_total.append(avg_error_x)
+        avg_error_y_total.append(avg_error_y)
+        stdev_xy_0_total.append(stdev_xy[0])
+        stdev_xy_1_total.append(stdev_xy[1])
+        n_collections+=1
 
         print(
             '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format(collection_key, rms,
@@ -271,24 +291,31 @@ if __name__ == "__main__":
             cv2.imshow(win_name, image)
             cv2.waitKey()
             cv2.destroyWindow(winname=win_name)
+    #
+    # total_pts = len(delta_total)
+    # delta_total = np.array(delta_total, np.float32)
+    # avg_error = np.sum(np.abs(delta_total)) / total_pts
+    # rms = np.sqrt((delta_total ** 2).mean())
+    rms=np.sum(np.abs(rms_total))/n_collections
 
-    total_pts = len(delta_total)
-    delta_total = np.array(delta_total, np.float32)
-    avg_error = np.sum(np.abs(delta_total)) / total_pts
-    rms = np.sqrt((delta_total ** 2).mean())
-
-    delta_xy = np.array(delta_total, np.float32)
-    delta_xy = delta_xy[:, 0]
-    avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
-    avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
-    stdev_xy = np.std(delta_xy, axis=0)
+    avg_error = np.sum(np.abs(avg_error_total)) / n_collections
+    avg_error_x =np.sum(np.abs(avg_error_x_total))/n_collections
+    avg_error_y =np.sum(np.abs(avg_error_y_total))/n_collections
+    x_stdev =np.sum(np.abs(stdev_xy_0_total))/n_collections
+    y_stdev =np.sum(np.abs(stdev_xy_1_total))/n_collections
+    #
+    # delta_xy = np.array(delta_total, np.float32)
+    # delta_xy = delta_xy[:, 0]
+    # avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
+    # avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
+    # stdev_xy = np.std(delta_xy, axis=0)
 
     print('-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print(
         '{:^25s}{:^25f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}{:^25.4f}'.format('All', rms,
                                                                              avg_error, avg_error_x,
                                                                              avg_error_y,
-                                                                             stdev_xy[0], stdev_xy[1]))
+                                                                             x_stdev, y_stdev))
     print(
         '-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------')
     print('Ending script...')

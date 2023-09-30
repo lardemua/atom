@@ -120,6 +120,10 @@ def main():
     dataset["patterns"] = patterns.createPatternLabels(args, dataset)  # TODO: Solve this strange dependency.
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
 
+
+    # print(dataset["patterns"])
+    # exit(0)
+
     print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
           " sensors and " + str(len(dataset["collections"].keys())) + " collections.")
 
