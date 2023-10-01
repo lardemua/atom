@@ -14,26 +14,29 @@
         <color rgba="0.21 0.21 .21 1" />
     </material>
 
-    <material name="red">
-        <color rgba="0.9 0 0 1" />
-    </material>
-
-    <material name="green">
-        <color rgba="0 0.9 0 1" />
-    </material>
 
     <!-- Includes -->
     <xacro:include filename="$(find rgb_rgb_system_description)/urdf/robot.gazebo.xacro" />
     <xacro:include filename="$(find rgb_rgb_system_description)/urdf/rgb_camera.urdf.xacro" />
 
     <!-- Left Camera -->
-    <xacro:rgb_camera parent="tripod_left_support" prefix="rgb_left" color="red">
+    <xacro:rgb_camera parent="tripod_left_support" prefix="rgb_left" color_gazebo="Red">
         <origin xyz="0.015 0 0.012" rpy="0 0 0" />
+        <color_rgb_rviz>
+            <material name="red">
+                <color rgba="0.9 0 0 1" />
+            </material>
+        </color_rgb_rviz>
     </xacro:rgb_camera>
 
     <!-- Right Camera -->
-    <xacro:rgb_camera parent="tripod_right_support" prefix="rgb_right" color="green">
+    <xacro:rgb_camera parent="tripod_right_support" prefix="rgb_right" color_gazebo="Green">
         <origin xyz="0.015 0 0.012" rpy="0 0 0" />
+        <color_rgb_rviz>
+            <material name="green">
+                <color rgba="0 0.9 0 1" />
+            </material>
+        </color_rgb_rviz>
     </xacro:rgb_camera>
 
 
@@ -45,14 +48,16 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.stl" scale="1 1 1"/>
+                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
             </geometry>
             <material name="tripod_color" />
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.stl" scale="1 1 1"/>
+                <mesh filename="package://rgb_rgb_system_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
             </geometry>
         </collision>
         <inertial>

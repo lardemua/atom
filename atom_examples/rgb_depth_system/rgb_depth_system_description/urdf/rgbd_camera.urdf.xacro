@@ -1,11 +1,15 @@
 <?xml version="1.0"?>
 <robot name="rgbd_camera" xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <!-- Xacro properties -->
-  <material name="default_camera_color">
-    <color rgba="0.21 0.21 .21 1" />
-  </material>
+	<!-- This is a xacro macro to define an rgbd camera. 
+	You can define as arguments the parent coordinate frame, the name of the sensor, the transformation
+	from that parent frame to the camera's root frame, the color to be used in rviz, and the color
+	used in gazebo. Colors should be specified for both rviz and gazebo since these have independent colors.
+	Gazebo colors should be capitalized and from this list:
+		http://wiki.ros.org/simulator_gazebo/Tutorials/ListOfMaterials 
+  -->
 
+  <!-- Start of macro -->
   <xacro:macro name="rgbd_camera" params="parent prefix *origin **color_rgb_rviz **color_depth_rviz color_rgb_gazebo:='DarkGrey' color_depth_gazebo:='DarkGrey'">
     <!-- List of Gazbo materials: http://wiki.ros.org/simulator_gazebo/Tutorials/ListOfMaterials -->
 

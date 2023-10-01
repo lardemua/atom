@@ -1,11 +1,16 @@
 <?xml version="1.0"?>
 <robot name="rgb_camera" xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <material name="default_camera_color">
-  	<color rgba="0.21 0.21 .21 1" />
-  </material>
+	<!-- This is a xacro macro to define and rgb camera. 
+	You can define as arguments the parent coordinate frame, the name of the sensor, the transformation
+	from that parent frame to the camera's root frame, the color to be used in rviz, and the color
+	used in gazebo. Colors should be specified for both rviz and gazebo since these have independent colors.
+	Gazebo colors should be capitalized and from this list:
+		http://wiki.ros.org/simulator_gazebo/Tutorials/ListOfMaterials 
+	-->
 
-	<xacro:macro name="rgb_camera" params="parent prefix *origin color:='default_camera_color'">
+	<!-- Start of macro -->
+	<xacro:macro name="rgb_camera" params="parent prefix *origin **color_rviz color_gazebo">
 
 		<joint name="${prefix}_joint" type="fixed">
 			<xacro:insert_block name="origin" />
@@ -15,16 +20,21 @@
 
 		<link name="${prefix}_link">
 			<visual>
-				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<origin xyz="0 0 0" rpy="0 0 0" />
 				<geometry>
-					<mesh filename="package://rgb_rgb_system_description/meshes/rgb_camera/rgb_camera.stl" scale="1 1 1"/>
+					<mesh
+						filename="package://rgb_rgb_system_description/meshes/rgb_camera/rgb_camera.stl"
+						scale="1 1 1" />
 				</geometry>
-				<material name="${color}"/>
+				<xacro:insert_block name="color_rviz" />
 			</visual>
+
 			<collision>
 				<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 				<geometry>
-					<mesh filename="package://rgb_rgb_system_description/meshes/rgb_camera/rgb_camera.stl" scale="1 1 1"/>
+					<mesh
+						filename="package://rgb_rgb_system_description/meshes/rgb_camera/rgb_camera.stl"
+						scale="1 1 1" />
 				</geometry>
 			</collision>
 			<inertial>
@@ -38,19 +48,7 @@
 
 		<gazebo reference="${prefix}_link">
 			<selfCollide>false</selfCollide>
-
-			<xacro:if value="${color == 'red'}">
-				<material>Gazebo/Red</material>
-			</xacro:if>
-			<xacro:if value="${color == 'green'}">
-				<material>Gazebo/Green</material>
-			</xacro:if>
-			<xacro:if value="${color == 'black'}">
-				<material>Gazebo/DarkGrey</material>
-			</xacro:if>
-			<xacro:if value="${color != 'red' and color != 'green' and color != 'black'}">
-				<material>Gazebo/DarkGrey</material>
-			</xacro:if>
+			<material>Gazebo/${color_gazebo}</material>
 		</gazebo>
 
 		<joint name="${prefix}_optical_joint" type="fixed">
