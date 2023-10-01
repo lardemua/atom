@@ -20,7 +20,7 @@ For instructions on how to install and use, **check the documentation**:
 <a href="https://lardemua.github.io/atom_documentation/">https://lardemua.github.io/atom_documentation/</a>
 </p> 
 
-and you can check [these examples](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples).
+and check [these examples](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples).
 
 <p align="center">
 <img align="center" width="832" height="468" src="https://github.com/lardemua/atom/blob/noetic-devel/docs/OverviewATOMMMTBot_compressed.gif"> 
