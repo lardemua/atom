@@ -5,7 +5,6 @@
   	<color rgba="0.21 0.21 .21 1" />
   </material>
 
-	<!-- Parameterised in part by the values in turtlebot_properties.urdf.xacro -->
 	<xacro:macro name="rgb_camera" params="parent prefix *origin color:='default_camera_color'">
 
 		<joint name="${prefix}_joint" type="fixed">
