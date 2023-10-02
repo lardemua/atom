@@ -10,29 +10,21 @@ Reads the calibration results from two json files and computes the evaluation me
 # Standard imports
 import argparse
 import copy
-import os
-import math
 import json
 from collections import OrderedDict
-from copy import deepcopy
 import sys
-import time
-from typing import List
 
 # ROS imports
-import cv2
 import numpy as np
-from matplotlib import cm
 from colorama import Style, Fore
 from prettytable import PrettyTable
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.utilities import rootMeanSquare, checkAdditionalTfs
+from atom_core.utilities import checkAdditionalTfs, saveFileResults
 from atom_core.naming import generateKey
-from atom_core.drawing import drawCross2D, drawSquare2D
 from atom_core.dataset_io import getMixedDataset
-from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
+from atom_core.geometry import matrixToRodrigues
 
 # -------------------------------------------------------------------------------
 # --- CLASSES 
@@ -102,12 +94,8 @@ class Table:
     def table_to_csv(self) -> None:
         if self.arg['save_file_results']:
             if args['save_file_results_name'] is None:
-                dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
-                last_slash_index = args['test_json_file'].rfind('/')
-                # Remove everything after the last '/'
-                folder_name = args['test_json_file'][:last_slash_index]
-                with open(folder_name + '/results/' +  f'{dataset_name}_ground_truth_frame_results.csv', 'w', newline='') as f_output:
-                    f_output.write(self.table_to_save.get_csv_string())
+                results_name = 'ground_truth_frame_results.csv'
+                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, self.table_to_save.get_csv_string.get_csv_string()())
             else: 
                 with open(args['save_file_results_name'], 'w', newline='') as f_output:
                     f_output.write(self.table_to_save.get_csv_string())

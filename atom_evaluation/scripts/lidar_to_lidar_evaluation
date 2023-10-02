@@ -26,8 +26,9 @@ from rospy_message_converter import message_converter
 from ros_numpy import numpify
 
 # Atom imports
-from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.atom import getTransform
+from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, loadResultsJSON, filterCollectionsFromDataset
+from atom_core.utilities import saveFileResults
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -271,12 +272,8 @@ if __name__ == "__main__":
     # save results in csv file 
     if args['save_file_results']: 
         if args['save_file_results_name'] is None:
-            dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
-            last_slash_index = args['test_json_file'].rfind('/')
-            # Remove everything after the last '/'
-            folder_name = args['test_json_file'][:last_slash_index]
-            with open(folder_name + '/results/'+ f'{dataset_name}_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv', 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+            results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
         else: 
             with open(args['save_file_results_name'], 'w', newline='') as f_output:
                 f_output.write(table_to_save.get_csv_string())
