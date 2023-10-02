@@ -12,10 +12,10 @@ A set of utilities to be used in the optimization algorithms
 import os
 
 import cv2
+import ros_numpy
 import open3d as o3d
 import numpy as np
 from numpy.linalg import norm
-from trimesh import PointCloud
 
 # ROS imports
 from image_geometry import PinholeCameraModel
@@ -23,6 +23,7 @@ from rospy_message_converter import message_converter
 
 # Atom imports
 from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
+from atom_core.dataset_io import  getPointCloudMessageFromDictionary, read_pcd
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -181,7 +182,7 @@ def depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs):
     return points_in_depth
 
 
-def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf, test_dataset):
+def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf):
     """
     Convert a depth image to points inside an rgb image
     """
@@ -192,11 +193,10 @@ def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf, test_d
     points_in_cam = np.dot(tf, points_in_depth)
 
     # -- Project them to the image
-    # TODO #466 this should be retrieved from the train dataset. Doing like this means that if we optimize the depth's intrinsics we will not take the estimated intrinsics into consideration.
     w, h = dataset['collections'][selected_collection_key]['data'][ts]['width'],\
             dataset['collections'][selected_collection_key]['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
-    D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
+    K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
     pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
@@ -214,3 +214,54 @@ def depthToPointCloud(dataset, selected_collection_key, json_file, ss, idxs):
 
 
     return point_cloud
+
+def depthInImage(dataset, selected_collection_key, ss):
+    """
+    Converts depth idxs_limit_points to points inside the depth image
+    """
+
+    idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
+    pinhole_camera_model = PinholeCameraModel()
+    pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
+        'sensor_msgs/CameraInfo', dataset['sensors'][ss]['camera_info']))
+    w = pinhole_camera_model.fullResolution()[0]
+
+    # initialize lists
+    xs = []
+    ys = []
+    for idx in idxs:  # iterate all points
+        # convert from linear idx to x_pix and y_pix indices.
+        y_pix = int(idx / w)
+        x_pix = int(idx - y_pix * w)
+        xs.append(x_pix)
+        ys.append(y_pix)
+
+    points_in_depth = np.array((xs, ys), dtype=float)
+    return points_in_depth
+
+
+def rangeToImage(mixed_dataset, collection, json_file, ss, ts, tf):
+    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
+    msg = read_pcd(filename)
+    collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
+
+    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
+    idxs = collection['labels'][ss]['idxs_limit_points']
+
+    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    points_in_vel = np.zeros((4, pc.shape[0]))
+    points_in_vel[0, :] = pc['x']
+    points_in_vel[1, :] = pc['y']
+    points_in_vel[2, :] = pc['z']
+    points_in_vel[3, :] = 1
+
+    points_in_cam = np.dot(tf, points_in_vel)
+
+    # -- Project them to the image
+    w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
+    K = np.ndarray((3, 3), buffer=np.array(mixed_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(mixed_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
+
+    lidar_pts_in_img, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
+
+    return lidar_pts_in_img

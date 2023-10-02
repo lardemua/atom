@@ -58,9 +58,8 @@ from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.utilities import rootMeanSquare
-from atom_core.naming import generateKey
 from atom_core.drawing import drawCross2D, drawSquare2D
+from atom_core.utilities import rootMeanSquare, saveFileResults
 
 # -------------------------------------------------------------------------------
 # --- IMPORTS
@@ -158,20 +157,18 @@ if __name__ == "__main__":
                             "Used or the Charuco.", action="store_true", default=False)
 
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                   "Default: {name_of_dataset}_cross_collection_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+                   "Default: -test_json/results/{name_of_dataset}_inter_collection_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
 
     # parse args
-    args = vars(ap.parse_args())
+    args = vars(ap.parse_known_args()[0])
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from files
     # ---------------------------------------
     # Loads the train json file containing the calibration results
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
+    train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
     # Loads the test json file containing a set of collections to evaluate the calibration
     test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])
@@ -181,45 +178,10 @@ if __name__ == "__main__":
     # ---------------------------------------
     test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
 
-    # Retrieving mixed_dataset
-    mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
-
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    # test_dataset = test_dataset
-    # I am just using the test dataset for everything. If we need an original test dataset we can copy here.
-
-    # Replace optimized transformations in the test dataset copying from the train dataset
-    for sensor_key, sensor in mixed_dataset['sensors'].items():
-        calibration_parent = sensor['calibration_parent']
-        calibration_child = sensor['calibration_child']
-        transform_name = generateKey(calibration_parent, calibration_child)
-
-        # We can only optimized fixed transformations, so the optimized transform should be the same for all
-        # collections. We select the first collection (selected_collection_key) and retrieve the optimized
-        # transformation for that.
-        selected_collection_key = list(mixed_dataset['collections'].keys())[0]
-        optimized_transform = mixed_dataset['collections'][selected_collection_key]['transforms'][transform_name]
-
-        # iterate all collections of the test dataset and replace the optimized transformation
-        for collection_key, collection in mixed_dataset['collections'].items():
-            collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
-            collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
-
-    # Copy intrinsic parameters for cameras from train to test dataset.
-    for sensor_key, sensor in mixed_dataset['sensors'].items():
-        if sensor['msg_type'] == 'Image':
-            mixed_dataset['sensors'][sensor_key]['camera_info']['D'] = sensor['camera_info']['D']
-            mixed_dataset['sensors'][sensor_key]['camera_info']['K'] = sensor['camera_info']['K']
-            mixed_dataset['sensors'][sensor_key]['camera_info']['P'] = sensor['camera_info']['P']
-            mixed_dataset['sensors'][sensor_key]['camera_info']['R'] = sensor['camera_info']['R']
-
-    f = open('test.json', 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
-    print(json.dumps(mixed_dataset, indent=2, sort_keys=True), file=f)
-    f.close()
-    # exit(0)
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors
@@ -575,11 +537,10 @@ if __name__ == "__main__":
     print(table)
 
     # save results in csv file 
-    if args['save_file_results'] != None: 
+    if args['save_file_results']: 
         if args['save_file_results_name'] is None:
-            dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
-            with open(args['save_file_results'] + f'{dataset_name}_cross_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv', 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+            results_name = f'inter_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
         else: 
-            with open(args['save_file_results'] + args['save_file_results_name'], 'w', newline='') as f_output:
+            with open(args['save_file_results_name'], 'w', newline='') as f_output:
                 f_output.write(table_to_save.get_csv_string())

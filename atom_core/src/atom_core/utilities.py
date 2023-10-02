@@ -177,3 +177,13 @@ def verifyAnchoredSensor(anchored_sensor, sensors):
 
     if anchored_sensor != '' and not anchored_sensor in list(sensors.keys()):
         atomError('Anchored sensor ' + Fore.BLUE + anchored_sensor + Style.RESET_ALL+ ' must be empty string or one of the configured sensors.')
+
+def saveFileResults(train_json, test_json, results_name, table_to_save):
+        dataset_name = train_json.split('/')[-1].split('.')[0]
+        last_slash_index = test_json.rfind('/')
+        # Remove everything after the last '/'
+        folder_name = test_json[:last_slash_index]
+        if not os.path.exists(folder_name + '/results'):
+            os.makedirs(folder_name + '/results')
+        with open(folder_name + '/results/'+ dataset_name + '_' + results_name, 'w', newline='') as f_output:
+            f_output.write(table_to_save.get_csv_string())

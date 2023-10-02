@@ -20,6 +20,7 @@ import cv2
 from scipy.spatial import distance
 from colorama import Fore, Style
 from prettytable import PrettyTable
+from copy import deepcopy
 
 
 # Atom imports
@@ -27,6 +28,12 @@ from atom_core.atom import getTransform
 from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.utilities import saveFileResults
 from atom_core.vision import depthInImage, rangeToImage
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -41,6 +48,7 @@ if __name__ == "__main__":
     ap.add_argument("-rs", "--range_sensor", help="Source transformation sensor.", type=str, required=True)
     ap.add_argument("-ds", "--depth_sensor", help="Target transformation sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-wf", "--world_frame", help="Fixed frame between collections.", type=str, required=True)
     ap.add_argument("-bt", "--border_tolerance", help="Define the percentage of pixels to use to create a border. Lidar points outside that border will not count for the error calculations",
                                                  type=float, default=0.025)
     ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
@@ -55,7 +63,7 @@ if __name__ == "__main__":
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                   "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+                   "Default: -test_json/results/{name_of_dataset}_inter_collection_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
 
     # - Save args
     args = vars(ap.parse_known_args()[0])
@@ -67,6 +75,7 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
+    # Loads a json file containing the calibration
     # Loads the train json file containing the calibration results
     train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
@@ -90,110 +99,104 @@ if __name__ == "__main__":
 
     # Declare output dict to save the evaluation data if desire
     delta_total = []
-    rms_total=[]
-    delta_xy_total=[]
-    avg_error_total=[]
-    avg_error_x_total = []
-    avg_error_y_total = []
-    stdev_xy_0_total = []
-    stdev_xy_1_total = []
-    n_collections=0
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
     source_frame = mixed_dataset['calibration_config']['sensors'][range_sensor]['link']
     target_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor]['link']
+    world_frame = args['world_frame']
+
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    od_target = deepcopy(od)
     e = {}  # dictionary with all the errors
-    for collection_key, collection in od.items():
-        e[collection_key] = {}  # init the dictionary of errors for this collection
-        # ---------------------------------------
-        # --- Range to depth projection
-        # ---------------------------------------
-        lidar2depth = getTransform(target_frame, source_frame, mixed_dataset['collections'][collection_key]['transforms'])
-        lidar_pts_in_img = rangeToImage(mixed_dataset, collection, test_json_file, range_sensor, depth_sensor, lidar2depth)
+    for collection_source_key, collection_source in od.items():
+        e[collection_source_key] = {}  # init the dictionary of errors for this collection
+        for collection_target_key, collection_target in od_target.items():
+            e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
+            # ---------------------------------------
+            # --- Range to depth projection
+            # ---------------------------------------
+            lidar2world_cs = getTransform(world_frame, source_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
+            world2depth_ct = getTransform(target_frame, world_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
+            lidar2depth = np.dot(world2depth_ct, lidar2world_cs)
 
-        # ---------------------------------------
-        # --- Get evaluation data for current collection
-        # ---------------------------------------
-        filename = os.path.dirname(test_json_file) + '/' + collection['data'][depth_sensor]['data_file']
-        image = cv2.imread(filename)
-        depth_pts_in_depth_img = depthInImage(mixed_dataset, collection_key, depth_sensor)
+            lidar_pts_in_img = rangeToImage(mixed_dataset, collection_source, test_json_file, range_sensor, depth_sensor, lidar2depth)
 
-        if len(depth_pts_in_depth_img[0]) == 0:
-            print('No Depth point mapped into the image for collection ' + str(collection_key))
-            continue
-        # Clear image annotations
-        image = cv2.imread(filename)
+            # ---------------------------------------
+            # --- Get evaluation data for current collection
+            # ---------------------------------------
+            filename = os.path.dirname(test_json_file) + '/' + collection_target['data'][depth_sensor]['data_file']
+            image = cv2.imread(filename)
+            depth_pts_in_depth_img = depthInImage(mixed_dataset, collection_target_key, depth_sensor)
 
-        delta_pts = []
-        distances = []
-        w, h = collection['data'][depth_sensor]['width'], collection['data'][depth_sensor]['height']
-        for idx in range(lidar_pts_in_img.shape[1]):
-            x = lidar_pts_in_img[0][idx]
-            y = lidar_pts_in_img[1][idx]
-            
-            # If the points are near or surpassing the image limits, do not count them for the errors
-            if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
-                y > h * (1 - border_tolerance) or y < h * border_tolerance:
+            # Clear image annotations
+            image = cv2.imread(filename)
+
+            delta_pts = []
+            distances = []
+            w, h = collection_target['data'][depth_sensor]['width'], collection_target['data'][depth_sensor]['height']
+            for idx in range(lidar_pts_in_img.shape[1]):
+                x = lidar_pts_in_img[0][idx]
+                y = lidar_pts_in_img[1][idx]
+                
+                # If the points are near or surpassing the image limits, do not count them for the errors
+                if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
+                    y > h * (1 - border_tolerance) or y < h * border_tolerance:
+                    continue
+
+                lidar_pt = np.reshape(lidar_pts_in_img[0:2, idx], (1, 2))
+                delta_pts.append(np.min(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
+                coords = np.where(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean') == np.min(
+                    distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
+                min_dist_pt = depth_pts_in_depth_img.transpose()[coords[1]][0]
+                # print(min_dist_pt)
+                dist = abs(lidar_pt - min_dist_pt)
+                distances.append(dist)
+                delta_total.append(dist)
+
+                if show_images:
+                    image = cv2.line(image, (int(lidar_pt.transpose()[0]), int(lidar_pt.transpose()[1])),
+                                    (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 2)
+
+            if len(delta_pts) == 0:
+                print('No LiDAR point mapped into the image for collection ' + str((collection_source_key, collection_target_key)))
                 continue
 
-            lidar_pt = np.reshape(lidar_pts_in_img[0:2, idx], (1, 2))
-            delta_pts.append(np.min(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
-            coords = np.where(distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean') == np.min(
-                distance.cdist(lidar_pt, depth_pts_in_depth_img.transpose()[:, :2], 'euclidean')))
-            min_dist_pt = depth_pts_in_depth_img.transpose()[coords[1]][0]
-            # print(min_dist_pt)
-            dist = abs(lidar_pt - min_dist_pt)
-            distances.append(dist)
-            delta_total.append(dist)
+            # ---------------------------------------
+            # --- Compute error metrics
+            # ---------------------------------------
+            total_pts = len(delta_pts)
+            delta_pts = np.array(delta_pts, np.float32)
+            rms = np.sqrt((delta_pts ** 2).mean())
 
-            if show_images:
-                image = cv2.line(image, (int(lidar_pt.transpose()[0]), int(lidar_pt.transpose()[1])),
-                                 (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 2)
+            delta_xy = np.array(distances, np.float32)
+            delta_xy = delta_xy[:, 0]
+            avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
+            avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
+            stdev_xy = np.std(delta_xy, axis=0)
 
-        if len(delta_pts) == 0:
-            print('No LiDAR point mapped into the image for collection ' + str(collection_key))
-            continue
+            # Recording the errors
+            e[collection_source_key][collection_target_key]['rms'] = rms
+            e[collection_source_key][collection_target_key]['avg_error_x'] = avg_error_x
+            e[collection_source_key][collection_target_key]['avg_error_y'] = avg_error_y
+            e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
+            e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
 
-        # ---------------------------------------
-        # --- Compute error metrics
-        # ---------------------------------------
-        total_pts = len(delta_pts)
-        delta_pts = np.array(delta_pts, np.float32)
-        rms = np.sqrt((delta_pts ** 2).mean())
-        rms_total.append(rms)
+            # ---------------------------------------
+            # --- Drawing ...
+            # ---------------------------------------
+            if show_images is True:
 
-        delta_xy = np.array(distances, np.float32)
-        delta_xy = delta_xy[:, 0]
-        avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
-        avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
-        stdev_xy = np.std(delta_xy, axis=0)
-
-
-        # Recording the errors
-        e[collection_key]['rms'] = rms
-        e[collection_key]['avg_error_x'] = avg_error_x
-        e[collection_key]['avg_error_y'] = avg_error_y
-        e[collection_key]['stdev_x'] = stdev_xy[0]
-        e[collection_key]['stdev_y'] = stdev_xy[1]
-
-
-        # ---------------------------------------
-        # --- Drawing ...
-        # ---------------------------------------
-        if show_images is True:
-
-            for idx in range(0, lidar_pts_in_img.shape[1]):
-                image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(
-                    lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
-            for idx in range(0, depth_pts_in_depth_img.shape[1]):
-                image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(
-                    depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255), -1)
-            win_name = "Lidar to Depth reprojection - collection " + str(collection_key)
-            cv2.imshow(win_name, image)
-            cv2.waitKey()
-            cv2.destroyWindow(winname=win_name)
+                for idx in range(0, lidar_pts_in_img.shape[1]):
+                    image = cv2.circle(image, (int(lidar_pts_in_img[0, idx]), int(
+                        lidar_pts_in_img[1, idx])), 5, (255, 0, 0), -1)
+                for idx in range(0, depth_pts_in_depth_img.shape[1]):
+                    image = cv2.circle(image, (int(depth_pts_in_depth_img[0, idx]), int(
+                        depth_pts_in_depth_img[1, idx])), 5, (0, 0, 255), -1)
+                win_name = "Lidar to Depth reprojection - collection " + str((collection_source_key, collection_target_key))
+                cv2.imshow(win_name, image)
+                cv2.waitKey()
+                cv2.destroyWindow(winname=win_name)
 
     # -------------------------------------------------------------
     # Print output table
@@ -203,16 +206,17 @@ if __name__ == "__main__":
     table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        row = [collection_key,
-               '%.4f' % e[collection_key]['rms'],
-               '%.4f' % e[collection_key]['avg_error_x'],
-               '%.4f' % e[collection_key]['avg_error_y'],
-               '%.4f' % e[collection_key]['stdev_x'],
-               '%.4f' % e[collection_key]['stdev_y']]
+    for collection_source_key, collection_source in od.items():
+        for collection_target_key, collection_target in od_target.items():
+            row = [collection_source_key + '-' + collection_target_key,
+                '%.4f' % e[collection_source_key][collection_target_key]['rms'],
+                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
+                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_y'],
+                '%.4f' % e[collection_source_key][collection_target_key]['stdev_x'],
+                '%.4f' % e[collection_source_key][collection_target_key]['stdev_y']]
 
-        table.add_row(row)
-        table_to_save.add_row(row)
+            table.add_row(row)
+            table_to_save.add_row(row)
 
     # Compute averages and add a bottom row
     bottom_row = []  # Compute averages and add bottom row to table
@@ -254,7 +258,6 @@ if __name__ == "__main__":
             except:
                 continue
 
-
             if value > max:
                 max = value
                 max_row_idx = row_idx
@@ -270,7 +273,7 @@ if __name__ == "__main__":
     # save results in csv file 
     if args['save_file_results']: 
         if args['save_file_results_name'] is None:
-            results_name = f'{args["range_sensor"]}_to_{args["depth_sensor"]}_results.csv'
+            results_name = f'inter_collection_{args["range_sensor"]}_to_{args["depth_sensor"]}_results.csv'
             saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
         else: 
             with open(args['save_file_results_name'], 'w', newline='') as f_output:

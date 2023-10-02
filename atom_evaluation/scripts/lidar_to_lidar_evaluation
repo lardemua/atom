@@ -26,8 +26,9 @@ from rospy_message_converter import message_converter
 from ros_numpy import numpify
 
 # Atom imports
-from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.atom import getTransform
+from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, loadResultsJSON, filterCollectionsFromDataset
+from atom_core.utilities import saveFileResults
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -86,12 +87,12 @@ if __name__ == "__main__":
     # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                   "Default: {name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+                   "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
 
     # - Save args
-    args = vars(ap.parse_args())
+    args = vars(ap.parse_known_args()[0])
     sensor_source = args['sensor_source']
     sensor_target = args['sensor_target']
     # show_images = args['show_images']
@@ -100,9 +101,7 @@ if __name__ == "__main__":
     # --- INITIALIZATION Read calibration data from file
     # ---------------------------------------
     # Loads a json file containing the calibration
-    train_json_file = args['train_json_file']
-    f = open(train_json_file, 'r')
-    train_dataset = json.load(f)
+    train_dataset, train_json_file = loadResultsJSON(args["train_json_file"], args["collection_selection_function"])
 
     # Loads the test json file containing a set of collections to evaluate the calibration
     test_dataset, test_json_file = loadResultsJSON(args["test_json_file"], args["collection_selection_function"])
@@ -271,13 +270,12 @@ if __name__ == "__main__":
     print(table)
 
     # save results in csv file 
-    if args['save_file_results'] != None: 
+    if args['save_file_results']: 
         if args['save_file_results_name'] is None:
-            dataset_name = args['train_json_file'].split('/')[-1].split('.')[0]
-            with open(args['save_file_results'] + f'{dataset_name}_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv', 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+            results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
         else: 
-            with open(args['save_file_results'] + args['save_file_results_name'], 'w', newline='') as f_output:
+            with open(args['save_file_results_name'], 'w', newline='') as f_output:
                 f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
