@@ -276,12 +276,12 @@ class DataCollectorAndLabeler:
     def lockAllLabelers(self):
         for sensor_name, sensor in self.sensors.items():
             self.sensor_labelers[sensor_name].lock.acquire()
-        print("Locked all labelers")
+        print("Locked all labelers ")
 
     def unlockAllLabelers(self):
         for sensor_name, sensor in self.sensors.items():
             self.sensor_labelers[sensor_name].lock.release()
-        print("Unlocked all labelers")
+        print("Unlocked all labelers ")
 
     def getLabelersTimeStatistics(self):
         stamps = []  # a list of the several time stamps of the stored messages

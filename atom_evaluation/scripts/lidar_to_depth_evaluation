@@ -90,6 +90,14 @@ if __name__ == "__main__":
 
     # Declare output dict to save the evaluation data if desire
     delta_total = []
+    rms_total=[]
+    delta_xy_total=[]
+    avg_error_total=[]
+    avg_error_x_total = []
+    avg_error_y_total = []
+    stdev_xy_0_total = []
+    stdev_xy_1_total = []
+    n_collections=0
     output_dict = {}
     output_dict['ground_truth_pts'] = {}
 
@@ -112,6 +120,9 @@ if __name__ == "__main__":
         image = cv2.imread(filename)
         depth_pts_in_depth_img = depthInImage(mixed_dataset, collection_key, depth_sensor)
 
+        if len(depth_pts_in_depth_img[0]) == 0:
+            print('No Depth point mapped into the image for collection ' + str(collection_key))
+            continue
         # Clear image annotations
         image = cv2.imread(filename)
 
@@ -151,6 +162,7 @@ if __name__ == "__main__":
         total_pts = len(delta_pts)
         delta_pts = np.array(delta_pts, np.float32)
         rms = np.sqrt((delta_pts ** 2).mean())
+        rms_total.append(rms)
 
         delta_xy = np.array(distances, np.float32)
         delta_xy = delta_xy[:, 0]
@@ -158,12 +170,14 @@ if __name__ == "__main__":
         avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
         stdev_xy = np.std(delta_xy, axis=0)
 
+
         # Recording the errors
         e[collection_key]['rms'] = rms
         e[collection_key]['avg_error_x'] = avg_error_x
         e[collection_key]['avg_error_y'] = avg_error_y
         e[collection_key]['stdev_x'] = stdev_xy[0]
         e[collection_key]['stdev_y'] = stdev_xy[1]
+
 
         # ---------------------------------------
         # --- Drawing ...
@@ -239,6 +253,7 @@ if __name__ == "__main__":
                 value = float(row[col_idx])
             except:
                 continue
+
 
             if value > max:
                 max = value

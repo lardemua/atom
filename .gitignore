@@ -217,3 +217,10 @@ snaps/
 *.vsix
 .vscode/settings.json
 atom_calibration/scripts/deprecated/calibration.code-workspace
+/atom_evaluation/scripts/incomplete.txt
+/atom_evaluation/scripts/output_total.txt
+/atom_evaluation/scripts/partials.txt
+/atom_evaluation/scripts/partials
+/atom_calibration/scripts/calibrate_old
+/atom_calibration/src/atom_calibration/collect/interactive_data_labeler_old.py
+/atom_calibration/src/atom_calibration/collect/label_messages_old.py
