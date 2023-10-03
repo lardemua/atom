@@ -78,7 +78,7 @@ sensors:
     child_link: "hand_camera"
     topic_name: "/hand_camera/image_raw"
     throttle: 10
-    modality: rgb
+    modality: "rgb"
 
 
   # You can have more than one sensor:
@@ -88,7 +88,7 @@ sensors:
     child_link: "another_camera"
     topic_name: "/another_camera/image_raw"
     throttle: 10
-    modality: rgb
+    modality: "rgb"
 
 # ATOM will calibrate the extrinsic parameters of your links.
 # In this section you should discriminate the additional transformations that will be part of the calibrations.
@@ -114,12 +114,12 @@ calibration_pattern:
 
   # The frame id (or link) of the pattern.
   # This link/transformation will be optimized.
-  link: "chessboard_link"
+  link: "pattern_link"
 
   # The parent frame id (or link) of the pattern.
   # For example, in hand-eye calibration the parent link
   # of the pattern can be the end-effector or the base of the arm
-  parent_link: "end_effector"
+  parent_link: "world"
 
   # Defines if the pattern link is the same in all collections (i.e. fixed=true),
   # or each collection will have its own estimate of the link transformation.
