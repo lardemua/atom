@@ -8,10 +8,10 @@ The system is composed of two rgb cameras mounted on a tripod.
 Cameras are called **rgb_left** (red) and **rgb_right** (green).
 The system contains the following topics:
 
-  - /rgb_left/rgb/camera_info 
-  - /rgb_left/rgb/image_raw 
-  - /rgb_right/rgb/camera_info
-  - /rgb_right/rgb/image_raw 
+  - /rgb_left/camera_info 
+  - /rgb_left/image_raw 
+  - /rgb_right/camera_info
+  - /rgb_right/image_raw 
   - /tf
   - /tf_static
 
