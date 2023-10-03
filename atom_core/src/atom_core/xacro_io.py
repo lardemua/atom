@@ -1,5 +1,3 @@
-
-
 # Standard imports
 import os
 from datetime import datetime
@@ -51,7 +49,7 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
 
                 # if origin is None create a new URDFPose.
                 # See https://github.com/lardemua/atom/issues/559
-                if joint.origin is None: # 
+                if joint.origin is None:  #
                     joint.origin = URDFPose()
 
                 # print("Replacing xyz = " + str(joint.origin.xyz) + " by " + str(trans))
@@ -76,11 +74,13 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
     else:
-        
-        urdf_file, _, _ = atom_core.config_io.uriReader(dataset['calibration_config']['description_file'])
-        urdf_path = os.path.dirname(urdf_file)
+        # urdf_file, _, _ = atom_core.config_io.uriReader(dataset['calibration_config']['description_file'])
+        # urdf_path = os.path.dirname(urdf_file)
+        # path_to_file = urdf_path + '/optimized/'
 
-        path_to_file = urdf_path + '/optimized/'
+        rospack = rospkg.RosPack()
+        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/optimized/")
+
         if not os.path.exists(path_to_file):
             os.mkdir(path_to_file)
         filename_results_xacro = path_to_file + file_name
@@ -88,7 +88,7 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
             out.write(URDF.to_xml_string(xml_robot))
 
         optimized_urdf_file = urdf_path + '/optimized.urdf.xacro'
-        with open(optimized_urdf_file, "w",) as out:
+        with open(optimized_urdf_file, "w", ) as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
