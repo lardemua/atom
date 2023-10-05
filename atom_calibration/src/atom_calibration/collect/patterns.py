@@ -1,4 +1,3 @@
-# 3rd-party
 import cv2
 import numpy as np
 
@@ -79,9 +78,17 @@ class CharucoPattern(object):
 
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
-        self.dictionary = cv2.aruco.getPredefinedDictionary(cdictionary)
+        # self.dictionary = cv2.aruco.getPredefinedDictionary(cdictionary)
+
+        # arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_100)
+        print('Getting aruco dict')
+        self.dictionary = cv2.aruco.Dictionary_get(cdictionary)
+        print('Got aruco dict')
+
         # self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length, self.dictionary)
-        self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length, self.dictionary)
+        # self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length, self.dictionary)
+        # TODO changed to CharucoBoard_create
+        self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
         print(self.board)
 
     def detect(self, image, equalize_histogram=False):
@@ -97,13 +104,18 @@ class CharucoPattern(object):
         # print('Line 95')
         # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
         # params = cv2.aruco.DetectorParameters()
-        params = cv2.aruco.DetectorParameters()
+        # params = cv2.aruco.DetectorParameters()
+
+        print('0')
+        params = cv2.aruco.DetectorParameters_create()
 
         # print(params)
         # print('Line 98')
 
         # setup initial data
+        print('1')
         params.adaptiveThreshConstant = 2
+        print('2')
         # params.adaptiveThreshWinSizeMin = 3
         # params.adaptiveThreshWinSizeMax = 10
         # params.adaptiveThreshWinSizeStep = 5
@@ -116,25 +128,38 @@ class CharucoPattern(object):
         params.maxErroneousBitsInBorderRate = .15
         params.errorCorrectionRate = .6
 
+        print('3')
+        params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
         # param.doCornerRefinement = False
 
-        # print('Line 115')
+        print('Line 115')
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
-        # print('corners = ' + str(corners))
-        corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
+        # (corners, ids, rejected) = cv2.aruco.detectMarkers(image, arucoDict,
+	# parameters=arucoParams)
 
+        # print('corners = ' + str(corners))
+        print('Line 129')
+        # corners, ids, rejected, _ = cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
+        print('4')
         if len(corners) > 4:
+            print('4.5')
             ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
+
+            print('5')
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
             # TODO is it 5x5 or 3x3 ...
             # Commented this because it return error in more recent opencv versions
             # ccorners = cv2.cornerSubPix(gray, ccorners, (5, 5), (-1, -1), criteria)
 
+            print('6')
             # A valid detection must have at least 25% of the total number of corners.
             detected = ccorners is not None and len(ccorners) > self.number_of_corners / 4
+
+            print('7')
             if detected:
                 return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
+            print('8')
 
 
         return {"detected": False, 'keypoints': np.array([]), 'ids': []}
@@ -147,3 +172,4 @@ class CharucoPattern(object):
         for point in points:
             cv2.drawMarker(image, tuple(point[0]), (0, 0, 255), cv2.MARKER_CROSS, 14)
             cv2.circle(image, tuple(point[0]), 7, (0, 255, 0), lineType=cv2.LINE_AA)
+
