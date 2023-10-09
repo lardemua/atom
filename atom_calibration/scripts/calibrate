@@ -74,7 +74,7 @@ def main():
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
-                    help="Percentage of noise to add to the initial guess atomic transformations set before.",
+                    help="Percentage of noise to add to the initial guess atomic transformations set before starting optimization.",
                     type=float, default=[0.0, 0.0],),
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help="A string to be evaluated into a lambda function that receives a sensor name as input and "

@@ -8,19 +8,17 @@ import time
 # 3rd-party
 import rospkg
 import rospy
-
 from colorama import Fore, Style
 from std_msgs.msg import Header, ColorRGBA
-from geometry_msgs.msg import Point
-from gazebo_msgs.msg import ModelState, ModelStates
 from geometry_msgs.msg import Point, Pose, Vector3, Quaternion
+from gazebo_msgs.msg import ModelState, ModelStates
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from atom_core.ros_utils import filterLaunchArguments
-
 from gazebo_msgs.srv import SetModelState, GetModelState, GetModelStateRequest, SetModelStateRequest
 from tf2_ros import TransformBroadcaster
+
 br = TransformBroadcaster()
 current_pose = Pose()
 current_pose.orientation.w = 1
@@ -31,7 +29,7 @@ pub = rospy.Publisher('~pattern', MarkerArray, queue_size=0, latch=True)
 
 # local packages
 
-model_name = 'charuco_800x600'
+model_name = 'charuco_800x600_5x5_100'
 server = None
 menu_handler = MenuHandler()
 
@@ -43,7 +41,7 @@ def makeBox( msg, pose):
                    pose=pose,
                    scale=Vector3(x=1.0, y=1.0, z=1.0),
                    color=ColorRGBA(r=1, g=1, b=1, a=1))
-    marker.mesh_resource = 'package://atom_worlds/pattern/models/charuco_800x600/charuco_800x600.dae'
+    marker.mesh_resource = 'package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae'
     marker.mesh_use_embedded_materials = True
     return marker
 

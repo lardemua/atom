@@ -90,7 +90,7 @@ Visualization Manager:
     Max Value: 1
     Median window: 5
     Min Value: 0
-    Name: left_camera-Labels-Image
+    Name: rgb_left-Labels-Image
     Normalize Range: true
     Queue Size: 2
     Transport Hint: raw
@@ -100,7 +100,7 @@ Visualization Manager:
     Enabled: true
     Image Rendering: background and overlay
     Image Topic: /rgb_left/image_raw
-    Name: left_camera-Camera
+    Name: rgb_left-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw
@@ -115,7 +115,7 @@ Visualization Manager:
     Max Value: 1
     Median window: 5
     Min Value: 0
-    Name: right_camera-Labels-Image
+    Name: rgb_right-Labels-Image
     Normalize Range: true
     Queue Size: 2
     Transport Hint: raw
@@ -125,7 +125,7 @@ Visualization Manager:
     Enabled: true
     Image Rendering: background and overlay
     Image Topic: /rgb_right/image_raw
-    Name: right_camera-Camera
+    Name: rgb_right-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw

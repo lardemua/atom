@@ -33,7 +33,7 @@
 description_file: "package://rgb_rgb_system_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rgb_rgb_system/bag1.bag" 
+bag_file: "$ROS_BAGS/rgb_rgb_system/rgb_rgb_system_example_bag.bag" 
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -72,7 +72,7 @@ sensors:
   #   /world_camera/rgb/image_raw
   #
 
-  left_camera:
+  rgb_left:
     link: "rgb_left_optical_frame"
     parent_link: "tripod_left_support"
     child_link: "rgb_left_link"
@@ -80,7 +80,7 @@ sensors:
     throttle: 10
     modality: "rgb"
 
-  right_camera:
+  rgb_right:
     link: "rgb_right_optical_frame"
     parent_link: "tripod_right_support"
     child_link: "rgb_right_link"
@@ -139,7 +139,7 @@ calibration_pattern:
 
   # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
   # See: description_file
-  mesh_file: "package://atom_worlds/pattern/models/charuco_800x600/charuco_800x600.dae"
+  mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
 
   # The border width from the edge corner to the pattern physical edge.
   # Used for 3D sensors and lidars.
@@ -164,7 +164,7 @@ calibration_pattern:
 # If your calibration problem is not fully constrained you should anchored one of the sensors.
 # This makes it immovable during the optimization.
 # This is typically referred to as gauge freedom.
-anchored_sensor: "left_camera"
+anchored_sensor: "rgb_left"
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
 max_duration_between_msgs: 1000

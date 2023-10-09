@@ -5,9 +5,9 @@
             <author>VCGLab</author>
             <authoring_tool>VCGLib | MeshLab</authoring_tool>
         </contributor>
+        <created>Sat Oct 7 22:58:22 2023 GMT</created>
+        <modified>Sat Oct 7 22:58:22 2023 GMT</modified>
         <up_axis>Y_UP</up_axis>
-        <created>qua Jun 10 00:44:20 2020</created>
-        <modified>qua Jun 10 00:44:20 2020</modified>
     </asset>
     <library_images>
         <image id="texture0" name="texture0">
@@ -37,36 +37,9 @@
                 </newparam>
                 <technique sid="common">
                     <blinn>
-                        <emission>
-                            <color>0 0 0 1</color>
-                        </emission>
-                        <ambient>
-                            <color>0 0 0 1</color>
-                        </ambient>
                         <diffuse>
-                            <texture texture="texture0" texcoord="UVSET0"/>
+                            <texture texture="texture0-sampler" texcoord="UVSET0"/>
                         </diffuse>
-                        <specular>
-                            <color>0 0 0 1</color>
-                        </specular>
-                        <shininess>
-                            <float>0.3</float>
-                        </shininess>
-                        <reflective>
-                            <color>0 0 0 1</color>
-                        </reflective>
-                        <reflectivity>
-                            <float>0.5</float>
-                        </reflectivity>
-                        <transparent>
-                            <color>0 0 0 1</color>
-                        </transparent>
-                        <transparency>
-                            <float>0</float>
-                        </transparency>
-                        <index_of_refraction>
-                            <float>0</float>
-                        </index_of_refraction>
                     </blinn>
                 </technique>
             </profile_COMMON>
@@ -76,7 +49,7 @@
         <geometry id="shape0-lib" name="shape0">
             <mesh>
                 <source id="shape0-lib-positions" name="position">
-                    <float_array id="shape0-lib-positions-array" count="24">0.699717 -0.0901255 -0.0106621 0.699717 -0.0901255 -0.000662102 -0.100283 -0.0901255 -0.0106621 -0.100283 -0.0901255 -0.000662102 0.699717 0.509874 -0.0106621 0.699717 0.509874 -0.000662102 -0.100283 0.509874 -0.0106621 -0.100283 0.509874 -0.000662102</float_array>
+                    <float_array id="shape0-lib-positions-array" count="24">0.761264 0.569863 0.010662 0.761264 0.569863 0.000662041 -0.0387357 0.569863 0.0106621 -0.0387357 0.569863 0.000662111 0.761264 -0.0301363 0.010662 0.761264 -0.0301363 0.000662041 -0.0387357 -0.0301362 0.0106621 -0.0387357 -0.0301362 0.000662111</float_array>
                     <technique_common>
                         <accessor count="8" source="#shape0-lib-positions-array" stride="3">
                             <param name="X" type="float"/>
@@ -86,7 +59,7 @@
                     </technique_common>
                 </source>
                 <source id="shape0-lib-normals" name="normal">
-                    <float_array id="shape0-lib-normals-array" count="36">0 -1 0 -1 0 0 -3.72529e-07 1 0 1 0 0 0 0 -1 0 0 1 0 -1 0 -1 0 0 -3.72529e-07 1 0 1 0 0 0 0 -1 0 0 1</float_array>
+                    <float_array id="shape0-lib-normals-array" count="36">0 1 0 -1 0 0 -1.21072e-07 -1 0 1 0 0 1.25729e-07 0 1 -8.7457e-08 0 -1 0 1 0 -1 0 0 -1.21072e-07 -1 0 1 0 0 1.25729e-07 0 1 -8.7457e-08 0 -1</float_array>
                     <technique_common>
                         <accessor count="12" source="#shape0-lib-normals-array" stride="3">
                             <param name="X" type="float"/>

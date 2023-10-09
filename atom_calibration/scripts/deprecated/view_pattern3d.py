@@ -163,7 +163,7 @@ def main():
                         default=0.014)
     args = vars(parser.parse_args())
 
-    scd = SimplePatternDetector(args)
+    SimplePatternDetector(args)
     rospy.spin()
 
 
