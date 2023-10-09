@@ -79,7 +79,10 @@ class CharucoPattern(object):
         self.size = (size["x"], size["y"])
         self.number_of_corners = size["x"] * size["y"]
 
-        self.dictionary = cv2.aruco.Dictionary_get(cdictionary)
+        if cv2.__version__ == '4.6.0':
+            self.dictionary = cv2.aruco.Dictionary_get(cdictionary)
+        else: # all versions from 4.7.0 onward
+            raise ValueError("Cannot use opencv version 4.7.0 and above.")
 
         self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
         # print(self.board)
