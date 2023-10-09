@@ -61,17 +61,17 @@
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start data collector node -->
-    <group if="$(arg overwrite)">
-        <node name="collect_data" pkg="atom_calibration" type="collect_data"
-              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' --overwrite" required="true"
-              output="screen"/>
-    </group>
+<!--    <group if="$(arg overwrite)">-->
+<!--        <node name="collect_data" pkg="atom_calibration" type="collect_data"-->
+<!--              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' &#45;&#45;overwrite" required="true"-->
+<!--              output="screen"/>-->
+<!--    </group>-->
 
-    <group unless="$(arg overwrite)">
-        <node name="collect_data" pkg="atom_calibration" type="collect_data"
-              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
-              output="screen"/>
-    </group>
+<!--    <group unless="$(arg overwrite)">-->
+<!--        <node name="collect_data" pkg="atom_calibration" type="collect_data"-->
+<!--              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"-->
+<!--              output="screen"/>-->
+<!--    </group>-->
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 </launch>

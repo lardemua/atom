@@ -81,10 +81,17 @@ class CharucoPattern(object):
 
         if cv2.__version__ == '4.6.0':
             self.dictionary = cv2.aruco.Dictionary_get(cdictionary)
-        else: # all versions from 4.7.0 onward
-            raise ValueError("Cannot use opencv version 4.7.0 and above.")
+            self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length,
+                                                       self.dictionary)
 
-        self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length, self.dictionary)
+        else: # all versions from 4.7.0 onward
+            self.dictionary = cv2.aruco.getPredefinedDictionary(cdictionary)
+            self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length,
+                                                       self.dictionary)
+            # parameters = cv2.aruco.DetectorParameters()
+            # detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+            # raise ValueError("Cannot use opencv version 4.7.0 and above.")
+
         # print(self.board)
 
     def detect(self, image, equalize_histogram=False):
@@ -101,9 +108,13 @@ class CharucoPattern(object):
         # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
         # params = cv2.aruco.DetectorParameters()
         # params = cv2.aruco.DetectorParameters()
-
-        params = cv2.aruco.DetectorParameters_create()
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
+        if cv2.__version__ == '4.6.0':
+            params = cv2.aruco.DetectorParameters_create()
+            corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
+        else:
+            params = cv2.aruco.DetectorParameters()
+            detector = cv2.aruco.ArucoDetector(self.dictionary, params)
+            corners, ids, rejected = detector.detectMarkers(gray)
 
         # print('corners = ' + str(corners))
         if len(corners) > 4:
