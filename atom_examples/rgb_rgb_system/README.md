@@ -42,52 +42,80 @@ This will put the bag file into your $ROS_BAGS folder.
 
 # Calibration 
 
-...
+The calibration of any robotic system using **ATOM** may have several variants. We recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
 
-<!-- 
-##   Configuring a calibration package
-Once your calibration package is created you will have to configure the calibration procedure by editing the softbot_calibration/calibration/config.yml file with your system information. Here is an example of a config.yml file.
-    
-    rosrun atom_calibration create_calibration_pkg --name softbot_calibration
+In this section, out goal is to carry out the simplest possible calibration pipeline for the **rgb_rgb_system**.
 
-After filling the config.yml file, you can run the package configuration:
+To calibrate, we will need a bagfile called [rgb_rgb_system_example_bag.bag](https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+We produced the bagfile by bringing up the system and then recording a bagfile as described above.
+This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
 
-    rosrun atom_calibration configure_calibration_pkg -n softbot_calibration --use_tfs
+Download the bagfile and put it in **$ROS_BAGS/rgb_rgb_system**. 
 
-This will create a set of files for launching the system, configuring rviz, etc.
+Next we describe each of the steps in the calibration pipeline.
 
-##  Collect data
+## Creating a calibration package
 
-To run a system calibration, one requires sensor data collected at different time instants. We refer to these as data collections. To collect data, the user should launch:
+See also the [generic documentation](https://lardemua.github.io/atom_documentation/procedures/#create-a-calibration-package) on this topic.
 
-    roslaunch softbot_calibration collect_data.launch  output_folder:=~/datasets/softbot/dataset3 overwrite:=true
-## Calibrate sensors
-finally run an optimization that will calibrate your sensors:
+Using ATOM conventions, we define name of the calibration package as **rgb_rgb_system_calibration**, and create it using:
 
-    roslaunch softbot_calibration calibrate.launch dataset_file:=~/datasets/softbot/dataset3/dataset.json run_calibration:=false 
+    rosrun atom_calibration create_calibration_pkg --name rgb_rgb_system_calibration
 
-and then launch the script in standalone mode
+**NOTE**: This procedure is carried out only once, and was done already. As such, this ros package is already [included in the atom repo](https://github.com/lardemua/atom/tree/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration). Therefore, you **should not execute this instruction** for the rgb_rgb_system.
 
-    rosrun atom_calibration calibrate -json ~/datasets/softbot/dataset3/dataset.json  -phased -rv -v -si
-OBS: If needed we can exclude some of the bad collections:
 
-    rosrun atom_calibration calibrate -json ~/datasets/softbot/dataset4/dataset_corrected.json  -phased -rv -v -si -csf "lambda x: int(x) not in [16,21,23,24,34,36]"
+## Configuring the calibration
 
-It is possible to add an initial guess of the position of the sensors in order to get a more real result
 
-    rosrun atom_calibration calibrate -json ~/datasets/softbot/dataset4/dataset_corrected.json  -phased -rv -v -si -csf "lambda x: int(x) not in [18,24,23] " -nig 0.01  0.003 -ss 3 -ipg
+This is the [config.yml](https://github.com/lardemua/atom/blob/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a charuco marker.
+The configuration file points to the bagfile mentioned above, and the _anchored_sensor_ is defined as the **rgb_left** sensor.
 
-To evaluate the calibration that was done, its need to do the annotation
+To configure run:
 
-    rosrun atom_evaluation annotate.py -test_json TEST_JSON_FILE -cs front_left_camera -si -->
+    rosrun rgb_rgb_system_calibration configure
 
-# Installation
+Which will run a series of checks and produce several files inside the **rgb_rgb_system_calibration** package.
 
-##### Add to .bashrc:
-```
-export TURTLEBOT3_MODEL="waffle"
-export ROS_BAGS="/home/<username>/bagfiles"
-export ATOM_DATASETS="/home/<username>/datasets"
-export GAZEBO_MODEL_PATH="`rospack find softbot_gazebo`/models:${GAZEBO_MODEL_PATH}"
-```
 
+## Collecting a dataset
+
+To collect a dataset we run:
+
+    roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example overwrite:=true
+
+And save a few collections. 
+
+We will use as example the [rgb_rgb_system_example_dataset](https://drive.google.com/file/d/1i4cOp1BcPsifmr2VLpYM0mYa0_SWaUGK/view?usp=sharing), which contains 4 collections, as shown bellow.
+
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset**.
+
+Collection |           rgb_left             |           rgb_right
+:----------------:|:-------------------------:|:-------------------------:
+0 | ![](docs/rgb_left_000.jpg) |  ![](docs/rgb_right_000.jpg)
+1 | ![](docs/rgb_left_001.jpg) |  ![](docs/rgb_right_001.jpg)
+2 | ![](docs/rgb_left_002.jpg) |  ![](docs/rgb_right_002.jpg)
+3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
+
+
+## Calibrate
+
+To calibrate, first setup visualization with:
+
+    roslaunch rgb_rgb_system_calibration calibrate.launch
+
+Then carry out the actual calibration using:
+
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv
+
+This will produce a table of residuals per iteration, like this:
+
+![](docs/calibration_output.png)
+
+This is the table presented once calibration is complete, which shows average reprojection errors of under 1 pixel. Sub-pixel accuracy is considered a good result for rgb camera calibration.
+ 
+ Since this is a simulation, the original pose of the cameras is actually the one used by gazebo to produce the images. This means that the cameras are already positioned in the actual ground truth pose, which means that the calibration did not do much in this case. In a real system, the sensors will not be positioned at the ground truth pose. In fact, for real systems, we do not know where the ground truth is.
+
+To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
+
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv -nig
