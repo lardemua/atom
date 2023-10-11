@@ -104,10 +104,7 @@ class CharucoPattern(object):
         if equalize_histogram:  # equalize image histogram
             gray = cv2.equalizeHist(gray)
 
-        # print('Line 95')
-        # more information here https://docs.opencv.org/4.x/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html:w
-        # params = cv2.aruco.DetectorParameters()
-        # params = cv2.aruco.DetectorParameters()
+        # https://github.com/lardemua/atom/issues/629
         if cv2.__version__ == '4.6.0':
             params = cv2.aruco.DetectorParameters_create()
             corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
@@ -116,21 +113,27 @@ class CharucoPattern(object):
             detector = cv2.aruco.ArucoDetector(self.dictionary, params)
             corners, ids, rejected = detector.detectMarkers(gray)
 
-        # print('corners = ' + str(corners))
-        if len(corners) > 4:
-            ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
-            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
-            # TODO is it 5x5 or 3x3 ...
-            ccorners = cv2.cornerSubPix(gray, ccorners, (5, 5), (-1, -1), criteria)
+        if len(corners) <= 4: # Must have more than 3 corner detections
+            return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 
-            # A valid detection must have at least 25% of the total number of corners.
-            detected = ccorners is not None and len(ccorners) > self.number_of_corners / 4
+        # Interpolation 
+        ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, self.board)
+        if ccorners is None: # Must have interpolation running ok
+            return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 
-            if detected:
-                return {'detected': detected, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
+        # Subpixel resolution for corners
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
+        # from https://stackoverflow.com/questions/33117252/cv2-cornersubpix-function-returns-none-value
+        cv2.cornerSubPix(gray, ccorners, (5, 5), (-1, -1), criteria)
+
+        # A valid detection must have at least 25% of the total number of corners.
+        if len(ccorners) <= self.number_of_corners / 4:
+            return {"detected": False, 'keypoints': np.array([]), 'ids': []}
+
+        # If all above works, return detected corners.
+        return {'detected': True, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
 
 
-        return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 
     def drawKeypoints(self, image, result):
         if result['keypoints'] is None or len(result['keypoints']) == 0:

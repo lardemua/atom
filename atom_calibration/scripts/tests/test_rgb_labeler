@@ -61,47 +61,52 @@ class SimplePatternDetector:
         ny = self.config['calibration_pattern']['dimension']['y']
         K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
         D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
- 
 
         result = self.pattern.detect(image, equalize_histogram=False)
 
+        if result['detected']: 
+            print('Pattern detected (' + str(len(result['ids'])) + ' out of ' + str(nx*ny) +  ' corners)')
+        else:
+            print('Failed to detect pattern')
+
         self.pattern.drawKeypoints(image, result)
 
-        objp = np.zeros((nx * ny, 3), np.float32)
-        objp[:, :2] = self.config['calibration_pattern']['size'] * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+        if result['detected']: 
+            objp = np.zeros((nx * ny, 3), np.float32)
+            objp[:, :2] = self.config['calibration_pattern']['size'] * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
-        # Build a numpy array with the chessboard corners
-        corners = np.zeros((len(result['keypoints']), 1, 2), dtype=float)
-        ids = list(range(0, len(result['keypoints'])))
+            # Build a numpy array with the chessboard corners
+            corners = np.zeros((len(result['keypoints']), 1, 2), dtype=float)
+            ids = list(range(0, len(result['keypoints'])))
 
-        points = result['keypoints'].astype(np.int32)
-        for idx, (point, id) in enumerate(zip(result['keypoints'], result['ids'])):
-            corners[idx, 0, 0] = point[0][0]
-            corners[idx, 0, 1] = point[0][1]
-            ids[idx] = id
+            points = result['keypoints'].astype(np.int32)
+            for idx, (point, id) in enumerate(zip(result['keypoints'], result['ids'])):
+                corners[idx, 0, 0] = point[0][0]
+                corners[idx, 0, 1] = point[0][1]
+                ids[idx] = id
 
-        # Find pose of the camera w.r.t the chessboard
-        filtered_objp = objp[ids]
-        ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
-        np_ids = np.array(ids, dtype=int)
+            # Find pose of the camera w.r.t the chessboard
+            filtered_objp = objp[ids]
+            ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
+            np_ids = np.array(ids, dtype=int)
 
-        # alternative using estimatePoseBoard
-        ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
-                                                                np_ids,
-                                                                self.pattern.board,
-                                                                K,
-                                                                D,
-                                                                rvecs, tvecs)
+            # alternative using estimatePoseBoard
+            ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                                    np_ids,
+                                                                    self.pattern.board,
+                                                                    K,
+                                                                    D,
+                                                                    rvecs, tvecs)
 
-        sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
-        trans = list(sensor_T_chessboard[0: 3, 3])
-        quat = list(transformations.quaternion_from_matrix(sensor_T_chessboard)) 
+            sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
+            trans = list(sensor_T_chessboard[0: 3, 3])
+            quat = list(transformations.quaternion_from_matrix(sensor_T_chessboard)) 
 
-        self.broadcaster.sendTransform(trans, quat, rospy.Time.now(), 'pattern', image_msg.header.frame_id)
+            self.broadcaster.sendTransform(trans, quat, rospy.Time.now(), 'pattern', image_msg.header.frame_id)
         
-        # Try to draw frame on the image
-        cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.5)
-        # https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html
+            # Draw frame on the image
+            cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.5)
+            # https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html
 
         image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
         self.image_pub.publish(image_msg_out)
