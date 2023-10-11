@@ -136,3 +136,5 @@ Which again, have subpixel accuracy. This means the procedure achieved a success
 The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets. 
 
 Download the [rgb_rgb_system_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset**.
+
+    roslaunch rgb_rgb_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset/atom_calibration.json
