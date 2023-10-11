@@ -82,13 +82,13 @@ Which will run a series of checks and produce several files inside the **rgb_rgb
 
 To collect a dataset we run:
 
-    roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example overwrite:=true
+    roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_rgb_system/dataset1 overwrite:=true
 
 And save a few collections. 
 
-We will use as example the [rgb_rgb_system_example_dataset](https://drive.google.com/file/d/1i4cOp1BcPsifmr2VLpYM0mYa0_SWaUGK/view?usp=sharing), which contains 4 collections, as shown bellow.
+We will use as example the [rgb_rgb_system_example_train_dataset](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing), which contains 4 collections, as shown bellow.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset**.
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset**.
 
 Collection |           rgb_left             |           rgb_right
 :----------------:|:-------------------------:|:-------------------------:
@@ -98,7 +98,7 @@ Collection |           rgb_left             |           rgb_right
 3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
 
 
-## Calibrate
+## Calibration
 
 To calibrate, first setup visualization with:
 
@@ -118,4 +118,21 @@ This is the table presented once calibration is complete, which shows average re
 
 To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv -nig
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv -nig 0.1 0.1
+
+Which starts the calibration with these errors:
+
+![](docs/calibration_output2.png)
+
+which are quite high, because of the incorrect pose of the sensors,  and ends up converging into these figures:
+
+![](docs/calibration_output3.png)
+
+Which again, have subpixel accuracy. This means the procedure achieved a successful calibration.
+
+
+## Evaluation
+
+The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets. 
+
+Download the [rgb_rgb_system_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset**.
