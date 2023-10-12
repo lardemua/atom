@@ -62,7 +62,7 @@ Using ATOM conventions, we define name of the calibration package as **rgb_rgb_s
 
     rosrun atom_calibration create_calibration_pkg --name rgb_rgb_system_calibration
 
-**NOTE**: This procedure is carried out only once, and was done already. As such, this ros package is already [included in the atom repo](https://github.com/lardemua/atom/tree/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration). Therefore, you **should not execute this instruction** for the rgb_rgb_system.
+**NOTE**: This procedure is carried out only once, and was done already. As such, this ros package is already [included in the atom repo](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration). Therefore, you **should not execute this instruction** for the rgb_rgb_system.
 
 
 ## Configuring the calibration
@@ -98,7 +98,7 @@ Collection |           rgb_left             |           rgb_right
 3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
 
 
-## Calibration
+## Running the Calibration
 
 To calibrate, first setup visualization with:
 
