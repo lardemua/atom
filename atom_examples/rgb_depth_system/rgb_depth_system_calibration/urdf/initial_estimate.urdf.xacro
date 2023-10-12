@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+    <!-- Define  properties -->
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+
+    <!-- Colors -->
+    <material name="tripod_color">
+        <color rgba="0.21 0.21 .21 1" />
+    </material>
+
+    <!-- Includes -->
+    <xacro:include filename="$(find rgb_depth_system_description)/urdf/robot.gazebo.xacro" />
+    <xacro:include filename="$(find rgb_depth_system_description)/urdf/rgbd_camera.urdf.xacro" />
+
+    <!-- RGBD Camera -->
+    <xacro:rgbd_camera parent="tripod_plate" prefix="rgbd" color_rgb_gazebo="Blue" color_depth_gazebo="Turquoise">
+        <origin xyz="0 0.08 0.042" rpy="0 0 0" />
+        <color_rgb_rviz>
+            <material name="blue">
+                <color rgba="0.25 0.41 0.88 1" />
+            </material>
+        </color_rgb_rviz>
+        <color_depth_rviz>
+            <material name="cyan">
+                <color rgba="0.53 1 1 1" />
+            </material>
+        </color_depth_rviz>
+    </xacro:rgbd_camera>
+
+    <!-- Define links and joints -->
+    <link name="world" />
+
+    <!-- Tripod link-->
+    <link name="tripod">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://rgb_depth_system_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
+            </geometry>
+            <material name="tripod_color" />
+        </visual>
+        <collision name="tripod_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://rgb_depth_system_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- parent to tripod -->
+    <joint name="world_to_tripod" type="fixed">
+        <parent link="world" />
+        <child link="tripod" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+
+    <link name="tripod_plate">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.05 0.015" />
+            </geometry>
+            <material name="tripod_color" />
+        </visual>
+        <collision name="tripod_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.05 0.015" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- tripod to tripod plate-->
+    <joint name="tripod_to_tripod_plate" type="fixed">
+        <parent link="tripod" />
+        <child link="tripod_plate" />
+        <origin xyz=".01 .03 1.65" rpy="0 0.314 0" />
+    </joint>
+
+</robot>

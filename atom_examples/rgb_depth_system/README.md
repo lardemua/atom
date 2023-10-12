@@ -69,7 +69,7 @@ Using ATOM conventions, we define name of the calibration package as **rgb_depth
 
     rosrun atom_calibration create_calibration_pkg --name rgb_depth_system_calibration
 
-**NOTE**: This procedure is carried out only once, and was done already. As such, this ros package is already [included in the atom repo](https://github.com/lardemua/atom/tree/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration). Therefore, you **should not execute this instruction** for the rgb_rgb_system.
+**NOTE**: This procedure is carried out only once, and was done already. As such, this ros package is already [included in the atom repo](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rgb_depth_system/rgb_depth_system_calibration). Therefore, you **should not execute this instruction** for the rgb_depth_system.
 
 
 ## Configuring the calibration
@@ -80,7 +80,7 @@ The configuration file points to the bagfile mentioned above, and the _anchored_
 
 To configure run:
 
-    rosrun rgb_rgb_system_calibration configure
+    rosrun rgb_depth_system_calibration configure
 
 Which will run a series of checks and produce several files inside the **rgb_rgb_system_calibration** package.
 
