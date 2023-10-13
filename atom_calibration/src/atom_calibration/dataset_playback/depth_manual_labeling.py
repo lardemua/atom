@@ -11,10 +11,15 @@ from sqlalchemy import true
 
 def normalizeDepthImage(image, max_value=5):
     height, width = image.shape
+
+    # Removing nans before casting to uint8
+    # https://github.com/lardemua/atom/issues/643
+    image_without_nans = np.nan_to_num(image)
+
     gui_image = np.zeros((height, width, 3), dtype=np.uint8)
-    gui_image[:, :, 0] = image / max_value * 255
-    gui_image[:, :, 1] = image / max_value * 255
-    gui_image[:, :, 2] = image / max_value * 255
+    gui_image[:, :, 0] = image_without_nans / max_value * 255
+    gui_image[:, :, 1] = image_without_nans / max_value * 255
+    gui_image[:, :, 2] = image_without_nans / max_value * 255
     return gui_image
 
 
