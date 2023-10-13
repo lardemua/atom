@@ -95,7 +95,7 @@ class Table:
         if self.arg['save_file_results']:
             if args['save_file_results_name'] is None:
                 results_name = 'ground_truth_frame_results.csv'
-                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, self.table_to_save.get_csv_string.get_csv_string()())
+                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, self.table_to_save)
             else: 
                 with open(args['save_file_results_name'], 'w', newline='') as f_output:
                     f_output.write(self.table_to_save.get_csv_string())
