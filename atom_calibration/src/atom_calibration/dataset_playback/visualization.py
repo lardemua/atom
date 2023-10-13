@@ -432,6 +432,7 @@ def setupVisualization(dataset, args, selected_collection_key):
         if sensor['modality'] not in ['depth']:  # only depth sensors
             continue
 
+
         if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
             continue
 
@@ -598,6 +599,9 @@ def visualizationFunction(models, selection, clicked_points=None):
             continue
 
         if not dataset['collections'][selected_collection_key]['labels'][sensor_key]['detected']:
+            continue
+
+        if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
             continue
 
         color = (graphics['collections'][collection_key]['color'][0], graphics['collections']
