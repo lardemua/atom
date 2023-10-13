@@ -75,14 +75,14 @@ Using ATOM conventions, we define name of the calibration package as **rgb_depth
 ## Configuring the calibration
 
 
-This is the [config.yml](https://github.com/lardemua/atom/blob/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a charuco marker.
-The configuration file points to the bagfile mentioned above, and the _anchored_sensor_ is defined as the **rgb_left** sensor.
+This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/rgb_depth_system/rgb_depth_system_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb** and **depth**. The pattern is a charuco marker.
+The configuration file points to the bagfile mentioned above, and the _anchored_sensor_ is defined as the **rgb** sensor.
 
 To configure run:
 
     rosrun rgb_depth_system_calibration configure
 
-Which will run a series of checks and produce several files inside the **rgb_rgb_system_calibration** package.
+Which will run a series of checks and produce several files inside the **rgb_depth_system_calibration** package.
 
 
 ## Collecting a dataset
@@ -93,27 +93,29 @@ To collect a dataset we run:
 
 And save a few collections. 
 
-We will use as example the [rgb_rgb_system_example_train_dataset](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing), which contains 4 collections, as shown bellow.
+We will use as example the [rgb_depth_system_example_train_dataset](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing), which contains 4 collections, as shown bellow.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset**.
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset**.
 
-Collection |           rgb_left             |           rgb_right
+Collection |           rgb             |           depth
 :----------------:|:-------------------------:|:-------------------------:
-0 | ![](docs/rgb_left_000.jpg) |  ![](docs/rgb_right_000.jpg)
-1 | ![](docs/rgb_left_001.jpg) |  ![](docs/rgb_right_001.jpg)
-2 | ![](docs/rgb_left_002.jpg) |  ![](docs/rgb_right_002.jpg)
-3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
+0 | ![](docs/rgb_000.jpg) |  ![](docs/depth_000.png)
+1 | ![](docs/rgb_001.jpg) |  ![](docs/depth_001.png)
+2 | ![](docs/rgb_002.jpg) |  ![](docs/depth_002.png)
+3 | ![](docs/rgb_003.jpg) |  ![](docs/depth_003.png)
+3 | ![](docs/rgb_004.jpg) |  ![](docs/depth_004.png)
+3 | ![](docs/rgb_005.jpg) |  ![](docs/depth_005.png)
 
 
 ## Running the Calibration
 
 To calibrate, first setup visualization with:
 
-    roslaunch rgb_rgb_system_calibration calibrate.launch
+    roslaunch rgb_depth_system_calibration calibrate.launch
 
 Then carry out the actual calibration using:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset.json -v -rv
 
 This will produce a table of residuals per iteration, like this:
 
