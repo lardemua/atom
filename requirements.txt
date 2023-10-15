@@ -16,5 +16,6 @@ urdf-parser-py
 SQLAlchemy
 open3d
 pytictoc
+scikit-image
 
 
