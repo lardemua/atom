@@ -668,10 +668,16 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         # ------------------------------------------------------
 
         # Compute center of pattern_mask
-        M = cv2.moments(pattern_mask)
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        center = (cX, cY) 
+        if pattern_mask is not None:
+            M = cv2.moments(pattern_mask)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY) 
+        else:
+            M = cv2.moments(pattern_solid_mask)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY) 
 
         idxs_rows = []
         idxs_cols = []
@@ -683,9 +689,16 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
 
             discrete_line = list(zip(*line(*(x,y), *center)))
             for xi, yi in discrete_line:
-                if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
-                    x, y = xi, yi
-                    break
+
+                if pattern_mask is not None:
+                    if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                        x, y = xi, yi
+                        break
+                else:
+                    if pattern_solid_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                        x, y = xi, yi
+                        break
+
 
             # if np.isnan(image[y, x]):  # if x,y is nan in depth image, find nearest white pixel
             #     closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y, x))
