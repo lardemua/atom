@@ -164,7 +164,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
                                              debug=False,
                                              subsample_solid_points=7, limit_sample_step=1,
                                              pattern_mask=pattern_mask_filtered,
-                                             filter_border_edges=0.25)
+                                             filter_border_edges=0.025)
 
 
         # Update the idxs and idxs_limit labels
