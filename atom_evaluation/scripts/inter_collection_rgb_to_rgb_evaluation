@@ -59,7 +59,7 @@ from atom_core.geometry import matrixToRodrigues, traslationRodriguesToTransform
 # Atom imports
 from atom_core.atom import getTransform
 from atom_core.drawing import drawCross2D, drawSquare2D
-from atom_core.utilities import rootMeanSquare, saveFileResults
+from atom_core.utilities import rootMeanSquare, saveFileResults, verifyFixedPattern
 
 # -------------------------------------------------------------------------------
 # --- IMPORTS
@@ -182,6 +182,11 @@ if __name__ == "__main__":
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
     mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
+
+    # ---------------------------------------
+    # --- Verify if pattern is fixed
+    # ---------------------------------------
+    verifyFixedPattern(mixed_dataset)
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors

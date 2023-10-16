@@ -26,7 +26,7 @@ from copy import deepcopy
 from atom_core.atom import getTransform
 from atom_core.vision import depthToImage
 from atom_core.dataset_io import getMixedDataset, readAnnotationFile, loadResultsJSON, filterCollectionsFromDataset
-from atom_core.utilities import rootMeanSquare, saveFileResults
+from atom_core.utilities import rootMeanSquare, saveFileResults, verifyFixedPattern
 
 
 # -------------------------------------------------------------------------------
@@ -88,6 +88,12 @@ if __name__ == "__main__":
 
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+
+    # ---------------------------------------
+    # --- Verify if pattern is fixed
+    # ---------------------------------------
+    verifyFixedPattern(mixed_dataset)
+
 
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---

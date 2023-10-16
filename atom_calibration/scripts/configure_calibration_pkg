@@ -599,31 +599,35 @@ if __name__ == "__main__":
         # Store the evaluation description in the sensor_combinations_dict
         sensor_combinations_dict[source + '_to_' + target] = evaluation_description
 
-        # Create an inter-collection evaluation description
-        inter_collection_evaluation_description = {
-            'filename': None,
-            'args': None,
-        }
-        
-        # Set the filename and arguments for inter-collection evaluation
-        inter_collection_evaluation_description['filename'] = 'inter_collection_' + evaluation_description['filename']
-        inter_collection_evaluation_description['args'] = evaluation_description['args'] + ' -wf ' + config['world_link']
+        # Only valid when sensor is fixed
+        if config['calibration_pattern']['fixed']:
+            # Create an inter-collection evaluation description
+            inter_collection_evaluation_description = {
+                'filename': None,
+                'args': None,
+            }
+            
+            # Set the filename and arguments for inter-collection evaluation
+            inter_collection_evaluation_description['filename'] = 'inter_collection_' + evaluation_description['filename']
+            inter_collection_evaluation_description['args'] = evaluation_description['args'] + ' -wf ' + config['world_link']
 
-        # Store the inter-collection evaluation description in the sensor_combinations_dict
-        sensor_combinations_dict['inter_collection_' + source + '_to_' + target] = inter_collection_evaluation_description
+            # Store the inter-collection evaluation description in the sensor_combinations_dict
+            sensor_combinations_dict['inter_collection_' + source + '_to_' + target] = inter_collection_evaluation_description
     
-    # Create evaluation descriptions for sensors against themselves
-    for sensor in config['sensors'].keys():
-        modality = getModalityEvaluation(config['sensors'][sensor])
-        evaluation_description = {
-            'filename': None,
-            'args': None,
-        }
+    # Only valid when sensor is fixed
+    if config['calibration_pattern']['fixed']:
+        # Create evaluation descriptions for sensors against themselves
+        for sensor in config['sensors'].keys():
+            modality = getModalityEvaluation(config['sensors'][sensor])
+            evaluation_description = {
+                'filename': None,
+                'args': None,
+            }
 
-        evaluation_description['filename'] = 'inter_collection_' + modality + '_to_' + modality
-        evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
+            evaluation_description['filename'] = 'inter_collection_' + modality + '_to_' + modality
+            evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
 
-        sensor_combinations_dict['inter_collection_' + sensor + '_to_' + sensor] = evaluation_description
+            sensor_combinations_dict['inter_collection_' + sensor + '_to_' + sensor] = evaluation_description
 
 
     template = env.get_template(os.path.basename(launch_file))

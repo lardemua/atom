@@ -187,3 +187,9 @@ def saveFileResults(train_json, test_json, results_name, table_to_save):
             os.makedirs(folder_name + '/results')
         with open(folder_name + '/results/'+ dataset_name + '_' + results_name, 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
+            
+def verifyFixedPattern(dataset):
+    print('Checking if calibration pattern is fixed ...', end='')
+
+    if not dataset['calibration_config']['calibration_pattern']['fixed']:
+        atomError('Calibration pattern is not fixed, inter collection evaluation is disabled')
