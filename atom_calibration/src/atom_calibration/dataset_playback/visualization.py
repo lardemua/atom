@@ -736,13 +736,13 @@ def visualizationFunction(models, selection, clicked_points=None):
                 if not clicked_points[selected_collection_key][sensor_key]['valid_polygon']:
                     # Draw a cross for each point
                     for point in clicked_sensor_points:
-                        drawSquare2D(gui_image, point['x'], point['y'], size=5, color=(50, 190, 0))
+                        drawSquare2D(gui_image, point['x'], point['y'], size=7, color=(50, 190, 0), thickness=2)
 
                     # Draw a line segment for each pair of consecutive points
                     for point_start, point_end in zip(clicked_sensor_points[:-1], clicked_sensor_points[1:]):
                         cv2.line(gui_image, pt1=(point_start['x'], point_start['y']),
                                  pt2=(point_end['x'], point_end['y']),
-                                 color=(0, 0, 255), thickness=1)
+                                 color=(0, 0, 255), thickness=2)
 
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 

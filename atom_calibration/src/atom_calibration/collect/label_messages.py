@@ -17,6 +17,7 @@ from cv_bridge import CvBridge
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
+from skimage.draw import line
 
 # Atom imports
 
@@ -554,6 +555,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
 
+
     # contours using cv2.findContours
     contours, hierarchy = cv2.findContours(pattern_solid_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -604,6 +606,13 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         cv2.imshow('pattern_solid_mask', pattern_solid_mask)
         cv2.namedWindow('pattern_edges_mask', cv2.WINDOW_NORMAL)
         cv2.imshow('pattern_edges_mask', pattern_edges_mask)
+
+
+        or_solid_edges = (np.logical_or(pattern_solid_mask.astype(bool), pattern_edges_mask.astype(bool))).astype(np.uint8)*255
+        xor_solid_edges = (np.logical_xor(pattern_solid_mask.astype(bool), or_solid_edges.astype(bool))).astype(np.uint8)*255
+        cv2.namedWindow('xor_solid_edges', cv2.WINDOW_NORMAL)
+        cv2.imshow('xor_solid_edges', xor_solid_edges)
+
         print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
 
     # -------------------------------------
@@ -636,7 +645,9 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
         # Also, the solid mask coordinates may be subsampled because they contain a lot of points.
 
+        # ------------------------------------------------------
         # Solid mask coordinates
+        # ------------------------------------------------------
         sampled = np.zeros(image.shape, dtype=bool)
         sampled[::subsample_solid_points, ::subsample_solid_points] = True
         idxs_rows, idxs_cols = np.where(np.logical_and(pattern_solid_mask, sampled))
@@ -652,19 +663,49 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
                 # store linear index
                 labels['idxs'].append(col + original_width * row)
 
+        # ------------------------------------------------------
         # Edges mask coordinates computed from the contours
+        # ------------------------------------------------------
+
+        # Compute center of pattern_mask
+        if pattern_mask is not None:
+            M = cv2.moments(pattern_mask)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY) 
+        else:
+            M = cv2.moments(pattern_solid_mask)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY) 
+
         idxs_rows = []
         idxs_cols = []
         external_contour = contours[0]
-        for value in external_contour:
+        for value in external_contour: # for each value in contours, correct it by analyzing a scan line that goes from the center to the point.
+
             x = value[0][0]
             y = value[0][1]
 
-            if np.isnan(image[y, x]):  # if x,y is nan in depth image, find nearest white pixel
-                closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y, x))
-                x = closest_not_nan_pixel[1]
-                y = closest_not_nan_pixel[0]
+            discrete_line = list(zip(*line(*(x,y), *center)))
+            for xi, yi in discrete_line:
 
+                if pattern_mask is not None:
+                    if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                        x, y = xi, yi
+                        break
+                else:
+                    if pattern_solid_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                        x, y = xi, yi
+                        break
+
+
+            # if np.isnan(image[y, x]):  # if x,y is nan in depth image, find nearest white pixel
+            #     closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y, x))
+            #     x = closest_not_nan_pixel[1]
+            #     y = closest_not_nan_pixel[0]
+
+            # Add point only if it is far away from the image borders
             if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
                 if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
                     idxs_rows.append(y)
@@ -690,9 +731,11 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     # Create a nice color image as result
     gui_image = np.zeros((height, width, 3), dtype=np.uint8)
     max_value = 5
-    gui_image[:, :, 0] = image / max_value * 255
-    gui_image[:, :, 1] = image / max_value * 255
-    gui_image[:, :, 2] = image / max_value * 255
+
+    image_without_nans = np.nan_to_num(image)
+    gui_image[:, :, 0] = image_without_nans / max_value * 255
+    gui_image[:, :, 1] = image_without_nans / max_value * 255
+    gui_image[:, :, 2] = image_without_nans / max_value * 255
 
     if labels['detected']:
         if pattern_mask is None:
@@ -753,7 +796,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
 
     if debug:
         cv2.imshow('ResultImage', gui_image)
-        cv2.waitKey(5)
+        cv2.waitKey(0)
         print('Time taken preparing gui image ' + str((rospy.Time.now() - now).to_sec()))
 
     return labels, gui_image, new_seed_point
