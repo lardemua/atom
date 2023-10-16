@@ -69,110 +69,138 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
     # polygon closed, compute new labels
     if start_to_end_distance < tolerance_radius:
         tic = rospy.Time.now()
-        print('Labeling pattern from user defined polygon .. it may take some time ...')
-        height = dataset['sensors'][sensor_key]['camera_info']['height']
-        width = dataset['sensors'][sensor_key]['camera_info']['width']
-        pattern_mask = getMaskFromPoints(clicked_points[collection_key][sensor_key]['points'], height, width)
-        msg, image = getMsgAndCvImageFromDictionaryDepth(dataset['collections'][collection_key]['data'][sensor_key])
 
-        # Filter out edges where depth is very far away
-        # https://github.com/lardemua/atom/issues/612
+        depth_labeling_mode = 'delete'
+        if depth_labeling_mode == 'delete':
+            print('Deleting depth boundary inside polygon ...')
 
-        # print('pattern_mask.dtype = ' + str(pattern_mask.dtype))
-        # print('type(image) = ' + str(type(image)))
-        # print('image.dtype = ' + str(image.dtype))
+            height = dataset['sensors'][sensor_key]['camera_info']['height']
+            width = dataset['sensors'][sensor_key]['camera_info']['width']
+            pattern_mask = getMaskFromPoints(clicked_points[collection_key][sensor_key]['points'], height, width)
 
-        # calculate moments of binary image
-        M = cv2.moments(pattern_mask)
-        
-        # calculate x,y coordinate of center
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        center = (cX, cY) 
-        # put text and highlight the center
- 
-        pattern_mask_bool = pattern_mask.astype(bool)
-        pattern_mask_filtered = deepcopy(pattern_mask)
-        
+            idxs_to_remove = [] 
+            for idx, linear_idx in enumerate(dataset['collections'][collection_key]['labels'][sensor_key]['idxs_limit_points']):
+                y = int(int(linear_idx) / int(width))
+                x = linear_idx - width * y
 
-        # cv2.imshow('pattern_mask', pattern_mask)
-        height, width = image.shape
-        for x in range(0, width):
-            for y in range(0, height):
-                if pattern_mask[y,x] == 255:
+                if pattern_mask[y,x] == 255: # point inside polygon
+                    idxs_to_remove.append(idx)
 
-                    # value = image[y,x]
+            idxs_to_remove.reverse()
+            for idx in idxs_to_remove:
+                del dataset['collections'][collection_key]['labels'][sensor_key]['idxs_limit_points'][idx]
 
-                    # print('centroid= ' + str(center))
-                    # print('centroid_range = ' + str(image[cY, cX]))
+            clicked_points[collection_key][sensor_key]['valid_polygon'] = True
 
-                    # being start and end two points (x1,y1), (x2,y2)
-                    discrete_line = list(zip(*line(*center, *(x,y))))
-                    # print('discrete_line = ' + str(discrete_line))
-
-                    ranges = [image[b,a] for a,b in discrete_line]
-                    # print('ranges = ' + str(ranges))
+            print('Completed deleting depth boundary inside polygon') 
 
 
-                    # print('x=' + str(x) + ' y=' + str(y)) 
-                    # print('value=' + str(value)) 
+        elif depth_labeling_mode == 'detect':
 
-                    idxs_to_remove = []
-                    remove_all = False
-                    for (x0, y0), (x1, y1) in zip(discrete_line[0:-1], discrete_line[1:]):
-                        value0 = image[y0,x0]
-                        value1 = image[y1,x1]
-                        if np.isnan(value0) or np.isnan(value1):
-                            continue
+            print('Labeling pattern from user defined polygon .. it may take some time ...')
+            height = dataset['sensors'][sensor_key]['camera_info']['height']
+            width = dataset['sensors'][sensor_key]['camera_info']['width']
+            pattern_mask = getMaskFromPoints(clicked_points[collection_key][sensor_key]['points'], height, width)
+            msg, image = getMsgAndCvImageFromDictionaryDepth(dataset['collections'][collection_key]['data'][sensor_key])
 
-                        diff = abs(value1 - value0)
-                        if diff > 0.1 or remove_all:
-                            # print('removing pixel x=' + str(x1) + ',y=' + str(y1) + ' from mask')
-                            pattern_mask_filtered[y1,x1] = 0
-                            remove_all = True
+            # Filter out edges where depth is very far away
+            # https://github.com/lardemua/atom/issues/612
 
-                    # cv2.imshow('pattern_mask', pattern_mask)
-#                     gui = normalizeDepthImage(image, max_value=5)
-#                     drawSquare2D(gui, x, y, size=7, color=(50, 190, 0), thickness=2)
-# 
-#                     cv2.circle(gui, (cX, cY), 5, (255, 255, 255), -1)
-#                     # cv2.putText(gui, "centroid", (cX - 25, cY - 25),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),2)
-# 
-#                     for x,y in discrete_line:
-#                         cv2.line(gui, (x, y), (x, y), (128,0,0), 1)
-# 
-                    
-                    # cv2.imshow('gui', gui)
-                    # cv2.waitKey(10)
+            # print('pattern_mask.dtype = ' + str(pattern_mask.dtype))
+            # print('type(image) = ' + str(type(image)))
+            # print('image.dtype = ' + str(image.dtype))
 
-        # pattern_mask_removals = (np.logical_xor(pattern_mask.astype(bool), pattern_mask_filtered.astype(bool))).astype(np.uint8)*255
-        # cv2.imshow('pattern_mas_removals', pattern_mask_removals)
-        # cv2.waitKey(0)
-        # print('DONE')
-        # new_values = image[pattern_mask_filtered.astype(bool)]
-        # with np.printoptions(threshold=np.inf):
-        #     print(new_values)
-        # # cv2.imwrite('pattern_mask_filtered.png', pattern_mask_filtered)
-        # pattern_mask_filtered = cv2.imread('pattern_mask_filtered.png', cv2.IMREAD_GRAYSCALE)
-        # cv2.namedWindow('pattern_filtered', cv2.WINDOW_NORMAL)
-        # cv2.imshow('pattern_filtered', pattern_mask_filtered)
+            # calculate moments of binary image
+            M = cv2.moments(pattern_mask)
+            
+            # calculate x,y coordinate of center
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY) 
+            # put text and highlight the center
+    
+            pattern_mask_bool = pattern_mask.astype(bool)
+            pattern_mask_filtered = deepcopy(pattern_mask)
+            
 
-        # TODO #646 we should use argument filter_border_edges here as well
-        labels, gui_image, _ = labelDepthMsg(msg, seed=None, bridge=None,
-                                             pyrdown=0, scatter_seed=True,
-                                             scatter_seed_radius=8,
-                                             debug=False,
-                                             subsample_solid_points=7, limit_sample_step=1,
-                                             pattern_mask=pattern_mask_filtered,
-                                             filter_border_edges=0.025)
+            # cv2.imshow('pattern_mask', pattern_mask)
+            height, width = image.shape
+            for x in range(0, width):
+                for y in range(0, height):
+                    if pattern_mask[y,x] == 255:
+
+                        # value = image[y,x]
+
+                        # print('centroid= ' + str(center))
+                        # print('centroid_range = ' + str(image[cY, cX]))
+
+                        # being start and end two points (x1,y1), (x2,y2)
+                        discrete_line = list(zip(*line(*center, *(x,y))))
+                        # print('discrete_line = ' + str(discrete_line))
+
+                        ranges = [image[b,a] for a,b in discrete_line]
+                        # print('ranges = ' + str(ranges))
 
 
-        # Update the idxs and idxs_limit labels
-        dataset['collections'][collection_key]['labels'][sensor_key] = labels
+                        # print('x=' + str(x) + ' y=' + str(y)) 
+                        # print('value=' + str(value)) 
 
-        clicked_points[collection_key][sensor_key]['valid_polygon'] = True
+                        idxs_to_remove = []
+                        remove_all = False
+                        for (x0, y0), (x1, y1) in zip(discrete_line[0:-1], discrete_line[1:]):
+                            value0 = image[y0,x0]
+                            value1 = image[y1,x1]
+                            if np.isnan(value0) or np.isnan(value1):
+                                continue
 
-        print('Labeling pattern completed in  ' + str((rospy.Time.now() - tic).to_sec()))
+                            diff = abs(value1 - value0)
+                            if diff > 0.1 or remove_all:
+                                # print('removing pixel x=' + str(x1) + ',y=' + str(y1) + ' from mask')
+                                pattern_mask_filtered[y1,x1] = 0
+                                remove_all = True
+
+                        # cv2.imshow('pattern_mask', pattern_mask)
+    #                     gui = normalizeDepthImage(image, max_value=5)
+    #                     drawSquare2D(gui, x, y, size=7, color=(50, 190, 0), thickness=2)
+    # 
+    #                     cv2.circle(gui, (cX, cY), 5, (255, 255, 255), -1)
+    #                     # cv2.putText(gui, "centroid", (cX - 25, cY - 25),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),2)
+    # 
+    #                     for x,y in discrete_line:
+    #                         cv2.line(gui, (x, y), (x, y), (128,0,0), 1)
+    # 
+                        
+                        # cv2.imshow('gui', gui)
+                        # cv2.waitKey(10)
+
+            # pattern_mask_removals = (np.logical_xor(pattern_mask.astype(bool), pattern_mask_filtered.astype(bool))).astype(np.uint8)*255
+            # cv2.imshow('pattern_mas_removals', pattern_mask_removals)
+            # cv2.waitKey(0)
+            # print('DONE')
+            # new_values = image[pattern_mask_filtered.astype(bool)]
+            # with np.printoptions(threshold=np.inf):
+            #     print(new_values)
+            # # cv2.imwrite('pattern_mask_filtered.png', pattern_mask_filtered)
+            # pattern_mask_filtered = cv2.imread('pattern_mask_filtered.png', cv2.IMREAD_GRAYSCALE)
+            # cv2.namedWindow('pattern_filtered', cv2.WINDOW_NORMAL)
+            # cv2.imshow('pattern_filtered', pattern_mask_filtered)
+
+            # TODO #646 we should use argument filter_border_edges here as well
+            labels, gui_image, _ = labelDepthMsg(msg, seed=None, bridge=None,
+                                                pyrdown=0, scatter_seed=True,
+                                                scatter_seed_radius=8,
+                                                debug=False,
+                                                subsample_solid_points=7, limit_sample_step=1,
+                                                pattern_mask=pattern_mask_filtered,
+                                                filter_border_edges=0.025)
+
+
+            # Update the idxs and idxs_limit labels
+            dataset['collections'][collection_key]['labels'][sensor_key] = labels
+
+            clicked_points[collection_key][sensor_key]['valid_polygon'] = True
+
+            print('Labeling pattern completed in  ' + str((rospy.Time.now() - tic).to_sec()))
 
 
 def clickedPointsReset(clicked_points, collection_key, sensor_key):
