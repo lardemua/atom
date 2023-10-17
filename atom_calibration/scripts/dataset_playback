@@ -104,6 +104,10 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection+1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
                 saveResultsJSON(output_file, dataset, freeze_dataset=True)
+
+                # More intuitive if detect mode is True at the beginning of a new collection
+                depth_mode['mode'] = 'detect'   
+                print('Changed depth mode to ' + depth_mode['mode'])
             else:
                 print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
         elif key == keyboard.Key.left:  # Save and move to collection - 1.
@@ -112,6 +116,11 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
                 saveResultsJSON(output_file, dataset, freeze_dataset=True)
+
+                # More intuitive if detect mode is True at the beginning of a new collection
+                depth_mode['mode'] = 'detect'   
+                print('Changed depth mode to ' + depth_mode['mode'])
+
             else:
                 print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
 

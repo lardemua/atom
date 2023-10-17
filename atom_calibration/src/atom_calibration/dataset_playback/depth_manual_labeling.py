@@ -148,11 +148,18 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
 
                         idxs_to_remove = []
                         remove_all = False
+                        range_prev = ranges[0]
                         for (x0, y0), (x1, y1) in zip(discrete_line[0:-1], discrete_line[1:]):
                             value0 = image[y0,x0]
                             value1 = image[y1,x1]
-                            if np.isnan(value0) or np.isnan(value1):
+
+                            if np.isnan(value1):
                                 continue
+
+                            if np.isnan(value0):
+                                value0 = range_prev
+                            else:
+                                range_prev = value0
 
                             diff = abs(value1 - value0)
                             if diff > 0.1 or remove_all:
