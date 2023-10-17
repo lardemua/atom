@@ -349,7 +349,7 @@ def getLinearIndexWidth(x, y, width):
 
 def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdown=0,
                   scatter_seed=False, scatter_seed_radius=8, subsample_solid_points=1, debug=False,
-                  limit_sample_step=5, filter_border_edges=0.025, pattern_mask=None):
+                  limit_sample_step=5, filter_border_edges=0.025, pattern_mask=None, remove_nan_border=True):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -364,7 +364,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     :param subsample_solid_points: Subsample factor of solid pattern points to go into the output labels.
     :param debug: Debug prints and shows images.
     :param limit_sample_step
-    :param filter_border_edges: Percentage of border that is to be ignored if the chessboard touches that area.
+    :param filter_border_edges: Percentage of the image width to be considered for ignoring the chessboard touches that area.
     :param pattern_mask: Mask with the pattern already defined. If not None, skips region growing steps in this function.
     :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
              gui_image, an image for visualization purposes which shows the result of the labeling.
@@ -649,30 +649,26 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
         # Also, the solid mask coordinates may be subsampled because they contain a lot of points.
 
-        # Create a mask where there is information in the image
-        #644 https://github.com/lardemua/atom/issues/644
-        mask_rectangle = (np.logical_not(np.isnan(image))).astype(np.uint8) * 255
-        max_x = -width
-        min_x = width*10
-        max_y = -height
-        min_y = height*10
-        for x in range(0,width):
-            for y in range(0,height):
-                if mask_rectangle[y,x] == 255:
-                    if x < min_x:
-                        min_x = x
-                    elif x > max_x:
-                        max_x = x
+        if remove_nan_border:
+            # Create a mask where there is information in the image
+            #644 https://github.com/lardemua/atom/issues/644
+            mask_rectangle = (np.logical_not(np.isnan(image))).astype(np.uint8) * 255
+            max_x = -width
+            min_x = width*10
+            max_y = -height
+            min_y = height*10
+            for x in range(0,width):
+                for y in range(0,height):
+                    if mask_rectangle[y,x] == 255:
+                        if x < min_x:
+                            min_x = x
+                        elif x > max_x:
+                            max_x = x
 
-                    if y < min_y:
-                        min_y = y
-                    elif y > max_y:
-                        max_y = y
-
-        print('max_x = ' + str(max_x))
-        print('min_x = ' + str(min_x))
-        print('max_y = ' + str(max_y))
-        print('min_y = ' + str(min_y))
+                        if y < min_y:
+                            min_y = y
+                        elif y > max_y:
+                            max_y = y
 
         # ------------------------------------------------------
         # Solid mask coordinates
@@ -708,6 +704,8 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             cY = int(M["m01"] / M["m00"])
             center = (cX, cY) 
 
+        border_tolerance = int(width*filter_border_edges)
+        print("border_tolerance = " + str(border_tolerance))
         idxs_rows = []
         idxs_cols = []
         external_contour = contours[0]
@@ -728,11 +726,23 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
                         x, y = xi, yi
                         break
 
-
             # if np.isnan(image[y, x]):  # if x,y is nan in depth image, find nearest white pixel
             #     closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y, x))
             #     x = closest_not_nan_pixel[1]
             #     y = closest_not_nan_pixel[0]
+
+            if remove_nan_border:
+                # Estimate a tolerance from the maximum
+                if x < (max_x - border_tolerance) and x > (min_x + border_tolerance):
+                    if y < (max_y - border_tolerance) and y > (min_y + border_tolerance):
+                        idxs_rows.append(y)
+                        idxs_cols.append(x)
+            else:
+                if x < (width - border_tolerance) and x > (0 + border_tolerance):
+                    if y < (height - border_tolerance) and y > (0 + border_tolerance):
+                        idxs_rows.append(y)
+                        idxs_cols.append(x)
+
 
             # Add point only if it is far away from the image borders
             # if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
@@ -740,10 +750,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             #         idxs_rows.append(y)
             #         idxs_cols.append(x)
 
-            if x < (max_x - max_x * filter_border_edges) and x > min_x * filter_border_edges:
-                if y < (max_y - max_y * filter_border_edges) and y > min_y * filter_border_edges:
-                    idxs_rows.append(y)
-                    idxs_cols.append(x)
 
 
         idxs_rows = np.array(idxs_rows)
