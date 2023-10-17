@@ -349,7 +349,7 @@ def getLinearIndexWidth(x, y, width):
 
 def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdown=0,
                   scatter_seed=False, scatter_seed_radius=8, subsample_solid_points=1, debug=False,
-                  limit_sample_step=5, filter_border_edges=0.025, pattern_mask=None, remove_nan_border=True):
+                  limit_sample_step=5, filter_border_edges=0.025, pattern_mask=None, remove_nan_border=False):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -357,7 +357,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     :param seed: dictionary containing coordinates of seed point
     :param propagation_threshold: maximum value of pixel difference under which propagation occurs.
     :param bridge: a cvbridge data structure to avoid having to constantly create one.
-    :param pyrdown: The ammount of times the image must be downscaled using pyrdown. 0 for no pyrdown
+    :param pyrdown: The amount of times the image must be downscaled using pyrdown. 0 for no pyrdown
     :param scatter_seed: To scatter the given seed in a circle of seed points. Useful because the given seed coordinate
                          may fall under a black rectangle of the pattern.
     :param scatter_seed: The radius of the scatter points
@@ -366,6 +366,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     :param limit_sample_step
     :param filter_border_edges: Percentage of the image width to be considered for ignoring the chessboard touches that area.
     :param pattern_mask: Mask with the pattern already defined. If not None, skips region growing steps in this function.
+    :param remove_nan_border: Will run a detection of nan values in the image, searching for the actul area of the image which is used. Then, border detection will use this estimated area.
     :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
              gui_image, an image for visualization purposes which shows the result of the labeling.
              new_seed_point, pixels coordinates of centroid of the pattern area.

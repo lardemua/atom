@@ -43,7 +43,7 @@ def drawLabelsOnImage(labels, image, color_idxs=(0, 200, 255), color_idxs_limits
 
 
 def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, selection,
-                           depth_mode, tolerance_radius=20):
+                           depth_mode, args, tolerance_radius=20):
 
     collection_key = selection['collection_key']
 
@@ -185,7 +185,8 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
                                                 debug=False,
                                                 subsample_solid_points=7, limit_sample_step=1,
                                                 pattern_mask=pattern_mask_filtered,
-                                                filter_border_edges=0.025)
+                                                filter_border_edges=0.025,
+                                                remove_nan_border=args['remove_nan_border'])
 
 
             # Update the idxs and idxs_limit labels

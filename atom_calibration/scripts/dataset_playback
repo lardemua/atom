@@ -136,6 +136,9 @@ def main():
                     help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-ow", "--overwrite",
                     help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
+    ap.add_argument("-rnb", "--remove_nan_border",
+                    help="Option for the labeling of depth images. It Will run a detection of nan values in the image, searching for the actual area of the image which is used. Then, border detection will use this estimated area...", action='store_true')
+
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -221,7 +224,7 @@ def main():
             points_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='2d') + '/mouse_click'
             rospy.Subscriber(points_topic, PointStamped,
                              partial(clickedPointsCallback, clicked_points=clicked_points,
-                                     dataset=dataset, sensor_key=sensor_key, selection=selection, depth_mode=depth_mode))
+                                     dataset=dataset, sensor_key=sensor_key, selection=selection, depth_mode=depth_mode, args=args))
 
     # ---------------------------------------
     # --- RGB modality subscribers
