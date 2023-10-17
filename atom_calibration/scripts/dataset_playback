@@ -46,6 +46,7 @@ def printHelp():
         ' b - Publish selected points to /rviz_selected_border_points\n'\
         ' r - Publish selected points to /rviz_selected_remove_points\n'\
         ' c - Publish selected points to /rviz_selected_clear_all_points\n'\
+        ' d - Switch between detect (find pattern inside user defined polygon) and delete (delete boundary points inside polygon) modes for depth labeling\n'\
         ' s - Save dataset\n'\
         ' q - Save dataset and quit \n'
 
