@@ -47,7 +47,6 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
 
     collection_key = selection['collection_key']
 
-    print('inside clickedPointsCallback ...')
 
     if clicked_points[collection_key][sensor_key]['valid_polygon']:
         clickedPointsReset(clicked_points, collection_key, sensor_key)
@@ -123,29 +122,15 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
             pattern_mask_bool = pattern_mask.astype(bool)
             pattern_mask_filtered = deepcopy(pattern_mask)
             
-
-            # cv2.imshow('pattern_mask', pattern_mask)
             height, width = image.shape
             for x in range(0, width):
                 for y in range(0, height):
                     if pattern_mask[y,x] == 255:
 
-                        # value = image[y,x]
-
-                        # print('centroid= ' + str(center))
-                        # print('centroid_range = ' + str(image[cY, cX]))
-
                         # being start and end two points (x1,y1), (x2,y2)
                         discrete_line = list(zip(*line(*center, *(x,y))))
-                        # print('discrete_line = ' + str(discrete_line))
 
                         ranges = [image[b,a] for a,b in discrete_line]
-                        # print('ranges = ' + str(ranges))
-
-
-                        # print('x=' + str(x) + ' y=' + str(y)) 
-                        # print('value=' + str(value)) 
-
                         idxs_to_remove = []
                         remove_all = False
                         range_prev = ranges[0]

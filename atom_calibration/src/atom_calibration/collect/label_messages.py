@@ -615,6 +615,8 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
 
         print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
 
+
+
     # -------------------------------------
     # Step 5: Compute next iteration's seed point as centroid of filled mask
     # -------------------------------------
@@ -638,12 +640,39 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     # -------------------------------------
     labels = {'detected': True, 'idxs': [], 'idxs_limit_points': []}
 
+
+
     if m0 == 0 or not contours:  # if no detection occurred
         labels['detected'] = False
     else:
         # The coordinates in the labels must be given as linear indices of the image in the original size. Because of
         # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
         # Also, the solid mask coordinates may be subsampled because they contain a lot of points.
+
+        # Create a mask where there is information in the image
+        #644 https://github.com/lardemua/atom/issues/644
+        mask_rectangle = (np.logical_not(np.isnan(image))).astype(np.uint8) * 255
+        max_x = -width
+        min_x = width*10
+        max_y = -height
+        min_y = height*10
+        for x in range(0,width):
+            for y in range(0,height):
+                if mask_rectangle[y,x] == 255:
+                    if x < min_x:
+                        min_x = x
+                    elif x > max_x:
+                        max_x = x
+
+                    if y < min_y:
+                        min_y = y
+                    elif y > max_y:
+                        max_y = y
+
+        print('max_x = ' + str(max_x))
+        print('min_x = ' + str(min_x))
+        print('max_y = ' + str(max_y))
+        print('min_y = ' + str(min_y))
 
         # ------------------------------------------------------
         # Solid mask coordinates
@@ -706,10 +735,16 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             #     y = closest_not_nan_pixel[0]
 
             # Add point only if it is far away from the image borders
-            if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
-                if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
+            # if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
+            #     if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
+            #         idxs_rows.append(y)
+            #         idxs_cols.append(x)
+
+            if x < (max_x - max_x * filter_border_edges) and x > min_x * filter_border_edges:
+                if y < (max_y - max_y * filter_border_edges) and y > min_y * filter_border_edges:
                     idxs_rows.append(y)
                     idxs_cols.append(x)
+
 
         idxs_rows = np.array(idxs_rows)
         idxs_cols = np.array(idxs_cols)
