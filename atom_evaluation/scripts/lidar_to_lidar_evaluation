@@ -23,7 +23,7 @@ from colorama import Style, Fore
 
 # ROS imports
 from rospy_message_converter import message_converter
-from ros_numpy import numpify
+from atom_core.ros_numpy import numpify
 
 # Atom imports
 from atom_core.atom import getTransform

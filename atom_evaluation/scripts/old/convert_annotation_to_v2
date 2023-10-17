@@ -67,7 +67,7 @@ import sys
 from collections import OrderedDict
 
 import numpy as np
-import ros_numpy
+import atom_core.ros_numpy
 import cv2
 from tqdm import tqdm
 from atom_core.dataset_io import createJSONFile, readAnnotationFile

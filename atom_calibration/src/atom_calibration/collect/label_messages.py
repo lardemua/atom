@@ -10,7 +10,7 @@ import cv2
 # ROS imports
 import cv_bridge
 import rospy
-import ros_numpy
+import atom_core.ros_numpy
 from scipy import ndimage, spatial
 from std_msgs.msg import Header, ColorRGBA
 from cv_bridge import CvBridge
@@ -69,7 +69,7 @@ def denseToSparsePointCloud(dense_pc):
     return sparse_pc, sparse_idxs
     
 def numpyFromPointCloudMsg(msg):
-    pc = ros_numpy.numpify(msg)
+    pc = atom_core.ros_numpy.numpify(msg)
 
     # Compute number of points by multiplying all the dimensions of the np array.
     # Must be done because different lidars provide point clouds with different sizes, e.g. velodyne outputs a point cloud of size (npoints,1), whereas ouster lidars output a point cloud of size (npoints_per_layer, nlayers).
@@ -205,7 +205,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     # ------------------------------------------------------------------------------------------------
     # STEP 1: Get labelled points into a list of dictionaries format which is suitable for later processing.
     # cloud_msg = getPointCloudMessageFromDictionary(collection['data'][sensor_key])
-    # pc = ros_numpy.numpify(cloud_msg)
+    # pc = atom_core.ros_numpy.numpify(cloud_msg)
     # pc is computed above from the input ros msg.
 
     ps = []  # list of points, each containing a dictionary with all the required information.

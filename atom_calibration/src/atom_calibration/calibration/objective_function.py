@@ -13,7 +13,7 @@ from datetime import datetime
 
 import re
 import numpy as np
-import ros_numpy
+import atom_core.ros_numpy
 from colorama import Fore, Style
 from scipy.spatial import distance
 
@@ -200,7 +200,7 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _sensor_key, _dataset):
 def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
     cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points = np.zeros((4, pc.shape[0]))
     points[0, :] = pc['x']
     points[1, :] = pc['y']

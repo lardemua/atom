@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 # 3rd-party
 import colorama
 import cv2
-import ros_numpy
+import atom_core.ros_numpy
 
 # import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy

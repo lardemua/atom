@@ -12,7 +12,7 @@ from tokenize import generate_tokens
 import cv2
 import cv_bridge
 import numpy as np
-import ros_numpy
+import atom_core.ros_numpy
 
 # import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
@@ -110,7 +110,7 @@ def getPointsInSensorAsNPArray_local(_collection_key, _sensor_key, _label_key, _
     cloud_msg = getPointCloudMessageFromDictionary(
         _dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points = np.zeros((4, pc.shape[0]))
     points[0, :] = pc['x']
     points[1, :] = pc['y']

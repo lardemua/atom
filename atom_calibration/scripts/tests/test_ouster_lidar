@@ -10,7 +10,7 @@ import cv2
 import cv_bridge
 import numpy as np
 import rospy
-import ros_numpy
+import atom_core.ros_numpy
 from sensor_msgs.msg import Image, PointCloud2
 
 # local packages
@@ -24,7 +24,7 @@ from std_msgs.msg import String
 def callbackOusterMessageReceived(msg):
     rospy.loginfo('Received ouster lidar msg')
 
-    pc = ros_numpy.numpify(msg)
+    pc = atom_core.ros_numpy.numpify(msg)
     print(pc.shape)
 
     # Compute number of points by multiplying all the dimensions of the np array.
@@ -45,7 +45,7 @@ def callbackOusterMessageReceived(msg):
 def callbackVelodyneMessageReceived(msg):
     rospy.loginfo('Received velodyne lidar msg')
 
-    pc = ros_numpy.numpify(msg)
+    pc = atom_core.ros_numpy.numpify(msg)
     print(pc.shape)
     print(list(pc.shape))
 

@@ -15,7 +15,7 @@ from copy import deepcopy
 from collections import OrderedDict
 
 import numpy as np
-import ros_numpy
+import atom_core.ros_numpy
 import atom_core.atom
 import cv2
 from scipy.spatial import distance
@@ -68,7 +68,7 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
     idxs = collection['labels'][ss]['idxs_limit_points']
 
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points_in_vel = np.zeros((4, pc.shape[0]))
     points_in_vel[0, :] = pc['x']
     points_in_vel[1, :] = pc['y']

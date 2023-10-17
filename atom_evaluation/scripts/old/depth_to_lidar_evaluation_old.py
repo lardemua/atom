@@ -18,7 +18,7 @@ import numpy as np
 import cv2
 
 # ROS imports
-import ros_numpy
+import atom_core.ros_numpy
 from colorama import Fore
 from scipy.spatial import distance
 from rospy_message_converter import message_converter
@@ -43,7 +43,7 @@ def rangeToImage(collection, json_file, lidar_sensor, tf):
     cloud_msg = getPointCloudMessageFromDictionary(collection['data'][lidar_sensor])
     idxs = collection['labels'][lidar_sensor]['idxs_limit_points']
 
-    pc = ros_numpy.numpify(cloud_msg)[idxs]
+    pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points_in_vel = np.zeros((4, pc.shape[0]))
     points_in_vel[0, :] = pc['x']
     points_in_vel[1, :] = pc['y']

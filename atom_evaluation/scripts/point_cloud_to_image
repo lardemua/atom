@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 
 # ROS imports
-import ros_numpy
+import atom_core.ros_numpy
 from matplotlib import cm
 
 # Atom imports
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
         # Read point cloud
         msg = read_pcd(pcd_filename, cloud_header=None)
-        pc = ros_numpy.numpify(msg)
+        pc = atom_core.ros_numpy.numpify(msg)
         points = np.zeros((pc.shape[0], 3))
         points[:, 0] = pc['x']
         points[:, 1] = pc['y']
