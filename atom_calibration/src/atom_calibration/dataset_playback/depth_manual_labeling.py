@@ -43,9 +43,11 @@ def drawLabelsOnImage(labels, image, color_idxs=(0, 200, 255), color_idxs_limits
 
 
 def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, selection,
-                          tolerance_radius=20):
+                           depth_mode, tolerance_radius=20):
 
     collection_key = selection['collection_key']
+
+    print('inside clickedPointsCallback ...')
 
     if clicked_points[collection_key][sensor_key]['valid_polygon']:
         clickedPointsReset(clicked_points, collection_key, sensor_key)
@@ -70,8 +72,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
     if start_to_end_distance < tolerance_radius:
         tic = rospy.Time.now()
 
-        depth_labeling_mode = 'delete'
-        if depth_labeling_mode == 'delete':
+        if depth_mode['mode'] == 'delete':
             print('Deleting depth boundary inside polygon ...')
 
             height = dataset['sensors'][sensor_key]['camera_info']['height']
@@ -95,7 +96,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
             print('Completed deleting depth boundary inside polygon') 
 
 
-        elif depth_labeling_mode == 'detect':
+        elif depth_mode['mode'] == 'detect':
 
             print('Labeling pattern from user defined polygon .. it may take some time ...')
             height = dataset['sensors'][sensor_key]['camera_info']['height']

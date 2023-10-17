@@ -52,7 +52,7 @@ def printHelp():
     print(s)
 
 
-def keyPressedCallback(key, selection, dataset, args):
+def keyPressedCallback(key, selection, dataset, args, depth_mode):
 
     if key is None:
         return
@@ -86,6 +86,15 @@ def keyPressedCallback(key, selection, dataset, args):
             selection['exit'] = True
         elif key_char == 'h':  # Prints help.
             printHelp()
+        elif key_char == 'd':  # Prints help.
+
+            if depth_mode['mode'] == 'detect':
+                depth_mode['mode'] = 'delete'   
+            else:
+                depth_mode['mode'] = 'detect'   
+
+            print('Changed depth mode to ' + depth_mode['mode'])
+
 
     except AttributeError:
         if key == keyboard.Key.right:  # Save and move to collection + 1.
@@ -151,6 +160,8 @@ def main():
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
 
+    depth_mode = {'mode': 'detect'}
+
     # ---------------------------------------
     # --- Define selection
     # ---------------------------------------
@@ -200,7 +211,7 @@ def main():
             points_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='2d') + '/mouse_click'
             rospy.Subscriber(points_topic, PointStamped,
                              partial(clickedPointsCallback, clicked_points=clicked_points,
-                                     dataset=dataset, sensor_key=sensor_key, selection=selection))
+                                     dataset=dataset, sensor_key=sensor_key, selection=selection, depth_mode=depth_mode))
 
     # ---------------------------------------
     # --- RGB modality subscribers
@@ -210,7 +221,8 @@ def main():
     # ---------------------------------------
     # --- Define callback to navigate through collections
     # ---------------------------------------
-    listener = keyboard.Listener(on_press=partial(keyPressedCallback, selection=selection, dataset=dataset, args=args))
+    listener = keyboard.Listener(on_press=partial(keyPressedCallback, selection=selection, dataset=dataset, args=args,
+                                                  depth_mode=depth_mode))
     listener.start()
 
     # ---------------------------------------
