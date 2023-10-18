@@ -126,6 +126,7 @@ class InteractiveDataLabeler:
         self.color = color
         self.received_first_msg = False
         self.labels = {'detected': False, 'idxs': []}
+        self.tic_manual_seed = rospy.Time.now()
         # self.server = server
         self.server = InteractiveMarkerServer(self.name + "/data_labeler")
         self.lock = threading.Lock()
@@ -240,6 +241,7 @@ class InteractiveDataLabeler:
     def mouseClickReceivedCallback(self, msg):
         self.seed['x'] = msg.point.x * pow(2, self.pyrdown)
         self.seed['y'] = msg.point.y * pow(2, self.pyrdown)
+        self.tic_manual_seed = rospy.Time.now()
         print('Setting new seed point for sensor ' + self.name + ' to ' + str(self.seed))
 
     def sensorDataReceivedCallback(self, msg):
@@ -476,18 +478,19 @@ class InteractiveDataLabeler:
             filter_border_edges=0.025
 
             # actual labeling
-            self.labels, result_image, new_seed_point = labelDepthMsg(
-                self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False,
-                subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
+            self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False, subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
 
-            # print(new_seed_point)
+            print('new_seed_point = ' + str(new_seed_point))
+            time_since_manual_seed = (rospy.Time.now()-self.tic_manual_seed).to_sec()
 
-            if 0 < new_seed_point['x'] < width-filter_border_edges*width and 0 < new_seed_point['y'] < height-filter_border_edges*height:
-                self.seed['x'] = new_seed_point['x']
-                self.seed['y'] = new_seed_point['y']
-                # print(self.seed)
-            else:
-                self.seed = {'x': round(width / 2), 'y': round(height / 2)}
+            #639 https://github.com/lardemua/atom/issues/639
+            if time_since_manual_seed > 1.0: # only track after 1 second of setting manual seed.
+                if 0 < new_seed_point['x'] < width-filter_border_edges*width and 0 < new_seed_point['y'] < height-filter_border_edges*height:
+                    self.seed['x'] = new_seed_point['x']
+                    self.seed['y'] = new_seed_point['y']
+                    # print(self.seed)
+                else:
+                    self.seed = {'x': round(width / 2), 'y': round(height / 2)}
 
             msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp
