@@ -685,15 +685,23 @@ def objectiveFunction(data):
                 ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                 float)
                 now = datetime.now()
-                # print("objective function: ", detected_limit_points_in_pattern.shape[1])
-                # Compute and save residuals
-                # for idx in range(detected_limit_points_in_pattern.shape[1]):
+                # # print("objective function: ", detected_limit_points_in_pattern.shape[1])
+                # # Compute and save residuals
+                # # for idx in range(detected_limit_points_in_pattern.shape[1]):
+                # if detected_limit_points_in_pattern[0:2, :].shape[1] != len(collection['labels'][sensor_key]['samples_longitudinal']) :
+                #     print(collection['labels'][sensor_key]['samples_longitudinal'])
+                #     print("Sensor: " + str(sensor_key))
+                #     print("Collection: " + str(collection_key))
+                #     print(detected_limit_points_in_pattern[0:2, :].shape)
+                #     print(len(collection['labels'][sensor_key]['samples_longitudinal']))
+
                 for idx in collection['labels'][sensor_key]['samples_longitudinal']:
                     m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
                     rname = 'c' + collection_key + '_' + sensor_key + '_ld_' + str(idx)
                     r[rname] = np.min(distance.cdist(m_pt,
                                                      ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
                         normalizer['depth']
+
                 # print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
                 # print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
                 #     (datetime.now() - now_i).total_seconds()) + ' secs.')

@@ -1,4 +1,3 @@
-
 # Standard imports
 import copy
 import math
@@ -19,6 +18,7 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
 from skimage.draw import line
 
+
 # Atom imports
 
 
@@ -32,6 +32,7 @@ def find_nearest_white(img, target):
     distances = np.sqrt((nonzero[:, 0] - target[0]) ** 2 + (nonzero[:, 1] - target[1]) ** 2)
     nearest_index = np.argmin(distances)
     return nonzero[nearest_index]
+
 
 def denseToSparsePointCloud(dense_pc):
     """Creates a sparse numpy array containing only the points. 
@@ -51,10 +52,10 @@ def denseToSparsePointCloud(dense_pc):
     zs = []
     sparse_idxs = []
 
-    for idx in range(0,dense_npoints):
-        x = dense_pc[idx,0]
-        y = dense_pc[idx,1]
-        z = dense_pc[idx,2]
+    for idx in range(0, dense_npoints):
+        x = dense_pc[idx, 0]
+        y = dense_pc[idx, 1]
+        z = dense_pc[idx, 2]
 
         if x != 0 and y != 0 and z != 0:
             xs.append(x)
@@ -63,20 +64,21 @@ def denseToSparsePointCloud(dense_pc):
             sparse_idxs.append(idx)
 
     sparse_npoints = len(sparse_idxs)
-    sparse_pc = np.array([xs,ys,zs]).transpose()
+    sparse_pc = np.array([xs, ys, zs]).transpose()
     sparse_idxs = np.array(sparse_idxs, dtype=np.uint).transpose()
 
     return sparse_pc, sparse_idxs
-    
+
+
 def numpyFromPointCloudMsg(msg):
     pc = atom_core.ros_numpy.numpify(msg)
 
     # Compute number of points by multiplying all the dimensions of the np array.
     # Must be done because different lidars provide point clouds with different sizes, e.g. velodyne outputs a point cloud of size (npoints,1), whereas ouster lidars output a point cloud of size (npoints_per_layer, nlayers).
-    #More info https://github.com/lardemua/atom/issues/498
+    # More info https://github.com/lardemua/atom/issues/498
     number_points = 1
     for value in list(pc.shape):
-        number_points = number_points*value
+        number_points = number_points * value
 
     points = np.zeros((number_points, 3))
     points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
@@ -92,7 +94,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     labels = {}
 
     points_in = numpyFromPointCloudMsg(msg)
-   
+
     # Get only the valid points
     points, points_idxs = denseToSparsePointCloud(points_in)
     # print('Reduced original num points in from ' + str(points_in.shape) + ' to ' + str(points.shape))
@@ -126,7 +128,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
-    A,B,C,D = None, None, None, None
+    A, B, C, D = None, None, None, None
     # RANSAC iterations
     for i in range(0, ransac_iterations):
 
@@ -177,7 +179,6 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
                 C = Ci
                 D = Di
 
-
     if A is None:
         labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
@@ -185,7 +186,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     # Extract the inliers
     distances = abs((A * pts[:, 0] + B * pts[:, 1] + C * pts[:, 2] + D)) / \
-        (math.sqrt(A * A + B * B + C * C))
+                (math.sqrt(A * A + B * B + C * C))
     inliers = pts[np.where(distances < ransac_threshold)]
     # Create dictionary [pcl point index, distance to plane] to select the pcl indexes of the inliers
     idx_map = dict(zip(idx, distances))
@@ -556,7 +557,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
 
-
     # contours using cv2.findContours
     contours, hierarchy = cv2.findContours(pattern_solid_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -608,15 +608,14 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         cv2.namedWindow('pattern_edges_mask', cv2.WINDOW_NORMAL)
         cv2.imshow('pattern_edges_mask', pattern_edges_mask)
 
-
-        or_solid_edges = (np.logical_or(pattern_solid_mask.astype(bool), pattern_edges_mask.astype(bool))).astype(np.uint8)*255
-        xor_solid_edges = (np.logical_xor(pattern_solid_mask.astype(bool), or_solid_edges.astype(bool))).astype(np.uint8)*255
+        or_solid_edges = (np.logical_or(pattern_solid_mask.astype(bool), pattern_edges_mask.astype(bool))).astype(
+            np.uint8) * 255
+        xor_solid_edges = (np.logical_xor(pattern_solid_mask.astype(bool), or_solid_edges.astype(bool))).astype(
+            np.uint8) * 255
         cv2.namedWindow('xor_solid_edges', cv2.WINDOW_NORMAL)
         cv2.imshow('xor_solid_edges', xor_solid_edges)
 
         print('Time taken in canny ' + str((rospy.Time.now() - now).to_sec()))
-
-
 
     # -------------------------------------
     # Step 5: Compute next iteration's seed point as centroid of filled mask
@@ -641,8 +640,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     # -------------------------------------
     labels = {'detected': True, 'idxs': [], 'idxs_limit_points': []}
 
-
-
     if m0 == 0 or not contours:  # if no detection occurred
         labels['detected'] = False
     else:
@@ -652,15 +649,15 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
 
         if remove_nan_border:
             # Create a mask where there is information in the image
-            #644 https://github.com/lardemua/atom/issues/644
+            # 644 https://github.com/lardemua/atom/issues/644
             mask_rectangle = (np.logical_not(np.isnan(image))).astype(np.uint8) * 255
             max_x = -width
-            min_x = width*10
+            min_x = width * 10
             max_y = -height
-            min_y = height*10
-            for x in range(0,width):
-                for y in range(0,height):
-                    if mask_rectangle[y,x] == 255:
+            min_y = height * 10
+            for x in range(0, width):
+                for y in range(0, height):
+                    if mask_rectangle[y, x] == 255:
                         if x < min_x:
                             min_x = x
                         elif x > max_x:
@@ -698,32 +695,32 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             M = cv2.moments(pattern_mask)
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-            center = (cX, cY) 
+            center = (cX, cY)
         else:
             M = cv2.moments(pattern_solid_mask)
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-            center = (cX, cY) 
+            center = (cX, cY)
 
-        border_tolerance = int(width*filter_border_edges)
+        border_tolerance = int(width * filter_border_edges)
         print("border_tolerance = " + str(border_tolerance))
         idxs_rows = []
         idxs_cols = []
         external_contour = contours[0]
-        for value in external_contour: # for each value in contours, correct it by analyzing a scan line that goes from the center to the point.
+        for value in external_contour:  # for each value in contours, correct it by analyzing a scan line that goes from the center to the point.
 
             x = value[0][0]
             y = value[0][1]
 
-            discrete_line = list(zip(*line(*(x,y), *center)))
+            discrete_line = list(zip(*line(*(x, y), *center)))
             for xi, yi in discrete_line:
 
                 if pattern_mask is not None:
-                    if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                    if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi, xi]):
                         x, y = xi, yi
                         break
                 else:
-                    if pattern_solid_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                    if pattern_solid_mask[yi, xi] == 255 and not np.isnan(image[yi, xi]):
                         x, y = xi, yi
                         break
 
@@ -736,13 +733,21 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
                 # Estimate a tolerance from the maximum
                 if x < (max_x - border_tolerance) and x > (min_x + border_tolerance):
                     if y < (max_y - border_tolerance) and y > (min_y + border_tolerance):
-                        idxs_rows.append(y)
-                        idxs_cols.append(x)
+                        if np.isnan(image[y,x]) == False:
+                            idxs_rows.append(y)
+                            idxs_cols.append(x)
             else:
                 if x < (width - border_tolerance) and x > (0 + border_tolerance):
                     if y < (height - border_tolerance) and y > (0 + border_tolerance):
-                        idxs_rows.append(y)
-                        idxs_cols.append(x)
+                        if np.isnan(image[y,x]) == False:
+                            idxs_rows.append(y)
+                            idxs_cols.append(x)
+                        # idxs_rows.append(y)
+                        # idxs_cols.append(x)
+                        # if np.isnan(image[y,x]):
+                        #     print("IS NAN")
+
+                            # print(image[y,x])
 
 
             # Add point only if it is far away from the image borders
@@ -750,8 +755,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             #     if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
             #         idxs_rows.append(y)
             #         idxs_cols.append(x)
-
-
 
         idxs_rows = np.array(idxs_rows)
         idxs_cols = np.array(idxs_cols)
@@ -993,8 +996,8 @@ def getFrustumMarkerArray(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     # ------------------------------------
     # Define wireframe
     # ------------------------------------
-    color_rviz = ColorRGBA(r=color[0]/2, g=color[1]/2, b=color[2]/2, a=1.0)
-    marker = Marker(ns=ns+'_wireframe', type=Marker.LINE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
+    color_rviz = ColorRGBA(r=color[0] / 2, g=color[1] / 2, b=color[2] / 2, a=1.0)
+    marker = Marker(ns=ns + '_wireframe', type=Marker.LINE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
                     color=color_rviz)
 
     marker.scale.x = 0.005  # line width
@@ -1043,7 +1046,7 @@ def getFrustumMarkerArray(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     # Define filled
     # ------------------------------------
     color_rviz = ColorRGBA(r=color[0], g=color[1], b=color[2], a=0.5)
-    marker = Marker(ns=ns+'_filled', type=Marker.TRIANGLE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
+    marker = Marker(ns=ns + '_filled', type=Marker.TRIANGLE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
                     color=color_rviz)
 
     marker.scale.x = 1  # line width
