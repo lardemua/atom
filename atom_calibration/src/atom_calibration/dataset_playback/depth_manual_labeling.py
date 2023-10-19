@@ -43,9 +43,10 @@ def drawLabelsOnImage(labels, image, color_idxs=(0, 200, 255), color_idxs_limits
 
 
 def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, selection,
-                          tolerance_radius=20):
+                           depth_mode, args, tolerance_radius=20):
 
     collection_key = selection['collection_key']
+
 
     if clicked_points[collection_key][sensor_key]['valid_polygon']:
         clickedPointsReset(clicked_points, collection_key, sensor_key)
@@ -70,8 +71,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
     if start_to_end_distance < tolerance_radius:
         tic = rospy.Time.now()
 
-        depth_labeling_mode = 'delete'
-        if depth_labeling_mode == 'delete':
+        if depth_mode['mode'] == 'delete':
             print('Deleting depth boundary inside polygon ...')
 
             height = dataset['sensors'][sensor_key]['camera_info']['height']
@@ -95,7 +95,7 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
             print('Completed deleting depth boundary inside polygon') 
 
 
-        elif depth_labeling_mode == 'detect':
+        elif depth_mode['mode'] == 'detect':
 
             print('Labeling pattern from user defined polygon .. it may take some time ...')
             height = dataset['sensors'][sensor_key]['camera_info']['height']
@@ -122,36 +122,29 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
             pattern_mask_bool = pattern_mask.astype(bool)
             pattern_mask_filtered = deepcopy(pattern_mask)
             
-
-            # cv2.imshow('pattern_mask', pattern_mask)
             height, width = image.shape
             for x in range(0, width):
                 for y in range(0, height):
                     if pattern_mask[y,x] == 255:
 
-                        # value = image[y,x]
-
-                        # print('centroid= ' + str(center))
-                        # print('centroid_range = ' + str(image[cY, cX]))
-
                         # being start and end two points (x1,y1), (x2,y2)
                         discrete_line = list(zip(*line(*center, *(x,y))))
-                        # print('discrete_line = ' + str(discrete_line))
 
                         ranges = [image[b,a] for a,b in discrete_line]
-                        # print('ranges = ' + str(ranges))
-
-
-                        # print('x=' + str(x) + ' y=' + str(y)) 
-                        # print('value=' + str(value)) 
-
                         idxs_to_remove = []
                         remove_all = False
+                        range_prev = ranges[0]
                         for (x0, y0), (x1, y1) in zip(discrete_line[0:-1], discrete_line[1:]):
                             value0 = image[y0,x0]
                             value1 = image[y1,x1]
-                            if np.isnan(value0) or np.isnan(value1):
+
+                            if np.isnan(value1):
                                 continue
+
+                            if np.isnan(value0):
+                                value0 = range_prev
+                            else:
+                                range_prev = value0
 
                             diff = abs(value1 - value0)
                             if diff > 0.1 or remove_all:
@@ -192,7 +185,8 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
                                                 debug=False,
                                                 subsample_solid_points=7, limit_sample_step=1,
                                                 pattern_mask=pattern_mask_filtered,
-                                                filter_border_edges=0.025)
+                                                filter_border_edges=0.025,
+                                                remove_nan_border=args['remove_nan_border'])
 
 
             # Update the idxs and idxs_limit labels

@@ -46,13 +46,14 @@ def printHelp():
         ' b - Publish selected points to /rviz_selected_border_points\n'\
         ' r - Publish selected points to /rviz_selected_remove_points\n'\
         ' c - Publish selected points to /rviz_selected_clear_all_points\n'\
+        ' d - Switch between detect (find pattern inside user defined polygon) and delete (delete boundary points inside polygon) modes for depth labeling\n'\
         ' s - Save dataset\n'\
         ' q - Save dataset and quit \n'
 
     print(s)
 
 
-def keyPressedCallback(key, selection, dataset, args):
+def keyPressedCallback(key, selection, dataset, args, depth_mode):
 
     if key is None:
         return
@@ -86,6 +87,15 @@ def keyPressedCallback(key, selection, dataset, args):
             selection['exit'] = True
         elif key_char == 'h':  # Prints help.
             printHelp()
+        elif key_char == 'd':  # Prints help.
+
+            if depth_mode['mode'] == 'detect':
+                depth_mode['mode'] = 'delete'   
+            else:
+                depth_mode['mode'] = 'detect'   
+
+            print('Changed depth mode to ' + depth_mode['mode'])
+
 
     except AttributeError:
         if key == keyboard.Key.right:  # Save and move to collection + 1.
@@ -94,6 +104,10 @@ def keyPressedCallback(key, selection, dataset, args):
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection+1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
                 saveResultsJSON(output_file, dataset, freeze_dataset=True)
+
+                # More intuitive if detect mode is True at the beginning of a new collection
+                depth_mode['mode'] = 'detect'   
+                print('Changed depth mode to ' + depth_mode['mode'])
             else:
                 print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
         elif key == keyboard.Key.left:  # Save and move to collection - 1.
@@ -102,6 +116,11 @@ def keyPressedCallback(key, selection, dataset, args):
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
                 saveResultsJSON(output_file, dataset, freeze_dataset=True)
+
+                # More intuitive if detect mode is True at the beginning of a new collection
+                depth_mode['mode'] = 'detect'   
+                print('Changed depth mode to ' + depth_mode['mode'])
+
             else:
                 print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
 
@@ -117,6 +136,9 @@ def main():
                     help="Json file containing input dataset.", type=str, required=True)
     ap.add_argument("-ow", "--overwrite",
                     help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
+    ap.add_argument("-rnb", "--remove_nan_border",
+                    help="Option for the labeling of depth images. It Will run a detection of nan values in the image, searching for the actual area of the image which is used. Then, border detection will use this estimated area...", action='store_true')
+
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -150,6 +172,8 @@ def main():
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
         len(dataset['collections'].keys())) + ' collections.')
+
+    depth_mode = {'mode': 'detect'}
 
     # ---------------------------------------
     # --- Define selection
@@ -200,7 +224,7 @@ def main():
             points_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='2d') + '/mouse_click'
             rospy.Subscriber(points_topic, PointStamped,
                              partial(clickedPointsCallback, clicked_points=clicked_points,
-                                     dataset=dataset, sensor_key=sensor_key, selection=selection))
+                                     dataset=dataset, sensor_key=sensor_key, selection=selection, depth_mode=depth_mode, args=args))
 
     # ---------------------------------------
     # --- RGB modality subscribers
@@ -210,7 +234,8 @@ def main():
     # ---------------------------------------
     # --- Define callback to navigate through collections
     # ---------------------------------------
-    listener = keyboard.Listener(on_press=partial(keyPressedCallback, selection=selection, dataset=dataset, args=args))
+    listener = keyboard.Listener(on_press=partial(keyPressedCallback, selection=selection, dataset=dataset, args=args,
+                                                  depth_mode=depth_mode))
     listener.start()
 
     # ---------------------------------------

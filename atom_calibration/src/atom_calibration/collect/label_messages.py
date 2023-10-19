@@ -1,4 +1,3 @@
-
 # Standard imports
 import copy
 import math
@@ -33,6 +32,7 @@ def find_nearest_white(img, target):
     nearest_index = np.argmin(distances)
     return nonzero[nearest_index]
 
+
 def denseToSparsePointCloud(dense_pc):
     """Creates a sparse numpy array containing only the points. 
     
@@ -51,10 +51,10 @@ def denseToSparsePointCloud(dense_pc):
     zs = []
     sparse_idxs = []
 
-    for idx in range(0,dense_npoints):
-        x = dense_pc[idx,0]
-        y = dense_pc[idx,1]
-        z = dense_pc[idx,2]
+    for idx in range(0, dense_npoints):
+        x = dense_pc[idx, 0]
+        y = dense_pc[idx, 1]
+        z = dense_pc[idx, 2]
 
         if x != 0 and y != 0 and z != 0:
             xs.append(x)
@@ -63,20 +63,21 @@ def denseToSparsePointCloud(dense_pc):
             sparse_idxs.append(idx)
 
     sparse_npoints = len(sparse_idxs)
-    sparse_pc = np.array([xs,ys,zs]).transpose()
+    sparse_pc = np.array([xs, ys, zs]).transpose()
     sparse_idxs = np.array(sparse_idxs, dtype=np.uint).transpose()
 
     return sparse_pc, sparse_idxs
-    
+
+
 def numpyFromPointCloudMsg(msg):
     pc = atom_core.ros_numpy.numpify(msg)
 
     # Compute number of points by multiplying all the dimensions of the np array.
     # Must be done because different lidars provide point clouds with different sizes, e.g. velodyne outputs a point cloud of size (npoints,1), whereas ouster lidars output a point cloud of size (npoints_per_layer, nlayers).
-    #More info https://github.com/lardemua/atom/issues/498
+    # More info https://github.com/lardemua/atom/issues/498
     number_points = 1
     for value in list(pc.shape):
-        number_points = number_points*value
+        number_points = number_points * value
 
     points = np.zeros((number_points, 3))
     points[:, 0] = pc['x'].flatten()  # flatten because some pcs are of shape (npoints,1) rather than (npoints,)
@@ -92,7 +93,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
     labels = {}
 
     points_in = numpyFromPointCloudMsg(msg)
-   
+
     # Get only the valid points
     points, points_idxs = denseToSparsePointCloud(points_in)
     # print('Reduced original num points in from ' + str(points_in.shape) + ' to ' + str(points.shape))
@@ -126,7 +127,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
         seed_point = [seed_x, seed_y, seed_z]
         return labels, seed_point, []
 
-    A,B,C,D = None, None, None, None
+    A, B, C, D = None, None, None, None
     # RANSAC iterations
     for i in range(0, ransac_iterations):
 
@@ -177,7 +178,6 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
                 C = Ci
                 D = Di
 
-
     if A is None:
         labels = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
         seed_point = [seed_x, seed_y, seed_z]
@@ -185,7 +185,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     # Extract the inliers
     distances = abs((A * pts[:, 0] + B * pts[:, 1] + C * pts[:, 2] + D)) / \
-        (math.sqrt(A * A + B * B + C * C))
+                (math.sqrt(A * A + B * B + C * C))
     inliers = pts[np.where(distances < ransac_threshold)]
     # Create dictionary [pcl point index, distance to plane] to select the pcl indexes of the inliers
     idx_map = dict(zip(idx, distances))
@@ -349,7 +349,7 @@ def getLinearIndexWidth(x, y, width):
 
 def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdown=0,
                   scatter_seed=False, scatter_seed_radius=8, subsample_solid_points=1, debug=False,
-                  limit_sample_step=5, filter_border_edges=0.025, pattern_mask=None):
+                  limit_sample_step=5, filter_border_edges=0.025, pattern_mask=None, remove_nan_border=False):
     """
     Labels rectangular patterns in ros image messages containing depth images.
 
@@ -357,15 +357,16 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     :param seed: dictionary containing coordinates of seed point
     :param propagation_threshold: maximum value of pixel difference under which propagation occurs.
     :param bridge: a cvbridge data structure to avoid having to constantly create one.
-    :param pyrdown: The ammount of times the image must be downscaled using pyrdown. 0 for no pyrdown
+    :param pyrdown: The amount of times the image must be downscaled using pyrdown. 0 for no pyrdown
     :param scatter_seed: To scatter the given seed in a circle of seed points. Useful because the given seed coordinate
                          may fall under a black rectangle of the pattern.
     :param scatter_seed: The radius of the scatter points
     :param subsample_solid_points: Subsample factor of solid pattern points to go into the output labels.
     :param debug: Debug prints and shows images.
     :param limit_sample_step
-    :param filter_border_edges: Percentage of border that is to be ignored if the chessboard touches that area.
+    :param filter_border_edges: Percentage of the image width to be considered for ignoring the chessboard touches that area.
     :param pattern_mask: Mask with the pattern already defined. If not None, skips region growing steps in this function.
+    :param remove_nan_border: Will run a detection of nan values in the image, searching for the actul area of the image which is used. Then, border detection will use this estimated area.
     :return: labels, a dictionary like this {'detected': True, 'idxs': [], 'idxs_limit_points': []}.
              gui_image, an image for visualization purposes which shows the result of the labeling.
              new_seed_point, pixels coordinates of centroid of the pattern area.
@@ -555,7 +556,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
     pattern_solid_mask = ndimage.morphology.binary_fill_holes(seeds_mask)  # close the holes
     pattern_solid_mask = pattern_solid_mask.astype(np.uint8) * 255  # convert to uint8
 
-
     # contours using cv2.findContours
     contours, hierarchy = cv2.findContours(pattern_solid_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -607,9 +607,10 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         cv2.namedWindow('pattern_edges_mask', cv2.WINDOW_NORMAL)
         cv2.imshow('pattern_edges_mask', pattern_edges_mask)
 
-
-        or_solid_edges = (np.logical_or(pattern_solid_mask.astype(bool), pattern_edges_mask.astype(bool))).astype(np.uint8)*255
-        xor_solid_edges = (np.logical_xor(pattern_solid_mask.astype(bool), or_solid_edges.astype(bool))).astype(np.uint8)*255
+        or_solid_edges = (np.logical_or(pattern_solid_mask.astype(bool), pattern_edges_mask.astype(bool))).astype(
+            np.uint8) * 255
+        xor_solid_edges = (np.logical_xor(pattern_solid_mask.astype(bool), or_solid_edges.astype(bool))).astype(
+            np.uint8) * 255
         cv2.namedWindow('xor_solid_edges', cv2.WINDOW_NORMAL)
         cv2.imshow('xor_solid_edges', xor_solid_edges)
 
@@ -645,6 +646,27 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
         # this we must take into account if some pyrdown was made to recover the coordinates of the original image.
         # Also, the solid mask coordinates may be subsampled because they contain a lot of points.
 
+        if remove_nan_border:
+            # Create a mask where there is information in the image
+            # 644 https://github.com/lardemua/atom/issues/644
+            mask_rectangle = (np.logical_not(np.isnan(image))).astype(np.uint8) * 255
+            max_x = -width
+            min_x = width * 10
+            max_y = -height
+            min_y = height * 10
+            for x in range(0, width):
+                for y in range(0, height):
+                    if mask_rectangle[y, x] == 255:
+                        if x < min_x:
+                            min_x = x
+                        elif x > max_x:
+                            max_x = x
+
+                        if y < min_y:
+                            min_y = y
+                        elif y > max_y:
+                            max_y = y
+
         # ------------------------------------------------------
         # Solid mask coordinates
         # ------------------------------------------------------
@@ -672,44 +694,65 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             M = cv2.moments(pattern_mask)
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-            center = (cX, cY) 
+            center = (cX, cY)
         else:
             M = cv2.moments(pattern_solid_mask)
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-            center = (cX, cY) 
+            center = (cX, cY)
 
+        border_tolerance = int(width * filter_border_edges)
         idxs_rows = []
         idxs_cols = []
         external_contour = contours[0]
-        for value in external_contour: # for each value in contours, correct it by analyzing a scan line that goes from the center to the point.
+        for value in external_contour:  # for each value in contours, correct it by analyzing a scan line that goes from the center to the point.
 
             x = value[0][0]
             y = value[0][1]
 
-            discrete_line = list(zip(*line(*(x,y), *center)))
+            discrete_line = list(zip(*line(*(x, y), *center)))
             for xi, yi in discrete_line:
 
                 if pattern_mask is not None:
-                    if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                    if pattern_mask[yi, xi] == 255 and not np.isnan(image[yi, xi]):
                         x, y = xi, yi
                         break
                 else:
-                    if pattern_solid_mask[yi, xi] == 255 and not np.isnan(image[yi,xi]):
+                    if pattern_solid_mask[yi, xi] == 255 and not np.isnan(image[yi, xi]):
                         x, y = xi, yi
                         break
-
 
             # if np.isnan(image[y, x]):  # if x,y is nan in depth image, find nearest white pixel
             #     closest_not_nan_pixel = find_nearest_white(pattern_solid_mask, (y, x))
             #     x = closest_not_nan_pixel[1]
             #     y = closest_not_nan_pixel[0]
 
+            if remove_nan_border:
+                # Estimate a tolerance from the maximum
+                if x < (max_x - border_tolerance) and x > (min_x + border_tolerance):
+                    if y < (max_y - border_tolerance) and y > (min_y + border_tolerance):
+                        if np.isnan(image[y,x]) == False:
+                            idxs_rows.append(y)
+                            idxs_cols.append(x)
+            else:
+                if x < (width - border_tolerance) and x > (0 + border_tolerance):
+                    if y < (height - border_tolerance) and y > (0 + border_tolerance):
+                        if np.isnan(image[y,x]) == False:
+                            idxs_rows.append(y)
+                            idxs_cols.append(x)
+                        # idxs_rows.append(y)
+                        # idxs_cols.append(x)
+                        # if np.isnan(image[y,x]):
+                        #     print("IS NAN")
+
+                            # print(image[y,x])
+
+
             # Add point only if it is far away from the image borders
-            if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
-                if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
-                    idxs_rows.append(y)
-                    idxs_cols.append(x)
+            # if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:
+            #     if y < (height - 1 - (height - 1) * filter_border_edges) and y > (height - 1) * filter_border_edges:
+            #         idxs_rows.append(y)
+            #         idxs_cols.append(x)
 
         idxs_rows = np.array(idxs_rows)
         idxs_cols = np.array(idxs_cols)
@@ -951,8 +994,8 @@ def getFrustumMarkerArray(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     # ------------------------------------
     # Define wireframe
     # ------------------------------------
-    color_rviz = ColorRGBA(r=color[0]/2, g=color[1]/2, b=color[2]/2, a=1.0)
-    marker = Marker(ns=ns+'_wireframe', type=Marker.LINE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
+    color_rviz = ColorRGBA(r=color[0] / 2, g=color[1] / 2, b=color[2] / 2, a=1.0)
+    marker = Marker(ns=ns + '_wireframe', type=Marker.LINE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
                     color=color_rviz)
 
     marker.scale.x = 0.005  # line width
@@ -1001,7 +1044,7 @@ def getFrustumMarkerArray(w, h, f_x, f_y, Z_near, Z_far, frame_id, ns, color):
     # Define filled
     # ------------------------------------
     color_rviz = ColorRGBA(r=color[0], g=color[1], b=color[2], a=0.5)
-    marker = Marker(ns=ns+'_filled', type=Marker.TRIANGLE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
+    marker = Marker(ns=ns + '_filled', type=Marker.TRIANGLE_LIST, action=Marker.ADD, header=Header(frame_id=frame_id),
                     color=color_rviz)
 
     marker.scale.x = 1  # line width

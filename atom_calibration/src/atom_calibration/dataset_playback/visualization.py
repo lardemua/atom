@@ -433,8 +433,10 @@ def setupVisualization(dataset, args, selected_collection_key):
             continue
 
 
-        if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
-            continue
+        # if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
+        #     continue
+
+        print(sensor_key)
 
         # Create a single publisher for the sensor (will use this one for all collections)
         labeled_topic = generateLabeledTopic(dataset['sensors'][sensor_key]['topic'], type='3d')
@@ -597,12 +599,14 @@ def visualizationFunction(models, selection, clicked_points=None):
     for sensor_key in graphics['ros']['sensors']:
         if not dataset['sensors'][sensor_key]['modality'] in ['depth']:  # only for depth sensors
             continue
+        # print("Creating markers")
+        # print(sensor_key)
 
-        if not dataset['collections'][selected_collection_key]['labels'][sensor_key]['detected']:
-            continue
-
-        if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
-            continue
+        # if not dataset['collections'][selected_collection_key]['labels'][sensor_key]['detected']:
+        #     continue
+        #
+        # if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
+        #     continue
 
         color = (graphics['collections'][collection_key]['color'][0], graphics['collections']
                  [collection_key]['color'][1], graphics['collections'][collection_key]['color'][2], 0.5)
@@ -616,6 +620,8 @@ def visualizationFunction(models, selection, clicked_points=None):
     for sensor_key in graphics['ros']['sensors']:
         if not dataset['sensors'][sensor_key]['modality'] in ['lidar3d']:  # TODO add  lidar2d
             continue
+
+
 
 
         # Create a new point cloud to publish which has the new label idxs in green, idxs_limits in dark green.

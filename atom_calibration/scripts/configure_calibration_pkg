@@ -5,6 +5,7 @@ import os
 import sys
 import argparse
 import subprocess
+import itertools
 from os.path import exists
 from copy import deepcopy
 from datetime import date, datetime
@@ -20,7 +21,6 @@ import rospy
 import rospkg
 import rosbag
 import jinja2
-import itertools
 import matplotlib.pyplot as plt
 import networkx as nx
 from pytictoc import TicToc
@@ -33,6 +33,7 @@ from graphviz import Digraph
 from urdf_parser_py.urdf import URDF
 from matplotlib import cm
 from jinja2 import Environment, FileSystemLoader
+
 
 def getModalityEvaluation(sensor):
     # Helper function to simplify modality extraction
@@ -197,7 +198,7 @@ if __name__ == "__main__":
                 if not gx.has_edge(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/','')):
                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
                     gx.add_edge(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''), weight=1, type='static')
-    # exit(0)
+
     # nx.draw(gx, with_labels=True)
     # plt.show()
     # --------------------------------------------------------------------------
@@ -300,8 +301,16 @@ if __name__ == "__main__":
                     atomError('Additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK + ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
 
             for additional_tf_key, additional_tf in config['additional_tfs'].items():
+
+                # Check if frames exits
+                if additional_tf['child_link'] in gx.nodes:
+                    atomError('Additional tf for child link ' + Fore.BLUE + additional_tf['child_link']   + Style.RESET_ALL+ ' not found.\nCheck the frames you entered in the config.yaml.' )
+
+
                 # path between root and additional_tfs data frame
+                print('\nChecking path from ' + config['world_link'] + ' to ' + additional_tf['child_link'])
                 paths = nx.shortest_path(gx, config['world_link'], additional_tf['child_link'])
+
                 print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET + ' to additional_tfs ' + Fore.LIGHTMAGENTA_EX + additional_tf_key + Fore.RESET + ':')
                 at = '['
                 for path in paths:
