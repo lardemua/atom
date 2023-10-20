@@ -91,7 +91,7 @@ def saveICPCalibration(dataset, sensor_source, sensor_target, transform, json_fi
         dataset['collections'][collection_key]['transforms'][frame]['trans'] = res[0:3, 3]
 
     # Save results to a json file
-    filename_results_json = os.path.dirname(json_file) + '/ICPCalibration_' + descriptor + '.json'
+    filename_results_json = os.path.dirname(json_file) + f'/ICPCalibration_{sensor_source}_to_{sensor_target}_{descriptor}.json'
     saveResultsJSON(filename_results_json, dataset)
 
 
