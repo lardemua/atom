@@ -143,6 +143,8 @@ which now should a very accurate labeling of the boundaries of the pattern.
 This procedure should be carried out for all collections in the dataset. 
 The result is a dataset_corrected.json which contains the correct labels.
 
+ADD LINK
+
 ## Running the Calibration
 
 To calibrate, first setup visualization with:
