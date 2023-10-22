@@ -103,9 +103,45 @@ Collection |           rgb             |           depth
 1 | ![](docs/rgb_001.jpg) |  ![](docs/depth_001.png)
 2 | ![](docs/rgb_002.jpg) |  ![](docs/depth_002.png)
 3 | ![](docs/rgb_003.jpg) |  ![](docs/depth_003.png)
-3 | ![](docs/rgb_004.jpg) |  ![](docs/depth_004.png)
-3 | ![](docs/rgb_005.jpg) |  ![](docs/depth_005.png)
+4 | ![](docs/rgb_004.jpg) |  ![](docs/depth_004.png)
+5 | ![](docs/rgb_005.jpg) |  ![](docs/depth_005.png)
 
+## Using dataset playback to verify the labels 
+
+In ATOM, typically RGB sensors are very accurately auto-labeled, but for other modalities one should verify if the labels generated automatically during the dataset collection stage are correct.
+This is done using the dataset playback functionality.
+
+Since the **rgb_depth_system** contains a depth sensor, we are going to run dataset playback without before running calibration. First launch the visualization:
+
+    roslaunch rgb_depth_system_calibration dataset_playback.launch
+
+and then the dataset playback node:
+
+    rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset.json -ow
+
+We can use the left / right arrow keys to move between collections. 
+
+Move on to ***collection 004**. You should see this:
+
+![dataset_playback](docs/dataset_playback.png)
+
+in the 3D you can see small grey points. These are the points that were labeled as belonging to the pattern. 
+Then you can see larger cubes, which are points annotated as belonging to the boundary of the pattern. 
+The latter are clearly incorrectly labeled as we can see in the 3D window that some of these points are on the floor, instead of being on the boundary of the pattern.
+
+To fix this we will use the manual correction of depth data. Draw a polygon around the pattern as shown in the image below:
+
+![dataset_playback](docs/user_defined_polygon.png)
+
+once you close the polygon, i.e., click a point close to the initial point, a labeling procedure will start using the user defined polygon as input (which may take several seconds). 
+The result of this manual labeling is the following:
+
+![manual_labeling_result](docs/manual_labeling_result.png)
+
+which now should a very accurate labeling of the boundaries of the pattern.
+
+This procedure should be carried out for all collections in the dataset. 
+The result is a dataset_corrected.json which contains the correct labels.
 
 ## Running the Calibration
 
