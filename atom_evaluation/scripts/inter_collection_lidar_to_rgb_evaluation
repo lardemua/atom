@@ -246,6 +246,8 @@ if __name__ == "__main__":
     od_target = deepcopy(od)
     for collection_source_key, collection_source in od.items():
         for collection_target_key, collection_target in od_target.items():
+            if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
+                continue
             row = [collection_source_key + '-' + collection_target_key,
                 '%.4f' % e[collection_source_key][collection_target_key]['rms'],
                 '%.4f' % e[collection_source_key][collection_target_key]['x'],

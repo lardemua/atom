@@ -207,6 +207,8 @@ if __name__ == "__main__":
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
+        if collection_key in collections_to_skip:
+            continue
         row = [collection_key,
                '%.4f' % e[collection_key]['rms'],
                '%.4f' % e[collection_key]['avg_error_x'],
