@@ -105,6 +105,7 @@ if __name__ == "__main__":
     target_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor]['link']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     e = {}  # dictionary with all the errors
+    collections_to_skip = []
     for collection_key, collection in od.items():
         e[collection_key] = {}  # init the dictionary of errors for this collection
         # ---------------------------------------
@@ -122,6 +123,7 @@ if __name__ == "__main__":
 
         if len(depth_pts_in_depth_img[0]) == 0:
             print('No Depth point mapped into the image for collection ' + str(collection_key))
+            collections_to_skip.append(collection_key)
             continue
         # Clear image annotations
         image = cv2.imread(filename)
@@ -154,6 +156,7 @@ if __name__ == "__main__":
 
         if len(delta_pts) == 0:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            collections_to_skip.append(collection_key)
             continue
 
         # ---------------------------------------

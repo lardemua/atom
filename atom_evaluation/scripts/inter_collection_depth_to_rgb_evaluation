@@ -114,6 +114,7 @@ if __name__ == "__main__":
     e = {}  # dictionary with all the errors
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
+    collection_tuples_to_skip = []
     for collection_source_key, collection_source in od.items():
         e[collection_source_key] = {}  # init the dictionary of errors for this collection
         for collection_target_key, collection_target in od_target.items():
@@ -179,6 +180,7 @@ if __name__ == "__main__":
 
             if not errors:
                 print('No target depth point mapped into the image for collection pair ' + str((collection_source_key, collection_target_key)))
+                collection_tuples_to_skip.append((collection_source_key, collection_target_key))
                 continue
 
             e[collection_source_key][collection_target_key]['x'] = np.average(x_errors)

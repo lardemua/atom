@@ -145,6 +145,7 @@ if __name__ == "__main__":
     to_frame = mixed_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     e = {}  # dictionary with all the errors
+    collections_to_skip = []
     for collection_key, collection in od.items():
         e[collection_key] = {}  # init the dictionary of errors for this collection
         # ---------------------------------------
@@ -206,6 +207,7 @@ if __name__ == "__main__":
 
         if not errors:
             print('No LiDAR point mapped into the image for collection ' + str(collection_key))
+            collections_to_skip.append(collection_key)
             continue
 
         e[collection_key]['x'] = np.average(x_errors)

@@ -105,6 +105,7 @@ if __name__ == "__main__":
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     od_target = deepcopy(od)
     e = {}  # dictionary with all the errors
+    collection_tuples_to_skip = []
     for collection_source_key, collection_source in od.items():
         e[collection_source_key] = {}  # init the dictionary of errors for this collection
         if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
@@ -161,6 +162,7 @@ if __name__ == "__main__":
 
             if len(delta_pts) == 0:
                 print('No target depth point mapped into the image for collection pair' + str((collection_source_key, collection_target_key)))
+                collection_tuples_to_skip.append((collection_source_key, collection_target_key))
                 continue
 
             # ---------------------------------------
@@ -212,6 +214,8 @@ if __name__ == "__main__":
         for collection_target_key, collection_target in od_target.items():
             if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
                 # Remove every pairing removed in the previous for cycle
+                continue
+            if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
                 continue
             row = [collection_source_key + '-' + collection_target_key,
                 '%.4f' % e[collection_source_key][collection_target_key]['rms'],
