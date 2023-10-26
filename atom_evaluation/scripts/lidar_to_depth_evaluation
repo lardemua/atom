@@ -11,20 +11,19 @@ Reads the calibration results from a json file and computes the evaluation metri
 # Standard imports
 import json
 import os
-
 import argparse
-from collections import OrderedDict
 import sys
+from collections import OrderedDict
+
 import numpy as np
 import cv2
 from scipy.spatial import distance
 from colorama import Fore, Style
 from prettytable import PrettyTable
 
-
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset
+from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset, readAnnotationFile
 from atom_core.utilities import saveFileResults
 from atom_core.vision import depthInImage, rangeToImage
 
@@ -43,6 +42,7 @@ if __name__ == "__main__":
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     ap.add_argument("-bt", "--border_tolerance", help="Define the percentage of pixels to use to create a border. Lidar points outside that border will not count for the error calculations",
                                                  type=float, default=0.025)
+    ap.add_argument("-ua", "--use_annotations", help="If true the script uses depth annotations file.", action='store_true', default=False)
     ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help="A string to be evaluated into a lambda function that receives a collection name as input and "
                     "returns True or False to indicate if the collection should be loaded (and used in the "
@@ -77,6 +77,7 @@ if __name__ == "__main__":
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
     test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
+
 
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
@@ -120,11 +121,48 @@ if __name__ == "__main__":
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][depth_sensor]['data_file']
         image = cv2.imread(filename)
         depth_pts_in_depth_img = depthInImage(mixed_dataset, collection_key, depth_sensor)
+        print('depth_points_in_depth_image=' + str(depth_pts_in_depth_img))
+        print('shape depth_points_in_depth_image=' + str(depth_pts_in_depth_img.shape))
 
-        if len(depth_pts_in_depth_img[0]) == 0:
-            print('No Depth point mapped into the image for collection ' + str(collection_key))
-            collections_to_skip.append(collection_key)
-            continue
+        if args['use_annotations']:
+            # print(annotations)
+            # print(annotations_file)
+            annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['depth_sensor'])
+
+            num_points = 0
+            num_points += len(annotations[collection_key]['top']['ixs'])
+            num_points += len(annotations[collection_key]['right']['ixs'])
+            num_points += len(annotations[collection_key]['bottom']['ixs'])
+            num_points += len(annotations[collection_key]['left']['ixs'])
+            print(num_points)
+
+            depth_pts_in_depth_img = np.ndarray((2,num_points), dtype=float)
+            idx = 0
+            for x,y in zip(annotations[collection_key]['top']['ixs'], annotations[collection_key]['top']['iys']):
+                depth_pts_in_depth_img[0,idx] = x
+                depth_pts_in_depth_img[1,idx] = y
+                idx += 1
+
+            for x,y in zip(annotations[collection_key]['right']['ixs'], annotations[collection_key]['right']['iys']):
+                depth_pts_in_depth_img[0,idx] = x
+                depth_pts_in_depth_img[1,idx] = y
+                idx += 1
+
+            for x,y in zip(annotations[collection_key]['bottom']['ixs'], annotations[collection_key]['bottom']['iys']):
+                depth_pts_in_depth_img[0,idx] = x
+                depth_pts_in_depth_img[1,idx] = y
+                idx += 1
+
+            for x,y in zip(annotations[collection_key]['left']['ixs'], annotations[collection_key]['left']['iys']):
+                depth_pts_in_depth_img[0,idx] = x
+                depth_pts_in_depth_img[1,idx] = y
+                idx += 1
+
+            if len(depth_pts_in_depth_img[0]) == 0:
+                print('No Depth point mapped into the image for collection ' + str(collection_key))
+                collections_to_skip.append(collection_key)
+                continue
+
         # Clear image annotations
         image = cv2.imread(filename)
 
