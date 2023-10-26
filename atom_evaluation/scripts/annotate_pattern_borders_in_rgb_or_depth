@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-This script is used to produce annotations of the pattern limites on rgb images.
+This script is used to produce annotations of the pattern limits on rgb images.
 These annotations are used later by the range_sensor_to_camera_evaluation.py script.
 Since these annotations are only used for evaluation, they are only produced for the test datasets and not the train datasets.
 """
@@ -115,9 +115,10 @@ if __name__ == "__main__":
         # ----------------------------------------------------
         if load_collection_data:
             # Get evaluation data for current collection_key
+
             collection = dataset['collections'][collection_key]
-            filename = os.path.dirname(
-                args['dataset_file']) + '/' + collection['data'][args['rgb_sensor']]['data_file']
+            print(args['dataset_file'])
+            filename = os.path.dirname(args['dataset_file']) + '/' + collection['data'][args['rgb_sensor']]['data_file']
             print('Reading image ' + filename)
             image = cv2.imread(filename)
             window_name = 'Sensor ' + args['rgb_sensor'] + ' collection ' + collection_key
