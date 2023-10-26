@@ -242,7 +242,7 @@ class InteractiveDataLabeler:
         self.seed['x'] = msg.point.x * pow(2, self.pyrdown)
         self.seed['y'] = msg.point.y * pow(2, self.pyrdown)
         self.tic_manual_seed = rospy.Time.now()
-        print('Setting new seed point for sensor ' + self.name + ' to ' + str(self.seed))
+        # print('Setting new seed point for sensor ' + self.name + ' to ' + str(self.seed))
 
     def sensorDataReceivedCallback(self, msg):
         # rospy.loginfo(self.name + ' (Before lock) received msg which is ' + str((rospy.Time.now() - msg.header.stamp).to_sec()) + ' secs.')

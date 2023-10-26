@@ -140,10 +140,7 @@ The result of this manual labeling is the following:
 
 which now should a very accurate labeling of the boundaries of the pattern.
 
-This procedure should be carried out for all collections in the dataset. 
-The result is a dataset_corrected.json which contains the correct labels.
-
-ADD LINK
+This procedure should be carried out for all collections in the dataset. The dataset playback produces a corrected dataset. You can use the **dataset_corrected.json** file contained in the [rgb_depth_system_example_train_dataset](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing) you downloaded before.
 
 ## Running the Calibration
 
@@ -151,32 +148,20 @@ To calibrate, first setup visualization with:
 
     roslaunch rgb_depth_system_calibration calibrate.launch
 
-Then carry out the actual calibration using:
+Then carry out the actual calibration, remembering to point to the corrected dataset and to add some noise (nig):
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset.json -v -rv
-
-This will produce a table of residuals per iteration, like this:
-
-![](docs/calibration_output.png)
-
-This is the table presented once calibration is complete, which shows average reprojection errors of under 1 pixel. Sub-pixel accuracy is considered a good result for rgb camera calibration.
- 
- Since this is a simulation, the original pose of the cameras is actually the one used by gazebo to produce the images. This means that the cameras are already positioned in the actual ground truth pose, which means that the calibration did not do much in this case. In a real system, the sensors will not be positioned at the ground truth pose. In fact, for real systems, we do not know where the ground truth is.
-
-To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
-
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv -nig 0.1 0.1
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset_corrected.json -v -rv -nig 0.1 0.1
 
 Which starts the calibration with these errors:
 
+![](docs/calibration_output1.png)
+
+which are high. Notice the average error for depth is 0.0894 meters, which corresponds to 8 centimeters.
+Once the calibration is complete, results are:
+
 ![](docs/calibration_output2.png)
 
-which are quite high, because of the incorrect pose of the sensors,  and ends up converging into these figures:
-
-![](docs/calibration_output3.png)
-
-Which again, have subpixel accuracy. This means the procedure achieved a successful calibration.
-
+Which shows subpixel accuracy for the rgb camera and half centimeter for the depth camera.
 
 ## Evaluation
 
