@@ -87,7 +87,7 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-        optimized_urdf_file = urdf_path + '/optimized.urdf.xacro'
+        optimized_urdf_file = path_to_file + 'optimized.urdf.xacro'
         with open(optimized_urdf_file, "w", ) as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")

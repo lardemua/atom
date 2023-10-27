@@ -147,9 +147,11 @@ if __name__ == "__main__":
                         x_min = x
                         y_min = y
 
-            x_errors.append(abs(x_proj - x_min))
-            y_errors.append(abs(y_proj - y_min))
-            errors.append(min_error)
+            if x_min and y_min and min_error:
+                x_errors.append(abs(x_proj - x_min))
+                y_errors.append(abs(y_proj - y_min))
+                errors.append(min_error)
+
 
             if args['show_images']:
                 cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
