@@ -263,7 +263,7 @@ def main():
                 initial_estimate = dataset["patterns"]["transforms_initial"][collection_key]
                 if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
                         not child == initial_estimate["child"]:
-                    atomError("Cannot set initial estimate for pattern at collection " + collection_key + '. You must run the calibration without this collection. Check the csf flag.')
+                    atomError("Cannot set initial estimate for pattern at collection " + collection_key + '. You must run the calibration without this collection. Check how to use the csf flag.')
 
                 collection["transforms"][transform_key] = {"parent": parent, "child": child,
                                                            "trans": initial_estimate["trans"],
