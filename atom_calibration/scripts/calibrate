@@ -26,7 +26,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabel
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import waitForKeyPress2, checkAdditionalTfs, atomStartupPrint, verifyAnchoredSensor
+from atom_core.utilities import atomError, waitForKeyPress2, checkAdditionalTfs, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
 
 
@@ -263,7 +263,7 @@ def main():
                 initial_estimate = dataset["patterns"]["transforms_initial"][collection_key]
                 if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
                         not child == initial_estimate["child"]:
-                    raise ValueError("Cannot set initial estimate for pattern at collection " + collection_key)
+                    atomError("Cannot set initial estimate for pattern at collection " + collection_key + '. You must run the calibration without this collection. Check the csf flag.')
 
                 collection["transforms"][transform_key] = {"parent": parent, "child": child,
                                                            "trans": initial_estimate["trans"],
