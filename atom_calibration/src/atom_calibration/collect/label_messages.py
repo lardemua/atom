@@ -18,6 +18,7 @@ from geometry_msgs.msg import Point
 from sensor_msgs.msg import CameraInfo, Image
 from skimage.draw import line
 
+
 # Atom imports
 
 
@@ -702,6 +703,7 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
             center = (cX, cY)
 
         border_tolerance = int(width * filter_border_edges)
+        print("border_tolerance = " + str(border_tolerance))
         idxs_rows = []
         idxs_cols = []
         external_contour = contours[0]

@@ -374,8 +374,11 @@ class Optimizer:
 
         return error_list
 
-    def startOptimization(self, optimization_options={'x_scale': 'jac', 'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8,
-                                                      'diff_step': 1e-4}):
+    # def startOptimization(self, optimization_options={'x_scale': 'jac', 'ftol': 1e-8, 'xtol': 1e-8, 'gtol': 1e-8,
+    #                                                   'diff_step': 1e-4}):
+
+    def startOptimization(self, optimization_options={'x_scale': 'jac', 'ftol': 1e-10, 'xtol': 1e-10, 'gtol': 1e-10,
+                                                          'diff_step': 1e-4}):
         """ Initializes the optimization procedure.
 
         :param optimization_options: dict with options for the least squares scipy function.

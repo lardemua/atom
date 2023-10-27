@@ -95,7 +95,6 @@ if __name__ == "__main__":
     target_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor_target]['link']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     e = {}  # dictionary with all the errors
-    collections_to_skip = []
     for collection_key, collection in od.items():
         e[collection_key] = {}  # init the dictionary of errors for this collection
         # ---------------------------------------
@@ -142,7 +141,6 @@ if __name__ == "__main__":
 
         if len(delta_pts) == 0:
             print('No target depth point mapped into the image for collection ' + str(collection_key))
-            collections_to_skip.append(collection_key)
             continue
 
         # ---------------------------------------
@@ -188,8 +186,6 @@ if __name__ == "__main__":
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
-        if collection_key in collections_to_skip:
-            continue
         row = [collection_key,
                '%.4f' % e[collection_key]['rms'],
                '%.4f' % e[collection_key]['avg_error_x'],
