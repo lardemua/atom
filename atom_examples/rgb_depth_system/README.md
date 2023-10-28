@@ -89,7 +89,7 @@ Which will run a series of checks and produce several files inside the **rgb_dep
 
 To collect a dataset we run:
 
-    roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_rgb_system/dataset1 overwrite:=true
+    roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_depth_system/dataset1 overwrite:=true
 
 And save a few collections. 
 
