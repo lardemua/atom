@@ -196,7 +196,7 @@ This procedure produces a files called **annotation_\<sensor name\>.json**, i.e.
 
 Finally, the evaluation of the calibration is run with:
 
-    roslaunch rgb_depth_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/atom_calibration.json
+    roslaunch rgb_depth_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_test_dataset/dataset_corrected.json train_json:=$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/atom_calibration.json
 
 which results in:
 
