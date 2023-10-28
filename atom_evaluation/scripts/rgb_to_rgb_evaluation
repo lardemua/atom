@@ -280,7 +280,7 @@ if __name__ == "__main__":
         # STEP 3. Compute sb_T_p
         ss_frame = test_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
         st_frame = test_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
-        st_T_ss = getTransform(st_frame, ss_frame, test_dataset['collections'][collection_key]['transforms'])
+        st_T_ss = getTransform(st_frame, ss_frame, mixed_dataset['collections'][collection_key]['transforms'])
 
         st_T_p = np.dot(st_T_ss, ss_T_p)
         # print('st_T_p =\n' + str(st_T_p))
@@ -357,7 +357,7 @@ if __name__ == "__main__":
         pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = getTransform(common_frame, target_frame,
-                           test_dataset['collections'][collection_key]['transforms'])
+                           mixed_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
@@ -366,7 +366,7 @@ if __name__ == "__main__":
         pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
         bTp = getTransform(common_frame, source_frame,
-                           test_dataset['collections'][collection_key]['transforms'])
+                           mixed_dataset['collections'][collection_key]['transforms'])
 
         pattern_pose_source = np.dot(bTp, pattern_pose_source)
 

@@ -187,7 +187,7 @@ if __name__ == "__main__":
         # ---------------------------------------
         # --- Range to image projection
         # ---------------------------------------
-        vel2cam = getTransform(from_frame, to_frame, test_dataset['collections'][collection_key]['transforms'])
+        vel2cam = getTransform(from_frame, to_frame, train_dataset['collections'][collection_key]['transforms'])
         lidar_pts_in_img = rangeToImage(collection, test_json_file, lidar_sensor, depth_sensor, vel2cam)
 
         # ---------------------------------------
