@@ -201,6 +201,7 @@ if __name__ == "__main__":
 
     # nx.draw(gx, with_labels=True)
     # plt.show()
+
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
     # --------------------------------------------------------------------------
@@ -300,10 +301,11 @@ if __name__ == "__main__":
                 if not edge_in_config in gx.edges():
                     atomError('Additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK + ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
 
+            
             for additional_tf_key, additional_tf in config['additional_tfs'].items():
 
                 # Check if frames exits
-                if additional_tf['child_link'] in gx.nodes:
+                if additional_tf['child_link'] not in gx.nodes:
                     atomError('Additional tf for child link ' + Fore.BLUE + additional_tf['child_link']   + Style.RESET_ALL+ ' not found.\nCheck the frames you entered in the config.yaml. Consider using the ' + Fore.GREEN + '-utf/--use_tfs' + Style.RESET_ALL + ' option to use the tranforms on the /tf and /tf_static topics.')
 
 
