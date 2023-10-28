@@ -480,7 +480,7 @@ class InteractiveDataLabeler:
             # actual labeling
             self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False, subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
 
-            print('new_seed_point = ' + str(new_seed_point))
+            # print('new_seed_point = ' + str(new_seed_point))
             time_since_manual_seed = (rospy.Time.now()-self.tic_manual_seed).to_sec()
 
             #639 https://github.com/lardemua/atom/issues/639

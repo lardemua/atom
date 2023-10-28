@@ -17,6 +17,7 @@ import cv2
 from colorama import Fore, Style
 from tf import transformations
 from atom_core.geometry import traslationRodriguesToTransform
+from atom_calibration.collect import patterns as opencv_patterns
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -152,16 +153,11 @@ def createPatternLabels(args, dataset, step=0.02):
 
         # ---------------- Frame ----------------
         # Corners
-#         patterns['frame']['corners']['top_left'] = {'x': -square - border_x, 'y': -square - border_y}
-#         patterns['frame']['corners']['top_right'] = {'x': nx * square + border_x, 'y': -square - border_y}
-#         patterns['frame']['corners']['bottom_right'] = {'x': nx * square + border_x, 'y': ny * square + border_y}
-#         patterns['frame']['corners']['bottom_left'] = {'x': -square - border_x, 'y': ny * square + border_y}
- 
         patterns['frame']['corners']['top_left'] = {'x': -border_x, 'y':  - border_y}
         patterns['frame']['corners']['top_right'] = {'x': square + nx * square + border_x, 'y': -border_y}
         patterns['frame']['corners']['bottom_right'] = {'x': square + nx * square + border_x, 'y': ny * square + border_y + square}
         patterns['frame']['corners']['bottom_left'] = {'x': - border_x, 'y': ny * square + border_y + square}
-
+ 
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(
             patterns['frame']['corners']['top_left'], patterns['frame']['corners']['top_right'], step)
@@ -194,6 +190,15 @@ def createPatternLabels(args, dataset, step=0.02):
     # -----------------------------------
     # Create first guess for pattern pose
     # -----------------------------------
+    config = dataset['calibration_config']
+    size = {'x': config['calibration_pattern']['dimension']['x'], 
+            'y': config['calibration_pattern']['dimension']['y']}
+    length = config['calibration_pattern']['size']
+    inner_length = config['calibration_pattern']['inner_size']
+    dictionary = config['calibration_pattern']['dictionary']
+
+    pattern = opencv_patterns.CharucoPattern(size, length, inner_length, dictionary)
+
     for collection_key, collection in dataset['collections'].items():
         flg_detected_pattern = False
         patterns['transforms_initial'][str(collection_key)] = {'detected': False}  # by default no detection
@@ -213,7 +218,8 @@ def createPatternLabels(args, dataset, step=0.02):
                 # TODO should we not read these from the dictionary?
                 objp = np.zeros((nx * ny, 3), np.float32)
                 objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
-                # Build a numpy array with the chessboard corners
+
+                # Build a numpy array with the charuco corners
                 corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=float)
                 ids = list(range(0, len(collection['labels'][sensor_key]['idxs'])))
                 for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
@@ -222,7 +228,14 @@ def createPatternLabels(args, dataset, step=0.02):
                     ids[idx] = point['id']
 
                 # Find pose of the camera w.r.t the chessboard
-                ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
+                np_ids = np.array(ids, dtype=int)
+                rvecs, tvecs = None, None
+                ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                                    np_ids,
+                                                                    pattern.board,
+                                                                    K,
+                                                                    D,
+                                                                    rvecs, tvecs)
 
                 # Compute the pose of he chessboard w.r.t the pattern parent link
                 root_T_sensor = atom_core.atom.getTransform(
