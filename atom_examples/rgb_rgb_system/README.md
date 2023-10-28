@@ -118,7 +118,7 @@ This is the table presented once calibration is complete, which shows average re
 
 To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv -nig 0.1 0.1
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset/dataset.json -v -rv -nig 0.1 0.1
 
 Which starts the calibration with these errors:
 

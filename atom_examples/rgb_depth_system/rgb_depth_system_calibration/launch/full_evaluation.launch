@@ -34,7 +34,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Evaluation -->
     <node type="depth_to_rgb_evaluation" pkg="atom_evaluation" 
-        name="rgb_to_depth_evaluation"
+        name="depth_to_rgb_evaluation"
         args="-cs rgb -ds depth -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
         output="screen"/>
 

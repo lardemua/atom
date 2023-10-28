@@ -167,7 +167,37 @@ Which shows subpixel accuracy for the rgb camera and half centimeter for the dep
 
 The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets. 
 
-Download the [rgb_rgb_system_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset**.
 
-    roslaunch rgb_rgb_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset/atom_calibration.json
+##### Download and verification of Test dataset
 
+Download the [rgb_depth_system_example_test_dataset](https://drive.google.com/file/d/1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_test_dataset**.
+We recommend that the labels in test dataset are also verified using the dataset playback:
+
+    roslaunch rgb_depth_system_calibration dataset_playback.launch
+
+and then:
+
+    rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_test_dataset/dataset.json -ow
+
+
+##### Manual annotation of pattern's boundaries in the rgb image
+
+To run the evaluation of the depth to rgb sensor, we will also need to manually annotate the ground truth pattern boundaries on the rgb images. Do this by calling:
+
+    rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset /home/mike/datasets/rgb_depth_system/rgb_depth_system_example_test_dataset/dataset.json --rgb_sensor rgb
+
+This is the image annotation tool from ATOM. You can press "h" for help. All collections should be annotated as exemplified below:
+
+![](docs/manual_annotation_rgb.png)
+
+This procedure produces a files called **annotation_\<sensor name\>.json**, i.e. **annotation_rgb.json**. This file is already included in the test dataset, so you may skip these steps if you wish to do so.
+
+##### Evaluation script
+
+Finally, the evaluation of the calibration is run with:
+
+    roslaunch rgb_depth_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/atom_calibration.json
+
+which results in:
+
+![](docs/evaluation_results.png)

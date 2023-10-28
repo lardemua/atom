@@ -28,7 +28,6 @@ from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16U
 from atom_core.utilities import checkAdditionalTfs
 
 
-
 def printImageInfo(image, text=None):
     if not text is None:
         print(text +
@@ -747,7 +746,7 @@ def readAnnotationFile(json_file, sensor):
     if os.path.exists(annotations_file) is False:
         print('Annotation file does not exist ' + Fore.RED + annotations_file + Style.RESET_ALL +
               '\nPlease annotate this sensor using: ' + Fore.BLUE +
-              'rosrun atom_evaluation annotate_pattern_borders_in_rgb --dataset ' + json_file + ' --rgb_sensor ' + sensor +
+              'rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset ' + json_file + ' --rgb_sensor ' + sensor +
               Style.RESET_ALL)
         exit(0)
 
