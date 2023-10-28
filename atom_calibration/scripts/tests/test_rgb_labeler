@@ -86,17 +86,11 @@ class SimplePatternDetector:
                 ids[idx] = id
 
             # Find pose of the camera w.r.t the chessboard
-            filtered_objp = objp[ids]
-            ret, rvecs, tvecs = cv2.solvePnP(objp[ids], np.array(corners, dtype=np.float32), K, D)
             np_ids = np.array(ids, dtype=int)
-
-            # alternative using estimatePoseBoard
-            ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
-                                                                    np_ids,
-                                                                    self.pattern.board,
-                                                                    K,
-                                                                    D,
-                                                                    rvecs, tvecs)
+            rvecs, tvecs = None, None
+            _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                                    np_ids, self.pattern.board,
+                                                                    K, D, rvecs, tvecs)
 
             sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
             trans = list(sensor_T_chessboard[0: 3, 3])

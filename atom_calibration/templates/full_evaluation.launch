@@ -36,7 +36,7 @@
     {% for combination in c.sensor_combinations -%}
 
     <node type="{{ c.sensor_combinations[combination]['filename'] }}_evaluation" pkg="atom_evaluation" 
-        name="{{ combination }}_evaluation"
+        name="{{ c.sensor_combinations[combination]['filename'] }}_evaluation"
         args="{{ c.sensor_combinations[combination]['args'] }} -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
         output="screen"/>
 
