@@ -22,7 +22,7 @@ from colorama import Style, Fore
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset
+from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset, readAnnotationFile
 from atom_core.utilities import saveFileResults
 from atom_core.vision import depthInImage, depthToImage
 
@@ -48,6 +48,7 @@ if __name__ == "__main__":
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
                     help="Remove any collection which does not have a detection for all sensors.", )
+    ap.add_argument("-ua", "--use_annotations", help="If true the script uses depth annotations file.", action='store_true', default=False)
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
     # save results in a csv file
@@ -81,6 +82,9 @@ if __name__ == "__main__":
     # ---------------------------------------
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
+    if args['use_annotations']:
+        annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['sensor_target'])
+
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
@@ -94,6 +98,7 @@ if __name__ == "__main__":
     source_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor_source]['link']
     target_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor_target]['link']
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+    collections_to_skip = []
     e = {}  # dictionary with all the errors
     for collection_key, collection in od.items():
         e[collection_key] = {}  # init the dictionary of errors for this collection
@@ -111,7 +116,43 @@ if __name__ == "__main__":
         target_depth_pts_in_img_target = depthInImage(mixed_dataset, collection_key, depth_sensor_target)
         source_depth_pts_in_img_target = depthToImage(
             mixed_dataset, collection_key, test_json_file, depth_sensor_source, depth_sensor_target, depth_source_2_depth_target)
-        
+
+
+
+        if args['use_annotations']:
+            num_points = 0
+            num_points += len(annotations[collection_key]['top']['ixs'])
+            num_points += len(annotations[collection_key]['right']['ixs'])
+            num_points += len(annotations[collection_key]['bottom']['ixs'])
+            num_points += len(annotations[collection_key]['left']['ixs'])
+
+            target_depth_pts_in_img_target = np.ndarray((2, num_points), dtype=float)
+            idx = 0
+            for x, y in zip(annotations[collection_key]['top']['ixs'], annotations[collection_key]['top']['iys']):
+                target_depth_pts_in_img_target[0, idx] = x
+                target_depth_pts_in_img_target[1, idx] = y
+                idx += 1
+
+            for x, y in zip(annotations[collection_key]['right']['ixs'], annotations[collection_key]['right']['iys']):
+                target_depth_pts_in_img_target[0, idx] = x
+                target_depth_pts_in_img_target[1, idx] = y
+                idx += 1
+
+            for x, y in zip(annotations[collection_key]['bottom']['ixs'], annotations[collection_key]['bottom']['iys']):
+                target_depth_pts_in_img_target[0, idx] = x
+                target_depth_pts_in_img_target[1, idx] = y
+                idx += 1
+
+            for x, y in zip(annotations[collection_key]['left']['ixs'], annotations[collection_key]['left']['iys']):
+                target_depth_pts_in_img_target[0, idx] = x
+                target_depth_pts_in_img_target[1, idx] = y
+                idx += 1
+
+            if len(target_depth_pts_in_img_target[0]) == 0:
+                print('No Depth point mapped into the image for collection ' + str(collection_key))
+                collections_to_skip.append(collection_key)
+                continue
+
 
         delta_pts = []
         distances = []
@@ -141,8 +182,8 @@ if __name__ == "__main__":
 
         if len(delta_pts) == 0:
             print('No target depth point mapped into the image for collection ' + str(collection_key))
+            collections_to_skip.append(collection_key)
             continue
-
         # ---------------------------------------
         # --- Compute error metrics
         # ---------------------------------------
@@ -186,6 +227,8 @@ if __name__ == "__main__":
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
+        if collection_key in collections_to_skip:
+            continue
         row = [collection_key,
                '%.4f' % e[collection_key]['rms'],
                '%.4f' % e[collection_key]['avg_error_x'],

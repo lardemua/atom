@@ -84,6 +84,11 @@ if __name__ == "__main__":
     # ---------------------------------------
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
+    if args['use_annotations']:
+        # print(annotations)
+        # print(annotations_file)
+        annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['depth_sensor'])
+
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
@@ -121,20 +126,13 @@ if __name__ == "__main__":
         filename = os.path.dirname(test_json_file) + '/' + collection['data'][depth_sensor]['data_file']
         image = cv2.imread(filename)
         depth_pts_in_depth_img = depthInImage(mixed_dataset, collection_key, depth_sensor)
-        print('depth_points_in_depth_image=' + str(depth_pts_in_depth_img))
-        print('shape depth_points_in_depth_image=' + str(depth_pts_in_depth_img.shape))
 
         if args['use_annotations']:
-            # print(annotations)
-            # print(annotations_file)
-            annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['depth_sensor'])
-
             num_points = 0
             num_points += len(annotations[collection_key]['top']['ixs'])
             num_points += len(annotations[collection_key]['right']['ixs'])
             num_points += len(annotations[collection_key]['bottom']['ixs'])
             num_points += len(annotations[collection_key]['left']['ixs'])
-            print(num_points)
 
             depth_pts_in_depth_img = np.ndarray((2,num_points), dtype=float)
             idx = 0
