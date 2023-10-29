@@ -27,7 +27,6 @@ from atom_core.vision import depthToImage
 from atom_core.dataset_io import getMixedDataset, readAnnotationFile, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.utilities import rootMeanSquare, saveFileResults
 
-
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
@@ -154,9 +153,9 @@ if __name__ == "__main__":
 
 
             if args['show_images']:
-                cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
+                # cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 10, (255, 0, 0), 1)
                 cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
-                         (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
+                         (int(round(x_min)), int(round(y_min))), (0, 255, 255), 1)
 
         if not errors:
             print('No Depth point mapped into the image for collection ' + str(collection_key))
