@@ -113,12 +113,12 @@ if __name__ == "__main__":
         filename = os.path.dirname(args['test_json_file']) + '/' + collection['data'][args['camera_sensor']]['data_file']
         image = cv2.imread(filename)
 
-        if args['show_images']:  # draw all ground truth annotations
-            for side in annotations[collection_key].keys():
-                for x, y in zip(annotations[collection_key][side]['ixs'],
-                                annotations[collection_key][side]['iys']):
-                    cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
-
+#         if args['show_images']:  # draw all ground truth annotations
+#             for side in annotations[collection_key].keys():
+#                 for x, y in zip(annotations[collection_key][side]['ixs'],
+#                                 annotations[collection_key][side]['iys']):
+#                     cv2.line(image, (int(round(x)), int(round(y))), 1, (0, 255, 0))
+# 
         # ---------------------------------------
         # --- Evaluation metrics - reprojection error
         # ---------------------------------------
@@ -140,6 +140,9 @@ if __name__ == "__main__":
             for side in annotations[collection_key].keys():
                 for x, y in zip(annotations[collection_key][side]['ixs'],
                                 annotations[collection_key][side]['iys']):
+
+
+
                     error = math.sqrt((x_proj - x) ** 2 + (y_proj - y) ** 2)
                     if error < min_error:
                         min_error = error
@@ -154,8 +157,20 @@ if __name__ == "__main__":
 
             if args['show_images']:
                 # cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 10, (255, 0, 0), 1)
+                # cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 10, (255, 0, 0), 1)
+
                 cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
                          (int(round(x_min)), int(round(y_min))), (0, 255, 255), 1)
+                
+                for side in annotations[collection_key].keys():
+                    for x, y in zip(annotations[collection_key][side]['ixs'],
+                                    annotations[collection_key][side]['iys']):
+                        cv2.line(image, (int(round(x)), int(round(y))), (int(round(x)), int(round(y))), (0, 255, 0), 1)
+
+
+                cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
+                         (int(round(x_proj)), int(round(y_proj))), (0, 0, 255), 1)
+
 
         if not errors:
             print('No Depth point mapped into the image for collection ' + str(collection_key))
