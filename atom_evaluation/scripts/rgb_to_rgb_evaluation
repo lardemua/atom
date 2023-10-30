@@ -239,9 +239,9 @@ if __name__ == "__main__":
         gray_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2GRAY)
 
         # Get pattern number of corners
-        nx = test_dataset['calibration_config']['calibration_pattern']['dimension']['x']
-        ny = test_dataset['calibration_config']['calibration_pattern']['dimension']['y']
-        square = test_dataset['calibration_config']['calibration_pattern']['size']
+        nx = mixed_dataset['calibration_config']['calibration_pattern']['dimension']['x']
+        ny = mixed_dataset['calibration_config']['calibration_pattern']['dimension']['y']
+        square = mixed_dataset['calibration_config']['calibration_pattern']['size']
 
         # Get corners and idxs for the source sensor
         corners_s = np.ones((3, len(collection['labels'][args['sensor_source']]['idxs'])), dtype=float)
@@ -278,8 +278,8 @@ if __name__ == "__main__":
         # print('ss_T_p =\n' + str(ss_T_p))
 
         # STEP 3. Compute sb_T_p
-        ss_frame = test_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
-        st_frame = test_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+        ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+        st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
         st_T_ss = getTransform(st_frame, ss_frame, mixed_dataset['collections'][collection_key]['transforms'])
 
         st_T_p = np.dot(st_T_ss, ss_T_p)
@@ -347,9 +347,9 @@ if __name__ == "__main__":
         delta_total = []
         terr = []
         rerr = []
-        common_frame = test_dataset['calibration_config']['world_link']
-        source_frame = test_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
-        target_frame = test_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+        common_frame = mixed_dataset['calibration_config']['world_link']
+        source_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+        target_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
         _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_t],
                                        np.array(corners_t[0: 2, :].T, dtype=np.float32),
@@ -446,7 +446,7 @@ if __name__ == "__main__":
     table = PrettyTable(table_header)
     table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
 
-    od = OrderedDict(sorted(test_dataset['collections'].items(), key=lambda t: int(t[0])))
+    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
         row = [collection_key,
                '%.4f' % e[collection_key]['rms'],
