@@ -28,7 +28,6 @@ from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16U
 from atom_core.utilities import checkAdditionalTfs
 
 
-
 def printImageInfo(image, text=None):
     if not text is None:
         print(text +
@@ -155,7 +154,8 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 # convert to dictionary
                 collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
 
-    print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
+    if skipped_loading: # list is not empty
+        print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
 
     return dataset, json_file
 
@@ -557,7 +557,9 @@ def filterCollectionsFromDataset(dataset, args):
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
-        print('Deleted collections: ' + str(deleted) + ' because of the -csf flag.')
+
+        if deleted: # list is not empty
+            print('Deleted collections: ' + str(deleted) + ' because of the -csf flag.')
 
     if not args['use_incomplete_collections']:
         deleted = []
@@ -570,8 +572,9 @@ def filterCollectionsFromDataset(dataset, args):
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
-        print('Deleted collections: ' + str(deleted) + ' because these are incomplete. If you want to use them set the '
-                                                       'use_incomplete_collections flag.')
+
+        if deleted: # list is not empty
+            print('Deleted collections: ' + str(deleted) + ' because these are incomplete. If you want to use them set the use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
         number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
@@ -581,8 +584,7 @@ def filterCollectionsFromDataset(dataset, args):
             for sensor_key, sensor in dataset['sensors'].items():
                 if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
-                        print(
-                            Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                        print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
                             collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
@@ -610,7 +612,9 @@ def filterCollectionsFromDataset(dataset, args):
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
-        print('Deleted collections: ' + str(deleted) + ': at least one detection by a camera should be present.')
+
+        if deleted: # list is not empty
+            print('Deleted collections: ' + str(deleted) + ': at least one detection by a camera should be present.')
 
     if not dataset['collections'].keys():
         raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
@@ -747,7 +751,7 @@ def readAnnotationFile(json_file, sensor):
     if os.path.exists(annotations_file) is False:
         print('Annotation file does not exist ' + Fore.RED + annotations_file + Style.RESET_ALL +
               '\nPlease annotate this sensor using: ' + Fore.BLUE +
-              'rosrun atom_evaluation annotate_pattern_borders_in_rgb --dataset ' + json_file + ' --rgb_sensor ' + sensor +
+              'rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset ' + json_file + ' --rgb_sensor ' + sensor +
               Style.RESET_ALL)
         exit(0)
 
