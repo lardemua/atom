@@ -20,7 +20,7 @@ class SimplePatternDetector:
 
     def __init__(self, args, config):
 
-        size = {'x': config['calibration_pattern']['dimension']['x'], 
+        size = {'x': config['calibration_pattern']['dimension']['x'],
                 'y': config['calibration_pattern']['dimension']['y']}
         length = config['calibration_pattern']['size']
         inner_length = config['calibration_pattern']['inner_size']
@@ -30,10 +30,10 @@ class SimplePatternDetector:
 
         if config['calibration_pattern']['pattern_type'] == 'charuco':
             self.pattern = patterns.CharucoPattern(size, length, inner_length, dictionary)
-        elif args['type'] == 'chessboard':
+        elif config['calibration_pattern']['pattern_type'] == 'chessboard':
             self.pattern = patterns.ChessboardPattern(size, length)
         else:
-            rospy.logerr("Unknown pattern '{}'".format(args['type']))
+            rospy.logerr("Unknown pattern '{}'".format(config['calibration_pattern']['pattern_type']))
             sys.exit(1)
 
         # Get a camera_info message
@@ -53,10 +53,13 @@ class SimplePatternDetector:
         self.bridge = CvBridge()
         self.image_pub = rospy.Publisher(topic + '/labeled', Image, queue_size=1)
 
-
     def onImageReceived(self, image_msg):
+        if self.args['use_ir']:
+            image = self.bridge.imgmsg_to_cv2(image_msg, 'mono16')
+            image = image.astype(np.uint8)
+        else:
+            image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
 
-        image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
         nx = self.config['calibration_pattern']['dimension']['x']
         ny = self.config['calibration_pattern']['dimension']['y']
         K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
@@ -64,14 +67,14 @@ class SimplePatternDetector:
 
         result = self.pattern.detect(image, equalize_histogram=False)
 
-        if result['detected']: 
-            print('Pattern detected (' + str(len(result['ids'])) + ' out of ' + str(nx*ny) +  ' corners)')
+        if result['detected']:
+            print('Pattern detected (' + str(len(result['ids'])) + ' out of ' + str(nx * ny) + ' corners)')
         else:
             print('Failed to detect pattern')
 
         self.pattern.drawKeypoints(image, result)
 
-        if result['detected']: 
+        if result['detected']:
             objp = np.zeros((nx * ny, 3), np.float32)
             objp[:, :2] = self.config['calibration_pattern']['size'] * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
@@ -85,24 +88,28 @@ class SimplePatternDetector:
                 corners[idx, 0, 1] = point[0][1]
                 ids[idx] = id
 
-            # Find pose of the camera w.r.t the chessboard
-            np_ids = np.array(ids, dtype=int)
-            rvecs, tvecs = None, None
-            _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
-                                                                    np_ids, self.pattern.board,
-                                                                    K, D, rvecs, tvecs)
+            # # Find pose of the camera w.r.t the chessboard
+            if self.args['estimate_3d']:
+                np_ids = np.array(ids, dtype=int)
+                rvecs, tvecs = None, None
+                _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                                     np_ids, self.pattern.board,
+                                                                     K, D, rvecs, tvecs)
 
-            sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
-            trans = list(sensor_T_chessboard[0: 3, 3])
-            quat = list(transformations.quaternion_from_matrix(sensor_T_chessboard)) 
+                sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
+                trans = list(sensor_T_chessboard[0: 3, 3])
+                quat = list(transformations.quaternion_from_matrix(sensor_T_chessboard))
 
-            self.broadcaster.sendTransform(trans, quat, rospy.Time.now(), 'pattern', image_msg.header.frame_id)
-        
-            # Draw frame on the image
-            cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.5)
-            # https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html
+                self.broadcaster.sendTransform(trans, quat, rospy.Time.now(), 'pattern', image_msg.header.frame_id)
 
-        image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
+                # Draw frame on the image
+                cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.5)
+                # https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html
+        if self.args['use_ir']:
+            image_msg_out = self.bridge.cv2_to_imgmsg(image, 'mono8')
+        else:
+            image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
+
         self.image_pub.publish(image_msg_out)
 
         topic = self.config['sensors'][self.args['sensor_name']]['topic_name']
@@ -117,8 +124,15 @@ def main():
     rospy.init_node('detect_chessboard', anonymous=True)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.', type=str, required=False, default=None)
-    parser.add_argument("-sn", "--sensor_name", help="Sensor to test as named in the config file.", type=str, required=True)
+    parser.add_argument("-cfg", "--config_file",
+                        help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
+                        type=str, required=False, default=None)
+    parser.add_argument("-sn", "--sensor_name", help="Sensor to test as named in the config file.", type=str,
+                        required=True)
+    parser.add_argument("-e3d", "--estimate_3d", help="Sensor to test as named in the config file.",
+                        action="store_true")
+    parser.add_argument("-uir", "--use_ir", help="Sensor to test as named in the config file.",
+                        action="store_true")
     args = vars(parser.parse_args())
 
     # Read config file

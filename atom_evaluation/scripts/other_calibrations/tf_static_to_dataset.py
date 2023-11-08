@@ -67,5 +67,5 @@ if __name__ == '__main__':
 
 
     # Save results to a json file
-    filename_results_json = os.path.dirname(json_file) + '/fabric_calibration.json'
+    filename_results_json = os.path.dirname(json_file) + '/factory_calibration.json'
     saveResultsJSON(filename_results_json, dataset)
