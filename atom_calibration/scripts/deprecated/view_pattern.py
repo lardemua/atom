@@ -5,6 +5,7 @@ import argparse
 
 import cv2
 import rospy
+import numpy as np
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from atom_calibration.collect import patterns
@@ -18,6 +19,7 @@ class SimplePatternDetector:
         inner_length = options['inner_length']
         dictionary = options['dict']
         self.options = options
+
 
         if options['type'] == 'charuco':
             self.pattern = patterns.CharucoPattern(size, length, inner_length, dictionary)
@@ -33,13 +35,22 @@ class SimplePatternDetector:
 
     def onImageReceived(self, image_msg):
 
-        image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+        if self.options['use_ir']:
+            image = self.bridge.imgmsg_to_cv2(image_msg, 'mono16')
+            image = image.astype(np.uint8)
+        else:
+            image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+
         result = self.pattern.detect(image, equalize_histogram=False)
 
 
         self.pattern.drawKeypoints(image, result)
 
-        image_msg_out = self.bridge.cv2_to_imgmsg(image, 'passthrough')
+        if self.options['use_ir']:
+            image_msg_out = self.bridge.cv2_to_imgmsg(image, 'mono8')
+        else:
+            image_msg_out = self.bridge.cv2_to_imgmsg(image, 'bgr8')
+
         self.image_pub.publish(image_msg_out)
 
         cv2.namedWindow(self.options['topic'], cv2.WINDOW_NORMAL)
@@ -63,6 +74,8 @@ def main():
                         required=True)
     parser.add_argument("-l", "--inner_length", help="Length of inner marker (e.g. aruco marker).", type=float,
                         default=0.014)
+    parser.add_argument("-uir", "--use_ir", help="Sensor to test as named in the config file.",
+                        action="store_true")
     args = vars(parser.parse_args())
 
     scd = SimplePatternDetector(args)
