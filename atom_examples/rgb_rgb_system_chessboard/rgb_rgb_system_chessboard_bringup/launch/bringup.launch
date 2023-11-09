@@ -1,0 +1,16 @@
+<launch>
+
+<!--Load robot xacro into robot_description ros parameter.-->
+<include file="$(find rgb_rgb_system_chessboard_description)/launch/upload.launch">
+</include>
+
+<!--Load robot xacro into robot_description ros parameter.-->
+<include file="$(find rgb_rgb_system_chessboard_gazebo)/launch/spawn.launch">
+</include>
+
+<include file="$(find rgb_rgb_system_chessboard_bringup)/launch/visualize.launch">
+</include>
+
+<node name="interactive_pattern" pkg="atom_worlds" type="interactive_pattern" output="screen" />
+
+</launch>
