@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # stdlib
+from functools import partial
 import sys
 import argparse
 import time
@@ -24,35 +25,38 @@ current_pose = Pose()
 current_pose.orientation.w = 1
 
 rospy.init_node("interactive_pattern")
-set_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+set_state_service = rospy.ServiceProxy(
+    '/gazebo/set_model_state', SetModelState)
 pub = rospy.Publisher('~pattern', MarkerArray, queue_size=0, latch=True)
 
 # local packages
-
-model_name = 'charuco_800x600_5x5_100'
 server = None
 menu_handler = MenuHandler()
 
-def makeBox( msg, pose):
+
+def makeBox(msg, pose, args):
 
     marker = Marker(header=Header(frame_id="world", stamp=rospy.Time.now()),
-                   ns=model_name, id=0, frame_locked=False,
-                   type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
-                   pose=pose,
-                   scale=Vector3(x=1.0, y=1.0, z=1.0),
-                   color=ColorRGBA(r=1, g=1, b=1, a=1))
-    marker.mesh_resource = 'package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae'
+                    ns=args['model_name'], id=0, frame_locked=False,
+                    type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(
+                        0),
+                    pose=pose,
+                    scale=Vector3(x=1.0, y=1.0, z=1.0),
+                    color=ColorRGBA(r=1, g=1, b=1, a=1))
+    marker.mesh_resource = args['mesh_resource']
     marker.mesh_use_embedded_materials = True
     return marker
 
-def makeBoxControl( msg, pose ):
-    control =  InteractiveMarkerControl()
+
+def makeBoxControl(msg, pose, args):
+    control = InteractiveMarkerControl()
     control.always_visible = True
-    control.markers.append( makeBox(msg, pose) )
-    msg.controls.append( control )
+    control.markers.append(makeBox(msg, pose, args))
+    msg.controls.append(control)
     return control
 
-def make6DofMarker(fixed, interaction_mode, pose, show_6dof=False):
+
+def make6DofMarker(fixed, interaction_mode, pose, show_6dof=False, args=None):
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = "world"
     int_marker.pose = pose
@@ -62,7 +66,7 @@ def make6DofMarker(fixed, interaction_mode, pose, show_6dof=False):
     int_marker.description = "Simple 6-DOF Control"
 
     # insert a box
-    makeBoxControl(int_marker, pose)
+    makeBoxControl(int_marker, pose, args)
     int_marker.controls[0].interaction_mode = interaction_mode
 
     if fixed:
@@ -147,15 +151,16 @@ def make6DofMarker(fixed, interaction_mode, pose, show_6dof=False):
             control.orientation_mode = InteractiveMarkerControl.FIXED
         int_marker.controls.append(control)
 
-    server.insert(int_marker, processFeedback)
+    server.insert(int_marker, partial(processFeedback, args=args))
     menu_handler.apply(server, int_marker.name)
 
-def processFeedback( feedback ):
+
+def processFeedback(feedback, args):
     s = "feedback from marker '" + feedback.marker_name
     s += "' / control '" + feedback.control_name + "'"
 
     if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
-        rospy.loginfo( s + ": pose changed")
+        rospy.loginfo(s + ": pose changed")
         print('new pose = ' + str(feedback.pose))
 
         print('feedback = \n' + str(feedback))
@@ -170,8 +175,7 @@ def processFeedback( feedback ):
 
         req = SetModelStateRequest()  # Create an object of type SetModelStateRequest
 
-
-        req.model_state.model_name = model_name
+        req.model_state.model_name = args['model_name']
         req.model_state.pose.position.x = pose.position.x
         req.model_state.pose.position.y = pose.position.y
         req.model_state.pose.position.z = pose.position.z
@@ -184,7 +188,7 @@ def processFeedback( feedback ):
         global set_state_service
         result = set_state_service(req.model_state)
 
-        print(result)
+        # print(result)
         # state_msg = ModelState()
         # state_msg.model_name = model_name
         # state_msg.pose.position.x = pose.position.x
@@ -245,17 +249,23 @@ def processFeedback( feedback ):
 
         server.applyChanges()
 
+
 def callbackTimer(event):
     print('Timer called at ' + str(event.current_real))
     global pose
 
+
 if __name__ == "__main__":
 
     # Parse command line arguments
-    ap = argparse.ArgumentParser(description='Interactive manipulation of pattern pattern in rviz.')
-    # ap.add_argument("-c", "--calibration_file", type=str, required=True, help='full path to calibration file.')
-    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
+    ap = argparse.ArgumentParser(
+        description='Interactive manipulation of pattern pattern in rviz.')
+    ap.add_argument("-ms", "--mesh_resource", type=str, help='full path to calibration pattern dae.',
+                    default='package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae')
+    ap.add_argument("-mn", "--model_name", type=str, help='Model name in gazebo.',
+                    default='charuco_800x600_5x5_100')
 
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
 
     # create a timer to update the published transforms
     # rospy.Timer(rospy.Duration(0.01), frameCallback)
@@ -265,13 +275,19 @@ if __name__ == "__main__":
 
     # Get current charuco gazebo model pose at set the marker's pose accordingly
     rospy.wait_for_service('/gazebo/get_model_state')
-    get_model_state_service = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
-    pose_gazebo = get_model_state_service(model_name, 'world')
+    get_model_state_service = rospy.ServiceProxy(
+        '/gazebo/get_model_state', GetModelState)
+    # while True:
+    print('Getting model state for model name ' + args["model_name"])
+    pose_gazebo = get_model_state_service(args['model_name'], 'world')
+    print(pose_gazebo)
+    # time.sleep(2)
 
     # pose = Pose(position=Point(x=2, y=2, z=1), orientation=Quaternion(x=0, y=0, z=0, w=1))
     import copy
     pose = copy.deepcopy(pose_gazebo.pose)
-    make6DofMarker(True, InteractiveMarkerControl.MOVE_3D, pose_gazebo.pose, True)
+    make6DofMarker(True, InteractiveMarkerControl.MOVE_3D,
+                   pose_gazebo.pose, True, args)
 
     server.applyChanges()
 

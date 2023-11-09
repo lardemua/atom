@@ -22,7 +22,7 @@
     Sets up image decompressors if needed, reads the urdf robot description.
 
 @arg bag_file  Absolute path to the playing bag.
-    default: $(env ROS_BAGS)/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_bag.bag
+    default: $(env ROS_BAGS)/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example.bag
 @arg bag_start Playback starting time (in seconds). default: 0.0
 @arg bag_rate  Playback rate. default: 1.0
 @arg use_tfs  Use tfs in the bag file or generate new ones using the urdf, joint state messages and the robot state publisher. default: False
@@ -30,7 +30,7 @@
 
 <launch>
 
-    <arg name="bag_file" default="$(env ROS_BAGS)/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_bag.bag"/>
+    <arg name="bag_file" default="$(env ROS_BAGS)/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example.bag"/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
@@ -44,21 +44,21 @@
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Throttle topics -->
-
-
+    
+    
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_left"
           args="messages /rgb_left/image_raw/compressed_to_throttle 10 /rgb_left/image_raw/compressed"/>
-
-
+    
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-
+    
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_right"
           args="messages /rgb_right/image_raw/compressed_to_throttle 10 /rgb_right/image_raw/compressed"/>
-
-
+    
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-
-
+    
+    
 
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
@@ -84,16 +84,16 @@
     </group>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Image Topic Decompression -->
     <node pkg="image_transport" type="republish" name="decompressor_rgb_left" output="screen"
           args="compressed in:=/rgb_left/image_raw raw out:=/rgb_left/image_raw"/>
     <node pkg="image_transport" type="republish" name="decompressor_rgb_right" output="screen"
           args="compressed in:=/rgb_right/image_raw raw out:=/rgb_right/image_raw"/>
-
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-
+    
 
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->

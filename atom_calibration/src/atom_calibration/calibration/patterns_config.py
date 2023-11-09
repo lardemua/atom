@@ -40,7 +40,7 @@ def sampleLineSegment(p0, p1, step):
 def createPatternLabels(args, dataset, step=0.02):
     """
     Creates the necessary data related to the chessboard calibration pattern
-    :return: a dataset_chessboard dictionary 
+    :return: a dataset_chessboard dictionary
     """
 
     if 'patterns' in dataset:  # If we have a patterns that means that the pattern poses were already found and written to the dataset. In that case we use the poses that exist.
@@ -76,7 +76,8 @@ def createPatternLabels(args, dataset, step=0.02):
         border_x = border_y = dataset['calibration_config']['calibration_pattern']['border_size']
 
     patterns = {  # All coordinates in the pattern's local coordinate system. Since z=0 for all points, it is omitted.
-        'corners': [],  # [{'idx': 0, 'x': 3, 'y': 4}, ..., ] # Pattern's visual markers
+        # [{'idx': 0, 'x': 3, 'y': 4}, ..., ] # Pattern's visual markers
+        'corners': [],
         'frame': {'corners': {'top_left': {'x': 0, 'y': 0},  # Physical outer boundaries of the pattern
                               'top_right': {'x': 0, 'y': 0},
                               'bottom_right': {'x': 0, 'y': 0},
@@ -100,15 +101,20 @@ def createPatternLabels(args, dataset, step=0.02):
         idx = 0
         for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
             for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
-                patterns['corners'].append({'id': idx, 'x': col * square, 'y': row * square})
+                patterns['corners'].append(
+                    {'id': idx, 'x': col * square, 'y': row * square})
                 idx += 1
 
         # ---------------- Frame ----------------
         # Corners
-        patterns['frame']['corners']['top_left'] = {'x': -square - border_x, 'y': -square - border_y}
-        patterns['frame']['corners']['top_right'] = {'x': nx * square + border_x, 'y': -square - border_y}
-        patterns['frame']['corners']['bottom_right'] = {'x': nx * square + border_x, 'y': ny * square + border_y}
-        patterns['frame']['corners']['bottom_left'] = {'x': -square - border_x, 'y': ny * square + border_y}
+        patterns['frame']['corners']['top_left'] = {
+            'x': -square - border_x, 'y': -square - border_y}
+        patterns['frame']['corners']['top_right'] = {
+            'x': nx * square + border_x, 'y': -square - border_y}
+        patterns['frame']['corners']['bottom_right'] = {
+            'x': nx * square + border_x, 'y': ny * square + border_y}
+        patterns['frame']['corners']['bottom_left'] = {
+            'x': -square - border_x, 'y': ny * square + border_y}
 
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(
@@ -148,16 +154,21 @@ def createPatternLabels(args, dataset, step=0.02):
         idx = 0
         for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
             for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
-                patterns['corners'].append({'id': idx, 'x': square + col * square, 'y': square + row * square})
+                patterns['corners'].append(
+                    {'id': idx, 'x': square + col * square, 'y': square + row * square})
                 idx += 1
 
         # ---------------- Frame ----------------
         # Corners
-        patterns['frame']['corners']['top_left'] = {'x': -border_x, 'y':  - border_y}
-        patterns['frame']['corners']['top_right'] = {'x': square + nx * square + border_x, 'y': -border_y}
-        patterns['frame']['corners']['bottom_right'] = {'x': square + nx * square + border_x, 'y': ny * square + border_y + square}
-        patterns['frame']['corners']['bottom_left'] = {'x': - border_x, 'y': ny * square + border_y + square}
- 
+        patterns['frame']['corners']['top_left'] = {
+            'x': -border_x, 'y': - border_y}
+        patterns['frame']['corners']['top_right'] = {
+            'x': square + nx * square + border_x, 'y': -border_y}
+        patterns['frame']['corners']['bottom_right'] = {
+            'x': square + nx * square + border_x, 'y': ny * square + border_y + square}
+        patterns['frame']['corners']['bottom_left'] = {
+            'x': - border_x, 'y': ny * square + border_y + square}
+
         # Lines sampled
         patterns['frame']['lines_sampled']['top'] = sampleLineSegment(
             patterns['frame']['corners']['top_left'], patterns['frame']['corners']['top_right'], step)
@@ -191,37 +202,45 @@ def createPatternLabels(args, dataset, step=0.02):
     # Create first guess for pattern pose
     # -----------------------------------
     config = dataset['calibration_config']
-    size = {'x': config['calibration_pattern']['dimension']['x'], 
+    size = {'x': config['calibration_pattern']['dimension']['x'],
             'y': config['calibration_pattern']['dimension']['y']}
     length = config['calibration_pattern']['size']
     inner_length = config['calibration_pattern']['inner_size']
     dictionary = config['calibration_pattern']['dictionary']
 
-    pattern = opencv_patterns.CharucoPattern(size, length, inner_length, dictionary)
+    pattern = opencv_patterns.CharucoPattern(
+        size, length, inner_length, dictionary)
 
     for collection_key, collection in dataset['collections'].items():
         flg_detected_pattern = False
-        patterns['transforms_initial'][str(collection_key)] = {'detected': False}  # by default no detection
+        patterns['transforms_initial'][str(collection_key)] = {
+            'detected': False}  # by default no detection
 
         for sensor_key, sensor in sorted(list(dataset['sensors'].items()), key=lambda x: x[0].lower(), reverse=True):
             # for sensor_key, sensor in dataset['sensors'].items():
 
-            if not collection['labels'][sensor_key]['detected']:  # if chessboard not detected by sensor in collection
-                print('Collection ' + str(collection_key) + ' is partial: Pattern not detected by sensor ' + str(sensor_key))
+            # if chessboard not detected by sensor in collection
+            if not collection['labels'][sensor_key]['detected']:
+                print('Collection ' + str(collection_key) +
+                      ' is partial: Pattern not detected by sensor ' + str(sensor_key))
                 continue
 
             # change accordingly to the first camera to give chessboard first poses
             if sensor['modality'] == 'rgb':
-                K = np.ndarray((3, 3), dtype=float, buffer=np.array(sensor['camera_info']['K']))
-                D = np.ndarray((5, 1), dtype=float, buffer=np.array(sensor['camera_info']['D']))
+                K = np.ndarray((3, 3), dtype=float, buffer=np.array(
+                    sensor['camera_info']['K']))
+                D = np.ndarray((5, 1), dtype=float, buffer=np.array(
+                    sensor['camera_info']['D']))
 
                 # TODO should we not read these from the dictionary?
                 objp = np.zeros((nx * ny, 3), np.float32)
                 objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
                 # Build a numpy array with the charuco corners
-                corners = np.zeros((len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=float)
-                ids = list(range(0, len(collection['labels'][sensor_key]['idxs'])))
+                corners = np.zeros(
+                    (len(collection['labels'][sensor_key]['idxs']), 1, 2), dtype=float)
+                ids = list(
+                    range(0, len(collection['labels'][sensor_key]['idxs'])))
                 for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
                     corners[idx, 0, 0] = point['x']
                     corners[idx, 0, 1] = point['y']
@@ -230,19 +249,22 @@ def createPatternLabels(args, dataset, step=0.02):
                 # Find pose of the camera w.r.t the chessboard
                 np_ids = np.array(ids, dtype=int)
                 rvecs, tvecs = None, None
-                ret, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
-                                                                    np_ids,
-                                                                    pattern.board,
-                                                                    K,
-                                                                    D,
-                                                                    rvecs, tvecs)
+
+                if config['calibration_pattern']['pattern_type'] == 'charuco':
+                    _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                                         np_ids, pattern.board,
+                                                                         K, D, rvecs, tvecs)
+                else:
+                    _, rvecs, tvecs = cv2.solvePnP(
+                        objp[ids], np.array(corners, dtype=np.float32), K, D)
 
                 # Compute the pose of he chessboard w.r.t the pattern parent link
                 root_T_sensor = atom_core.atom.getTransform(
                     dataset['calibration_config']['calibration_pattern']['parent_link'],
                     sensor['camera_info']['header']['frame_id'], collection['transforms'])
 
-                sensor_T_chessboard = traslationRodriguesToTransform(tvecs, rvecs)
+                sensor_T_chessboard = traslationRodriguesToTransform(
+                    tvecs, rvecs)
                 root_T_chessboard = np.dot(root_T_sensor, sensor_T_chessboard)
                 T = deepcopy(root_T_chessboard)
                 T[0:3, 3] = 0  # remove translation component from 4x4 matrix
@@ -261,7 +283,8 @@ def createPatternLabels(args, dataset, step=0.02):
                 break  # don't search for this collection's chessboard on anymore sensors
 
     if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
-        raise ValueError('Collection ' + collection_key + ' could not find pattern.')
+        raise ValueError('Collection ' + collection_key +
+                         ' could not find pattern.')
 
     return patterns
 

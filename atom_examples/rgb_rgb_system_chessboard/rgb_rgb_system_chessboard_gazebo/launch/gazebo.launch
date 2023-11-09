@@ -1,6 +1,6 @@
 <launch>
 
-<arg name="world_name" default="$(find atom_worlds)/worlds/calibration_studio.world" />
+<arg name="world_name" default="$(find atom_worlds)/worlds/calibration_studio_with_chessboard.world" />
 <arg name="gui" default="true"/>
 <arg name="paused" default="false"/>
 <arg name="use_sim_time" default="true"/>

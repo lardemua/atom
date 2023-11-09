@@ -33,7 +33,7 @@
 description_file: "package://rgb_rgb_system_chessboard_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_bag.bag"
+bag_file: "$ROS_BAGS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -130,7 +130,7 @@ calibration_pattern:
   # Supported pattern are:
   # - chessboard
   # - charuco
-  pattern_type: "charuco"
+  pattern_type: "chessboard"
 
   # If the pattern type is "charuco" you need to define
   # the aruco dictionary used by the pattern.
@@ -139,7 +139,7 @@ calibration_pattern:
 
   # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
   # See: description_file
-  mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
+  mesh_file: "package://atom_worlds/pattern/models/chessboard_1200x900_10x7/chessboard_1200x900_10x7.dae"
 
   # The border width from the edge corner to the pattern physical edge.
   # Used for 3D sensors and lidars.
@@ -150,10 +150,10 @@ calibration_pattern:
   # Note: The charuco detector uses the number of squares per dimension in its detector.
   # Internally we add a +1 to Y and X dimensions to account for that.
   # Therefore, the number of corners should be used even for the charuco pattern.
-  dimension: { "x": 11, "y": 8 }
+  dimension: { "x": 10, "y": 7 }
 
   # The length of the square edge.
-  size: 0.06
+  size: 0.1
 
   # The length of the charuco inner marker.
   inner_size: 0.045

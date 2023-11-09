@@ -11,6 +11,7 @@
 <include file="$(find rgb_rgb_system_chessboard_bringup)/launch/visualize.launch">
 </include>
 
-<node name="interactive_pattern" pkg="atom_worlds" type="interactive_pattern" output="screen" />
+<node name="interactive_pattern" pkg="atom_worlds" type="interactive_pattern" output="screen" args="--model_name chessboard_1200x900_10x7 --mesh_resource package://atom_worlds/pattern/models/chessboard_1200x900_10x7/chessboard_1200x900_10x7.dae" >
+</node>
 
 </launch>
