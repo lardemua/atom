@@ -33,7 +33,7 @@
 description_file: "package://rgb_rgb_system_chessboard_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example.bag"
+bag_file: "$ROS_BAGS/rgb_rgb_system_chessboard/train.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.

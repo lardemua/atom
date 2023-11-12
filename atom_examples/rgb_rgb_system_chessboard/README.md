@@ -1,4 +1,4 @@
-# RGB_RGB_SYSTEM_CHESSBOARD
+<!-- # RGB RGB SYSTEM CHESSBOARD -->
 
 The **rgb_rgb_system_chessboard** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners. The novelty here is that the system uses a chessboard as calibration pattern, instead of the usual charuco board.
 
@@ -46,9 +46,9 @@ The calibration of any robotic system using **ATOM** may have several variants. 
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **rgb_rgb_system_chessboard**.
 
-To calibrate, we will need a bagfile called [rgb_rgb_system_chessboard_example_bag.bag](https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1zucjVjg27plyvN-vWpAyo3-utY7Xro--/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 We produced the bagfile by bringing up the system and then recording a bagfile as described above.
-This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
+This is a small bagfile with 50 seconds / 55MB for demonstration purposes. Typically, calibration bagfiles are larger.
 
 Download the bagfile and put it in **$ROS_BAGS/rgb_rgb_system_chessboard**.
 
@@ -67,8 +67,7 @@ Using ATOM conventions, we define name of the calibration package as **rgb_rgb_s
 
 ## Configuring the calibration
 
-
-This is the [config.yml](https://github.com/lardemua/atom/blob/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a charuco marker.
+This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a **chessboard marker**.
 The configuration file points to the bagfile mentioned above, and the _anchored_sensor_ is defined as the **rgb_left** sensor.
 
 To configure run:
@@ -86,9 +85,9 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [rgb_rgb_system_chessboard_example_train_dataset](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing), which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing) dataset, which contains 6 collections, as shown bellow.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_train_dataset**.
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system_chessboard/train**.
 
 Collection |           rgb_left             |           rgb_right
 :----------------:|:-------------------------:|:-------------------------:
@@ -96,6 +95,8 @@ Collection |           rgb_left             |           rgb_right
 1 | ![](docs/rgb_left_001.jpg) |  ![](docs/rgb_right_001.jpg)
 2 | ![](docs/rgb_left_002.jpg) |  ![](docs/rgb_right_002.jpg)
 3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
+4 | ![](docs/rgb_left_004.jpg) |  ![](docs/rgb_right_004.jpg)
+5 | ![](docs/rgb_left_005.jpg) |  ![](docs/rgb_right_005.jpg)
 
 
 ## Running the Calibration
@@ -104,37 +105,49 @@ To calibrate, first setup visualization with:
 
     roslaunch rgb_rgb_system_chessboard_calibration calibrate.launch
 
-Then carry out the actual calibration using:
+Then carry out the actual calibration using, using a **nig** to give some noise in the initial estimate:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_dataset/dataset.json -v -rv
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system_chessboard/train/dataset.json -v -rv -si -nig 0.1 0.1
 
-This will produce a table of residuals per iteration, like this:
+At the beginning of the calibration, the error table is this:
 
-![](docs/calibration_output.png)
+![](docs/output_start.png)
 
-This is the table presented once calibration is complete, which shows average reprojection errors of under 1 pixel. Sub-pixel accuracy is considered a good result for rgb camera calibration.
+where we can see that the errors for the **rgb_right** camera are very high due to the noise that was induced in the initial estimate. The initial state of the system is the following:
 
- Since this is a simulation, the original pose of the cameras is actually the one used by gazebo to produce the images. This means that the cameras are already positioned in the actual ground truth pose, which means that the calibration did not do much in this case. In a real system, the sensors will not be positioned at the ground truth pose. In fact, for real systems, we do not know where the ground truth is.
+![](docs/optimization_start.png)
 
-To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
+where it is possible to see that the **rgb_right** camera is below the support bar of the tripod, i.e., not in the correct position.
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_train_dataset/dataset.json -v -rv -nig 0.1 0.1
+After the optimization finishes we get:
 
-Which starts the calibration with these errors:
+![](docs/output_end.png)
 
-![](docs/calibration_output2.png)
+Here we can see that as a result of the calibration, the errors are much lower.
+This is also observed visually:
 
-which are quite high, because of the incorrect pose of the sensors,  and ends up converging into these figures:
+![](docs/optimization_end.png)
 
-![](docs/calibration_output3.png)
-
-Which again, have subpixel accuracy. This means the procedure achieved a successful calibration.
-
+since the position of the **rgb_right** is now on top of the support bar.
 
 ## Evaluation
 
 The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
 
-Download the [rgb_rgb_system_chessboard_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_test_dataset**.
+Download the [test](https://drive.google.com/file/d/1bvHr2iXsNS3snF9Af8gJ0mJJbPwUcTpJ/view?usp=sharing) dataset and decompress to **$ATOM_DATASETS/rgb_rgb_system_chessboard/test**.
+Then run:
 
-    roslaunch rgb_rgb_system_chessboard_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_rgb_system_chessboard/rgb_rgb_system_chessboard_example_train_dataset/atom_calibration.json
+    roslaunch rgb_rgb_system_chessboard_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_rgb_system_chessboard/test/dataset.json train_json:=$ATOM_DATASETS/rgb_rgb_system_chessboard/train/atom_calibration.json
+
+which will produce a table comparing the estimated pose versus the ground truth pose, which is only possible to compute because we are using a simulated system:
+
+![](docs/ground_truth_errors.png)
+
+which are very small, meaning the calibration is very accurate.
+
+It is also possible to see a table comparing the sensor to sensor projections. This is interesting since it is possible to have also with real data:
+
+
+![](docs/rgb_rgb_evaluation.png)
+
+Also in this evaluation, the errors are very low, which means the calibration is very accurate.
