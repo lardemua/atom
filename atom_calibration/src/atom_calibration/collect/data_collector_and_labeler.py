@@ -71,7 +71,7 @@ class DataCollectorAndLabeler:
         self.additional_data = {}
         self.metadata = {}
         self.bridge = CvBridge()
-        self.dataset_version = "2.0"
+        self.dataset_version = "2.1"
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -172,6 +172,18 @@ class DataCollectorAndLabeler:
 
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
+
+        # Defining metadata
+        dataset_name = self.output_folder.split('/')[-1]
+        robot_description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
+        robot_description = URDF.from_xml_file(robot_description_file)
+
+        if args['package_name'] is '':
+            args['package_name'] = robot_description.name + "_calibration"
+
+        self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
+                         'version': self.dataset_version, 'robot_name': robot_description.name,
+                         'dataset_name': dataset_name, 'package_name': args['package_name']}
 
 
         self.abstract_transforms = self.getAllAbstractTransforms()
@@ -357,14 +369,6 @@ class DataCollectorAndLabeler:
         self.collections[collection_key] = collection_dict
         self.data_stamp += 1
 
-        dataset_name = self.output_folder.split('/')[-1]
-        description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
-        description = URDF.from_xml_file(description_file)
-
-        # Create metadata.
-        self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
-                         'version': self.dataset_version, 'robot_name': description.name,
-                         'dataset_name': dataset_name}
 
         # Save to json file.
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,

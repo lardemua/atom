@@ -79,7 +79,14 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         # path_to_file = urdf_path + '/optimized/'
 
         rospack = rospkg.RosPack()
-        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/optimized/")
+
+        # Defining the package name to be compatible with 2.0 dataset version (see #653 for more details)
+        if "package_name" in dataset["_metadata"]:
+            package_name = dataset["_metadata"]["package_name"]
+        else:
+            package_name = dataset["_metadata"]["robot_name"] + "_calibration"
+
+        path_to_file = (rospack.get_path(package_name) + "/urdf/optimized/")
 
         if not os.path.exists(path_to_file):
             os.mkdir(path_to_file)
