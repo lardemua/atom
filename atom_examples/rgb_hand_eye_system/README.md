@@ -40,7 +40,7 @@ This will put the bag file into your $ROS_BAGS folder.
 
 # Calibration
 
-The calibration of any robotic system using **ATOM** may have several variants. We recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
+<!-- The calibration of any robotic system using **ATOM** may have several variants. We recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **rgb_hand_eye_system**.
 
@@ -135,4 +135,4 @@ The evaluation be conducted with a second dataset which has not been seen during
 
 Download the [rgb_hand_eye_system_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_test_dataset**.
 
-    roslaunch rgb_hand_eye_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_train_dataset/atom_calibration.json
+    roslaunch rgb_hand_eye_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_train_dataset/atom_calibration.json -->
