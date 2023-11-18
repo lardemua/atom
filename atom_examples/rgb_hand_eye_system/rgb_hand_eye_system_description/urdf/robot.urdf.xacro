@@ -47,13 +47,10 @@
     <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/table.macro.xacro"/>
 
     <!-- Sensors-->
-<!--    <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/astra.urdf.xacro" />-->
-    <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/atom_astra.urdf.xacro" />
-    <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
+    <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/rgb_camera.urdf.xacro" />
 
     <!-- Manipulator-->
     <xacro:include filename="$(find ur_gazebo)/urdf/ur_macro.xacro"/>
-    <!--    <xacro:include filename="$(find ur_description)/urdf/inc/ur10e_macro.xacro"/>-->
 
     <!-- ####################################### -->
     <!-- Declare links and joints -->
@@ -77,8 +74,7 @@
             transmission_hw_interface="$(arg transmission_hw_interface)"
             safety_limits="$(arg safety_limits)"
             safety_pos_margin="$(arg safety_pos_margin)"
-            safety_k_position="$(arg safety_k_position)"
-    />
+            safety_k_position="$(arg safety_k_position)"/>
 
     <!--  Place robot on top of the table1-->
     <joint name="tabletop_table_to_ur10e" type="fixed">
@@ -87,11 +83,16 @@
         <origin xyz="0.0 0.0 0.001" rpy="0.0 0.0 0.0" />
     </joint>
 
+    <!-- Hand Camera (place hand rgb in the end effector) -->
+    <xacro:rgb_camera parent="flange" prefix="rgb_hand" color_gazebo="Green">
+        <origin xyz="-0.02 0.00 0.065" rpy="0 0.0 0" />
+        <color_rgb_rviz>
+            <material name="green">
+                <color rgba="0 0.9 0 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
 
-    <!-- Place hand rgb in the end effector-->
-    <xacro:sensor_astra prefix="hand_rgb" parent="flange">
-        <origin xyz="-0.02 0.05 0.07" rpy="0 0.0 0" />
-    </xacro:sensor_astra>
 
 
 </robot>

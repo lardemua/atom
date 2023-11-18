@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: hand_rgb
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -87,29 +87,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        hand_rgb_depth_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        hand_rgb_depth_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hand_rgb_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        hand_rgb_rgb_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        hand_rgb_rgb_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         leg1_table:
           Alpha: 1
           Show Axes: false
@@ -130,6 +107,15 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        rgb_hand_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rgb_hand_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         shoulder_link:
           Alpha: 1
           Show Axes: false
@@ -191,8 +177,8 @@ Visualization Manager:
       Unreliable: false
       Value: false
     - Class: rviz/Image
-      Enabled: false
-      Image Topic: /hand_rgb/rgb/image_raw
+      Enabled: true
+      Image Topic: /rgb_hand/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -201,7 +187,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
       Enabled: true
@@ -226,16 +212,6 @@ Visualization Manager:
           Value: true
         forearm_link:
           Value: true
-        hand_rgb_depth_frame:
-          Value: true
-        hand_rgb_depth_optical_frame:
-          Value: true
-        hand_rgb_link:
-          Value: true
-        hand_rgb_rgb_frame:
-          Value: true
-        hand_rgb_rgb_optical_frame:
-          Value: true
         leg1_table:
           Value: true
         leg2_table:
@@ -243,6 +219,10 @@ Visualization Manager:
         leg3_table:
           Value: true
         leg4_table:
+          Value: true
+        rgb_hand_link:
+          Value: true
+        rgb_hand_optical_frame:
           Value: true
         shoulder_link:
           Value: true
@@ -291,13 +271,9 @@ Visualization Manager:
                           wrist_2_link:
                             wrist_3_link:
                               flange:
-                                hand_rgb_link:
-                                  hand_rgb_depth_frame:
-                                    hand_rgb_depth_optical_frame:
-                                      {}
-                                  hand_rgb_rgb_frame:
-                                    hand_rgb_rgb_optical_frame:
-                                      {}
+                                rgb_hand_link:
+                                  rgb_hand_optical_frame:
+                                    {}
                                 tool0:
                                   {}
       Update Interval: 0
@@ -355,29 +331,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          hand_rgb_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          hand_rgb_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          hand_rgb_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          hand_rgb_rgb_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          hand_rgb_rgb_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           leg1_table:
             Alpha: 1
             Show Axes: false
@@ -398,6 +351,15 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          rgb_hand_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          rgb_hand_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           shoulder_link:
             Alpha: 1
             Show Axes: false
@@ -508,29 +470,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          hand_rgb_depth_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          hand_rgb_depth_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          hand_rgb_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          hand_rgb_rgb_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          hand_rgb_rgb_optical_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           leg1_table:
             Alpha: 1
             Show Axes: false
@@ -551,6 +490,15 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          rgb_hand_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          rgb_hand_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           shoulder_link:
             Alpha: 1
             Show Axes: false
@@ -635,7 +583,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.93370246887207
+      Distance: 3.172661304473877
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -643,17 +591,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.3816039562225342
-        Y: 0.6919234395027161
-        Z: 1.025778889656067
+        X: 0.03689466044306755
+        Y: -0.12323968857526779
+        Z: 1.462047815322876
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5603988170623779
+      Pitch: 0.6453987956047058
       Target Frame: <Fixed Frame>
-      Yaw: 5.387212753295898
+      Yaw: 5.072205066680908
     Saved: ~
 Window Geometry:
   Displays:
@@ -665,7 +613,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000023000000362fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003c000001df000000c800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002210000017d0000017200fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016000000010000016400000362fc0200000005fb0000001000680061006e0064005f007200670062000000003c000001ae0000001600fffffffb00000012007200670062005f00720069006700680074000000003c000003620000001600fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003c000002b2000000a200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004770000003efc0100000002fb0000000800540069006d00650100000000000004770000029800fffffffb0000000800540069006d00650100000000000004500000000000000000000002410000036200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000023000000362fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003c000001df000000c800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002210000017d0000017100fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016000000010000016400000362fc0200000005fb0000001000680061006e0064005f007200670062010000003c000003620000001600fffffffb00000012007200670062005f00720069006700680074000000003c000003620000001600fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003c000002b2000000a200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000029800fffffffb0000000800540069006d00650100000000000004500000000000000000000003e00000036200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -674,7 +622,7 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1143
+  Width: 1920
   X: 0
   Y: 30
   hand_rgb:

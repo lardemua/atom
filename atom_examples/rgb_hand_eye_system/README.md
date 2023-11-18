@@ -1,17 +1,15 @@
-# RGB_RGB_SYSTEM
+# RGB_HAND_EYE_SYSTEM
 
-The **rgb_hand_eye_system** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
+The **rgb_hand_eye_system** is a robotic system used to evaluate hand eye calibrations in ATOM.
 
 ![gazebo](docs/system.png)
 
-The system is composed of two rgb cameras mounted on a tripod.
-Cameras are called **rgb_left** (red) and **rgb_right** (green).
+The system is composed of one rgb camera mounted on the end effector of a robotic manipulator.
+The camera is called **rgb_hand** (green).
 The system contains the following topics:
 
-  - /rgb_left/camera_info
-  - /rgb_left/image_raw
-  - /rgb_right/camera_info
-  - /rgb_right/image_raw
+  - /rgb_hand/camera_info
+  - /rgb_hand/image_raw
   - /tf
   - /tf_static
 
