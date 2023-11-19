@@ -136,8 +136,6 @@ All collections | ![](docs/3.png) |  ![](docs/4.png)
 Collection 0 | ![](docs/1.png) |  ![](docs/2.png)
 Collection 0 (top view)| ![](docs/5.png) |  ![](docs/6.png)
 
-
-
 ## Evaluation
 
 test bag file
