@@ -26,7 +26,7 @@
             </inertial>
         </link>
         <gazebo reference="${name}_${parent}">
-            <material>Gazebo/Grey</material>
+            <material>Gazebo/DarkGrey</material>
             <mu1>1000.0</mu1>
             <mu2>1000.0</mu2>
             <kp>10000000.0</kp>
@@ -81,7 +81,7 @@
         </link>
 
         <gazebo reference="tabletop_${name}">
-            <material>Gazebo/Grey</material>
+            <material>Gazebo/DarkGrey</material>
             <mu1>50.0</mu1>
             <mu2>50.0</mu2>
             <kp>1000000.0</kp>

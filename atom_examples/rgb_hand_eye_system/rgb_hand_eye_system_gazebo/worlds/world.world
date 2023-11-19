@@ -89,16 +89,16 @@
     </spherical_coordinates>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-4.00699 -4.41639 5.12999 0 0.519644 0.616207</pose>
+        <pose>0.950969 -1.73738 3.62833 0 0.855645 2.4642</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
     <state world_name='default'>
-      <sim_time>2051 173000000</sim_time>
-      <real_time>179 499861184</real_time>
-      <wall_time>1700388007 914256519</wall_time>
-      <iterations>178349</iterations>
+      <sim_time>2563 216000000</sim_time>
+      <real_time>514 592362207</real_time>
+      <wall_time>1700391319 313233374</wall_time>
+      <iterations>512043</iterations>
       <model name='charuco_800x600_5x5_100'>
         <pose>-1.07519 0.290802 0.809538 3.1218 0.006099 0.022791</pose>
         <scale>1 1 1</scale>
@@ -123,153 +123,9 @@
         <pose>0 0 10 0 -0 0</pose>
       </light>
       <light name='user_point_light_0'>
-        <pose>0.288943 -0.55574 1 0 -0 0</pose>
-      </light>
-      <light name='user_point_light_1'>
-        <pose>0.349209 0.561748 1 0 -0 0</pose>
-      </light>
-      <light name='user_point_light_2'>
-        <pose>-1.07079 1.08955 1 0 -0 0</pose>
-      </light>
-      <light name='user_point_light_3'>
-        <pose>0.080416 2.2112 1 0 -0 0</pose>
-      </light>
-      <light name='user_point_light_4'>
-        <pose>1.52353 0.764558 1 0 -0 0</pose>
-      </light>
-      <light name='user_point_light_8'>
-        <pose>0.979869 2.09916 1 0 -0 0</pose>
-      </light>
-      <light name='user_point_light_9'>
-        <pose>0.07472 3.93797 1 0 -0 0</pose>
+        <pose>-0.961836 -0.587166 2.49224 0 -0 0</pose>
       </light>
     </state>
-    <light name='user_point_light_2' type='point'>
-      <pose>-1.07079 1.08955 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <light name='user_point_light_4' type='point'>
-      <pose>1.52353 0.764558 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <light name='user_point_light_8' type='point'>
-      <pose>0.979869 2.09916 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <light name='user_point_light_9' type='point'>
-      <pose>0.07472 3.93797 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <light name='user_point_light_0' type='point'>
-      <pose>0.288943 -0.55574 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <light name='user_point_light_1' type='point'>
-      <pose>0.349209 0.561748 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <light name='user_point_light_3' type='point'>
-      <pose>0.080416 2.2112 1 0 -0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <cast_shadows>0</cast_shadows>
-      <direction>0 0 -1</direction>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
     <model name='charuco_800x600_5x5_100'>
       <static>1</static>
       <link name='charuco'>
@@ -307,5 +163,18 @@
       </link>
       <pose>1.05523 -0.198617 0 0 -0 0</pose>
     </model>
+    <light name='user_point_light_0' type='point'>
+      <pose>2.7443 2.56534 1 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>20</range>
+        <constant>0.5</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
   </world>
 </sdf>

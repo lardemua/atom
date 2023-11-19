@@ -4,7 +4,7 @@ The **rgb_hand_eye_system** is a robotic system used to evaluate hand eye calibr
 
 ![gazebo](docs/system.png)
 
-The system is composed of one rgb camera mounted on the end effector of a robotic manipulator.
+The system contains a single rgb camera mounted on the end effector of a robotic manipulator.
 The camera is called **rgb_hand** (green).
 The system contains the following topics:
 
