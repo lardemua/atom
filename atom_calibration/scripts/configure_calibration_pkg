@@ -35,7 +35,7 @@ from matplotlib import cm
 from jinja2 import Environment, FileSystemLoader
 
 
-# TODO #698 but if modality is called lidar3d we should not create an alternative name. This is confusing ...
+# TODO but if modality is called lidar3d we should not create an alternative name. This is confusing ...
 def getModalityEvaluation(sensor):
     # Helper function to simplify modality extraction
     return 'lidar' if sensor['modality'] == 'lidar3d' else sensor['modality']
@@ -48,8 +48,6 @@ if __name__ == "__main__":
     ap.add_argument("-utf", "--use_tfs", action="store_true",
                     help='Use transformations in the bag file instead of generating new tfs from the xacro, '
                          'joint_state_msgs and robot state publisher.')
-    ap.add_argument("-cgt", "--collect_ground_truth", action="store_true",
-                    help='Assume the transformations in the bag file are ground truth and collect them into atom_datasets. Useful to evaluate against ground truth.')
     ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
                     type=str, required=False, default=None)
     args = vars(ap.parse_args())
