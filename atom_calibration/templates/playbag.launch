@@ -34,8 +34,6 @@
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
-    <arg name="use_tfs" default="{{ c.use_tfs }}"
-         doc="If false ignore tfs in the bag file and use the xacro, joint_state_msgs and robot state publisher to generate new tfs."/>
     <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
     <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
@@ -44,50 +42,65 @@
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Throttle topics -->
-    {% set remapping = [] %}
+    {% set remapping = [] -%}
     {% for key, value in c.throttle_topics.items() -%}
-    {% if value['use_throttle'] %}
+    {% if value['use_throttle'] -%}
     <node pkg="topic_tools" type="throttle" name="throttler_{{ value['sensor_key'] }}"
           args="messages {{ key }}_to_throttle {{ value['throttle_hz'] }} {{ key }}"/>
     {% do remapping.append( key ~ ':=' ~ key ~ '_to_throttle' )%}
-    {% endif %}
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-    {% endfor %}
-    {% set remapping= remapping|join(' ') %}
-
+    {% endif -%}
+    {% endfor -%}
+    {% set remapping= remapping|join(' ') -%}
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Load robot description and tf generators -->
     <param name="robot_description" command="$(find xacro)/xacro $(arg description_file)"/>
 
-    <group unless="$(arg use_tfs)">
-        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-    </group>
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Playback the bag file -->
     <param name="/use_sim_time" value="true"/>
 
-    <group if="$(arg use_tfs)"> <!--Play bag file using tfs, ignore joint states -->
-        <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+    {% if c.use_tfs and c.collect_ground_truth -%}
+    <!-- Play bag file using tfs, ignore joint states, collect /tf and /tf_static as ground truth  -->
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+        args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /joint_states:=/joint_states_null {{ remapping }}"/>
+
+    <node pkg="topic_tools" type="relay" name="tf_ground_truth_relay" output="screen" args="/tf /tf_ground_truth"/>
+
+    <node pkg="topic_tools" type="relay" name="tf_ground_truth_relay" output="screen" args="/tf_static /tf_static_ground_truth"/>
+    {% endif -%}
+
+    {% if c.use_tfs and not c.collect_ground_truth -%}
+    <!-- Play bag file using tfs, ignore joint states, do not collect ground truth  -->
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
               args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /joint_states:=/joint_states_null {{ remapping }}"/>
-    </group>
-    <group unless="$(arg use_tfs)"> <!--Play bag file ignoring tfs-->
-        <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
-              args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null {{ remapping }}"/>
-    </group>
+    {% endif -%}
+
+    {% if not c.use_tfs and c.collect_ground_truth -%}
+    <!-- Generate transformatiosn from the xacro and joint state msgs, use tfs as ground truth  -->
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+              args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_ground_truth /tf_static:=/tf_static_ground_truth {{ remapping }}"/>
+    {% endif -%}
+
+    {% if not c.use_tfs and not c.collect_ground_truth -%}
+    <!-- Generate transformatiosn from the xacro and joint state msgs, ignore tfs -->
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+        args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null {{ remapping }}"/>
+    {% endif -%}
+
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-    {% if c.use_compressed_topics %}
+    {% if c.use_compressed_topics -%}
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Image Topic Decompression -->
     {% for key, value in c.compressed_topics.items() -%}
     <node pkg="image_transport" type="republish" name="decompressor_{{ value['sensor_key'] }}" output="screen"
           args="compressed in:={{ key }} raw out:={{ key }}"/>
-    {% endfor %}
+    {% endfor -%}
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-    {% endif %}
+    {% endif -%}
 
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->

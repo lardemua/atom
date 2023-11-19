@@ -13,7 +13,7 @@
  https://github.com/lardemua/atom
 
 WARNING WARNING WARNING WARNING
-Auto-generated file on 03/10/2023 21:50:51
+Auto-generated file on 19/11/2023 17:16:18
 Only modify this file if you know what you are doing!
 """
 
@@ -32,6 +32,9 @@ def main():
     parser.add_argument('-utf', '--use_tfs', action='store_true',
                         help='ATOM will use the transforms on /tf and /tf_static topics. See https://lardemua.github.io/atom_documentation/procedures/#using-tfs-instead-of-the-xacro-file for more info.')
 
+    parser.add_argument("-cgt", "--collect_ground_truth", action="store_true",
+                        help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
+
     parser.add_argument('-cfg', '--config_file', type=str,
                         help='Uses a custom calibration config.yml file.', default=None)
 
@@ -44,6 +47,9 @@ def main():
 
     if args['use_tfs']:  # Add -utf flag if that's the case
         command += ' --use_tfs'
+
+    if args['collect_ground_truth']:  # Add -utf flag if that's the case
+        command += ' --collect_ground_truth'
 
     if args['config_file'] is not None:  # Add custom config file if needed
         command += ' --config_file ' + args['config_file']
