@@ -50,13 +50,15 @@ class DataCollectorAndLabeler:
 
             time.sleep(2)
             print('\n\nWarning: Dataset ' + Fore.YELLOW + self.output_folder + Style.RESET_ALL +
-                  ' exists.\nMoving it to a new folder: ' + Fore.YELLOW + backup_folder +
-                  '\nThis will be deleted after a system reboot!' + Style.RESET_ALL + '\n\n')
+                  ' exists.\nMoving it to temporary folder: ' + Fore.YELLOW + backup_folder +
+                  '\nThis will be deleted after a system reboot! If you want to keep it, copy the folder to some other location.' + Style.RESET_ALL + '\n\n')
             time.sleep(2)
 
             execute('mv ' + self.output_folder + ' ' + backup_folder, verbose=True)
+            os.makedirs(self.output_folder, exist_ok=False)  # Create the folder empty
 
-        os.mkdir(self.output_folder)  # Recreate the folder
+        elif not os.path.exists(self.output_folder):
+            os.makedirs(self.output_folder, exist_ok=False)  # Create the folder
 
         self.listener = TransformListener()
         self.sensors = {}
@@ -172,7 +174,6 @@ class DataCollectorAndLabeler:
 
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
-
 
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
@@ -382,11 +383,11 @@ class DataCollectorAndLabeler:
         rospy.sleep(0.5)
         now = rospy.Time.now()
 
-        # Error came up in 
+        # Error came up in
         # https://github.com/miguelriemoliveira/agri-gaia-test/issues/1
-        # Identified that this was deprecated in 
+        # Identified that this was deprecated in
         # https://answers.ros.org/question/335327/yamlload-is-deprecated-when-source-melodic_wssetupbash-is-executed/
-        # Using solution from 
+        # Using solution from
         # https://answers.ros.org/question/347857/how-to-get-list-of-all-tf-frames-programatically/
         # all_frames = self.listener.getFrameStrings()
         frames_dict = yaml.safe_load(self.listener._buffer.all_frames_as_yaml())
