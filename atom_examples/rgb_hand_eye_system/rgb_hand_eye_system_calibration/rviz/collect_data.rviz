@@ -86,11 +86,11 @@ Visualization Manager:
     Value: true
   - Class: rviz/Image
     Enabled: true
-    Image Topic: /rgb_left/image_raw/labeled
+    Image Topic: /rgb_hand/image_raw/labeled
     Max Value: 1
     Median window: 5
     Min Value: 0
-    Name: rgb_left-Labels-Image
+    Name: rgb_hand-Labels-Image
     Normalize Range: true
     Queue Size: 2
     Transport Hint: raw
@@ -99,33 +99,8 @@ Visualization Manager:
   - Class: rviz/Camera
     Enabled: true
     Image Rendering: background and overlay
-    Image Topic: /rgb_left/image_raw
-    Name: rgb_left-Camera
-    Overlay Alpha: 0.5
-    Queue Size: 2
-    Transport Hint: raw
-    Unreliable: false
-    Value: false
-    Visibility:
-      Value: true
-    Zoom Factor: 1
-  - Class: rviz/Image
-    Enabled: true
-    Image Topic: /rgb_right/image_raw/labeled
-    Max Value: 1
-    Median window: 5
-    Min Value: 0
-    Name: rgb_right-Labels-Image
-    Normalize Range: true
-    Queue Size: 2
-    Transport Hint: raw
-    Unreliable: false
-    Value: false
-  - Class: rviz/Camera
-    Enabled: true
-    Image Rendering: background and overlay
-    Image Topic: /rgb_right/image_raw
-    Name: rgb_right-Camera
+    Image Topic: /rgb_hand/image_raw
+    Name: rgb_hand-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw

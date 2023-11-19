@@ -88,23 +88,11 @@ Visualization Manager:
     Value: true
   - Class: rviz/Image
     Enabled: true
-    Image Topic: /rgb_left/image_raw/c000/labeled2d
+    Image Topic: /rgb_hand/image_raw/c000/labeled2d
     Max Value: 1
     Median window: 5
     Min Value: 0
-    Name: rgb_left-Labels-Image
-    Normalize Range: true
-    Queue Size: 2
-    Transport Hint: raw
-    Unreliable: false
-    Value: false
-  - Class: rviz/Image
-    Enabled: true
-    Image Topic: /rgb_right/image_raw/c000/labeled2d
-    Max Value: 1
-    Median window: 5
-    Min Value: 0
-    Name: rgb_right-Labels-Image
+    Name: rgb_hand-Labels-Image
     Normalize Range: true
     Queue Size: 2
     Transport Hint: raw

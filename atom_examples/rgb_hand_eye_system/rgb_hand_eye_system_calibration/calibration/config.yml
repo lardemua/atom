@@ -33,7 +33,7 @@
 description_file: "package://rgb_hand_eye_system_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rgb_hand_eye_system/rgb_hand_eye_system_example_bag.bag"
+bag_file: "$ROS_BAGS/rgb_hand_eye_system/train.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -72,19 +72,11 @@ sensors:
   #   /world_camera/rgb/image_raw
   #
 
-  rgb_left:
-    link: "rgb_left_optical_frame"
-    parent_link: "tripod_left_support"
-    child_link: "rgb_left_link"
-    topic_name: "/rgb_left/image_raw"
-    throttle: 10
-    modality: "rgb"
-
-  rgb_right:
-    link: "rgb_right_optical_frame"
-    parent_link: "tripod_right_support"
-    child_link: "rgb_right_link"
-    topic_name: "/rgb_right/image_raw"
+  rgb_hand:
+    link: "rgb_hand_optical_frame"
+    parent_link: "flange"
+    child_link: "rgb_hand_link"
+    topic_name: "/rgb_hand/image_raw"
     throttle: 10
     modality: "rgb"
 
@@ -124,7 +116,7 @@ calibration_pattern:
   # or each collection will have its own estimate of the link transformation.
   # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
   # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
-  fixed: false
+  fixed: true
 
   # The type of pattern used for the calibration.
   # Supported pattern are:
@@ -164,7 +156,7 @@ calibration_pattern:
 # If your calibration problem is not fully constrained you should anchored one of the sensors.
 # This makes it immovable during the optimization.
 # This is typically referred to as gauge freedom.
-anchored_sensor: "rgb_left"
+anchored_sensor: ""
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
 max_duration_between_msgs: 1000

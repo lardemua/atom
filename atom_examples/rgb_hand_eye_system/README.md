@@ -12,6 +12,7 @@ The system contains the following topics:
   - /rgb_hand/image_raw
   - /tf
   - /tf_static
+  - /joint_states
 
 Since this is a systems to test calibration, where frame rate is not a critical issue, we restrained images topics to 10Hz.
 This is a simulated system, which can be seen in gazebo:
@@ -40,13 +41,13 @@ This will put the bag file into your $ROS_BAGS folder.
 
 # Calibration
 
-<!-- The calibration of any robotic system using **ATOM** may have several variants. We recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
+As always, we recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
 
-In this section, out goal is to carry out the simplest possible calibration pipeline for the **rgb_hand_eye_system**.
+In this section, out goal is to describe the calibration pipeline for the **rgb_hand_eye_system**.
 
-To calibrate, we will need a bagfile called [rgb_hand_eye_system_example_bag.bag](https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1_YYIaJfvP8G7_mBr3oT7S7RkVTymu2pb/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 We produced the bagfile by bringing up the system and then recording a bagfile as described above.
-This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
+This is a bagfile with 140 seconds / 115MB for demonstration purposes. Typically, calibration bagfiles are larger.
 
 Download the bagfile and put it in **$ROS_BAGS/rgb_hand_eye_system**.
 
@@ -65,9 +66,8 @@ Using ATOM conventions, we define name of the calibration package as **rgb_hand_
 
 ## Configuring the calibration
 
-
-This is the [config.yml](https://github.com/lardemua/atom/blob/miguelriemoliveira/issue629/atom_examples/rgb_hand_eye_system/rgb_hand_eye_system_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a charuco marker.
-The configuration file points to the bagfile mentioned above, and the _anchored_sensor_ is defined as the **rgb_left** sensor.
+This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/rgb_hand_eye_system/rgb_hand_eye_system_calibration/calibration/config.yml) that we wrote to define the calibration. There is a single sensor to be calibrated, named **rgb_hand**. The pattern is a charuco marker.
+The configuration file points to the train bagfile mentioned above, and the _anchored_sensor_ is not defined.
 
 To configure run:
 
@@ -75,6 +75,11 @@ To configure run:
 
 Which will run a series of checks and produce several files inside the **rgb_hand_eye_system_calibration** package.
 
+The configuration produces a [visual schematic summarizing](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/rgb_hand_eye_system/rgb_hand_eye_system_calibration/calibration/summary.pdf) the calibration you have setup.
+
+![](docs/summary.png)
+
+It is advisable to inspect this document carefully to make sure that the calibration is well configured.
 
 ## Collecting a dataset
 
@@ -84,16 +89,16 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [rgb_hand_eye_system_example_train_dataset](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing), which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/1YlFdik-38zhtI8fByY27XR7pxYdN-h_9/view?usp=sharing) dataset, which contains 11 collections. Some are shown below.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_train_dataset**.
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_hand_eye_system/train**.
 
-Collection |           rgb_left             |           rgb_right
-:----------------:|:-------------------------:|:-------------------------:
-0 | ![](docs/rgb_left_000.jpg) |  ![](docs/rgb_right_000.jpg)
-1 | ![](docs/rgb_left_001.jpg) |  ![](docs/rgb_right_001.jpg)
-2 | ![](docs/rgb_left_002.jpg) |  ![](docs/rgb_right_002.jpg)
-3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
+Collection |           rgb_hand
+:----------------:|:-------------------------:
+0 | ![](docs/rgb_hand_000.jpg)
+1 | ![](docs/rgb_hand_001.jpg)
+2 | ![](docs/rgb_hand_009.jpg)
+3 | ![](docs/rgb_hand_010.jpg)
 
 
 ## Running the Calibration
@@ -102,37 +107,50 @@ To calibrate, first setup visualization with:
 
     roslaunch rgb_hand_eye_system_calibration calibrate.launch
 
-Then carry out the actual calibration using:
+This is useful to visualize the collections stored in the dataset.
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_dataset/dataset.json -v -rv
+![gazebo](docs/calibration.png)
+
+Then carry out the actual calibration including noise, using:
+
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_hand_eye_system/train/dataset.json -v -rv -nig 0.1 0.1
 
 This will produce a table of residuals per iteration, like this:
 
-![](docs/calibration_output.png)
-
-This is the table presented once calibration is complete, which shows average reprojection errors of under 1 pixel. Sub-pixel accuracy is considered a good result for rgb camera calibration.
-
- Since this is a simulation, the original pose of the cameras is actually the one used by gazebo to produce the images. This means that the cameras are already positioned in the actual ground truth pose, which means that the calibration did not do much in this case. In a real system, the sensors will not be positioned at the ground truth pose. In fact, for real systems, we do not know where the ground truth is.
-
-To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
-
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_train_dataset/dataset.json -v -rv -nig 0.1 0.1
-
 Which starts the calibration with these errors:
 
-![](docs/calibration_output2.png)
+![](docs/calibration_output_initial.png)
 
 which are quite high, because of the incorrect pose of the sensors,  and ends up converging into these figures:
 
-![](docs/calibration_output3.png)
+![](docs/calibration_output_final.png)
 
-Which again, have subpixel accuracy. This means the procedure achieved a successful calibration.
+Which shows subpixel accuracy. This means the procedure achieved a successful calibration.
+
+During calibration We can see all collections in the system and, as the calibration progresses, the estimated transformations will be applied to the visualization. The table below shows the positioning of the **rgb_hand** sensor before the calibration starts (using nig 0.1 0.1), and after the calibration is carried out.
+
+
+View |           Before calibration             |           After calibration
+:----------------:|:-------------------------:|:-------------------------:
+All collections | ![](docs/3.png) |  ![](docs/4.png)
+Collection 0 | ![](docs/1.png) |  ![](docs/2.png)
+Collection 0 (top view)| ![](docs/5.png) |  ![](docs/6.png)
+
 
 
 ## Evaluation
 
+test bag file
+https://drive.google.com/file/d/1iKMODjk2m37TBB3tWavJfZlKlwx-WHWz/view?usp=sharing
+
 The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
 
-Download the [rgb_hand_eye_system_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_test_dataset**.
+Download the [test](https://drive.google.com/file/d/16Vi6xo6kt2wEeFBWbTGrZdOL8DmT5ztt/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_hand_eye_system/test**.
 
-    roslaunch rgb_hand_eye_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_hand_eye_system/rgb_hand_eye_system_example_train_dataset/atom_calibration.json -->
+    roslaunch rgb_hand_eye_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_hand_eye_system/test/dataset.json train_json:=$ATOM_DATASETS/rgb_hand_eye_system/train/atom_calibration.json
+
+Since we have a single sensor, we do not have reprojection errors. The error w.r.t. the ground truth is:
+
+![](docs/ground_truth_results.png)
+
+which shows sub-millimeter accuracy.

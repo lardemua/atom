@@ -1,37 +1,91 @@
-<?xml version="1.0"?>
-<robot name="robot" xmlns:xacro="http://ros.org/wiki/xacro">
+<?xml version="1.0" ?>
+<robot name="rgb_hand_eye_system" xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <!-- rgb_hand_eye_system is a simple robotic system containing two rgb cameras on top of a tripop.  -->
+    <!-- ####################################### -->
+    <!-- Arguments and propperties-->
+    <!-- ####################################### -->
+    <!--Args are local, properties are global, so we copy the values of the arguments to the properties-->
+    <!--Properties are global so they can be viewed from inside the included xacros-->
+    <!--  args are used with $(arg arg_name), properties are used as ${property_name}-->
 
-    <!-- Define  properties -->
     <xacro:property name="M_PI" value="3.1415926535897931" />
-    <material name="Orange">
-        <color rgba="1.0 0.4 0.0 1.0" />
-    </material>
 
-    <!-- Colors -->
-    <material name="tripod_color">
-        <color rgba="0.21 0.21 .21 1" />
-    </material>
+    <!-- Tables properties-->
+    <xacro:property name="table_height" value="0.795"/>
+    <xacro:property name="table_width" value=".9"/>
+    <xacro:property name="table_lenght" value="1.9"/>
+    <xacro:property name="table_tabletop_thickness" value="0.015"/>
+    <xacro:property name="table_leg_radius" value="0.02"/>
+
+    <!-- Manipulator's args and propperties -->
+    <xacro:arg name="joint_limit_params" default="$(find ur_description)/config/ur10e/joint_limits.yaml"/>
+    <xacro:arg name="physical_params" default="$(find ur_description)/config/ur10e/physical_parameters.yaml"/>
+    <xacro:arg name="kinematics_params" default="$(find ur_description)/config/ur10e/default_kinematics.yaml"/>
+    <xacro:arg name="visual_params" default="$(find ur_description)/config/ur10e/visual_parameters.yaml"/>
+<!--    <xacro:arg name="joint_limit_params" default=""/>-->
+<!--    <xacro:arg name="kinematics_params" default=""/>-->
+<!--    <xacro:arg name="physical_params" default=""/>-->
+<!--    <xacro:arg name="visual_params" default=""/>-->
+    <!-- legal values:
+          - hardware_interface/PositionJointInterface
+          - hardware_interface/VelocityJointInterface
+          - hardware_interface/EffortJointInterface
+    -->
+    <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+    <xacro:arg name="safety_limits" default="false"/>
+    <xacro:arg name="safety_pos_margin" default="0.15"/>
+    <xacro:arg name="safety_k_position" default="20"/>
 
 
-    <!-- Includes -->
-    <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/robot.gazebo.xacro" />
+
+    <!-- ####################################### -->
+    <!-- Include files-->
+    <!-- ####################################### -->
+
+    <!-- Scene objets-->
+    <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/properties.xacro"/>
+    <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/table.macro.xacro"/>
+
+    <!-- Sensors-->
     <xacro:include filename="$(find rgb_hand_eye_system_description)/urdf/rgb_camera.urdf.xacro" />
 
-    <!-- Left Camera -->
-    <xacro:rgb_camera parent="tripod_left_support" prefix="rgb_left" color_gazebo="Red">
-        <origin xyz="0.015 0 0.012" rpy="0 0 0" />
-        <color_rgb_rviz>
-            <material name="red">
-                <color rgba="0.9 0 0 1" />
-            </material>
-        </color_rgb_rviz>
-    </xacro:rgb_camera>
+    <!-- Manipulator-->
+    <xacro:include filename="$(find ur_gazebo)/urdf/ur_macro.xacro"/>
 
-    <!-- Right Camera -->
-    <xacro:rgb_camera parent="tripod_right_support" prefix="rgb_right" color_gazebo="Green">
-        <origin xyz="0.015 0 0.012" rpy="0 0 0" />
+    <!-- ####################################### -->
+    <!-- Declare links and joints -->
+    <!-- ####################################### -->
+    <link name="world"/>
+
+    <!-- Place table 1 in the scene-->
+    <xacro:table_macro name="table" parent="world" width="${table_width}"
+                       lenght="${table_lenght}" height="${table_height}"
+                       tabletop_thickness="${table_tabletop_thickness}" leg_radius="${table_leg_radius}">
+        <origin xyz="-1 0 0" rpy="0 0 ${M_PI/2}" />
+    </xacro:table_macro>
+
+    <!--  Place manipulator1 in the scene-->
+    <xacro:ur_robot_gazebo
+            prefix=""
+            joint_limits_parameters_file="$(arg joint_limit_params)"
+            kinematics_parameters_file="$(arg kinematics_params)"
+            physical_parameters_file="$(arg physical_params)"
+            visual_parameters_file="$(arg visual_params)"
+            transmission_hw_interface="$(arg transmission_hw_interface)"
+            safety_limits="$(arg safety_limits)"
+            safety_pos_margin="$(arg safety_pos_margin)"
+            safety_k_position="$(arg safety_k_position)"/>
+
+    <!--  Place robot on top of the table1-->
+    <joint name="tabletop_table_to_ur10e" type="fixed">
+        <parent link="tabletop_table" />
+        <child link = "base_link"/>
+        <origin xyz="0.0 0.25 0.001" rpy="0.0 0.0 0.0" />
+    </joint>
+
+    <!-- Hand Camera (place hand rgb in the end effector) -->
+    <xacro:rgb_camera parent="flange" prefix="rgb_hand" color_gazebo="Green">
+        <origin xyz="-0.02 0.00 0.065" rpy="0 0.0 0" />
         <color_rgb_rviz>
             <material name="green">
                 <color rgba="0 0.9 0 1" />
@@ -40,87 +94,5 @@
     </xacro:rgb_camera>
 
 
-    <!-- Define links and joints -->
-    <link name="world" />
-
-    <!-- Tripod link-->
-    <link name="tripod">
-        <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <mesh filename="package://rgb_hand_eye_system_description/meshes/tripod/tripod.stl"
-                    scale="1 1 1" />
-            </geometry>
-            <material name="tripod_color" />
-        </visual>
-        <collision name="tripod_collision">
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <mesh filename="package://rgb_hand_eye_system_description/meshes/tripod/tripod.stl"
-                    scale="1 1 1" />
-            </geometry>
-        </collision>
-        <inertial>
-            <mass value="1.0" />
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
-        </inertial>
-    </link>
-
-
-    <!-- parent to tripod -->
-    <joint name="world_to_tripod" type="fixed">
-        <parent link="world" />
-        <child link="tripod" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
-
-    <link name="tripod_plate">
-        <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.04 0.4 0.015" />
-            </geometry>
-            <material name="tripod_color" />
-        </visual>
-        <collision name="tripod_collision">
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.04 0.15 0.015" />
-            </geometry>
-        </collision>
-        <inertial>
-            <mass value="1.0" />
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
-        </inertial>
-    </link>
-
-    <!-- tripod to tripod plate-->
-    <joint name="tripod_to_tripod_plate" type="fixed">
-        <parent link="tripod" />
-        <child link="tripod_plate" />
-        <origin xyz=".01 .03 1.65" rpy="0 0.314 0" />
-    </joint>
-
-    <!-- Tripod left support-->
-    <link name="tripod_left_support" />
-
-    <!-- tripod plate to tripod left support -->
-    <joint name="tripod_plate_to_tripod_left_support" type="fixed">
-        <parent link="tripod_plate" />
-        <child link="tripod_left_support" />
-        <origin xyz="0 0.18 0.0075" rpy="0 0 0" />
-    </joint>
-
-    <!-- Tripod right support-->
-    <link name="tripod_right_support" />
-
-    <!-- tripod plate to tripod right support -->
-    <joint name="tripod_plate_to_tripod_right_support" type="fixed">
-        <parent link="tripod_plate" />
-        <child link="tripod_right_support" />
-        <origin xyz="0 -0.18 0.0075" rpy="0 0 0" />
-    </joint>
 
 </robot>
