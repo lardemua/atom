@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+import rospy
+from time import sleep
+import threading
+from tf2_msgs.msg import TFMessage
+import tf2_ros
+
+
+class ConfigurableTransformListener(tf2_ros.TransformListener):
+    # https://github.com/ros/geometry2/issues/69
+
+    def __init__(self, buffer, queue_size=None, buff_size=65536, tcp_nodelay=False, tf_topic='tf', tf_static_topic='tf_static'):
+
+        # Copy past the code from the tf2_ros.TransformListener constructor method, changing the subscribed topics.
+        self.buffer = buffer
+        self.last_update = rospy.Time.now()
+        self.last_update_lock = threading.Lock()
+        self.tf_sub = rospy.Subscriber(tf_topic, TFMessage, self.callback,
+                                       queue_size=queue_size, buff_size=buff_size, tcp_nodelay=tcp_nodelay)
+        self.tf_static_sub = rospy.Subscriber(tf_static_topic, TFMessage, self.static_callback,
+                                              queue_size=queue_size, buff_size=buff_size, tcp_nodelay=tcp_nodelay)
+
+
+def main():
+
+    rospy.init_node('dual_tf_listener', anonymous=False)
+
+    tfBuffer = tf2_ros.Buffer()
+    # listener = tf2_ros.TransformListener(tfBuffer) # this is the conventional way.
+    listener = ConfigurableTransformListener(tfBuffer, tf_topic='tf_ground_truth',
+                                             tf_static_topic='tf_static_ground_truth')
+
+    rate = rospy.Rate(3.0)
+    while not rospy.is_shutdown():
+        try:
+            trans = tfBuffer.lookup_transform('world', 'shoulder_link', rospy.Time())
+            print(trans)
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print('Could not get transform')
+            continue
+
+        print('sleeping')
+        sleep(1)
+
+
+if __name__ == '__main__':
+    main()

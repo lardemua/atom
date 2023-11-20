@@ -69,7 +69,7 @@
 
     <node pkg="topic_tools" type="relay" name="tf_ground_truth_relay" output="screen" args="/tf /tf_ground_truth"/>
 
-    <node pkg="topic_tools" type="relay" name="tf_ground_truth_relay" output="screen" args="/tf_static /tf_static_ground_truth"/>
+    <node pkg="topic_tools" type="relay" name="tf_static_ground_truth_relay" output="screen" args="/tf_static /tf_static_ground_truth"/>
     {% endif -%}
 
     {% if c.use_tfs and not c.collect_ground_truth -%}
