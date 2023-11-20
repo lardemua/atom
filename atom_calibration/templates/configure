@@ -26,11 +26,17 @@ def main():
     # ---------------------------------------------------
     # Handle command line arguments
     # ---------------------------------------------------
-    parser = argparse.ArgumentParser(description='Configure {{ c.package_name }} calibration package. See  https://lardemua.github.io/atom_documentation/procedures/#configure-a-calibration-package for more info.')
+    parser = argparse.ArgumentParser(
+        description='Configure {{ c.package_name }} calibration package. See  https://lardemua.github.io/atom_documentation/procedures/#configure-a-calibration-package for more info.')
 
-    parser.add_argument('-utf', '--use_tfs', action='store_true', help='ATOM will use the transforms on /tf and /tf_static topics. See https://lardemua.github.io/atom_documentation/procedures/#using-tfs-instead-of-the-xacro-file for more info.')
+    parser.add_argument('-utf', '--use_tfs', action='store_true',
+                        help='ATOM will use the transforms on /tf and /tf_static topics. See https://lardemua.github.io/atom_documentation/procedures/#using-tfs-instead-of-the-xacro-file for more info.')
 
-    parser.add_argument('-cfg', '--config_file', type=str, help='Uses a custom calibration config.yml file.', default=None)
+    parser.add_argument("-cgt", "--collect_ground_truth", action="store_true",
+                        help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
+
+    parser.add_argument('-cfg', '--config_file', type=str,
+                        help='Uses a custom calibration config.yml file.', default=None)
 
     args = vars(parser.parse_args())
 
@@ -39,10 +45,13 @@ def main():
     # ---------------------------------------------------
     command = 'rosrun atom_calibration configure_calibration_pkg -n {{ c.package_name }}'
 
-    if args['use_tfs']: # Add -utf flag if that's the case
+    if args['use_tfs']:  # Add -utf flag if that's the case
         command += ' --use_tfs'
 
-    if args['config_file'] is not None: # Add custom config file if needed
+    if args['collect_ground_truth']:  # Add -utf flag if that's the case
+        command += ' --cgt'
+
+    if args['config_file'] is not None:  # Add custom config file if needed
         command += ' --config_file ' + args['config_file']
 
     # ---------------------------------------------------
@@ -59,8 +68,9 @@ def main():
     stderr_output = result.stderr
     print(stderr_output)
 
-    if result.returncode !=0:
-        print( 'exit status:', result.returncode )
+    if result.returncode != 0:
+        print('exit status:', result.returncode)
+
 
 if __name__ == '__main__':
     main()

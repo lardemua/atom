@@ -29,6 +29,7 @@ from atom_core.naming import generateKey
 from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
 from atom_core.config_io import execute, loadConfig
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
+from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
 
 
 class DataCollectorAndLabeler:
@@ -61,6 +62,17 @@ class DataCollectorAndLabeler:
             os.makedirs(self.output_folder, exist_ok=False)  # Create the folder
 
         self.listener = TransformListener()
+        self.tf_buffer = tf2_ros.Buffer()
+        self.listener_2 = ConfigurableTransformListener(self.tf_buffer,
+                                                        tf_topic='tf',
+                                                        tf_static_topic='tf_static')
+
+        # Add special transform listener to get ground truth tfs
+        self.tf_buffer_ground_truth = tf2_ros.Buffer()
+        self.listener_ground_truth = ConfigurableTransformListener(self.tf_buffer_ground_truth,
+                                                                   tf_topic='tf_ground_truth',
+                                                                   tf_static_topic='tf_static_ground_truth')
+
         self.sensors = {}
         self.sensor_labelers = {}
         self.server = server
@@ -73,7 +85,8 @@ class DataCollectorAndLabeler:
         self.additional_data = {}
         self.metadata = {}
         self.bridge = CvBridge()
-        self.dataset_version = "2.0"
+        self.dataset_version = "2.2"
+        self.collect_ground_truth = None
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -84,6 +97,19 @@ class DataCollectorAndLabeler:
 
         # Create a colormap so that we have one color per sensor
         self.cm_sensors = cm.Pastel2(np.linspace(0, 1, len(self.config['sensors'].keys())))
+
+        # Check if there is ground truth information, i.e. messages on topics /tf_ground_truth and /tf_static_ground_truth
+        print("Checking the existence of ground truth data, waiting for one msg on topic " +
+              Fore.BLUE + '/tf_ground_truth' + Style.RESET_ALL, end='')
+        try:
+            msg = rospy.wait_for_message('tf_ground_truth', rospy.AnyMsg, 1)
+            print('... received!\n' + Fore.GREEN +
+                  'Recording ground truth data from topics /tf_ground_truth and /tf_static_ground_truth' + Style.RESET_ALL)
+        except:
+            print('... not received!\n' + Fore.YELLOW + 'Assuming there is no ground truth information.' + Style.RESET_ALL)
+            self.collect_ground_truth = False
+        else:
+            self.collect_ground_truth = True
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
@@ -260,15 +286,21 @@ class DataCollectorAndLabeler:
         response.success = success
         return response
 
-    def getTransforms(self, abstract_transforms, time=None):
+    def getTransforms(self, abstract_transforms, buffer, time=None):
         transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
 
         if time is None:
             time = rospy.Time.now()
 
         for ab in abstract_transforms:  # Update all transformations
-            self.listener.waitForTransform(ab['parent'], ab['child'], time, rospy.Duration(1.0))
-            (trans, quat) = self.listener.lookupTransform(ab['parent'], ab['child'], time)
+
+            transf = buffer.lookup_transform(ab['parent'], ab['child'], time)
+            trans = [transf.transform.translation.x, transf.transform.translation.y, transf.transform.translation.z]
+            quat = [transf.transform.rotation.x,
+                    transf.transform.rotation.y,
+                    transf.transform.rotation.z,
+                    transf.transform.rotation.w]
+
             key = generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
 
@@ -323,7 +355,16 @@ class DataCollectorAndLabeler:
 
         # collect all the transforms
         print('average_time=' + str(average_time))
-        transforms = self.getTransforms(self.abstract_transforms, average_time)  # use average time of sensor msgs
+        transforms = self.getTransforms(self.abstract_transforms,
+                                        self.tf_buffer,
+                                        average_time)  # use average time of sensor msgs
+
+        if self.collect_ground_truth:  # collect ground truth transforms
+            pass
+            transforms_ground_truth = self.getTransforms(self.abstract_transforms,
+                                                         self.tf_buffer_ground_truth,
+                                                         average_time)  # use average time of sensor msgs
+
         printRosTime(average_time, "Collected transforms for time ")
 
         all_sensor_data_dict = {}
@@ -352,8 +393,12 @@ class DataCollectorAndLabeler:
             msg = copy.deepcopy(self.sensor_labelers[description].msg)
             all_additional_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
-        collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict, 'transforms': transforms,
+        collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
+                           'transforms': transforms,
                            'additional_data': all_additional_data_dict}
+        if self.collect_ground_truth:
+            collection_dict['transforms_ground_truth'] = transforms_ground_truth
+
         collection_key = str(self.data_stamp).zfill(3)
         self.collections[collection_key] = collection_dict
         self.data_stamp += 1
