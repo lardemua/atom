@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+# Standard imports
+import argparse
+import copy
+import os
+import random
+import signal
+import sys
+from functools import partial
+
+import numpy as np
+
+# Atom imports
+import atom_calibration.calibration.patterns_config as patterns
+from colorama import Fore, Style
+from atom_core.optimization_utils import Optimizer, addArguments
+from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
+                                                              setterCameraIntrinsics, setterTransform)
+from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
+from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
+from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
+                                  filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
+                                  saveResultsJSON)
+from atom_core.naming import generateName, generateKey
+from atom_core.utilities import atomError, waitForKeyPress2, checkAdditionalTfs, atomStartupPrint, verifyAnchoredSensor
+from atom_core.xacro_io import saveResultsXacro
+
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    print("Stopping optimization (Ctrl+C pressed)")
+    sys.exit(0)
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+def main():
+    # ---------------------------------------
+    # --- Parse command line argument
+    # ---------------------------------------
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-ji", "--json_dataset_in", type=str, required=True, help="Json file containing input dataset.", )
+    ap.add_argument("-jo", "--json_dataset_out", type=str, required=True, help="Json file containing output dataset.", )
+
+    args = vars(ap.parse_args())
+
+    atomStartupPrint('Adding field transforms_ground_truth to dataset')
+
+    # ---------------------------------------
+    # --- Read data from file
+    # ---------------------------------------
+    # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
+    dataset, json_file = loadResultsJSON(args["json_dataset_in"], None)
+
+    for collection_key, collection in dataset['collections'].items():
+        key = 'transforms_ground_truth'
+        if key in collection:
+            atomError('dataset already contains ground truth data.')
+
+        collection[key] = copy.deepcopy(collection['transforms'])
+
+    saveResultsJSON(args['json_dataset_out'], dataset)
+
+
+if __name__ == "__main__":
+    main()
