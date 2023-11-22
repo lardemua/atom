@@ -35,12 +35,6 @@ from matplotlib import cm
 from jinja2 import Environment, FileSystemLoader
 
 
-# TODO but if modality is called lidar3d we should not create an alternative name. This is confusing ...
-def getModalityEvaluation(sensor):
-    # Helper function to simplify modality extraction
-    return 'lidar' if sensor['modality'] == 'lidar3d' else sensor['modality']
-
-
 if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
@@ -614,18 +608,24 @@ if __name__ == "__main__":
 
     # Define mappings for filenames and argumets based on sensor modalities
     modality_to_filename = {
-        ('rgb', 'lidar'): 'lidar_to_rgb',
-        ('depth', 'lidar'): 'lidar_to_depth',
+        ('rgb', 'rgb'): 'rgb_to_rgb',
+        ('lidar3d', 'lidar3d'): 'lidar_to_lidar',
+        ('depth', 'depth'): 'depth_to_depth',
+        ('rgb', 'lidar3d'): 'lidar_to_rgb',
+        ('lidar3d', 'rgb'): 'lidar_to_rgb',
+        ('depth', 'lidar3d'): 'lidar_to_depth',
+        ('lidar3d', 'depth'): 'lidar_to_depth',
         ('rgb', 'depth'): 'depth_to_rgb',
+        ('depth', 'rgb'): 'depth_to_rgb',
     }
 
     modality_to_args = {
         ('rgb', 'depth'): '-cs {} -ds {}',
         ('depth', 'rgb'): '-ds {} -cs {}',
-        ('rgb', 'lidar'): '-cs {} -rs {}',
-        ('lidar', 'rgb'): '-rs {} -cs {}',
-        ('depth', 'lidar'): '-ds {} -rs {}',
-        ('lidar', 'depth'): '-rs {} -ds {}',
+        ('rgb', 'lidar3d'): '-cs {} -rs {}',
+        ('lidar3d', 'rgb'): '-rs {} -cs {}',
+        ('depth', 'lidar3d'): '-ds {} -rs {}',
+        ('lidar3d', 'depth'): '-rs {} -ds {}',
     }
 
     for source, target in sensor_combinations_list:
@@ -636,17 +636,12 @@ if __name__ == "__main__":
         }
 
         # Determine the modalities of the source and target sensors
-        source_modality = getModalityEvaluation(config['sensors'][source])
-        target_modality = getModalityEvaluation(config['sensors'][target])
-        modality_combination = (source_modality, target_modality)
+        modality_combination = (config['sensors'][source]['modality'], config['sensors'][target]['modality'])
 
         # Set the filename and args based on the modality combination
-        if modality_combination in modality_to_filename:
-            evaluation_description['filename'] = modality_to_filename[modality_combination]
-        else:
-            evaluation_description['filename'] = '{}_to_{}'.format(source_modality, target_modality)
+        evaluation_description['filename'] = modality_to_filename[modality_combination]
 
-        if source_modality == target_modality:
+        if config['sensors'][source]['modality'] == config['sensors'][target]['modality']:
             evaluation_description['args'] = f'-ss {source} -st {target}'
         else:
             evaluation_description['args'] = modality_to_args[modality_combination].format(source, target)
@@ -676,13 +671,13 @@ if __name__ == "__main__":
     if config['calibration_pattern']['fixed']:
         # Create evaluation descriptions for sensors against themselves
         for sensor in config['sensors'].keys():
-            modality = getModalityEvaluation(config['sensors'][sensor])
             evaluation_description = {
                 'filename': None,
                 'args': None,
             }
 
-            evaluation_description['filename'] = 'inter_collection_' + modality + '_to_' + modality
+            evaluation_description['filename'] = 'inter_collection_' + modality_to_filename[\
+                (config['sensors'][sensor]['modality'], config['sensors'][sensor]['modality'])] 
             evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
 
             sensor_combinations_dict['inter_collection_' + sensor + '_to_' + sensor] = evaluation_description
