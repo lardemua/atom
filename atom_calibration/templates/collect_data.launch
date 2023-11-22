@@ -63,13 +63,13 @@
     <!-- Start data collector node -->
     <group if="$(arg overwrite)">
         <node name="collect_data" pkg="atom_calibration" type="collect_data"
-              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' -pn {{ c.package_name }} --overwrite" required="true"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' --overwrite" required="true"
               output="screen"/>
     </group>
 
     <group unless="$(arg overwrite)">
         <node name="collect_data" pkg="atom_calibration" type="collect_data"
-              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' -pn {{ c.package_name }}" required="true"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
               output="screen"/>
     </group>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->

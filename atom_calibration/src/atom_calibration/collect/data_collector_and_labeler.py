@@ -28,6 +28,7 @@ from urdf_parser_py.urdf import URDF
 from atom_core.naming import generateKey
 from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
 from atom_core.config_io import execute, loadConfig
+from atom_core.xacro_io import readXacroFile
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 
 
@@ -176,15 +177,14 @@ class DataCollectorAndLabeler:
         # Defining metadata
         dataset_name = self.output_folder.split('/')[-1]
         robot_description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
-        robot_description = URDF.from_xml_file(robot_description_file)
+        robot_description = readXacroFile(robot_description_file)
 
-        if args['package_name'] is '':
-            args['package_name'] = robot_description.name + "_calibration"
+        if 'package_name' not in self.config:
+            self.config['package_name'] = robot_description.name + "_calibration"
 
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
                          'version': self.dataset_version, 'robot_name': robot_description.name,
-                         'dataset_name': dataset_name, 'package_name': args['package_name']}
-
+                         'dataset_name': dataset_name, 'package_name': self.config['package_name']}
 
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))

@@ -77,11 +77,13 @@ if __name__ == "__main__":
 
     execute('chmod +x ' + configure_file)  # make file executable
 
-    # Add template config.json
-    config_file_src = atom_calibration_path + '/templates/config.yml'
-    config_file_dst = package_path + '/calibration/config.yml'
-    cmd = 'cp ' + config_file_src + ' ' + config_file_dst
-    execute(cmd)
+    # Add template config.yml
+    config_yaml_file = package_path + '/calibration/config.yaml'
+    template = env.get_template('config.yml')
+    with open(config_yaml_file, 'wb') as f:
+        output = template.render(c={'date': dt_string,
+                                    'package_name': package_name})
+        f.write(output.encode('utf-8'))
 
     # Check if package is under $ROS_PACKAGE_PATH
     execute('rospack profile && rospack profile && rospack profile', verbose=False)
@@ -93,5 +95,5 @@ if __name__ == "__main__":
 
     # Print final report
     print('\nCreated calibration package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' in ' + Fore.BLUE + package_base_path + Style.RESET_ALL + '. Next steps:')
-    print(Fore.BLUE + '   1. Edit the ' + config_file_dst + ' to setup the calibration and; \n   2. Run:' + Fore.RED +
+    print(Fore.BLUE + '   1. Edit the config.yml file to setup the calibration and; \n   2. Run:' + Fore.RED +
           ' rosrun ' + package_name + ' configure' + Style.RESET_ALL)
