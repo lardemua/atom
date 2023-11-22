@@ -33,7 +33,7 @@
 description_file: "package://rgb_rgb_system_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rgb_rgb_system/rgb_rgb_system_example_bag.bag" 
+bag_file: "$ROS_BAGS/rgb_rgb_system/rgb_rgb_system_example_bag.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -104,8 +104,8 @@ additional_tfs: ""
   #
   # EXAMPLE:
   # base_footprint_to_base_link:
-  #   parent_link: "base_footprint"
-  #   child_link: "base_link"
+  #   parent_link: "tripod"
+  #   child_link: "tripod_plate"
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
@@ -122,7 +122,7 @@ calibration_pattern:
 
   # Defines if the pattern link is the same in all collections (i.e. fixed=true),
   # or each collection will have its own estimate of the link transformation.
-  # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors, 
+  # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
   # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
   fixed: false
 

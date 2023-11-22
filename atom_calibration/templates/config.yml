@@ -37,7 +37,7 @@ package_name: "{{ c.package_name }}"
 description_file: "package://your_package/urdf/description.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/data.bag" 
+bag_file: "$ROS_BAGS/data.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -108,9 +108,9 @@ additional_tfs: ""
   #           This is the transformation (i.e. link) that we be optimized.
   #
   # EXAMPLE:
-  # base_footprint_to_base_link:
-  #   parent_link: "base_footprint"
-  #   child_link: "base_link"
+  #base_footprint_to_base_link:
+  #  parent_link: "base_footprint"
+  #  child_link: "base_link"
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
@@ -127,7 +127,7 @@ calibration_pattern:
 
   # Defines if the pattern link is the same in all collections (i.e. fixed=true),
   # or each collection will have its own estimate of the link transformation.
-  # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors, 
+  # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
   # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
   fixed: true
 

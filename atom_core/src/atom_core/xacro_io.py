@@ -1,6 +1,7 @@
 # Standard imports
 import os
 from datetime import datetime
+from colorama import Fore, Style
 
 # Ros imports
 import rospkg
@@ -94,9 +95,13 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
 
+        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/")
         optimized_urdf_file = path_to_file + 'optimized.urdf.xacro'
         with open(optimized_urdf_file, "w", ) as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
     print("Optimized xacro saved to " + str(filename_results_xacro) + " . You can use it as a ROS robot_description.")
+
+    print("You can use it as a ROS robot_description by launching:\n" +
+          Fore.BLUE + 'roslaunch ' + package_name + ' playbag.launch optimized:=true' + Style.RESET_ALL)

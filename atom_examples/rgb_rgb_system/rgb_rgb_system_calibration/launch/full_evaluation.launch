@@ -34,7 +34,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Evaluation -->
     <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
-        name="rgb_left_to_rgb_right_evaluation"
+        name="rgb_to_rgb_evaluation"
         args="-ss rgb_left -st rgb_right -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
         output="screen"/>
 
