@@ -606,7 +606,7 @@ if __name__ == "__main__":
     # Initialize a dictionary to store sensor combination descriptions
     sensor_combinations_dict = dict()
 
-    # Define mappings for filenames and argumets based on sensor modalities
+    # Define mappings for filenames, arguments and based on sensor modalities
     modality_to_filename = {
         ('rgb', 'rgb'): 'rgb_to_rgb',
         ('lidar3d', 'lidar3d'): 'lidar_to_lidar',
@@ -620,13 +620,12 @@ if __name__ == "__main__":
     }
 
     modality_to_args = {
-        ('rgb', 'depth'): '-cs {} -ds {}',
-        ('depth', 'rgb'): '-ds {} -cs {}',
-        ('rgb', 'lidar3d'): '-cs {} -rs {}',
-        ('lidar3d', 'rgb'): '-rs {} -cs {}',
-        ('depth', 'lidar3d'): '-ds {} -rs {}',
-        ('lidar3d', 'depth'): '-rs {} -ds {}',
+        'rgb': '-cs {} ',
+        'depth': '-ds {} ',
+        'lidar3d': '-rs {} ',
     }
+
+
 
     for source, target in sensor_combinations_list:
         # Initialize a description for the evaluation
@@ -636,18 +635,31 @@ if __name__ == "__main__":
         }
 
         # Determine the modalities of the source and target sensors
-        modality_combination = (config['sensors'][source]['modality'], config['sensors'][target]['modality'])
+        source_modality = config['sensors'][source]['modality']
+        target_modality = config['sensors'][target]['modality']
+        modality_combination = (source_modality, target_modality)
 
         # Set the filename and args based on the modality combination
         evaluation_description['filename'] = modality_to_filename[modality_combination]
 
-        if config['sensors'][source]['modality'] == config['sensors'][target]['modality']:
+        if source_modality == target_modality:
             evaluation_description['args'] = f'-ss {source} -st {target}'
         else:
-            evaluation_description['args'] = modality_to_args[modality_combination].format(source, target)
+            evaluation_description['args'] = modality_to_args[source_modality].format(source)
+            evaluation_description['args'] += modality_to_args[target_modality].format(target)
+
+        if source_modality == target_modality or\
+            source_modality == 'depth' and target_modality == 'rgb' or \
+            source_modality == 'lidar3d' and target_modality == 'rgb' or \
+            source_modality == 'lidar3d' and target_modality == 'depth': 
+            combination_name = source + '_to_' + target
+        elif source_modality == 'rgb' and target_modality == 'depth' or \
+            source_modality == 'rgb' and target_modality == 'lidar3d' or \
+            source_modality == 'depth' and target_modality == 'lidar3d': 
+            combination_name = target + '_to_' + source
 
         # Store the evaluation description in the sensor_combinations_dict
-        sensor_combinations_dict[source + '_to_' + target] = evaluation_description
+        sensor_combinations_dict[combination_name] = evaluation_description
 
         # Only valid when sensor is fixed
         if config['calibration_pattern']['fixed']:
@@ -664,8 +676,7 @@ if __name__ == "__main__":
                 ' -wf ' + config['world_link']
 
             # Store the inter-collection evaluation description in the sensor_combinations_dict
-            sensor_combinations_dict['inter_collection_' + source +
-                                     '_to_' + target] = inter_collection_evaluation_description
+            sensor_combinations_dict[f'inter_collection_{combination_name}'] = inter_collection_evaluation_description
 
     # Only valid when sensor is fixed
     if config['calibration_pattern']['fixed']:
