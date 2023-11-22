@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+
+# stdlib
+import argparse
+from copy import deepcopy
+
+# 3rd-party
+import rosbag
+from tqdm import tqdm
+from colorama import Fore, Style
+from tf2_msgs.msg import TFMessage
+from geometry_msgs.msg import TransformStamped, Transform
+from pytictoc import TicToc
+
+# local packages
+
+if __name__ == "__main__":
+
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-bfi", "--bagfile_in", help='Full path to the bagfile', type=str, required=True)
+    ap.add_argument("-bfo", "--bagfile_out", help='Full path to the bagfile', type=str, required=True)
+    ap.add_argument("-jn", "--joint_name", help='joint to add noise to', type=str, required=True)
+    ap.add_argument("-jd", "--joint_delta", help='Value to add to the read joint value.', type=float, required=True)
+    # ap.add_argument("-c", "--child", help='Transform child', type=str, required=True)
+    args = vars(ap.parse_args())
+
+    # --------------------------------------------------------------------------
+    # Initial setup
+    # --------------------------------------------------------------------------
+    tictoc = TicToc()
+    tictoc.tic()
+    bag_out = rosbag.Bag(args['bagfile_out'], 'w')
+
+    # --------------------------------------------------------------------------
+    # Read the bag input file
+    # --------------------------------------------------------------------------
+    bag_file = args['bagfile_in']
+    print('Loading bagfile ' + bag_file)
+    bag = rosbag.Bag(bag_file)  # load the bag file
+    bag_info = bag.get_type_and_topic_info()
+    bag_types = bag_info[0]
+    bag_topics = bag_info[1]
+
+    # --------------------------------------------------------------------------
+    # Get initial stamp to compute mission time
+    # --------------------------------------------------------------------------
+    for topic, msg, stamp in bag.read_messages():
+        initial_stamp = stamp
+        break
+
+    # --------------------------------------------------------------------------
+    # Writing new bagfile
+    # --------------------------------------------------------------------------
+    print('Producing bagfile. Please wait...')
+    for topic, msg, stamp, connection_header in tqdm(bag.read_messages(return_connection_header=True)):
+
+        mission_time = round((stamp - initial_stamp).to_sec(), 1)
+
+        if topic == '/joint_states':
+
+            # print('joint_state message at time ' + str(mission_time))
+
+            for idx, (joint, position) in enumerate(zip(msg.name, msg.position)):
+                # print('joint ' + str(joint) + ' has position ' + str(position))
+                if joint == args['joint_name']:
+                    initial_position = list(msg.position)
+                    final_position = deepcopy(initial_position)
+                    final_position[idx] = initial_position[idx] + args['joint_delta']
+                    final_position = tuple(final_position)
+                    msg.position = final_position
+                    # print('Changed joint ' + joint + ' position from ' + str(initial_position[idx]) + ' to ' +
+                    #       str(final_position[idx]) + ' at time ' + str(mission_time))
+
+        bag_out.write(topic, msg, stamp, connection_header=connection_header)
+
+    bag.close()  # close the bag file.
+    bag_out.close()  # close the bag file.
+
+    # Print final report
+    print('Finished in ' + str(round(tictoc.tocvalue(), 2)) + ' seconds.')
+    print('Created bagfile ' + str(args['bagfile_out']) + ' containing changed joint position')
