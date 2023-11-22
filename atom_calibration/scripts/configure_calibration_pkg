@@ -1101,3 +1101,4 @@ if __name__ == "__main__":
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(dataset_playback_launch_file) +
           Style.RESET_ALL)
     print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(calibrate_launch_file) + Style.RESET_ALL)
+    print(Fore.BLUE + 'roslaunch ' + package_name + ' ' + os.path.basename(full_evaluation_launch_file) + Style.RESET_ALL)
