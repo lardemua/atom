@@ -7,6 +7,7 @@ import sys
 
 import atom_core.config_io
 import atom_core.ros_utils
+import atom_msgs.srv
 
 # 3rd-party
 import ros
@@ -28,10 +29,16 @@ def menuFeedback(feedback):
     if handle == 1:  # collect snapshot
         print('Save collection selected ')
         data_collector.saveCollection()
+    elif handle == 2:
+        print('Automatic data collection selected ')
+        rospy.wait_for_service('/automatic_data_collector/toggle_automatic_data_collector')
+        toggle_automatic_data_collector = rospy.ServiceProxy('/automatic_data_collector/toggle_automatic_data_collector', atom_msgs.srv.ToggleAutomaticDataCollector)
+        _ = toggle_automatic_data_collector()
 
 
 def initMenu():
     menu_handler.insert("Save collection", callback=menuFeedback)
+    menu_handler.insert("Automatic data collection", callback=menuFeedback)
 
 
 def createInteractiveMarker(world_link):
