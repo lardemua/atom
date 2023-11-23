@@ -13,6 +13,7 @@ import atom_core.config_io
 import atom_core.dataset_io
 
 # 3rd-party
+import rospy
 import atom_msgs.srv
 import tf
 from matplotlib import cm
@@ -87,7 +88,6 @@ class DataCollectorAndLabeler:
         self.metadata = {}
         self.bridge = CvBridge()
 
-        self.dataset_version = "2.1"
         self.dataset_version = "2.2"
         self.collect_ground_truth = None
 
@@ -204,6 +204,11 @@ class DataCollectorAndLabeler:
 
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
+
+        # Defining metadata
+        dataset_name = self.output_folder.split('/')[-1]
+        robot_description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
+        robot_description = readXacroFile(robot_description_file)
                 
         if 'package_name' not in self.config:
             self.config['package_name'] = robot_description.name + "_calibration"
