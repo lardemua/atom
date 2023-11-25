@@ -119,7 +119,7 @@ class DataCollectorAndLabeler:
             atomError('Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' +
                       Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
 
-        self.description = URDF.from_xml_file(urdf_file)  # read the urdf file
+        self.urdf_description = URDF.from_xml_file(urdf_file)  # read the urdf file
 
         # Check if there is ground truth information, i.e. messages on topics /tf_ground_truth and /tf_static_ground_truth
         print("Checking the existence of ground truth data, waiting for one msg on topic " +
@@ -399,7 +399,56 @@ class DataCollectorAndLabeler:
 
         printRosTime(average_time, "Collected transforms for time ")
 
-        joint_state_dict = message_converter.convert_ros_message_to_dictionary(self.last_joint_state_msg)
+        # Create joint dict
+        joints_dict = {}
+        for config_joint_key, config_joint in self.config['joints'].items():
+
+            # TODO should we set the position bias
+            config_joint_dict = {'transform_key': None, 'position_bias': 0.0, 'position': None}
+
+            # find joint in xacro
+            found_in_urdf = False
+            for urdf_joint in self.urdf_description.joints:
+                if config_joint['parent_link'] == urdf_joint.parent and config_joint['child_link'] == urdf_joint.child:
+                    x, y, z = urdf_joint.origin.xyz
+                    roll, pitch, yaw = urdf_joint.origin.rpy
+                    config_joint_dict['x'] = x
+                    config_joint_dict['y'] = y
+                    config_joint_dict['z'] = z
+                    config_joint_dict['roll'] = roll
+                    config_joint_dict['pitch'] = pitch
+                    config_joint_dict['yaw'] = yaw
+                    config_joint_dict['xacro_joint_name'] = urdf_joint.name
+                    found_in_urdf = True
+                    break
+
+            if not found_in_urdf:
+                atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                          ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
+
+            # find joint in transforms pool
+            for transform_key, transform in transforms.items():
+                if config_joint['parent_link'] == transform['parent'] and config_joint['child_link'] == transform['child']:
+                    config_joint_dict['transform_key'] = transform_key
+                    break
+
+            if config_joint_dict['transform_key'] is None:
+                atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                          ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
+
+            # Get current joint position from the joint state message
+            for name, position in zip(self.last_joint_state_msg.name, self.last_joint_state_msg.position):
+
+                if name == config_joint_key:
+                    config_joint_dict['position'] = position
+
+            if config_joint_dict['position'] is None:
+                atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                          ' from /joint_state messages.')
+
+            joints_dict[config_joint_key] = config_joint_dict
+
+        # joint_state_dict = message_converter.convert_ros_message_to_dictionary(self.last_joint_state_msg)
 
         all_sensor_data_dict = {}
         all_sensor_labels_dict = {}
@@ -429,7 +478,7 @@ class DataCollectorAndLabeler:
 
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
                            'transforms': transforms,
-                           'additional_data': all_additional_data_dict, 'joint_states': joint_state_dict}
+                           'additional_data': all_additional_data_dict, 'joints': joints_dict}
         if self.collect_ground_truth:
             collection_dict['transforms_ground_truth'] = transforms_ground_truth
 
@@ -439,7 +488,7 @@ class DataCollectorAndLabeler:
 
         # Create metadata.
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
-                         'version': self.dataset_version, 'robot_name': self.description.name,
+                         'version': self.dataset_version, 'robot_name': self.urdf_description.name,
                          'dataset_name': self.dataset_name}
 
         # Save to json file.
@@ -447,7 +496,6 @@ class DataCollectorAndLabeler:
              'calibration_config': self.config, '_metadata': self.metadata}
         output_file = self.output_folder + '/dataset.json'
         atom_core.dataset_io.saveResultsJSON(output_file, D)
-
         self.unlockAllLabelers()
 
     def getAllAbstractTransforms(self):
