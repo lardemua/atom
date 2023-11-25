@@ -7,6 +7,7 @@ import getpass
 from datetime import datetime, date
 
 import numpy as np
+from atom_core.utilities import atomError
 import tf2_ros
 import yaml
 import atom_core.config_io
@@ -30,6 +31,7 @@ from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAv
 from atom_core.config_io import execute, loadConfig
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
+from sensor_msgs.msg import JointState
 
 
 class DataCollectorAndLabeler:
@@ -87,6 +89,7 @@ class DataCollectorAndLabeler:
         self.bridge = CvBridge()
         self.dataset_version = "2.2"
         self.collect_ground_truth = None
+        self.last_joint_state_msg = None
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -97,6 +100,26 @@ class DataCollectorAndLabeler:
 
         # Create a colormap so that we have one color per sensor
         self.cm_sensors = cm.Pastel2(np.linspace(0, 1, len(self.config['sensors'].keys())))
+
+        # Reading the xacro
+        self.dataset_name = self.output_folder.split('/')[-1]
+        description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
+
+        # Must first convert to urdf, if it is a xacro
+        urdf_file = '/tmp/description.urdf'
+        if os.path.exists(urdf_file):
+            # print('Deleting temporary file ' + urdf_file)
+            os.remove(urdf_file)
+
+        print('Parsing description file ' + Fore.BLUE + description_file + Style.RESET_ALL)
+        xacro_cmd = 'xacro ' + description_file + ' -o ' + urdf_file
+        atom_core.config_io.execute(xacro_cmd, verbose=True)  # create tmp urdf file
+
+        if not os.path.exists(urdf_file):
+            atomError('Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' +
+                      Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
+
+        self.description = URDF.from_xml_file(urdf_file)  # read the urdf file
 
         # Check if there is ground truth information, i.e. messages on topics /tf_ground_truth and /tf_static_ground_truth
         print("Checking the existence of ground truth data, waiting for one msg on topic " +
@@ -110,6 +133,10 @@ class DataCollectorAndLabeler:
             self.collect_ground_truth = False
         else:
             self.collect_ground_truth = True
+
+        # Setup joint_state message subscriber
+        self.subscriber_joint_states = rospy.Subscriber(
+            '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1)
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
@@ -217,6 +244,11 @@ class DataCollectorAndLabeler:
         self.service_delete_collection = rospy.Service('~delete_collection',
                                                        atom_msgs.srv.DeleteCollection,
                                                        self.callbackDeleteCollection)
+
+    def callbackReceivedJointStateMsg(self, msg):
+        # print('Received joint state msg ' + str(msg))
+        # TODO does not work if not all joints are published always in every joint_state_msg
+        self.last_joint_state_msg = msg
 
     def callbackDeleteCollection(self, request):
         print('callbackDeleteCollection service called')
@@ -367,6 +399,8 @@ class DataCollectorAndLabeler:
 
         printRosTime(average_time, "Collected transforms for time ")
 
+        joint_state_dict = message_converter.convert_ros_message_to_dictionary(self.last_joint_state_msg)
+
         all_sensor_data_dict = {}
         all_sensor_labels_dict = {}
         all_additional_data_dict = {}
@@ -395,7 +429,7 @@ class DataCollectorAndLabeler:
 
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
                            'transforms': transforms,
-                           'additional_data': all_additional_data_dict}
+                           'additional_data': all_additional_data_dict, 'joint_states': joint_state_dict}
         if self.collect_ground_truth:
             collection_dict['transforms_ground_truth'] = transforms_ground_truth
 
@@ -403,14 +437,10 @@ class DataCollectorAndLabeler:
         self.collections[collection_key] = collection_dict
         self.data_stamp += 1
 
-        dataset_name = self.output_folder.split('/')[-1]
-        description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
-        description = URDF.from_xml_file(description_file)
-
         # Create metadata.
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
-                         'version': self.dataset_version, 'robot_name': description.name,
-                         'dataset_name': dataset_name}
+                         'version': self.dataset_version, 'robot_name': self.description.name,
+                         'dataset_name': self.dataset_name}
 
         # Save to json file.
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,
