@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+# stdlib
+import argparse
+
+from colorama import Fore, Style
+
+from atom_core.utilities import atomError
+from copy import deepcopy
+
+# 3rd-party
+import rosbag
+from tqdm import tqdm
+from pytictoc import TicToc
+
+# local packages
+
+if __name__ == "__main__":
+
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-bfi", "--bagfile_in", help='Full path to the bagfile', type=str, required=True)
+    args = vars(ap.parse_args())
+
+    # --------------------------------------------------------------------------
+    # Initial setup
+    # --------------------------------------------------------------------------
+    tictoc = TicToc()
+    tictoc.tic()
+
+    # --------------------------------------------------------------------------
+    # Read the bag input file
+    # --------------------------------------------------------------------------
+    bag_file = args['bagfile_in']
+    print('Loading bagfile ' + bag_file)
+    bag = rosbag.Bag(bag_file)  # load the bag file
+    bag_info = bag.get_type_and_topic_info()
+    bag_types = bag_info[0]
+    bag_topics = bag_info[1]
+
+    # --------------------------------------------------------------------------
+    # Get initial stamp to compute mission time
+    # --------------------------------------------------------------------------
+    for topic, msg, stamp in bag.read_messages():
+        initial_stamp = stamp
+        break
+
+    existing_joints = set()
+    # --------------------------------------------------------------------------
+    # Get names of all joints in the first five secs of bag
+    # --------------------------------------------------------------------------
+    for topic, msg, stamp in bag.read_messages():
+
+        if topic == '/joint_states':
+            for idx, (bag_joint, bag_position) in enumerate(zip(msg.name, msg.position)):
+                existing_joints.add(bag_joint)
+
+        if (stamp-initial_stamp).to_sec() > 5:  # assume in the first 5 secs we have covered all the existing joints
+            break
+
+    biases = ['0.0'] * len(existing_joints)
+    print('Read first 5 seconds of bag and found joints: ' + str(list(existing_joints)) +
+          ' To set bias on all joints, copy and adapt the following:\n')
