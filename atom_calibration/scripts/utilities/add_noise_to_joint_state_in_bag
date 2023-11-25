@@ -2,14 +2,15 @@
 
 # stdlib
 import argparse
+
+from colorama import Fore, Style
+
+from atom_core.utilities import atomError
 from copy import deepcopy
 
 # 3rd-party
 import rosbag
 from tqdm import tqdm
-from colorama import Fore, Style
-from tf2_msgs.msg import TFMessage
-from geometry_msgs.msg import TransformStamped, Transform
 from pytictoc import TicToc
 
 # local packages
@@ -20,10 +21,14 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-bfi", "--bagfile_in", help='Full path to the bagfile', type=str, required=True)
     ap.add_argument("-bfo", "--bagfile_out", help='Full path to the bagfile', type=str, required=True)
-    ap.add_argument("-jn", "--joint_name", help='joint to add noise to', type=str, required=True)
-    ap.add_argument("-jd", "--joint_delta", help='Value to add to the read joint value.', type=float, required=True)
-    # ap.add_argument("-c", "--child", help='Transform child', type=str, required=True)
+    ap.add_argument("-l", "--list_joints", help='List all joints in the bag.', action='store_true')
+    ap.add_argument("-jn", "--joint_names", nargs='+', help='joints to add noise to', type=str, required=True)
+    ap.add_argument("-jb", "--joint_biases", nargs='+',
+                    help='Corresponding biases to add to the joint values in the bagfile. Must have the same number of elements as joint_names', type=float, required=True)
     args = vars(ap.parse_args())
+
+    if not len(args['joint_names']) == len(args['joint_biases']):
+        atomError('Number of joints is not the same as number of biases. Aborting.')
 
     # --------------------------------------------------------------------------
     # Initial setup
@@ -49,6 +54,30 @@ if __name__ == "__main__":
         initial_stamp = stamp
         break
 
+    if args['list_joints']:
+
+        existing_joints = set()
+        # --------------------------------------------------------------------------
+        # Get names of all joints in the first five secs of bag
+        # --------------------------------------------------------------------------
+        for topic, msg, stamp in bag.read_messages():
+
+            if topic == '/joint_states':
+                for idx, (bag_joint, bag_position) in enumerate(zip(msg.name, msg.position)):
+                    existing_joints.add(bag_joint)
+
+            if (stamp-initial_stamp).to_sec() > 5:  # assume in the first 5 secs we have covered all the existing joints
+                break
+
+        biases = ['0.0'] * len(existing_joints)
+        print('Read first 5 seconds of bag and found joints: ' + str(list(existing_joints)) +
+              ' To set bias on all joints, copy and adapt the following:\n')
+
+        print(Fore.BLUE + 'rosrun atom_calibration add_noise_to_joint_state_in_bag -bfi ' +
+              args['bagfile_in'] + ' -bfo ' + args['bagfile_out'] + ' -jn ' + " ".join(existing_joints) +
+              ' -jb ' + " ".join(biases) + Style.RESET_ALL)
+        exit(0)
+
     # --------------------------------------------------------------------------
     # Writing new bagfile
     # --------------------------------------------------------------------------
@@ -61,16 +90,16 @@ if __name__ == "__main__":
 
             # print('joint_state message at time ' + str(mission_time))
 
-            for idx, (joint, position) in enumerate(zip(msg.name, msg.position)):
-                # print('joint ' + str(joint) + ' has position ' + str(position))
-                if joint == args['joint_name']:
-                    initial_position = list(msg.position)
-                    final_position = deepcopy(initial_position)
-                    final_position[idx] = initial_position[idx] + args['joint_delta']
-                    final_position = tuple(final_position)
-                    msg.position = final_position
-                    # print('Changed joint ' + joint + ' position from ' + str(initial_position[idx]) + ' to ' +
-                    #       str(final_position[idx]) + ' at time ' + str(mission_time))
+            for joint_name, joint_bias in zip(args['joint_names'], args['joint_biases']):
+                for idx, (bag_joint, bag_position) in enumerate(zip(msg.name, msg.position)):
+                    # print('joint ' + str(joint) + ' has position ' + str(position))
+                    if bag_joint == joint_name:
+                        initial_position = list(msg.position)
+                        final_position = deepcopy(initial_position)
+                        final_position[idx] = initial_position[idx] + joint_bias
+                        final_position = tuple(final_position)
+                        msg.position = final_position
+                        # print('Changed joint ' + joint_name + ' position from ' + str(initial_position[idx]) + ' to ' + str(final_position[idx]) + ' at time ' + str(mission_time))
 
         bag_out.write(topic, msg, stamp, connection_header=connection_header)
 
