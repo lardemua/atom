@@ -12,7 +12,6 @@ import argparse
 from functools import partial
 import os
 
-from transformations import quaternion_from_matrix, translation_from_matrix
 
 import rospy
 from sensor_msgs.msg import JointState
@@ -59,18 +58,12 @@ def jointStateMsgReceived(msg, description, br):
         # ---------------------------------------------------------
         # Get transformation from joint
         # ---------------------------------------------------------
-        transform = getTransformationFromRevoluteJoint(joint_dict)
+        quat, trans = getTransformationFromRevoluteJoint(joint_dict)
         print('transform for joint ' + joint_dict['xacro_joint_name'] + ' with parent ' +
-              parent + ' and child ' + child + ' is\n' + str(transform))
-
-        quat = quaternion_from_matrix(transform)
-        # for some strange reason, quaternion_from_matrix returns w,x,y,z instead of x,y,z,w
-        quat = [quat[1], quat[2], quat[3], quat[0]]
-
-        transl = translation_from_matrix(transform)
+              parent + ' and child ' + child + ' is\nquat=' + str(quat) + ' , trans=' + str(trans))
 
         child_alternative = child + '_alternative'
-        br.sendTransform(transl, quat, rospy.Time.now(), child_alternative, parent)
+        br.sendTransform(trans, quat, rospy.Time.now(), child_alternative, parent)
 
 
 def main():

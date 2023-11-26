@@ -2,11 +2,8 @@
 import numpy as np
 
 
-from transformations import euler_matrix, rotation_matrix
-
+from transformations import euler_matrix, rotation_matrix, quaternion_from_matrix, translation_from_matrix
 import numpy as np
-
-
 from atom_core.utilities import atomError
 
 
@@ -34,4 +31,10 @@ def getTransformationFromRevoluteJoint(joint):
     # However, this is the way it works exactly like robot state publisher.
     composed_matrix = np.dot(origin_matrix, joint_position_matrix)
 
-    return composed_matrix
+    quat = quaternion_from_matrix(composed_matrix)
+    # TODO  for some strange reason, quaternion_from_matrix returns w,x,y,z instead of x,y,z,w
+    quat = [quat[1], quat[2], quat[3], quat[0]]
+
+    trans = translation_from_matrix(composed_matrix)
+
+    return quat, trans
