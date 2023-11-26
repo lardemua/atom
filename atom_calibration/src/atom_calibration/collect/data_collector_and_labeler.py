@@ -412,13 +412,12 @@ class DataCollectorAndLabeler:
                 if config_joint['parent_link'] == urdf_joint.parent and config_joint['child_link'] == urdf_joint.child:
                     x, y, z = urdf_joint.origin.xyz
                     roll, pitch, yaw = urdf_joint.origin.rpy
-                    config_joint_dict['x'] = x
-                    config_joint_dict['y'] = y
-                    config_joint_dict['z'] = z
-                    config_joint_dict['roll'] = roll
-                    config_joint_dict['pitch'] = pitch
-                    config_joint_dict['yaw'] = yaw
+                    config_joint_dict['origin'] = {'x': x, 'y': y, 'z': z,
+                                                   'pitch': pitch, 'roll': roll, 'yaw': yaw}
+                    ax, ay, az = urdf_joint.axis
+                    config_joint_dict['axis'] = {'x': ax, 'y': ay, 'z': az}
                     config_joint_dict['xacro_joint_name'] = urdf_joint.name
+                    config_joint_dict['xacro_joint_type'] = urdf_joint.type
                     found_in_urdf = True
                     break
 

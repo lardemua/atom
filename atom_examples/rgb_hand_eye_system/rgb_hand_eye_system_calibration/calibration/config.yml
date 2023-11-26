@@ -97,8 +97,24 @@ additional_tfs: ""
   #
   # EXAMPLE:
   # base_footprint_to_base_link:
-  #   parent_link: "tripod"
+  #   parent_link: "base_link_inertia"
   #   child_link: "tripod_plate"
+
+joints:
+  elbow_joint:
+    # parent_link: "tabletop_table"
+    # child_link: "base_link"
+    parent_link: "upper_arm_link"
+    child_link: "forearm_link"
+    calibration:
+      x: false
+      y: false
+      z: false
+      roll: false
+      pitch: false
+      yaw: false
+      position_bias: true
+
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.

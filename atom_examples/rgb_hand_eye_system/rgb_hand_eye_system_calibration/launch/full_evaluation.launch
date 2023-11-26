@@ -34,7 +34,7 @@
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Evaluation -->
     <node type="inter_collection_rgb_to_rgb_evaluation" pkg="atom_evaluation" 
-        name="inter_collection_rgb_to_rgb_evaluation"
+        name="inter_collection_rgb_hand_to_rgb_hand_evaluation"
         args="-ss rgb_hand -st rgb_hand -wf world -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
         output="screen"/>
 

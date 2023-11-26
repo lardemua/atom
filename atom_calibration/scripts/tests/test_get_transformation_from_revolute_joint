@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+
+# This code is used to assess if the function getTransformFromRevoluteJoint is working properly.
+# It works by subscribing to the joint_states topic, and then computing for each joint position the corresponding geometric transformation. Then this transformation is published as a tf message so that it is possible to see if this is working exactly like the robot state publisher. See https://github.com/lardemua/atom/issues/711 for more info.
+
+# Useful links
+# https://leechangyo.github.io/ros/2019/10/03/ROS-TUTORIAL3/
+# https://docs.ros.org/en/jade/api/moveit_core/html/revolute__joint__model_8cpp_source.html
+# http://www.math.tau.ac.il/~dcor/Graphics/cg-slides/geom3d.pdf
+
+import argparse
+from functools import partial
+import os
+
+from transformations import quaternion_from_matrix, translation_from_matrix
+
+import rospy
+from sensor_msgs.msg import JointState
+from colorama import Fore, Style
+from urdf_parser_py.urdf import URDF
+import tf
+
+import atom_core.config_io
+
+from atom_core.utilities import atomError
+from atom_core.joint_models import getTransformationFromRevoluteJoint
+
+
+def jointStateMsgReceived(msg, description, br):
+
+    for name, position in zip(msg.name, msg.position):
+        joint_dict = {}
+        joint_dict['position'] = position
+        joint_dict['bias'] = 0.0
+
+        # ---------------------------------------------------------
+        # Find joint in xacro
+        # ---------------------------------------------------------
+        found_joint_in_xacro = False
+        for urdf_joint in description.joints:
+            if urdf_joint.name == name:
+                joint_name = urdf_joint.name
+
+                x, y, z = urdf_joint.origin.xyz
+                roll, pitch, yaw = urdf_joint.origin.rpy
+                joint_dict['origin'] = {'x': x, 'y': y, 'z': z,
+                                                'pitch': pitch, 'roll': roll, 'yaw': yaw}
+                ax, ay, az = urdf_joint.axis
+                joint_dict['axis'] = {'x': ax, 'y': ay, 'z': az}
+                joint_dict['xacro_joint_name'] = urdf_joint.name
+                joint_dict['xacro_joint_type'] = urdf_joint.type
+                parent = urdf_joint.parent
+                child = urdf_joint.child
+                break
+
+        if found_joint_in_xacro:
+            raise ValueError('Description file does not have a joint ' + name)
+
+        # ---------------------------------------------------------
+        # Get transformation from joint
+        # ---------------------------------------------------------
+        transform = getTransformationFromRevoluteJoint(joint_dict)
+        print('transform for joint ' + joint_dict['xacro_joint_name'] + ' with parent ' +
+              parent + ' and child ' + child + ' is\n' + str(transform))
+
+        quat = quaternion_from_matrix(transform)
+        # for some strange reason, quaternion_from_matrix returns w,x,y,z instead of x,y,z,w
+        quat = [quat[1], quat[2], quat[3], quat[0]]
+
+        transl = translation_from_matrix(transform)
+
+        child_alternative = child + '_alternative'
+        br.sendTransform(transl, quat, rospy.Time.now(), child_alternative, parent)
+
+
+def main():
+    rospy.init_node('test_revolute_joint_model_ros', anonymous=True)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-json", "--json_file",
+                        help='', type=str, required=False, default=None)
+    parser.add_argument("-df", "--description_file",
+                        help='path to the xacro or urdf file', type=str, required=False, default=None)
+    parser.add_argument("-p", "--parent", type=str, required=True)
+    parser.add_argument("-c", "--child", type=str, required=True)
+    args = vars(parser.parse_args())
+
+    br = tf.TransformBroadcaster()
+
+    # Check the description file
+    urdf_file = '/tmp/description.urdf'
+    if os.path.exists(urdf_file):
+        # print('Deleting temporary file ' + urdf_file)
+        os.remove(urdf_file)
+
+    print('Parsing description file ' + Fore.BLUE + args['description_file'] + Style.RESET_ALL)
+    xacro_cmd = 'xacro ' + args['description_file'] + ' -o ' + urdf_file
+    atom_core.config_io.execute(xacro_cmd, verbose=True)  # create tmp urdf file
+
+    if not os.path.exists(urdf_file):
+        atomError('Could not parse description file ' + Fore.BLUE + args['description_file'] + Style.RESET_ALL + '\nYou must manually run command:\n' +
+                  Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
+
+    description = URDF.from_xml_file(urdf_file)  # read the urdf file
+
+    sub = rospy.Subscriber('joint_states', JointState,
+                           partial(jointStateMsgReceived, description=description,
+                                   br=br),
+                           queue_size=1)
+
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()
