@@ -77,12 +77,8 @@ def main():
     rospy.init_node('test_revolute_joint_model_ros', anonymous=True)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-json", "--json_file",
-                        help='', type=str, required=False, default=None)
     parser.add_argument("-df", "--description_file",
                         help='path to the xacro or urdf file', type=str, required=False, default=None)
-    parser.add_argument("-p", "--parent", type=str, required=True)
-    parser.add_argument("-c", "--child", type=str, required=True)
     args = vars(parser.parse_args())
 
     br = tf.TransformBroadcaster()
