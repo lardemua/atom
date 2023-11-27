@@ -25,7 +25,7 @@
 @arg marker_size   The size of the interaction marker that is used to trigger a data save.
 
 @arg bag_file  Absolute path to the playing bag.
-    default: $(env ROS_BAGS)/rgb_hand_eye_system/train.bag
+    default: $(env ROS_BAGS)/rgb_hand_eye_system/train_with_noise_all_joints.bag
 @arg bag_start Playback starting time (in seconds). default: 0.0
 @arg bag_rate  Playback rate. default: 1.0
 -->
@@ -43,7 +43,7 @@
     <arg name="rviz_file" default="$(find rgb_hand_eye_system_calibration)/rviz/collect_data.rviz"/>
     <arg name="description_file" default="$(find rgb_hand_eye_system_calibration)/urdf/initial_estimate.urdf.xacro"/>
     <!-- arguments to be passed onto playbag.launch  -->
-    <arg name="bag_file" default="$(env ROS_BAGS)/rgb_hand_eye_system/train.bag"/>
+    <arg name="bag_file" default="$(env ROS_BAGS)/rgb_hand_eye_system/train_with_noise_all_joints.bag"/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="ssl" default="lambda sensor_name: False"/>
@@ -72,6 +72,10 @@
               args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
               output="screen"/>
     </group>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Start automatic data collector node -->
+    <node name="automatic_data_collector" pkg="atom_calibration" type="automatic_data_collector" output="screen"
+                args="-c $(arg config_file)"/>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 </launch>

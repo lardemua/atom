@@ -13,6 +13,7 @@ from datetime import datetime
 
 import re
 import numpy as np
+from atom_core.joint_models import getTransformationFromRevoluteJoint
 import atom_core.ros_numpy
 from colorama import Fore, Style
 from scipy.spatial import distance
@@ -39,24 +40,24 @@ def errorReport(dataset, residuals, normalizer, args):
     from prettytable import PrettyTable
     table_header = ['Collection']
 
-
     for sensor_key, sensor in dataset['sensors'].items():
 
         # Define units
         if sensor['modality'] in ['lidar3d', 'depth']:
-            units = ' [m]' 
+            units = ' [m]'
         elif sensor['modality'] in ['rgb']:
-            units = ' [px]' 
+            units = ' [px]'
         else:
             units = ''
-        
+
         if sensor_key == dataset['calibration_config']['anchored_sensor']:
             table_header.append(Fore.YELLOW + sensor_key + Style.RESET_ALL + units)
         else:
             table_header.append(sensor_key + units)
-        
+
     table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+    # table to save. This table was created, because the original has colors and the output csv save them as random characters
+    table_to_save = PrettyTable(table_header)
 
     # Build each row in the table
     keys = sorted(dataset['collections'].keys(), key=lambda x: int(x))
@@ -154,8 +155,8 @@ def errorReport(dataset, residuals, normalizer, args):
           'not detected as \"---\")' + Style.RESET_ALL)
     print(table)
 
-    # save results in csv file 
-    if args['save_file_results'] != None: 
+    # save results in csv file
+    if args['save_file_results'] != None:
         with open(args['save_file_results'] + 'calibration_results.csv', 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
 
@@ -385,20 +386,28 @@ def objectiveFunction(data):
 
     normalizer = data['normalizer']
 
+    if not args['skip_joint_calibration']:
+        # Read all joints being optimized, and correct the corresponding transforms
+        # print('Updating transforms from calibrated joints ...')
+        for collection_key, collection in dataset['collections'].items():
+            # print('Collection ' + collection_key)
+            for joint_key, joint in collection['joints'].items():
+
+                # Get the transformation from the joint configuration defined in the xacro, and the current joint value
+                quat, trans = getTransformationFromRevoluteJoint(joint)
+
+                # print('Transform before:\n' + str(collection['transforms'][joint['transform_key']]))
+
+                collection['transforms'][joint['transform_key']]['quat'] = quat
+                collection['transforms'][joint['transform_key']]['trans'] = trans
+
+                # print('Transform after:\n' + str(collection['transforms'][joint['transform_key']]))
+
+    # print('Computing cost ...')
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
 
-        # from tf import transformations
-        # print('collection ' + str(collection_key))
-        # m = getTransform('world', 'hand_camera_link', collection['transforms'])
-        # q = transformations.quaternion_from_matrix(m)
-        # print('world to hand_camera_link = ' + str(m) + '\nquat = ' + str(q))
-        #
-        # m = getTransform('world', 'world_camera_link', collection['transforms'])
-        # q = transformations.quaternion_from_matrix(m)
-        # print('world to world_camera_link = ' + str(m) + '\nquat = ' + str(q))
-
-        for sensor_key, sensor in dataset['sensors'].items():
+        for sensor_key, sensor in dataset['sensors'].items():  # iterate all sensors
 
             if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
                 continue

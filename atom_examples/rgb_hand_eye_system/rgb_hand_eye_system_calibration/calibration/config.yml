@@ -33,8 +33,9 @@
 description_file: "package://rgb_hand_eye_system_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rgb_hand_eye_system/train.bag"
-# bag_file: "$ROS_BAGS/rgb_hand_eye_system/train_with_noise.bag"
+# bag_file: "$ROS_BAGS/rgb_hand_eye_system/train.bag"
+# bag_file: "$ROS_BAGS/rgb_hand_eye_system/train_with_noise_elbow_joint.bag"
+bag_file: "$ROS_BAGS/rgb_hand_eye_system/train_with_noise_all_joints.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -97,8 +98,35 @@ additional_tfs: ""
   #
   # EXAMPLE:
   # base_footprint_to_base_link:
-  #   parent_link: "tripod"
+  #   parent_link: "base_link_inertia"
   #   child_link: "tripod_plate"
+
+# ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
+joints:
+  shoulder_pan_joint:
+    parent_link: "base_link_inertia"
+    child_link: "shoulder_link"
+    params_to_calibrate: ['position_bias']
+  shoulder_lift_joint:
+    parent_link: "shoulder_link"
+    child_link: "upper_arm_link"
+    params_to_calibrate: ['position_bias']
+  elbow_joint:
+    parent_link: "upper_arm_link"
+    child_link: "forearm_link"
+    params_to_calibrate: ['position_bias']
+  wrist_1_joint:
+    parent_link: "forearm_link"
+    child_link: "wrist_1_link"
+    params_to_calibrate: ['position_bias']
+  wrist_2_joint:
+    parent_link: "wrist_1_link"
+    child_link: "wrist_2_link"
+    params_to_calibrate: ['position_bias']
+  wrist_3_joint:
+    parent_link: "wrist_2_link"
+    child_link: "wrist_3_link"
+    params_to_calibrate: ['position_bias']
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
