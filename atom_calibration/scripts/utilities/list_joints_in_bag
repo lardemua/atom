@@ -59,5 +59,4 @@ if __name__ == "__main__":
             break
 
     biases = ['0.0'] * len(existing_joints)
-    print('Read first 5 seconds of bag and found joints: ' + str(list(existing_joints)) +
-          ' To set bias on all joints, copy and adapt the following:\n')
+    print('Read first 5 seconds of bag and found joints: ' + str(list(existing_joints)))
