@@ -466,6 +466,15 @@ if __name__ == "__main__":
                         atomError('Defined joint ' + Fore.BLUE + joint_key + Style.RESET_ALL +
                                   ' to be calibrated, but this is not of type revolute.' + Style.RESET_ALL)
 
+    # Verify if joints calibrate parameters are valid
+    allowed_params = ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
+    if 'joints' in config and config['joints']:  # must exist and not be null
+        for joint_key, joint in config['joints'].items():
+            for param in joint['params_to_calibrate']:
+                if not param in allowed_params:
+                    atomError('Joint ' + Fore.BLUE + joint_key + Style.RESET_ALL + ' is configured to calibrate parameter ' + Fore.BLUE + param +
+                              Style.RESET_ALL + ' which is not known.\nOnly parameters ' + Fore.BLUE + str(allowed_params) + Style.RESET_ALL + ' are allowed.')
+
     # TODO Verify if bagfile contains joints defined to be calibrated
 
     # TODO Verify if the joints define to be calibrated do not collide with transforms to be calibrated

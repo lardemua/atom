@@ -87,7 +87,7 @@ class DataCollectorAndLabeler:
         self.additional_data = {}
         self.metadata = {}
         self.bridge = CvBridge()
-        self.dataset_version = "2.2"
+        self.dataset_version = "2.3"  # included joint calibration
         self.collect_ground_truth = None
         self.last_joint_state_msg = None
 
@@ -412,10 +412,17 @@ class DataCollectorAndLabeler:
                 if config_joint['parent_link'] == urdf_joint.parent and config_joint['child_link'] == urdf_joint.child:
                     x, y, z = urdf_joint.origin.xyz
                     roll, pitch, yaw = urdf_joint.origin.rpy
-                    config_joint_dict['origin'] = {'x': x, 'y': y, 'z': z,
-                                                   'pitch': pitch, 'roll': roll, 'yaw': yaw}
+                    config_joint_dict['origin_x'] = x
+                    config_joint_dict['origin_y'] = y
+                    config_joint_dict['origin_z'] = z
+                    config_joint_dict['origin_roll'] = roll
+                    config_joint_dict['origin_pitch'] = pitch
+                    config_joint_dict['origin_yaw'] = yaw
+
                     ax, ay, az = urdf_joint.axis
-                    config_joint_dict['axis'] = {'x': ax, 'y': ay, 'z': az}
+                    config_joint_dict['axis_x'] = ax
+                    config_joint_dict['axis_y'] = ay
+                    config_joint_dict['axis_z'] = az
                     config_joint_dict['xacro_joint_name'] = urdf_joint.name
                     config_joint_dict['xacro_joint_type'] = urdf_joint.type
                     found_in_urdf = True

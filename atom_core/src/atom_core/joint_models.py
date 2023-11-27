@@ -13,18 +13,18 @@ def getTransformationFromRevoluteJoint(joint):
         atomError('Cannot model non revolute joint.')
 
     # STEP 1: compute the rotation matrix due to the joint revolution position
-    joint_axis = [joint['axis']['x'], joint['axis']['y'], joint['axis']['z']]
-    joint_position_matrix = rotation_matrix(joint['position'], joint_axis, point=None)
+    joint_axis = [joint['axis_x'], joint['axis_y'], joint['axis_z']]
+    joint_position_matrix = rotation_matrix(joint['position']+joint['position_bias'], joint_axis, point=None)
 
     # STEP 2: compute the rotation due to the origin rpy
-    origin_matrix = euler_matrix(joint['origin']['roll'],
-                                 joint['origin']['pitch'],
-                                 joint['origin']['yaw'], axes='sxyz')
+    origin_matrix = euler_matrix(joint['origin_roll'],
+                                 joint['origin_pitch'],
+                                 joint['origin_yaw'], axes='sxyz')
 
     # STEP 3: Add to the origin matrix the translation
-    origin_matrix[0, 3] = joint['origin']['x']
-    origin_matrix[1, 3] = joint['origin']['y']
-    origin_matrix[2, 3] = joint['origin']['z']
+    origin_matrix[0, 3] = joint['origin_x']
+    origin_matrix[1, 3] = joint['origin_y']
+    origin_matrix[2, 3] = joint['origin_z']
 
     # STEP 4: compute the aggregate transformation
     # TODO I get confused here, I though the multiplication should be the other way around.
@@ -35,6 +35,6 @@ def getTransformationFromRevoluteJoint(joint):
     # TODO  for some strange reason, quaternion_from_matrix returns w,x,y,z instead of x,y,z,w
     quat = [quat[1], quat[2], quat[3], quat[0]]
 
-    trans = translation_from_matrix(composed_matrix)
+    trans = list(translation_from_matrix(composed_matrix))
 
     return quat, trans
