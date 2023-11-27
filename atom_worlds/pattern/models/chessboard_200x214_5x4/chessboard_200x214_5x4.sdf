@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <model name="chessboard_200x214_5x4">
+    <static>1</static>
+    <link name="chessboard">
+      <pose>0 0 0 0 0 0</pose>
+      <visual name="chessboard_200x214_5x4">
+        <geometry>
+          <mesh>
+            <uri>model://chessboard_200x214_5x4/chessboard_200x214_5x4.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="charuco_800x600_5x5_100">
+        <geometry>
+          <mesh>
+            <uri>model://chessboard_200x214_5x4/chessboard_200x214_5x4.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

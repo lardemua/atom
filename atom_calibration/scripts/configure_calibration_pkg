@@ -424,9 +424,8 @@ if __name__ == "__main__":
         edge = gx.get_edge_data(parent, child)
 
         if not edge['type'] == 'static':
-            print('Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent +
-                  ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
-            exit(0)
+            atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent +
+                      ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
 
     if 'additional_tfs' in config and config['additional_tfs']:  # must exist and not be null
         for additional_tf_key, additional_tf in config['additional_tfs'].items():
@@ -435,9 +434,50 @@ if __name__ == "__main__":
             edge = gx.get_edge_data(parent, child)
 
             if not edge['type'] == 'static':
-                print('Error: additional_tf  ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX +
-                      parent + ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
-                exit(0)
+                atomError('Additional_tf  ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX +
+                          parent + ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
+
+    # Verify if urdf contains joints defined to be calibrated
+    if 'joints' in config and config['joints']:  # must exist and not be null
+        for joint_key, joint in config['joints'].items():
+            parent = joint['parent_link']
+            child = joint['child_link']
+
+            joint_in_urdf = False
+            for urdf_joint in description.joints:
+                if urdf_joint.parent == parent and urdf_joint.child == child:
+                    joint_in_urdf = True
+                    break
+
+            if not joint_in_urdf:
+                atomError('Defined joint ' + Fore.BLUE + joint_key + Style.RESET_ALL +
+                          ' to be calibrated, but it does not exist in the urdf description.\nAre you sure there is a joint in the urdf defined with parent ' + Fore.BLUE + parent + Style.RESET_ALL + ' and child ' + Fore.BLUE + child + Style.RESET_ALL + ' ?')
+
+    # Verify if joints are of type revolute
+    if 'joints' in config and config['joints']:  # must exist and not be null
+        for joint_key, joint in config['joints'].items():
+            parent = joint['parent_link']
+            child = joint['child_link']
+
+            joint_in_urdf = False
+            for urdf_joint in description.joints:
+                if urdf_joint.parent == parent and urdf_joint.child == child:
+                    if not urdf_joint.type == 'revolute':
+                        atomError('Defined joint ' + Fore.BLUE + joint_key + Style.RESET_ALL +
+                                  ' to be calibrated, but this is not of type revolute.' + Style.RESET_ALL)
+
+    # Verify if joints calibrate parameters are valid
+    allowed_params = ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
+    if 'joints' in config and config['joints']:  # must exist and not be null
+        for joint_key, joint in config['joints'].items():
+            for param in joint['params_to_calibrate']:
+                if not param in allowed_params:
+                    atomError('Joint ' + Fore.BLUE + joint_key + Style.RESET_ALL + ' is configured to calibrate parameter ' + Fore.BLUE + param +
+                              Style.RESET_ALL + ' which is not known.\nOnly parameters ' + Fore.BLUE + str(allowed_params) + Style.RESET_ALL + ' are allowed.')
+
+    # TODO Verify if bagfile contains joints defined to be calibrated
+
+    # TODO Verify if the joints define to be calibrated do not collide with transforms to be calibrated
 
     # --------------------------------------------------------------------------
     # Create dot calibration graph (used for printing out a summary)
@@ -625,8 +665,6 @@ if __name__ == "__main__":
         'lidar3d': '-rs {} ',
     }
 
-
-
     for source, target in sensor_combinations_list:
         # Initialize a description for the evaluation
         evaluation_description = {
@@ -649,13 +687,13 @@ if __name__ == "__main__":
             evaluation_description['args'] += modality_to_args[target_modality].format(target)
 
         if source_modality == target_modality or\
-            source_modality == 'depth' and target_modality == 'rgb' or \
-            source_modality == 'lidar3d' and target_modality == 'rgb' or \
-            source_modality == 'lidar3d' and target_modality == 'depth': 
+                source_modality == 'depth' and target_modality == 'rgb' or \
+                source_modality == 'lidar3d' and target_modality == 'rgb' or \
+                source_modality == 'lidar3d' and target_modality == 'depth':
             combination_name = source + '_to_' + target
         elif source_modality == 'rgb' and target_modality == 'depth' or \
-            source_modality == 'rgb' and target_modality == 'lidar3d' or \
-            source_modality == 'depth' and target_modality == 'lidar3d': 
+                source_modality == 'rgb' and target_modality == 'lidar3d' or \
+                source_modality == 'depth' and target_modality == 'lidar3d':
             combination_name = target + '_to_' + source
 
         # Store the evaluation description in the sensor_combinations_dict
@@ -687,8 +725,8 @@ if __name__ == "__main__":
                 'args': None,
             }
 
-            evaluation_description['filename'] = 'inter_collection_' + modality_to_filename[\
-                (config['sensors'][sensor]['modality'], config['sensors'][sensor]['modality'])] 
+            evaluation_description['filename'] = 'inter_collection_' + modality_to_filename[
+                (config['sensors'][sensor]['modality'], config['sensors'][sensor]['modality'])]
             evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
 
             sensor_combinations_dict['inter_collection_' + sensor + '_to_' + sensor] = evaluation_description
