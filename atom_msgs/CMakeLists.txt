@@ -66,6 +66,7 @@ add_service_files(
   GetDataset.srv
   SaveCollection.srv
   DeleteCollection.srv
+  ToggleAutomaticDataCollector.srv
 )
 
 ## Generate actions in the 'action' folder
