@@ -121,6 +121,11 @@ if __name__ == "__main__":
     bag_topics = bag_info[1]
     # print('\n' + str(bag_topics))
 
+    # Get initial stamp to compute mission time
+    for topic, msg, stamp in bag.read_messages():
+        bag_initial_stamp = stamp
+        break
+
     # --------------------------------------------------------------------------
     # Setup the description file
     # --------------------------------------------------------------------------
@@ -475,8 +480,40 @@ if __name__ == "__main__":
                     atomError('Joint ' + Fore.BLUE + joint_key + Style.RESET_ALL + ' is configured to calibrate parameter ' + Fore.BLUE + param +
                               Style.RESET_ALL + ' which is not known.\nOnly parameters ' + Fore.BLUE + str(allowed_params) + Style.RESET_ALL + ' are allowed.')
 
-    # TODO Verify if bagfile contains joints defined to be calibrated
+    # Verify if bagfile contains joints defined to be calibrated
+    joints_to_check = deepcopy(config['joints'])
+    if joints_to_check:  # only if there are joints to check
+        print('Checking if bagfile contains joint to be calibrated in /joint_states topic ... ')
+        # Read first 10 secs of bagfile and search for joint state msgs
+        for topic, msg, stamp in bag.read_messages():
+            if topic == '/joint_states':
+                for idx, (bag_joint, bag_position) in enumerate(zip(msg.name, msg.position)):
 
+                    # From the xacro, get the parent and child of this joint
+                    parent = None
+                    child = None
+                    for joint in description.joints:
+                        if joint.name == bag_joint:
+                            parent = joint.parent
+                            child = joint.child
+                            break
+
+                    for joint_to_check_key, joint_to_check in joints_to_check.items():
+                        if joint_to_check['parent_link'] == parent and joint_to_check['child_link'] == child:
+                            print('Joint ' + Fore.BLUE + joint_to_check_key + Style.RESET_ALL +
+                                  ' (' + bag_joint + ' in bagfile) found ', end='')
+                            atomPrintOK()
+                            del joints_to_check[joint_to_check_key]
+                            break
+
+            if (stamp-bag_initial_stamp).to_sec() > 10:  # assume in the first 5 secs we have covered all the existing joints
+                break
+
+        if list(joints_to_check.keys()):
+            atomError('Bagfile /joint_states message do not contain joint ' +
+                      str(list(joints_to_check.keys())) + ' (' + bag_joint + ' in bagfile)')
+
+    exit(0)
     # TODO Verify if the joints define to be calibrated do not collide with transforms to be calibrated
 
     # --------------------------------------------------------------------------

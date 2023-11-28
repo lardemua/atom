@@ -110,6 +110,31 @@ additional_tfs: ""
   #   parent_link: "base_footprint"
   #   child_link: "base_link"
 
+# ATOM can also calibrate several parameters of your joints.
+# In this section you should discriminate the joints that will be part of the calibrations.
+# For each joint you must specify which parameters to optimize.
+# The joint is identified not by its name, but by the parent and child links.
+# NOTE: Delete the "" after joints if you add a joint.
+joints: ""
+  # Each key will define a joint and its name, which will be use throughout the calibration.
+  # Each joint definition must have the following properties:
+  #
+  #       parent_link:
+  #           The parent link of the joint to be calibrated.
+  #
+  #       child_link:
+  #           This child link of the joint to be calibrated.
+  #
+  #       params_to_calibrate:
+  #           This is the list of parameters that will be optimized, from the urdf definition (http://wiki.ros.org/urdf/XML/joint):
+  #           ["origin_x", "origin_y", "origin_z", "origin_roll", "origin_pitch", "origin_yaw", "position_bias"]
+  #
+  # EXAMPLE:
+  #head_pan_joint:
+  #  parent_link: "torso_lift_link"
+  #  child_link: "head_pan_link"
+  #  params_to_calibrate: ["position_bias"]
+
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
 calibration_pattern:
