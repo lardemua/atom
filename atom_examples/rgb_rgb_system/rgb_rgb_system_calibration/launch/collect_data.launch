@@ -73,5 +73,9 @@
               output="screen"/>
     </group>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Start automatic data collector node -->
+    <node name="automatic_data_collector" pkg="atom_calibration" type="automatic_data_collector" output="screen"
+                args="-c $(arg config_file)"/>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
 </launch>

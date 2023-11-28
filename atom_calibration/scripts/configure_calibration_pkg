@@ -459,7 +459,7 @@ if __name__ == "__main__":
                           ' to be calibrated, but it does not exist in the urdf description.\nAre you sure there is a joint in the urdf defined with parent ' + Fore.BLUE + parent + Style.RESET_ALL + ' and child ' + Fore.BLUE + child + Style.RESET_ALL + ' ?')
 
     # Verify if joints are of type revolute
-    if 'joints' in config and config['joints']:  # must exist and not be null
+    if not config['joints'] == "":
         for joint_key, joint in config['joints'].items():
             parent = joint['parent_link']
             child = joint['child_link']
@@ -472,8 +472,9 @@ if __name__ == "__main__":
                                   ' to be calibrated, but this is not of type revolute.' + Style.RESET_ALL)
 
     # Verify if joints calibrate parameters are valid
-    allowed_params = ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
-    if 'joints' in config and config['joints']:  # must exist and not be null
+    if not config['joints'] == "":
+        allowed_params = ['origin_x', 'origin_y', 'origin_z',
+                          'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
         for joint_key, joint in config['joints'].items():
             for param in joint['params_to_calibrate']:
                 if not param in allowed_params:
@@ -481,39 +482,51 @@ if __name__ == "__main__":
                               Style.RESET_ALL + ' which is not known.\nOnly parameters ' + Fore.BLUE + str(allowed_params) + Style.RESET_ALL + ' are allowed.')
 
     # Verify if bagfile contains joints defined to be calibrated
-    joints_to_check = deepcopy(config['joints'])
-    if joints_to_check:  # only if there are joints to check
-        print('Checking if bagfile contains joint to be calibrated in /joint_states topic ... ')
-        # Read first 10 secs of bagfile and search for joint state msgs
-        for topic, msg, stamp in bag.read_messages():
-            if topic == '/joint_states':
-                for idx, (bag_joint, bag_position) in enumerate(zip(msg.name, msg.position)):
+    if not config['joints'] == "":
+        joints_to_check = deepcopy(config['joints'])
+        if joints_to_check:  # only if there are joints to check
+            print('Checking if bagfile contains joint to be calibrated in /joint_states topic ... ')
+            # Read first 10 secs of bagfile and search for joint state msgs
+            for topic, msg, stamp in bag.read_messages():
+                if topic == '/joint_states':
+                    for idx, (bag_joint, bag_position) in enumerate(zip(msg.name, msg.position)):
 
-                    # From the xacro, get the parent and child of this joint
-                    parent = None
-                    child = None
-                    for joint in description.joints:
-                        if joint.name == bag_joint:
-                            parent = joint.parent
-                            child = joint.child
-                            break
+                        # From the xacro, get the parent and child of this joint
+                        parent = None
+                        child = None
+                        for joint in description.joints:
+                            if joint.name == bag_joint:
+                                parent = joint.parent
+                                child = joint.child
+                                break
 
-                    for joint_to_check_key, joint_to_check in joints_to_check.items():
-                        if joint_to_check['parent_link'] == parent and joint_to_check['child_link'] == child:
-                            print('Joint ' + Fore.BLUE + joint_to_check_key + Style.RESET_ALL +
-                                  ' (' + bag_joint + ' in bagfile) found ', end='')
-                            atomPrintOK()
-                            del joints_to_check[joint_to_check_key]
-                            break
+                        for joint_to_check_key, joint_to_check in joints_to_check.items():
+                            if joint_to_check['parent_link'] == parent and joint_to_check['child_link'] == child:
+                                print('Joint ' + Fore.BLUE + joint_to_check_key + Style.RESET_ALL +
+                                      ' (' + bag_joint + ' in bagfile) found ', end='')
+                                atomPrintOK()
+                                del joints_to_check[joint_to_check_key]
+                                break
 
-            if (stamp-bag_initial_stamp).to_sec() > 10:  # assume in the first 5 secs we have covered all the existing joints
-                break
+                if (stamp-bag_initial_stamp).to_sec() > 10:  # assume in the first 5 secs we have covered all the existing joints
+                    break
 
-        if list(joints_to_check.keys()):
-            atomError('Bagfile /joint_states message do not contain joint ' +
-                      str(list(joints_to_check.keys())) + ' (' + bag_joint + ' in bagfile)')
+            if list(joints_to_check.keys()):
+                atomError('Bagfile /joint_states message do not contain joint ' +
+                          str(list(joints_to_check.keys())) + ' (' + bag_joint + ' in bagfile)')
 
-    # TODO Verify if the joints define to be calibrated do not collide with transforms to be calibrated
+    # Verify if the joints define to be calibrated do not collide with transforms to be calibrated
+    if not config['joints'] == "":
+        print('Checking if joints to be calibrated do not collide with transformations to be calibrated ... ')
+        for joint_key, joint in config['joints'].items():
+            for sensor_key, sensor in config['sensors'].items():
+                if sensor['parent_link'] == joint['parent_link'] and sensor['child_link'] == joint['child_link']:
+                    atomError('Transformation for sensor ' + sensor_key + ' collides with joint ' + joint_key)
+
+            if not config['additional_tfs'] == "":
+                for additional_tf_key, additional_tf in config['additional_tfs'].items():
+                    if additional_tf['parent_link'] == joint['parent_link'] and additional_tf['child_link'] == joint['child_link']:
+                        atomError('Additional tf ' + additional_tf_key + ' collides with joint ' + joint_key)
 
     # --------------------------------------------------------------------------
     # Create dot calibration graph (used for printing out a summary)
