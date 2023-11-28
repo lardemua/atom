@@ -513,7 +513,6 @@ if __name__ == "__main__":
             atomError('Bagfile /joint_states message do not contain joint ' +
                       str(list(joints_to_check.keys())) + ' (' + bag_joint + ' in bagfile)')
 
-    exit(0)
     # TODO Verify if the joints define to be calibrated do not collide with transforms to be calibrated
 
     # --------------------------------------------------------------------------
