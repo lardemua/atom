@@ -91,7 +91,8 @@ class DataCollectorAndLabeler:
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
         self.collect_ground_truth = None
-        self.last_joint_state_msg = None
+        self.buffer_joint_state_msg = []
+        self.buffer_joint_state_size = 10
 
 
         # print(args['calibration_file'])
@@ -255,9 +256,13 @@ class DataCollectorAndLabeler:
                                                        self.callbackDeleteCollection)
 
     def callbackReceivedJointStateMsg(self, msg):
-        # print('Received joint state msg ' + str(msg))
-        # TODO does not work if not all joints are published always in every joint_state_msg
-        self.last_joint_state_msg = msg
+        # Insert the message at the beginning of the buffer
+        self.buffer_joint_state_msg.insert(0, msg)
+
+        # Remove the oldest message (last in the buffer) if larger than predetermined size
+        if len(self.buffer_joint_state_msg) >= self.buffer_joint_state_size:
+            self.buffer_joint_state_msg.pop(-1)
+
 
     def callbackDeleteCollection(self, request):
         print('callbackDeleteCollection service called')
@@ -452,10 +457,14 @@ class DataCollectorAndLabeler:
                           ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
 
             # Get current joint position from the joint state message
-            for name, position in zip(self.last_joint_state_msg.name, self.last_joint_state_msg.position):
+            for joint_state_msg in self.buffer_joint_state_msg:
+                for name, position in zip(joint_state_msg.name, joint_state_msg.position):
+                    if name == config_joint_key:
+                        config_joint_dict['position'] = position
+                        break
 
-                if name == config_joint_key:
-                    config_joint_dict['position'] = position
+                if config_joint_dict['position'] is not None:
+                    break
 
             if config_joint_dict['position'] is None:
                 atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
