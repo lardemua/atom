@@ -80,17 +80,23 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         # path_to_file = urdf_path + '/optimized/'
 
         rospack = rospkg.RosPack()
-        package_name = dataset["_metadata"]["robot_name"] + "_calibration"
-        path_to_file = (rospack.get_path(package_name) + "/urdf/optimized/")
 
-        if not os.path.exists(path_to_file):
-            os.mkdir(path_to_file)
-        filename_results_xacro = path_to_file + file_name
+        # Defining the package name to be compatible with 2.0 dataset version (see #653 for more details)
+        if "package_name" in dataset["_metadata"]:
+            package_name = dataset["_metadata"]["package_name"]
+        else:
+            package_name = dataset["_metadata"]["robot_name"] + "_calibration"
+
+        path_to_urdf_directory = (rospack.get_path(package_name) + "/urdf/")
+        path_to_optimized_directory = (path_to_urdf_directory + "optimized/")
+
+        if not os.path.exists(path_to_optimized_directory):
+            os.mkdir(path_to_optimized_directory)
+        filename_results_xacro = path_to_optimized_directory + file_name
         with open(filename_results_xacro, "w") as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-        path_to_file = (rospack.get_path(dataset["_metadata"]["robot_name"] + "_calibration") + "/urdf/")
-        optimized_urdf_file = path_to_file + 'optimized.urdf.xacro'
+        optimized_urdf_file = path_to_urdf_directory + 'optimized.urdf.xacro'
         with open(optimized_urdf_file, "w", ) as out:
             out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")

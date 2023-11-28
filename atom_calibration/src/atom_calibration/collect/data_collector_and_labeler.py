@@ -14,6 +14,7 @@ import atom_core.config_io
 import atom_core.dataset_io
 
 # 3rd-party
+import rospy
 import atom_msgs.srv
 import tf
 from matplotlib import cm
@@ -29,6 +30,7 @@ from urdf_parser_py.urdf import URDF
 from atom_core.naming import generateKey
 from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
 from atom_core.config_io import execute, loadConfig
+from atom_core.xacro_io import readXacroFile
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
 from sensor_msgs.msg import JointState
@@ -87,9 +89,10 @@ class DataCollectorAndLabeler:
         self.additional_data = {}
         self.metadata = {}
         self.bridge = CvBridge()
-        self.dataset_version = "2.3"  # included joint calibration
+        self.dataset_version = "3.0"  # included joint calibration
         self.collect_ground_truth = None
         self.last_joint_state_msg = None
+
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -227,6 +230,12 @@ class DataCollectorAndLabeler:
 
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
+
+        # Defining metadata
+        self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
+                         'version': self.dataset_version, 'robot_name': self.urdf_description.name,
+                         'dataset_name': self.dataset_name, 'package_name': self.config['package_name']}
+
 
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
@@ -492,10 +501,6 @@ class DataCollectorAndLabeler:
         self.collections[collection_key] = collection_dict
         self.data_stamp += 1
 
-        # Create metadata.
-        self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
-                         'version': self.dataset_version, 'robot_name': self.urdf_description.name,
-                         'dataset_name': self.dataset_name}
 
         # Save to json file.
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,

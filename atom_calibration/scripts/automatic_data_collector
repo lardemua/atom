@@ -116,17 +116,19 @@ class AutomaticDataCollector:
                     self.frame_times[frame]={'times': [t.to_sec()],
                                             'values': [[trans, quat]],
                                             'static': False}
-                elif t not in self.frame_times[frame]['times']:
+                elif t.to_sec() not in self.frame_times[frame]['times']:
                     self.frame_times[frame]['times'].append(t.to_sec())
                     self.frame_times[frame]['values'].append([trans, quat])
 
-                while self.frame_times[frame]['times'][-1] - self.frame_times[frame]['times'][0] > self.time_threshold:
-                    self.frame_times[frame]['static'] = compareTransforms(self.frame_times[frame]['values'][0], \
-                        self.frame_times[frame]['values'][-1], self.translation_threshold, self.rotation_threshold)
+                    while self.frame_times[frame]['times'][-1] - self.frame_times[frame]['times'][0] > self.time_threshold:
+                        self.frame_times[frame]['static'] = compareTransforms(self.frame_times[frame]['values'][0], \
+                            self.frame_times[frame]['values'][-1], self.translation_threshold, self.rotation_threshold)
+                            
                         
-                    
-                    self.frame_times[frame]['times'].pop(0)
-                    self.frame_times[frame]['values'].pop(0)
+                        self.frame_times[frame]['times'].pop(0)
+                        self.frame_times[frame]['values'].pop(0)
+                elif t.to_sec() == rospy.Time(0).to_sec():
+                    self.frame_times[frame]['static'] = True
 
                 
             # Check if all frames are static
