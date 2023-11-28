@@ -24,7 +24,7 @@ from atom_calibration.calibration.objective_function import errorReport, objecti
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
-                                  saveResultsJSON)
+                                  saveResultsJSON, filterJointsFromDataset, filterAdditionalTfsFromDataset)
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, checkAdditionalTfs, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
@@ -93,6 +93,18 @@ def main():
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument("-jsf", "--joint_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help="A string to be evaluated into a lambda function that receives a joint name as input and "
+                    "returns True or False to indicate if the joint should be calibrated (and used in the "
+                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    'language. Example: lambda name: name in ["left_arm_roll", "right_shoulder_lift"] , to load only '
+                    "joints left_arm_roll and right_shoulder_lift")
+    ap.add_argument("-atsf", "--additional_tf_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help="A string to be evaluated into a lambda function that receives an additional_tf name as input and "
+                    "returns True or False to indicate if the additional_tf should be calibrated (and used in the "
+                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    'language. Example: lambda name: name in ["base_link_to_base_link_mb", "left_wheel_to_base_link"] , to load only '
+                    "additional_tfs base_link_to_base_link_mb and left_wheel_to_base_link")
     ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
                     "after calling the optimization. Good for debugging.", action="store_true", default=False)
     ap.add_argument("-ipg", "--initial_pose_ghost", action="store_true", default=False,
@@ -121,7 +133,7 @@ def main():
     dataset_original = copy.deepcopy(dataset)
 
     # ---------------------------------------
-    # --- Filter some collections and / or sensors from the dataset
+    # --- Filter some collections, sensors, joints and additional tfs from the dataset
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
 
@@ -131,6 +143,10 @@ def main():
     # TODO: Solve this strange dependency.
     dataset["patterns"] = patterns.createPatternLabels(args, dataset)
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
+
+    dataset = filterJointsFromDataset(dataset, args)
+
+    dataset = filterAdditionalTfsFromDataset(dataset, args)
 
     # print(dataset["patterns"])
     # exit(0)
