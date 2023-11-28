@@ -115,7 +115,7 @@ additional_tfs: ""
 # For each joint you must specify which parameters to optimize.
 # The joint is identified not by its name, but by the parent and child links.
 # NOTE: Delete the "" after joints if you add a joint.
-joints:
+joints: ""
   # Each key will define a joint and its name, which will be use throughout the calibration.
   # Each joint definition must have the following properties:
   #
@@ -130,10 +130,10 @@ joints:
   #           ["origin_x", "origin_y", "origin_z", "origin_roll", "origin_pitch", "origin_yaw", "position_bias"]
   #
   # EXAMPLE:
-  head_pan_joint:
-   parent_link: "tripod_left_support"
-   child_link: "rgb_left_link"
-   params_to_calibrate: ["position_bias"]
+  # head_pan_joint:
+  #  parent_link: "tripod_left_support"
+  #  child_link: "rgb_left_link"
+  #  params_to_calibrate: ["position_bias"]
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.

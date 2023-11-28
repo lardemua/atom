@@ -557,6 +557,7 @@ if __name__ == "__main__":
         type = edge_data['type']
         rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
         to_be_calibrated = False  # If this transform is to be calibrated, change the label on the edge
+        joint_calibration = False
 
         for sensor_key, sensor in config['sensors'].items():  # if the joint is marked for calibration
             if sensor['parent_link'] == parent and sensor['child_link'] == child:
@@ -564,15 +565,23 @@ if __name__ == "__main__":
                 rgb = matplotlib.colors.rgb2hex([0, 0, 1])
                 to_be_calibrated = True
 
-        if 'additional_tfs' in config:
-            if config['additional_tfs'] != '':
-                for additional_tf_key, additional_tf in config['additional_tfs'].items():
-                    if additional_tf['parent_link'] == parent and additional_tf['child_link'] == child:
-                        label += ' To be calibrated \n'
-                        rgb = matplotlib.colors.rgb2hex([0, 0, 1])
-                        to_be_calibrated = True
+        if not config['additional_tfs'] == "":
+            for additional_tf_key, additional_tf in config['additional_tfs'].items():
+                if additional_tf['parent_link'] == parent and additional_tf['child_link'] == child:
+                    label += ' To be calibrated \n'
+                    rgb = matplotlib.colors.rgb2hex([0, 0, 1])
+                    to_be_calibrated = True
 
-        if not to_be_calibrated:
+        if not config['joints'] == "":
+            for joint_key, joint in config['joints'].items():
+                if parent == joint['parent_link'] and child == joint['child_link']:
+                    label += '  Joint calibration\n  ' + str(joint['params_to_calibrate']) + '\n'
+                    rgb = matplotlib.colors.rgb2hex([1, 0.6, 0])
+                    joint_calibration = True
+
+        if joint_calibration:
+            pass
+        elif not to_be_calibrated:
             label += ' ' + type + ' '  # add word "static" or "dynamic"
         else:
             if type == 'static':
