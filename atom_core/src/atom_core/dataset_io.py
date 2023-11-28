@@ -626,6 +626,54 @@ def filterCollectionsFromDataset(dataset, args):
     return dataset
 
 
+def filterJointsFromDataset(dataset, args):
+    """
+    Filters some joints to be calibrated from the dataset, using the joint_selection_function
+    :param dataset:
+    :param args: Makes use of 'joint_selection_function'
+    """
+
+    if 'joint_selection_function' in args:
+        if not args['joint_selection_function'] is None:
+            deleted = []
+            for joint_key in dataset['calibration_config']['joints']:
+                if not args['joint_selection_function'](joint_key):  # use the lambda expression jsf
+                    deleted.append(joint_key)
+
+            for joint_key in deleted:
+                del dataset['calibration_config']['joints'][joint_key]
+                for collection_key in dataset['collections']:
+                    del dataset['collections'][collection_key]['joints'][joint_key]
+
+            print("Deleted joints for calibration: " + str(deleted))
+
+
+    return dataset
+
+
+def filterAdditionalTfsFromDataset(dataset, args):
+    """
+    Filters some additional tfs to be calibrated from the dataset, using the additional_tfs_selection_function
+    :param dataset:
+    :param args: Makes use of 'additional_tf_selection_function'
+    """
+
+    if 'additional_tf_selection_function' in args:
+        if not args['additional_tf_selection_function'] is None:
+            deleted = []
+            for additional_tf_key in dataset['calibration_config']['additional_tfs']:
+                if not args['additional_tf_selection_function'](additional_tf_key):  # use the lambda expression atsf
+                    deleted.append(additional_tf_key)
+
+            for additional_tf_key in deleted:
+                del dataset['calibration_config']['additional_tfs'][additional_tf_key]
+
+            print("Deleted additional_tfs for calibration: " + str(deleted))
+
+
+    return dataset
+
+
 def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     """
     Adds noise
