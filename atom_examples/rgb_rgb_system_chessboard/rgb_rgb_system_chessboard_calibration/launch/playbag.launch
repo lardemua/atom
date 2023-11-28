@@ -34,8 +34,6 @@
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
-    <arg name="use_tfs" default="False"
-         doc="If false ignore tfs in the bag file and use the xacro, joint_state_msgs and robot state publisher to generate new tfs."/>
     <arg name="rviz_file" default="$(find rgb_rgb_system_chessboard_calibration)/rviz/set_initial_estimate.rviz"/>
     <arg name="description_file" default="$(find rgb_rgb_system_chessboard_calibration)/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
@@ -44,58 +42,34 @@
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Throttle topics -->
-    
-    
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_left"
           args="messages /rgb_left/image_raw/compressed_to_throttle 10 /rgb_left/image_raw/compressed"/>
-    
-    
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_right"
           args="messages /rgb_right/image_raw/compressed_to_throttle 10 /rgb_right/image_raw/compressed"/>
     
-    
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-    
-    
-
-
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Load robot description and tf generators -->
     <param name="robot_description" command="$(find xacro)/xacro $(arg description_file)"/>
 
-    <group unless="$(arg use_tfs)">
-        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-    </group>
-    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Playback the bag file -->
     <param name="/use_sim_time" value="true"/>
 
-    <group if="$(arg use_tfs)"> <!--Play bag file using tfs, ignore joint states -->
-        <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
-              args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /joint_states:=/joint_states_null /rgb_left/image_raw/compressed:=/rgb_left/image_raw/compressed_to_throttle /rgb_right/image_raw/compressed:=/rgb_right/image_raw/compressed_to_throttle"/>
-    </group>
-    <group unless="$(arg use_tfs)"> <!--Play bag file ignoring tfs-->
-        <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
-              args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null /rgb_left/image_raw/compressed:=/rgb_left/image_raw/compressed_to_throttle /rgb_right/image_raw/compressed:=/rgb_right/image_raw/compressed_to_throttle"/>
-    </group>
+    <!-- Generate transformatiosn from the xacro and joint state msgs, ignore tfs -->
+    <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+        args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null /rgb_left/image_raw/compressed:=/rgb_left/image_raw/compressed_to_throttle /rgb_right/image_raw/compressed:=/rgb_right/image_raw/compressed_to_throttle"/>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
-    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Image Topic Decompression -->
     <node pkg="image_transport" type="republish" name="decompressor_rgb_left" output="screen"
           args="compressed in:=/rgb_left/image_raw raw out:=/rgb_left/image_raw"/>
     <node pkg="image_transport" type="republish" name="decompressor_rgb_right" output="screen"
           args="compressed in:=/rgb_right/image_raw raw out:=/rgb_right/image_raw"/>
-    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
-    
-
-
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Visualization -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" required="true"/>

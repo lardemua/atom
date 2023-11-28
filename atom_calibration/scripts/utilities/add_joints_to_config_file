@@ -54,15 +54,37 @@ if __name__ == "__main__":
     # Produce a new config.yml
     # --------------------------------------
 
-    if not 'package_name' in existing_config:
+    if not 'joints' in existing_config:
 
         import os
         import fileinput
 
-        old = "# This yaml file describes your calibration!"
-        new = '# This yaml file describes your calibration!\n\n' + \
-            '# This parameter is automatically filled by ATOM, please only change if you know what you are doing\n' + \
-            'package_name: "' + args['package_name'] + '"\n'
+        old = "# The calibration requires a detectable pattern."
+        new = '# ATOM can also calibrate several parameters of your joints.\n' +\
+              '# In this section you should discriminate the joints that will be part of the calibrations.\n' +\
+              '# For each joint you must specify which parameters to optimize.\n' +\
+              '# The joint is identified not by its name, but by the parent and child links.\n' +\
+              '# NOTE: Delete the "" after joints if you add a joint.\n' +\
+              'joints: ""\n' +\
+              '  # Each key will define a joint and its name, which will be use throughout the calibration.\n' +\
+              '  # Each joint definition must have the following properties:\n' +\
+              '  #\n' +\
+              '  #       parent_link:\n' +\
+              '  #           The parent link of the joint to be calibrated.\n' +\
+              '  #\n' +\
+              '  #       child_link:\n' +\
+              '  #           This child link of the joint to be calibrated.\n' +\
+              '  #\n' +\
+              '  #       params_to_calibrate:\n' +\
+              '  #           This is the list of parameters that will be optimized, from the urdf definition (http://wiki.ros.org/urdf/XML/joint):\n' +\
+              '  #           ["origin_x", "origin_y", "origin_z", "origin_roll", "origin_pitch", "origin_yaw", "position_bias"]\n' +\
+              '  #\n' +\
+              '  # EXAMPLE:\n' +\
+              '  #head_pan_joint:\n' +\
+              '  #  parent_link: "torso_lift_link"\n' +\
+              '  #  child_link: "head_pan_link"\n' +\
+              '  #  params_to_calibrate: ["position_bias"]\n\n' +\
+              '# The calibration requires a detectable pattern.\n'
 
         execute('cp ' + args['config_file'] + ' /tmp/config.yml.bak')
 
@@ -88,5 +110,5 @@ if __name__ == "__main__":
               Fore.BLUE + 'rosrun ' + package_name + ' configure' + Style.RESET_ALL)
 
     else:
-        print('Package name already exists in ' + Fore.BLUE + args['config_file'] +
-              Style.RESET_ALL + '. Nothing to do.')
+        atomError('joints field already exists in ' + Fore.BLUE + args['config_file'] +
+                  Style.RESET_ALL + '. Nothing to do.')
