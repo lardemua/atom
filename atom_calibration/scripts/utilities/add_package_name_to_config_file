@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+# stdlib
+from copy import deepcopy
+import datetime
+import os
+from os.path import exists
+import argparse
+
+import jinja2
+from jinja2 import Environment, FileSystemLoader
+
+
+# 3rd-party
+import rospkg
+from colorama import Style, Fore
+from atom_core.config_io import execute, loadConfig, loadYMLConfig, uriReader, verifyConfig
+
+# local packages
+
+if __name__ == "__main__":
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-pn", "--package_name", help='calibration package_name', type=str, required=True)
+    ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
+                    type=str, required=False, default=None)
+    args = vars(ap.parse_args())
+
+    package_name = args['package_name']
+
+    rospack = rospkg.RosPack()
+    package_path = rospack.get_path(package_name)  # full path to the package, including its name.
+    package_base_path = os.path.dirname(package_path)  # parent path where the package is located
+
+    # --------------------------------------------------------------------------
+    # Read the config.yml file
+    # --------------------------------------------------------------------------
+    if args['config_file'] is None:
+        args['config_file'] = package_path + '/calibration/config.yml'
+    else:
+        args['config_file'] = package_path + '/calibration/' + args['config_file']
+        if not exists(args['config_file']):
+            args['config_file'] = package_path + '/calibration/config.yml'
+
+    print('Loading config_file ' + Fore.BLUE + str(args['config_file']) + Style.RESET_ALL)
+
+    existing_config = loadYMLConfig(args['config_file'])
+    if existing_config is None:
+        raise ValueError(Fore.RED + 'Your config file ' + args['config_file'] +
+                         ' could not be read. Aborting.' + Fore.RESET)
+
+    # --------------------------------------
+    # Produce a new config.yml
+    # --------------------------------------
+
+    if not 'package_name' in existing_config:
+
+        import os
+        import fileinput
+
+        old = "# This yaml file describes your calibration!"
+        new = '# This yaml file describes your calibration!\n\n' + \
+            '# This parameter is automatically filled by ATOM, please only change if you know what you are doing\n' + \
+            'package_name: "' + args['package_name'] + '"\n'
+
+        execute('cp ' + args['config_file'] + ' /tmp/config.yml.bak')
+
+        file_handle_read = open('/tmp/config.yml.bak', "r")
+        file_handle_write = open(args['config_file'], "w")
+
+        for line in file_handle_read.readlines():
+
+            if old in line:
+                print('Found a line\n:' + line)
+                file_handle_write.write(new)
+            else:
+                file_handle_write.write(line)
+
+        file_handle_read.close()
+        file_handle_write.close()
+
+        # Print final report
+        print('\n\nUpdated ' + Fore.BLUE + args['config_file'] + Style.RESET_ALL +
+              ' in ' + package_path + '.\nYou should now run a new package configuration with:' +
+              Fore.BLUE + 'rosrun ' + package_name + ' configure' + Style.RESET_ALL)
+
+    else:
+        print('Package name already exists in ' + Fore.BLUE + args['config_file'] +
+              Style.RESET_ALL + '. Nothing to do.')

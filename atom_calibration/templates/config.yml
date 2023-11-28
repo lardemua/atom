@@ -17,7 +17,7 @@
 # This parameter is automatically filled by ATOM, please only change if you know what you are doing
 package_name: "{{ c.package_name }}"
 
-# You can start by defining your robotic system.
+# Start by defining your robotic system.
 # This is the URDF file (or xacro) that describes your robot.
 # Every time a path to a file is requested you can use
 #

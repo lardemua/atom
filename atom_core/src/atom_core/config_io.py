@@ -133,12 +133,11 @@ def loadConfig(filename, check_paths=True):
     # print(missing_parameters)
 
     if missing_parameters:  # list is not empty
-        # TODO: #589 find another way to resolve this
-        if missing_parameters != ['additional_tfs']: # I added this line to run old config.yml files, but here the 'additional_tfs' key don't raise an error if missing.
-            raise ValueError(Fore.RED + 'Your config file ' + filename +
-                            ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
-                            str(missing_parameters) + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
-                            ' rosrun <my_robot>_calibration configure' + Fore.RESET)
+        print(Fore.RED + 'Your config file ' + filename +
+              ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
+              str(missing_parameters) + Fore.RED + '\nPerhaps your file format is not updated.\n' +
+              ' should re-run:\n' + Fore.BLUE + ' rosrun <my_robot>_calibration configure' + Fore.RESET)
+        exit(0)
 
     # Check if description file is ok
     # print(config['description_file'])
