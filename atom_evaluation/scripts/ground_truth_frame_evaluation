@@ -21,7 +21,7 @@ from prettytable import PrettyTable
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.utilities import checkAdditionalTfs, saveFileResults
+from atom_core.utilities import saveFileResults
 from atom_core.naming import generateKey
 from atom_core.dataset_io import getMixedDataset
 from atom_core.geometry import matrixToRodrigues
@@ -258,7 +258,7 @@ def argToTargetFrame(arg, train_dataset):
     return target_frame
 
 def evaluateSourceFrame(source_frame, train_dataset):
-    if checkAdditionalTfs(train_dataset):
+    if not train_dataset['calibration_config']['additional_tfs'] == "":
         if source_frame in train_dataset['calibration_config']['additional_tfs']:
             transform_key = generateKey(train_dataset['calibration_config']['additional_tfs'][source_frame]['parent_link'], 
                                         train_dataset['calibration_config']['additional_tfs'][source_frame]['child_link'])
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         errors.saveToDict()
         
     else: # compute for all frames estimated in the calibration
-        if checkAdditionalTfs(mixed_dataset):
+        if not mixed_dataset['calibration_config']['additional_tfs'] == "":
             for additional_tf_key, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
                 transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
                 source_child = additional_tf['child_link']
