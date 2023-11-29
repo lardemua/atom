@@ -55,9 +55,9 @@
     <!-- Playback the bag file -->
     <param name="/use_sim_time" value="true"/>
 
-    <!-- Generate transformatiosn from the xacro and joint state msgs, use tfs as ground truth  -->
+    <!-- Generate transformatiosn from the xacro and joint state msgs, ignore tfs -->
     <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
-              args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_ground_truth /tf_static:=/tf_static_ground_truth /rgb_hand/image_raw/compressed:=/rgb_hand/image_raw/compressed_to_throttle"/>
+        args=" $(arg bag_file) --clock -r $(arg bag_rate) -l -s $(arg bag_start) -d 2 /tf:=/tf_dev_null /tf_static:=/tf_static_dev_null /rgb_hand/image_raw/compressed:=/rgb_hand/image_raw/compressed_to_throttle"/>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->

@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import yaml
 import rospkg
-from colorama import Fore
+from colorama import Fore, Style
 
 
 def execute(cmd, blocking=True, verbose=True):
@@ -133,12 +133,12 @@ def loadConfig(filename, check_paths=True):
     # print(missing_parameters)
 
     if missing_parameters:  # list is not empty
-        # TODO: #589 find another way to resolve this
-        if missing_parameters != ['additional_tfs']: # I added this line to run old config.yml files, but here the 'additional_tfs' key don't raise an error if missing.
-            raise ValueError(Fore.RED + 'Your config file ' + filename +
-                            ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
-                            str(missing_parameters) + Fore.RED + '\nPerhaps you should re-run:\n' + Fore.BLUE +
-                            ' rosrun <my_robot>_calibration configure' + Fore.RESET)
+        print('Your config file ' + Fore.BLUE + filename + Style.RESET_ALL +
+              ' appears to be corrupted. These mandatory parameters are missing: ' + Fore.BLUE +
+              str(missing_parameters) + Style.RESET_ALL + '\nPerhaps your file format is not updated.\n' +
+              'To fix, check scripts ' + Fore.BLUE + 'add_joints_to_config_file' + Style.RESET_ALL + ' and ' +
+              Fore.BLUE + 'add_package_name_to_config_file' + Style.RESET_ALL + ' in atom_calibration/scripts/utilities')
+        exit(0)
 
     # Check if description file is ok
     # print(config['description_file'])
