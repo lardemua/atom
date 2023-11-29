@@ -21,7 +21,7 @@ from cv_bridge import CvBridge
 from colorama import Fore, Style
 from rospy_message_converter import message_converter
 from std_msgs.msg import Header
-from atom_core.config_io import uriReader
+from atom_core.system import uriReader
 from atom_core.naming import generateName, generateKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)
@@ -134,7 +134,8 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 # TODO verify if values in the dataset or ok
                 # exit(0)
 
-            elif load_file and (sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):  # Load point cloud.
+            # Load point cloud.
+            elif load_file and (sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):
                 filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
                 frame_id = str(collection['data'][sensor_key]['header']['frame_id'])
 
@@ -153,7 +154,7 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 # convert to dictionary
                 collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
 
-    if skipped_loading: # list is not empty
+    if skipped_loading:  # list is not empty
         print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
 
     return dataset, json_file
@@ -230,7 +231,7 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         # Save file if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.pcd'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
-            #TODO must remove this or True, just for debugging
+            # TODO must remove this or True, just for debugging
             # from: dictionary -> ros_message -> PointCloud2() -> pcd file
             msg = getPointCloudMessageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
             write_pcd(filename, msg)
@@ -435,8 +436,8 @@ def write_pcd(filename, pointcloud, mode='binary'):
     # https://github.com/lardemua/atom/issues/520
     pc_np = numpyFromPointCloudMsg(pointcloud)
     points = []  # Build a list of points.
-    for idx in range(0,pc_np.shape[0]):
-        points.append([pc_np[idx,0], pc_np[idx,1], pc_np[idx,2]])
+    for idx in range(0, pc_np.shape[0]):
+        points.append([pc_np[idx, 0], pc_np[idx, 1], pc_np[idx, 2]])
 
     fields = [PointField('x', 0, PointField.FLOAT32, 1),
               PointField('y', 4, PointField.FLOAT32, 1),
@@ -557,7 +558,7 @@ def filterCollectionsFromDataset(dataset, args):
         for collection_key in deleted:
             del dataset['collections'][collection_key]
 
-        if deleted: # list is not empty
+        if deleted:  # list is not empty
             print('Deleted collections: ' + str(deleted) + ' because of the -csf flag.')
 
     if not args['use_incomplete_collections']:
@@ -572,8 +573,9 @@ def filterCollectionsFromDataset(dataset, args):
         for collection_key in deleted:
             del dataset['collections'][collection_key]
 
-        if deleted: # list is not empty
-            print('Deleted collections: ' + str(deleted) + ' because these are incomplete. If you want to use them set the use_incomplete_collections flag.')
+        if deleted:  # list is not empty
+            print('Deleted collections: ' + str(deleted) +
+                  ' because these are incomplete. If you want to use them set the use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
         number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
@@ -584,7 +586,7 @@ def filterCollectionsFromDataset(dataset, args):
                 if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                         print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                            collection_key + ', sensor ' + sensor_key)
+                              collection_key + ', sensor ' + sensor_key)
                         collection['labels'][sensor_key]['detected'] = False
 
     # It may occur that some collections do not have any detection in a camera sensor (because all detections were
@@ -612,7 +614,7 @@ def filterCollectionsFromDataset(dataset, args):
         for collection_key in deleted:
             del dataset['collections'][collection_key]
 
-        if deleted: # list is not empty
+        if deleted:  # list is not empty
             print('Deleted collections: ' + str(deleted) + ': at least one detection by a camera should be present.')
 
     if not dataset['collections'].keys():
@@ -646,7 +648,6 @@ def filterJointsFromDataset(dataset, args):
 
             print("Deleted joints for calibration: " + str(deleted))
 
-
     return dataset
 
 
@@ -669,7 +670,6 @@ def filterAdditionalTfsFromDataset(dataset, args):
 
             print("Deleted additional_tfs for calibration: " + str(deleted))
 
-
     return dataset
 
 
@@ -691,7 +691,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']
-            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot) 
+            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
 
     # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
@@ -702,6 +702,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
+
 
 def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
     tf_link = generateKey(calibration_parent, calibration_child, suffix='')
@@ -732,6 +733,7 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
         dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
             dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
 
+
 def copyTFToDataset(calibration_parent, calibration_child, source_dataset, target_dataset):
     """
     Copy optimized transformations from a source dataset to a target dataset.
@@ -744,7 +746,7 @@ def copyTFToDataset(calibration_parent, calibration_child, source_dataset, targe
     :param source_dataset: The source dataset containing the optimized transformation.
     :param target_dataset: The target dataset where the optimized transformation will be copied.
     """
-    
+
     # Generate a key for the transformation based on calibration parameters
     transform_name = generateKey(calibration_parent, calibration_child)
 
@@ -758,7 +760,6 @@ def copyTFToDataset(calibration_parent, calibration_child, source_dataset, targe
     for collection_key, collection in target_dataset['collections'].items():
         collection['transforms'][transform_name]['quat'] = optimized_transform['quat']
         collection['transforms'][transform_name]['trans'] = optimized_transform['trans']
-
 
 
 def getMixedDataset(train_dataset, test_dataset):
@@ -780,7 +781,6 @@ def getMixedDataset(train_dataset, test_dataset):
     if not train_dataset['calibration_config']['additional_tfs'] == "":
         for _, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
             copyTFToDataset(additional_tf['parent_link'], additional_tf['child_link'], train_dataset, mixed_dataset)
-        
 
     # Copy intrinsic parameters for cameras from train to mixed dataset.
     for train_sensor_key, train_sensor in train_dataset['sensors'].items():

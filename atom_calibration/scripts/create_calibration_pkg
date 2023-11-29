@@ -14,7 +14,7 @@ from jinja2 import Environment, FileSystemLoader
 from colorama import Style, Fore
 
 # local packages
-from atom_core.config_io import execute, resolvePath
+from atom_core.system import execute, resolvePath
 
 if __name__ == "__main__":
 

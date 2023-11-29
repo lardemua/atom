@@ -29,7 +29,7 @@ from urdf_parser_py.urdf import URDF
 # local packages
 from atom_core.naming import generateKey
 from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
-from atom_core.config_io import execute, loadConfig
+from atom_core.system import execute, loadConfig
 from atom_core.xacro_io import readXacroFile
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
@@ -92,7 +92,6 @@ class DataCollectorAndLabeler:
         self.dataset_version = "3.0"  # included joint calibration
         self.collect_ground_truth = None
         self.joint_state_position_dict = {}
-
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -236,7 +235,6 @@ class DataCollectorAndLabeler:
                          'version': self.dataset_version, 'robot_name': self.urdf_description.name,
                          'dataset_name': self.dataset_name, 'package_name': self.config['package_name']}
 
-
         self.abstract_transforms = self.getAllAbstractTransforms()
         # print("abstract_transforms = " + str(self.abstract_transforms))
 
@@ -258,7 +256,6 @@ class DataCollectorAndLabeler:
         # Add the joint positions to the dictionary
         for name, position in zip(msg.name, msg.position):
             self.joint_state_position_dict[name] = position
-
 
     def callbackDeleteCollection(self, request):
         print('callbackDeleteCollection service called')
@@ -498,7 +495,6 @@ class DataCollectorAndLabeler:
         collection_key = str(self.data_stamp).zfill(3)
         self.collections[collection_key] = collection_dict
         self.data_stamp += 1
-
 
         # Save to json file.
         D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,

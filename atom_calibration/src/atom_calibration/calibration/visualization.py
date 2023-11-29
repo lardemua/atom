@@ -40,7 +40,7 @@ from matplotlib import cm
 # own packages
 from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateLabeledTopic, generateName
-from atom_core.config_io import execute, uriReader
+from atom_core.system import execute, uriReader
 from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary, genCollectionPrefix)
@@ -477,7 +477,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
     if dataset['calibration_config']['calibration_pattern']['fixed'] and \
-        dataset['calibration_config']['calibration_pattern']['parent_link'] == dataset['calibration_config']['world_link']:  
+            dataset['calibration_config']['calibration_pattern']['parent_link'] == dataset['calibration_config']['world_link']:
         # Draw single pattern for selected collection key
         frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
                                 prefix='c' + selected_collection_key)

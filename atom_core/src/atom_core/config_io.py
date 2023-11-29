@@ -1,6 +1,7 @@
 
 # Standard imports
 import os
+
 import re
 import subprocess
 
@@ -11,109 +12,89 @@ import yaml
 import rospkg
 from colorama import Fore, Style
 
-
-def execute(cmd, blocking=True, verbose=True):
-    """ @brief Executes the command in the shell in a blocking or non-blocking manner
-        @param cmd a string with teh command to execute
-        @return
-    """
-    if verbose:
-        print("Executing command: " + cmd)
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    if blocking:  # if blocking is True:
-        for line in p.stdout.readlines():
-            if verbose:
-                print
-                line,
-            p.wait()
+from atom_core.utilities import atomError
 
 
-def resolvePath(path, verbose=False):
-    """ Resolves path by replacing environment variables, common notations (e.g. ~ for home/user)"""
+def dictionaries_have_same_keys(d1, d2):
 
-    path = os.path.expanduser(path)
-    path = os.path.expandvars(path)
-    path = os.path.abspath(path)
-    path = os.path.normpath(path)
-    return path
+    if not d1.keys() == d2.keys():  # Check if all high level keys exist
 
+        extra_keys = []
+        for d1_key in d1.keys():
+            if not d1_key in d2.keys():
+                extra_keys.append(d1_key)
 
-def expandToLaunchEnv(path):
-    if len(path) == 0:  # if path is empty, path[0] does not exist
-        return path
+        missing_keys = []
+        for d2_key in d2.keys():
+            if not d2_key in d1.keys():
+                missing_keys.append(d2_key)
 
-    if path[0] == '~':
-        path = '$(env HOME)' + path[1:]
+        return False, extra_keys, missing_keys
 
-    if '$' not in path:
-        return path
-
-    evars = re.compile(r'\$(\w+|\{[^}]*\})')
-    i = 0
-    while True:
-        m = evars.search(path, i)
-        if not m:
-            break
-
-        i, j = m.span(0)
-        name = m.group(1)
-        if name.startswith('{') and name.endswith('}'):
-            name = name[1:-1]
-
-        tail = path[j:]
-        path = path[:i] + '$(env {})'.format(name)
-        i = len(path)
-        path += tail
-
-    return path
-
-
-def uriReader(resource):
-    uri = urlparse(str(resource))
-    # print(uri)
-    if uri.scheme == 'package':  # using a ros package uri
-        # print('This is a ros package')
-        rospack = rospkg.RosPack()
-        assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
-        fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
-        relpath = '$(find {}){}'.format(uri.netloc, uri.path)
-
-    elif uri.scheme == 'file':  # local file
-        # print('This is a local file')
-        fullpath = resolvePath(uri.netloc + uri.path)
-        relpath = fullpath
-    elif uri.scheme == '':  # no scheme, assume local file
-        # print('This is a local file')
-
-        fullpath = resolvePath(uri.path)
-        relpath = expandToLaunchEnv(uri.path)
     else:
-        raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')
-
-    assert (os.path.exists(fullpath)), Fore.RED + fullpath + ' does not exist.'
-    return fullpath, os.path.basename(fullpath), relpath
+        return True, [], []
 
 
-def verifyConfig(config, template_config, upper_key=None):
-    missing_keys = []
-    for key in template_config:
-        # print('Checking key ' + key)
-        if not key in config:
-            if upper_key is None:
-                missing_keys.append(key)
-            else:
-                missing_keys.append(upper_key + '/' + key)
-            # print(str(key) + ' is not here: ' + str(config))
-        elif type(config[key]) is dict and not key == 'sensors':
-            # print('key ' + key + ' is a dict')
+def verifyConfig(config, template_config):
 
-            if upper_key is None:
-                mk = verifyConfig(config[key], template_config[key], key)
-            else:
-                mk = verifyConfig(config[key], template_config[key], upper_key + '/' + key)
-            missing_keys.extend(mk)
+    # Check if all high level keys exist
+    same_keys, extra_keys, missing_keys = dictionaries_have_same_keys(config, template_config)
+    if not same_keys:
+        atomError('Config file does not have the correct keys.\nKeys that should not exist: ' +
+                  str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
 
-    return missing_keys
+    sensor_template = template_config['sensors']['hand_camera']
+    for sensor_key, sensor in config['sensors'].items():
+        same_keys, extra_keys, missing_keys = dictionaries_have_same_keys(sensor, sensor_template)
+        if not same_keys:
+            atomError('In config file, sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' does not have the correct keys.\nKeys that should not exist: ' +
+                      str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
+
+    if config['additional_tfs'] is not None:
+        additional_tf_template = {'parent_link': None, 'child_link': None}
+        for additional_tf_key, additional_tf in config['additional_tfs'].items():
+            same_keys, extra_keys, missing_keys = dictionaries_have_same_keys(additional_tf, additional_tf_template)
+            if not same_keys:
+                atomError('In config file, additional_tf ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' does not have the correct keys.\nKeys that should not exist: ' +
+                          str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
+
+    if config['joints'] is not None:
+        joint_template = {'params_to_calibrate': None}
+        for joint_key, joint in config['joints'].items():
+            same_keys, extra_keys, missing_keys = dictionaries_have_same_keys(joint, joint_template)
+            if not same_keys:
+                atomError('In config file, joint ' + Fore.BLUE + joint_key + Style.RESET_ALL + ' does not have the correct keys.\nKeys that should not exist: ' +
+                          str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
+
+    calibration_pattern_template = template_config['calibration_patterns']['pattern_1']
+    for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
+        same_keys, extra_keys, missing_keys = dictionaries_have_same_keys(
+            calibration_pattern, calibration_pattern_template)
+        if not same_keys:
+            atomError('In config file, calibration_pattern ' + Fore.BLUE + calibration_pattern_key + Style.RESET_ALL + ' does not have the correct keys.\nKeys that should not exist: ' +
+                      str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
+
+    exit(0)
+# def verifyConfig(config, template_config, upper_key=None):
+#     missing_keys = []
+#     for key in template_config:
+#         # print('Checking key ' + key)
+#         if not key in config:
+#             if upper_key is None:
+#                 missing_keys.append(key)
+#             else:
+#                 missing_keys.append(upper_key + '/' + key)
+#             # print(str(key) + ' is not here: ' + str(config))
+#         elif type(config[key]) is dict and not key == 'sensors' and not key == 'calibration_patterns':
+#             # print('key ' + key + ' is a dict')
+#
+#             if upper_key is None:
+#                 mk = verifyConfig(config[key], template_config[key], key)
+#             else:
+#                 mk = verifyConfig(config[key], template_config[key], upper_key + '/' + key)
+#             missing_keys.extend(mk)
+#
+#     return missing_keys
 
 
 def loadConfig(filename, check_paths=True):

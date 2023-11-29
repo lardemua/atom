@@ -15,7 +15,7 @@ from jinja2 import Environment, FileSystemLoader
 from colorama import Style, Fore
 
 # local packages
-from atom_core.config_io import execute, resolvePath
+from atom_core.system import execute, resolvePath
 
 if __name__ == "__main__":
     # Parse command line arguments
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Add configure.py script
     configure_file = package_path + '/scripts/configure'
     print(configure_file)
-    
+
     # Template jinja engine setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
     env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
@@ -50,4 +50,5 @@ if __name__ == "__main__":
     execute('chmod +x ' + configure_file)  # make file executable
 
     # Print final report
-    print('\n\nUpdated configure script in calibration package ' + Fore.BLUE + args['name'] + Style.RESET_ALL + ' in ' + package_path + '.')
+    print('\n\nUpdated configure script in calibration package ' + Fore.BLUE +
+          args['name'] + Style.RESET_ALL + ' in ' + package_path + '.')

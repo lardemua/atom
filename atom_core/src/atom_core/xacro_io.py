@@ -11,7 +11,7 @@ import tf
 # Atom imports
 from urdf_parser_py.urdf import Pose as URDFPose
 from urdf_parser_py.urdf import URDF
-from atom_core.config_io import execute, uriReader
+from atom_core.system import execute, uriReader
 from atom_core.naming import generateKey
 
 

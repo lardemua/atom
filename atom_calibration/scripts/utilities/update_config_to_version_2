@@ -18,7 +18,7 @@ from atom_core.utilities import atomError, atomPrintOK
 # 3rd-party
 import rospkg
 from colorama import Style, Fore
-from atom_core.config_io import execute, loadYMLConfig
+from atom_core.system import execute, loadYMLConfig
 
 # local packages
 

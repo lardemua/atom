@@ -15,7 +15,7 @@ from signal import setitimer, signal, SIGALRM, ITIMER_REAL
 import readchar
 import rospkg
 from colorama import Fore, Style
-from atom_core.config_io import execute
+from atom_core.system import execute
 
 # 3rd-party
 from rospy_message_converter import message_converter
@@ -144,8 +144,10 @@ def atomError(message):
     print(Fore.RED + '\nATOM Error: ' + Style.RESET_ALL + message)
     exit(0)
 
+
 def atomPrintOK(message=''):
     print(message + Fore.GREEN + '[OK]' + Style.RESET_ALL)
+
 
 def atomStartupPrint(message=''):
     print('_______________________________________________________')
@@ -166,21 +168,25 @@ def atomStartupPrint(message=''):
 
 def verifyAnchoredSensor(anchored_sensor, sensors):
     # If anchored sensor exists, it must be one of the existing sensors
-    print('Checking if anchored sensor ' + Fore.BLUE + str(anchored_sensor) + Style.RESET_ALL + ' is valid ... '+ Style.RESET_ALL, end='')
+    print('Checking if anchored sensor ' + Fore.BLUE + str(anchored_sensor) +
+          Style.RESET_ALL + ' is valid ... ' + Style.RESET_ALL, end='')
 
     if anchored_sensor != '' and not anchored_sensor in list(sensors.keys()):
-        atomError('Anchored sensor ' + Fore.BLUE + anchored_sensor + Style.RESET_ALL+ ' must be one of the configured sensors (or an empty string).')
+        atomError('Anchored sensor ' + Fore.BLUE + anchored_sensor + Style.RESET_ALL +
+                  ' must be one of the configured sensors (or an empty string).')
+
 
 def saveFileResults(train_json, test_json, results_name, table_to_save):
-        dataset_name = train_json.split('/')[-1].split('.')[0]
-        last_slash_index = test_json.rfind('/')
-        # Remove everything after the last '/'
-        folder_name = test_json[:last_slash_index]
-        if not os.path.exists(folder_name + '/results'):
-            os.makedirs(folder_name + '/results')
-        with open(folder_name + '/results/'+ dataset_name + '_' + results_name, 'w', newline='') as f_output:
-            f_output.write(table_to_save.get_csv_string())
-            
+    dataset_name = train_json.split('/')[-1].split('.')[0]
+    last_slash_index = test_json.rfind('/')
+    # Remove everything after the last '/'
+    folder_name = test_json[:last_slash_index]
+    if not os.path.exists(folder_name + '/results'):
+        os.makedirs(folder_name + '/results')
+    with open(folder_name + '/results/' + dataset_name + '_' + results_name, 'w', newline='') as f_output:
+        f_output.write(table_to_save.get_csv_string())
+
+
 def verifyFixedPattern(dataset):
     print('Checking if calibration pattern is fixed ...', end='')
 

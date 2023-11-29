@@ -23,7 +23,7 @@ from atom_calibration.calibration.objective_function import *
 from atom_calibration.collect.label_messages import *
 from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from atom_core.cache import Cache
-from atom_core.config_io import execute, uriReader
+from atom_core.system import execute, uriReader
 from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (genCollectionPrefix, getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary)
@@ -323,7 +323,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             # Removed because of https://github.com/lardemua/atom/issues/515
             # if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
-                # continue
+            # continue
 
             graphics['ros']['sensors'][sensor_key]['collections'][collection_key] = {}
 
@@ -431,7 +431,6 @@ def setupVisualization(dataset, args, selected_collection_key):
     for sensor_key, sensor in dataset['sensors'].items():
         if sensor['modality'] not in ['depth']:  # only depth sensors
             continue
-
 
         # if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
         #     continue
@@ -620,9 +619,6 @@ def visualizationFunction(models, selection, clicked_points=None):
     for sensor_key in graphics['ros']['sensors']:
         if not dataset['sensors'][sensor_key]['modality'] in ['lidar3d']:  # TODO add  lidar2d
             continue
-
-
-
 
         # Create a new point cloud to publish which has the new label idxs in green, idxs_limits in dark green.
         # Also, change intensity channel according to the idxs of the sensor
