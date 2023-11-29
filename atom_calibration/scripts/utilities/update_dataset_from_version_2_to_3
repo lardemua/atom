@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+# stdlib
+import os
+from os.path import exists
+import argparse
+
+from atom_core.utilities import atomError
+
+
+# 3rd-party
+import rospkg
+from colorama import Style, Fore
+from atom_core.dataset_io import loadResultsJSON, saveResultsJSON
+
+# local packages
+
+if __name__ == "__main__":
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-json", "--json_file", type=str, required=True,
+                    help="Json file containing input dataset.", )
+    ap.add_argument("-pn", "--package_name", help='Calibration package_name', type=str, required=True)
+    args = vars(ap.parse_args())
+
+    package_name = args['package_name']
+
+    rospack = rospkg.RosPack()
+    all_packages = rospack.list()
+    if not package_name in all_packages:
+        atomError('Could not find package ' + package_name + ' . Did you misspell the name?')
+
+
+    # --------------------------------------------------------------------------
+    # Read the dataset json file
+    # --------------------------------------------------------------------------
+    print('Loading dataset ' + Fore.BLUE + str(args['json_file']) + Style.RESET_ALL)
+
+    # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
+    dataset, json_file = loadResultsJSON(args["json_file"])
+
+    # --------------------------------------------------------------------------
+    # Save a backup of the old dataset
+    # --------------------------------------------------------------------------
+    print('Backing up your dataset')
+    saveResultsJSON(args['json_file'] + '.bkp', dataset)
+
+    # --------------------------------------
+    # Produce a new dataset
+    # --------------------------------------
+    if not 'package_name' in dataset['calibration_config']:
+        dataset['calibration_config']['package_name'] = package_name
+        
+    if not 'joints' in dataset['calibration_config']:
+        dataset['calibration_config']['joints'] = ''
+
+    if not 'additional_tfs' in dataset['calibration_config']:
+        dataset['calibration_config']['additional_tfs'] = ''
+
+    if not 'package_name' in dataset['_metadata']:
+        dataset['_metadata']['package_name'] = package_name
+
+    dataset['_metadata']['version'] = '3.0'
+
+    # --------------------------------------------------------------------------
+    # Save the new dataset
+    # --------------------------------------------------------------------------
+    print('Saving your updated dataset')
+    saveResultsJSON(args['json_file'], dataset)
