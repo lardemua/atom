@@ -14,8 +14,6 @@
 
 # This yaml file describes your calibration!
 
-# This parameter is automatically filled by ATOM, please only change if you know what you are doing
-package_name: "{{ c.package_name }}"
 
 # Start by defining your robotic system.
 # This is the URDF file (or xacro) that describes your robot.
@@ -96,8 +94,7 @@ sensors:
 
 # ATOM will calibrate the extrinsic parameters of your links.
 # In this section you should discriminate the additional transformations that will be part of the calibrations.
-# NOTE: Delete the "" after joints if you add an additional_tf.
-additional_tfs: ""
+additional_tfs:
   # Each key will define a transformations and its name, which will be use throughout the calibration.
   # Each additional transformations definition must have the following properties:
   #
@@ -116,8 +113,7 @@ additional_tfs: ""
 # In this section you should discriminate the joints that will be part of the calibrations.
 # For each joint you must specify which parameters to optimize.
 # The joint is identified not by its name, but by the parent and child links.
-# NOTE: Delete the "" after joints if you add a joint.
-joints: ""
+joints:
   # Each key will define a joint and its name, which will be use throughout the calibration.
   # Each joint definition must have the following properties:
   #
@@ -139,54 +135,55 @@ joints: ""
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
-calibration_pattern:
+calibration_patterns:
 
-  # The frame id (or link) of the pattern.
-  # This link/transformation will be optimized.
-  link: "pattern_link"
+  pattern1:
+    # The frame id (or link) of the pattern.
+    # This link/transformation will be optimized.
+    link: "pattern_link"
 
-  # The parent frame id (or link) of the pattern.
-  # For example, in hand-eye calibration the parent link
-  # of the pattern can be the end-effector or the base of the arm
-  parent_link: "world"
+    # The parent frame id (or link) of the pattern.
+    # For example, in hand-eye calibration the parent link
+    # of the pattern can be the end-effector or the base of the arm
+    parent_link: "world"
 
-  # Defines if the pattern link is the same in all collections (i.e. fixed=true),
-  # or each collection will have its own estimate of the link transformation.
-  # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
-  # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
-  fixed: true
+    # Defines if the pattern link is the same in all collections (i.e. fixed=true),
+    # or each collection will have its own estimate of the link transformation.
+    # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
+    # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
+    fixed: true
 
-  # The type of pattern used for the calibration.
-  # Supported pattern are:
-  # - chessboard
-  # - charuco
-  pattern_type: "chessboard"
+    # The type of pattern used for the calibration.
+    # Supported pattern are:
+    # - chessboard
+    # - charuco
+    pattern_type: "chessboard"
 
-  # If the pattern type is "charuco" you need to define
-  # the aruco dictionary used by the pattern.
-  # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
-  dictionary: "DICT_5X5_100"
+    # If the pattern type is "charuco" you need to define
+    # the aruco dictionary used by the pattern.
+    # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
+    dictionary: "DICT_5X5_100"
 
-  # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
-  # See: description_file
-  mesh_file: "package://atom_calibration/meshes/charuco_5x5.dae"
+    # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
+    # See: description_file
+    mesh_file: "package://atom_calibration/meshes/charuco_5x5.dae"
 
-  # The border width from the edge corner to the pattern physical edge.
-  # Used for 3D sensors and lidars.
-  # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
-  border_size: { 'x': 0.05, 'y': 0.05 }
+    # The border width from the edge corner to the pattern physical edge.
+    # Used for 3D sensors and lidars.
+    # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
+    border_size: { 'x': 0.05, 'y': 0.05 }
 
-  # The number of corners the pattern has in the X and Y dimensions.
-  # Note: The charuco detector uses the number of squares per dimension in its detector.
-  # Internally we add a +1 to Y and X dimensions to account for that.
-  # Therefore, the number of corners should be used even for the charuco pattern.
-  dimension: { "x": 9, "y": 6 }
+    # The number of corners the pattern has in the X and Y dimensions.
+    # Note: The charuco detector uses the number of squares per dimension in its detector.
+    # Internally we add a +1 to Y and X dimensions to account for that.
+    # Therefore, the number of corners should be used even for the charuco pattern.
+    dimension: { "x": 9, "y": 6 }
 
-  # The length of the square edge.
-  size: 0.02
+    # The length of the square edge.
+    size: 0.02
 
-  # The length of the charuco inner marker.
-  inner_size: 0.015
+    # The length of the charuco inner marker.
+    inner_size: 0.015
 
 
 # Miscellaneous configuration
@@ -199,3 +196,8 @@ anchored_sensor: ""
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
 max_duration_between_msgs: 1000
 
+# This parameter is automatically filled by ATOM, please only change if you know what you are doing
+package_name: "{{ c.package_name }}"
+
+# Automatically filled. Do not touch unless you know what you are doing.
+version: 2.0

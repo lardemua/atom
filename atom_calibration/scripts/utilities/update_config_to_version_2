@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+
+# stdlib
+
+from datetime import datetime
+import os
+from copy import deepcopy
+
+from jinja2 import Environment, FileSystemLoader
+from os.path import exists
+import argparse
+
+import jinja2
+
+from atom_core.utilities import atomError, atomPrintOK
+
+
+# 3rd-party
+import rospkg
+from colorama import Style, Fore
+from atom_core.config_io import execute, loadYMLConfig
+
+# local packages
+
+if __name__ == "__main__":
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-pn", "--package_name", help='calibration package_name', type=str, required=True)
+    ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
+                    type=str, required=False, default=None)
+    args = vars(ap.parse_args())
+
+    # --------------------------------------------------------------------------
+    # Setup packages and paths
+    # --------------------------------------------------------------------------
+    package_name = args['package_name']
+
+    rospack = rospkg.RosPack()
+    all_packages = rospack.list()
+    if not package_name in all_packages:
+        atomError('Could not find package ' + package_name + ' . Did you misspell the name?')
+
+    package_path = rospack.get_path(package_name)  # full path to the package, including its name.
+    package_base_path = os.path.dirname(package_path)  # parent path where the package is located
+    dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    atom_calibration_path = rospack.get_path('atom_calibration')
+
+    # --------------------------------------------------------------------------
+    # Read the config.yml file
+    # --------------------------------------------------------------------------
+    if args['config_file'] is None:
+        args['config_file'] = package_path + '/calibration/config.yml'
+    else:
+        args['config_file'] = package_path + '/calibration/' + args['config_file']
+        if not exists(args['config_file']):
+            args['config_file'] = package_path + '/calibration/config.yml'
+
+    print('Loading config_file ' + Fore.BLUE + str(args['config_file']) + Style.RESET_ALL)
+
+    existing_config = loadYMLConfig(args['config_file'])
+    if existing_config is None:
+        atomError(Fore.RED + 'Your config file ' + args['config_file'] +
+                  ' could not be read. Aborting.' + Fore.RESET)
+
+    # --------------------------------------------------------------------------
+    # Create a backup of the config.yml file
+    # --------------------------------------------------------------------------
+    backup_file = args['config_file'][:-4] + '.old.yml'
+    cmd = 'cp ' + args['config_file'] + ' ' + backup_file
+    execute(cmd)
+
+    # --------------------------------------------------------------------------
+    # Write the new config.yml file
+    # --------------------------------------------------------------------------
+    # Template jinja engine setup
+    file_loader = FileSystemLoader(atom_calibration_path + '/templates')
+    env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
+    env.add_extension('jinja2.ext.do')
+    template = env.get_template('config.yml.update_to_version_2')
+
+    # Add template config.yml
+    config_yaml_file = args['config_file']
+
+    c = existing_config
+
+    c['date'] = dt_string
+    print('Adding date ... ', end=''), atomPrintOK()
+
+    c['package_name'] = package_name
+    print('Adding package name ' + Fore.BLUE + package_name + Style.RESET_ALL, end=''), atomPrintOK()
+
+    c['version'] = 2.0
+    print('Adding config.yml version ', end=''), atomPrintOK()
+
+    # move additional_tfs: "" to additional_tfs:
+    if c['additional_tfs'] == "" or c['additional_tfs'] == None:
+        c['additional_tfs'] = None
+        print('Changing empty additional_tfs to new convention: ' + Fore.BLUE +
+              "additional_tfs: " + Style.RESET_ALL, end=''), atomPrintOK()
+
+    # move joints: "" to joints:
+    if c['joints'] == "" or c['joints'] == None:
+        c['joints'] = None
+        print('Changing empty joints to new convention: ' + Fore.BLUE +
+              "joints: " + Style.RESET_ALL, end=''), atomPrintOK()
+
+    # move calibration_pattern: to calibration_patterns[0]:
+    c['calibration_patterns'] = {'pattern_1': deepcopy(c['calibration_pattern'])}
+    del c['calibration_pattern']
+
+    with open(config_yaml_file, 'wb') as f:
+        output = template.render(c=c)
+        f.write(output.encode('utf-8'))
+
+    print('Created a backup file of old config.yml in ' + Fore.BLUE + backup_file + Style.RESET_ALL)
+    print('Rendered ' + Fore.BLUE + args['config_file'] + Style.RESET_ALL + ' to version 2.0')

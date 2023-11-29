@@ -25,7 +25,6 @@ from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)
-from atom_core.utilities import checkAdditionalTfs
 
 
 def printImageInfo(image, text=None):
@@ -688,7 +687,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_rot = args['noisy_initial_guess'][1]
 
     # add noise to additional tfs for simulation
-    if checkAdditionalTfs(dataset):
+    if not dataset['calibration_config']['additional_tfs'] == "":
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']
@@ -778,7 +777,7 @@ def getMixedDataset(train_dataset, test_dataset):
     # Replace optimized transformations in the test dataset copying from the train dataset
     for _, sensor in train_dataset['sensors'].items():
         copyTFToDataset(sensor['calibration_parent'], sensor['calibration_child'], train_dataset, mixed_dataset)
-    if checkAdditionalTfs(train_dataset):
+    if not train_dataset['calibration_config']['additional_tfs'] == "":
         for _, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
             copyTFToDataset(additional_tf['parent_link'], additional_tf['child_link'], train_dataset, mixed_dataset)
         

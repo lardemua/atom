@@ -297,53 +297,52 @@ if __name__ == "__main__":
             frames_to_verify[sensor_key + '.' + frame] = config['sensors'][sensor_key][frame]
 
     # Search for additional tfs to be estimated
-    if 'additional_tfs' in config:
-        if config['additional_tfs'] != '':
-            # Check if link, child_link and parent_link exist in the bagfile.
-            for additional_tf_key in config['additional_tfs']:
-                for frame in ['child_link', 'parent_link']:
-                    frames_to_verify[additional_tf_key + '.' +
-                                     frame] = config['additional_tfs'][additional_tf_key][frame]
+    if not config['additional_tfs'] == '':
+        # Check if link, child_link and parent_link exist in the bagfile.
+        for additional_tf_key in config['additional_tfs']:
+            for frame in ['child_link', 'parent_link']:
+                frames_to_verify[additional_tf_key + '.' +
+                                    frame] = config['additional_tfs'][additional_tf_key][frame]
 
-            # Verify that the parent and child links for each additional_tfs are a direct transformation
-            for additional_tf_key, additional_tf in config['additional_tfs'].items():
-                edge_in_config = (config['additional_tfs'][additional_tf_key]['parent_link'],
-                                  config['additional_tfs'][additional_tf_key]['child_link'])
+        # Verify that the parent and child links for each additional_tfs are a direct transformation
+        for additional_tf_key, additional_tf in config['additional_tfs'].items():
+            edge_in_config = (config['additional_tfs'][additional_tf_key]['parent_link'],
+                                config['additional_tfs'][additional_tf_key]['child_link'])
 
-                if not edge_in_config in gx.edges():
-                    atomError('Additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
-                              edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK + ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
+            if not edge_in_config in gx.edges():
+                atomError('Additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
+                            edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK + ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
 
-            for additional_tf_key, additional_tf in config['additional_tfs'].items():
+        for additional_tf_key, additional_tf in config['additional_tfs'].items():
 
-                # Check if frames exits
-                if additional_tf['child_link'] not in gx.nodes:
-                    atomError('Additional tf for child link ' + Fore.BLUE + additional_tf['child_link'] + Style.RESET_ALL + ' not found.\nCheck the frames you entered in the config.yaml. Consider using the ' +
-                              Fore.GREEN + '-utf/--use_tfs' + Style.RESET_ALL + ' option to use the tranforms on the /tf and /tf_static topics.')
+            # Check if frames exits
+            if additional_tf['child_link'] not in gx.nodes:
+                atomError('Additional tf for child link ' + Fore.BLUE + additional_tf['child_link'] + Style.RESET_ALL + ' not found.\nCheck the frames you entered in the config.yaml. Consider using the ' +
+                            Fore.GREEN + '-utf/--use_tfs' + Style.RESET_ALL + ' option to use the tranforms on the /tf and /tf_static topics.')
 
-                # path between root and additional_tfs data frame
-                print('\nChecking path from ' + config['world_link'] + ' to ' + additional_tf['child_link'])
-                paths = nx.shortest_path(gx, config['world_link'], additional_tf['child_link'])
+            # path between root and additional_tfs data frame
+            print('\nChecking path from ' + config['world_link'] + ' to ' + additional_tf['child_link'])
+            paths = nx.shortest_path(gx, config['world_link'], additional_tf['child_link'])
 
-                print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET +
-                      ' to additional_tfs ' + Fore.LIGHTMAGENTA_EX + additional_tf_key + Fore.RESET + ':')
-                at = '['
-                for path in paths:
-                    if path == config['world_link']:
-                        at += Fore.RED + path + Fore.RESET + ', '
-                    elif path == additional_tf['parent_link'] or path == additional_tf['child_link']:
-                        at += Fore.BLUE + path + Fore.RESET + ', '
-                    else:
-                        for joint in description.joints:  # atomic transformations are given by the joints
-                            if path == joint.parent or path == joint.child:
-                                if joint.type == 'fixed':
-                                    at += path + ', '
-                                else:
-                                    at += Fore.GREEN + path + Fore.RESET + ', '
-                                break
-                at = at[:-2]
-                at += ']'
-                print(at)
+            print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET +
+                    ' to additional_tfs ' + Fore.LIGHTMAGENTA_EX + additional_tf_key + Fore.RESET + ':')
+            at = '['
+            for path in paths:
+                if path == config['world_link']:
+                    at += Fore.RED + path + Fore.RESET + ', '
+                elif path == additional_tf['parent_link'] or path == additional_tf['child_link']:
+                    at += Fore.BLUE + path + Fore.RESET + ', '
+                else:
+                    for joint in description.joints:  # atomic transformations are given by the joints
+                        if path == joint.parent or path == joint.child:
+                            if joint.type == 'fixed':
+                                at += path + ', '
+                            else:
+                                at += Fore.GREEN + path + Fore.RESET + ', '
+                            break
+            at = at[:-2]
+            at += ']'
+            print(at)
 
     # Checking if all tf frames exist
     for key, frame in frames_to_verify.items():
@@ -432,7 +431,7 @@ if __name__ == "__main__":
             atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent +
                       ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
 
-    if 'additional_tfs' in config and config['additional_tfs']:  # must exist and not be null
+    if not config['additional_tfs'] == '':
         for additional_tf_key, additional_tf in config['additional_tfs'].items():
             parent = additional_tf['parent_link']
             child = additional_tf['child_link']
@@ -443,7 +442,7 @@ if __name__ == "__main__":
                           parent + ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
 
     # Verify if urdf contains joints defined to be calibrated
-    if 'joints' in config and config['joints']:  # must exist and not be null
+    if not config['joints'] == "":
         for joint_key, joint in config['joints'].items():
             parent = joint['parent_link']
             child = joint['child_link']
