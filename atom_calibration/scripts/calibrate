@@ -26,7 +26,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabel
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON, filterJointsFromDataset, filterAdditionalTfsFromDataset)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import atomError, waitForKeyPress2, checkAdditionalTfs, atomStartupPrint, verifyAnchoredSensor
+from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
 
 
@@ -109,8 +109,6 @@ def main():
                     "after calling the optimization. Good for debugging.", action="store_true", default=False)
     ap.add_argument("-ipg", "--initial_pose_ghost", action="store_true", default=False,
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
-    ap.add_argument("-sjc", "--skip_joint_calibration", action="store_true", default=False,
-                    help="Will not execute the calibration of joints.")
     ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
                     type=str, required=False, default=None)
 
@@ -250,7 +248,7 @@ def main():
             sensor["calibration_parent"], sensor["calibration_child"])
         transforms_set.add(transform_key)
 
-    if checkAdditionalTfs(dataset):
+    if not dataset['calibration_config']['additional_tfs'] == '':
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             transform_key = generateKey(
                 additional_tf['parent_link'], additional_tf['child_link'])
@@ -364,27 +362,29 @@ def main():
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add joint(s) parameters
     # ---------------------------------------
-    def getterJointParam(dataset, joint_key, param_key, collection_name):
-        return [dataset['collections'][collection_name]['joints'][joint_key][param_key]]
 
-    def setterJointParam(dataset, value, joint_key, param_key, collection_name):
-        if collection_name is None:  # if collection_name is None, set all collections with the same value
-            for collection_key in dataset['collections']:
-                dataset['collections'][collection_key]['joints'][joint_key][param_key] = value[0]
-        else:
-            dataset['collections'][collection_name]['joints'][joint_key][param_key] = value
+    if not dataset['calibration_config']['joints'] == "":
+        def getterJointParam(dataset, joint_key, param_key, collection_name):
+            return [dataset['collections'][collection_name]['joints'][joint_key][param_key]]
 
-    for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
-        joint_config = dataset['calibration_config']['joints'][joint_key]
+        def setterJointParam(dataset, value, joint_key, param_key, collection_name):
+            if collection_name is None:  # if collection_name is None, set all collections with the same value
+                for collection_key in dataset['collections']:
+                    dataset['collections'][collection_key]['joints'][joint_key][param_key] = value[0]
+            else:
+                dataset['collections'][collection_name]['joints'][joint_key][param_key] = value
 
-        for param_key in joint_config['params_to_calibrate']:
+        for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
+            joint_config = dataset['calibration_config']['joints'][joint_key]
 
-            group_name = 'joint-' + joint_key + '-' + param_key
-            getter = partial(getterJointParam, joint_key=joint_key,
-                             param_key=param_key, collection_name=selected_collection_key)
-            setter = partial(setterJointParam, joint_key=joint_key,
-                             param_key=param_key, collection_name=None)
-            opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter, setter=setter)
+            for param_key in joint_config['params_to_calibrate']:
+
+                group_name = 'joint-' + joint_key + '-' + param_key
+                getter = partial(getterJointParam, joint_key=joint_key,
+                                param_key=param_key, collection_name=selected_collection_key)
+                setter = partial(setterJointParam, joint_key=joint_key,
+                                param_key=param_key, collection_name=None)
+                opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter, setter=setter)
 
     opt.printParameters()
 
@@ -450,11 +450,11 @@ def main():
                 pattern_transform_key))  # pattern related params
 
             # TODO Append joint params. Right now appending all joint params. Should be clever and know, from residual, which will affect
-            for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
-                pattern = 'joint-' + joint_key
-                params.extend(opt.getParamsContainingPattern(pattern))  # pattern related params
+            if not dataset['calibration_config']['joints'] == "":
+                for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
+                    pattern = 'joint-' + joint_key
+                    params.extend(opt.getParamsContainingPattern(pattern))  # pattern related params
 
-            group_name = 'joint-' + joint_key + '-' + param_key
 
             if sensor["modality"] == "rgb":
                 # Compute step as a function of residual sampling factor

@@ -386,7 +386,7 @@ def objectiveFunction(data):
 
     normalizer = data['normalizer']
 
-    if not args['skip_joint_calibration']:
+    if not dataset['calibration_config']['joints'] == "":
         # Read all joints being optimized, and correct the corresponding transforms
         # print('Updating transforms from calibrated joints ...')
         for collection_key, collection in dataset['collections'].items():
