@@ -63,16 +63,23 @@ if __name__ == "__main__":
                   ' could not be read. Aborting.' + Fore.RESET)
 
     # --------------------------------------------------------------------------
+    # Create a backup of the config.yml file
+    # --------------------------------------------------------------------------
+    backup_file = args['config_file'][:-4] + '.old.yml'
+    cmd = 'cp ' + args['config_file'] + ' ' + backup_file
+    execute(cmd)
+
+    # --------------------------------------------------------------------------
     # Write the new config.yml file
     # --------------------------------------------------------------------------
     # Template jinja engine setup
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
     env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
     env.add_extension('jinja2.ext.do')
+    template = env.get_template('config.yml.update_to_version_2')
 
     # Add template config.yml
-    config_yaml_file = package_path + '/calibration/config2.yaml'
-    template = env.get_template('config.yml.update_to_version_2')
+    config_yaml_file = args['config_file']
 
     c = existing_config
 
@@ -105,4 +112,5 @@ if __name__ == "__main__":
         output = template.render(c=c)
         f.write(output.encode('utf-8'))
 
+    print('Created a backup file of old config.yml in ' + Fore.BLUE + backup_file + Style.RESET_ALL)
     print('Rendered ' + Fore.BLUE + args['config_file'] + Style.RESET_ALL + ' to version 2.0')

@@ -10,13 +10,12 @@
 #  | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <
 #  |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
 #  https://github.com/lardemua/atom
+# Auto-generated file on 29/11/2023 18:57:00
 
 # This yaml file describes your calibration!
 
-# This parameter is automatically filled by ATOM, please only change if you know what you are doing
-package_name: "rgb_rgb_system_calibration"
 
-# You can start by defining your robotic system.
+# Start by defining your robotic system.
 # This is the URDF file (or xacro) that describes your robot.
 # Every time a path to a file is requested you can use
 #
@@ -73,28 +72,26 @@ sensors:
   #   /world_camera/rgb/image_raw/compressed
   # you should not add the "compressed" part, use only:
   #   /world_camera/rgb/image_raw
-  #
-
+  
   rgb_left:
     link: "rgb_left_optical_frame"
     parent_link: "tripod_left_support"
     child_link: "rgb_left_link"
     topic_name: "/rgb_left/image_raw"
-    throttle: 10
+    throttle: "10"
     modality: "rgb"
-
+  
   rgb_right:
     link: "rgb_right_optical_frame"
     parent_link: "tripod_right_support"
     child_link: "rgb_right_link"
     topic_name: "/rgb_right/image_raw"
-    throttle: 10
+    throttle: "10"
     modality: "rgb"
-
+  
 
 # ATOM will calibrate the extrinsic parameters of your links.
 # In this section you should discriminate the additional transformations that will be part of the calibrations.
-# NOTE: Delete the "" after additional_tfs to prevent the error 'All mapping items must start at the same column YAML'
 additional_tfs:
   # Each key will define a transformations and its name, which will be use throughout the calibration.
   # Each additional transformations definition must have the following properties:
@@ -106,16 +103,16 @@ additional_tfs:
   #           This is the transformation (i.e. link) that we be optimized.
   #
   # EXAMPLE:
-  # base_footprint_to_base_link:
-  #   parent_link: "tripod"
-  #   child_link: "tripod_plate"
+  #base_footprint_to_base_link:
+  #  parent_link: "base_footprint"
+  #  child_link: "base_link"
+
 
 # ATOM can also calibrate several parameters of your joints.
 # In this section you should discriminate the joints that will be part of the calibrations.
 # For each joint you must specify which parameters to optimize.
 # The joint is identified not by its name, but by the parent and child links.
-# NOTE: Delete the "" after joints if you add a joint.
-joints: ""
+joints:
   # Each key will define a joint and its name, which will be use throughout the calibration.
   # Each joint definition must have the following properties:
   #
@@ -127,65 +124,28 @@ joints: ""
   #
   #       params_to_calibrate:
   #           This is the list of parameters that will be optimized, from the urdf definition (http://wiki.ros.org/urdf/XML/joint):
-  #           ["origin_x", "origin_y", "origin_z", "origin_roll", "origin_pitch", "origin_yaw", "position_bias"]
+  #           ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
   #
   # EXAMPLE:
-  # head_pan_joint:
-  #  parent_link: "tripod_left_support"
-  #  child_link: "rgb_left_link"
-  #  params_to_calibrate: ["position_bias"]
+  #head_pan_joint:
+  #  parent_link: "torso_lift_link"
+  #  child_link: "head_pan_link"
+  #  params_to_calibrate: ['position_bias']
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in th calibration.
-calibration_pattern:
-
-  # The frame id (or link) of the pattern.
-  # This link/transformation will be optimized.
-  link: "pattern_link"
-
-  # The parent frame id (or link) of the pattern.
-  # For example, in hand-eye calibration the parent link
-  # of the pattern can be the end-effector or the base of the arm
-  parent_link: "world"
-
-  # Defines if the pattern link is the same in all collections (i.e. fixed=true),
-  # or each collection will have its own estimate of the link transformation.
-  # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
-  # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
-  fixed: false
-
-  # The type of pattern used for the calibration.
-  # Supported pattern are:
-  # - chessboard
-  # - charuco
-  pattern_type: "charuco"
-
-  # If the pattern type is "charuco" you need to define
-  # the aruco dictionary used by the pattern.
-  # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
-  dictionary: "DICT_5X5_100"
-
-  # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
-  # See: description_file
-  mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
-
-  # The border width from the edge corner to the pattern physical edge.
-  # Used for 3D sensors and lidars.
-  # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
-  border_size: { 'x': 0.04, 'y': 0.03 }
-
-  # The number of corners the pattern has in the X and Y dimensions.
-  # Note: The charuco detector uses the number of squares per dimension in its detector.
-  # Internally we add a +1 to Y and X dimensions to account for that.
-  # Therefore, the number of corners should be used even for the charuco pattern.
-  dimension: { "x": 11, "y": 8 }
-
-  # The length of the square edge.
-  size: 0.06
-
-  # The length of the charuco inner marker.
-  inner_size: 0.045
-
+calibration_patterns:
+  pattern_1:
+    link: "pattern_link"
+    parent_link: "world"
+    fixed: "False"
+    pattern_type: "charuco"
+    dictionary: "DICT_5X5_100"
+    mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
+    border_size: "{'x': 0.04, 'y': 0.03}"
+    dimension: "{'x': 11, 'y': 8}"
+    size: "0.06"
+    inner_size: "0.045"
 
 # Miscellaneous configuration
 
@@ -195,5 +155,10 @@ calibration_pattern:
 anchored_sensor: "rgb_left"
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
-max_duration_between_msgs: 1000
+max_duration_between_msgs: "1000"
 
+# This parameter is automatically filled by ATOM, please only change if you know what you are doing
+package_name: "rgb_rgb_system_calibration"
+
+# Automatically filled. Do not touch unless you know what you are doing.
+version: "2.0"
