@@ -136,17 +136,24 @@ def main():
     # --- Filter some collections, sensors, joints and additional tfs from the dataset
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
+    dataset_filtered_collections = copy.deepcopy(dataset)
 
-    # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
-    # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
+    dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
+
+    # For now we MUST have a camera to estimate the initial parameters
     # related to the pattern pose (we use solve PNP for a camera).
     # TODO: Solve this strange dependency.
-    dataset["patterns"] = patterns.createPatternLabels(args, dataset)
-    dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
+    # Verify if the dataset contains at least one RGB sensor
+    if any(sensor.get('modality') == 'rgb' for sensor in dataset.get('sensors', {}).values()):
+        dataset["patterns"] = patterns.createPatternLabels(args, dataset)
+    else:
+        dataset["patterns"] = patterns.createPatternLabels(args, dataset_filtered_collections)
 
     dataset = filterJointsFromDataset(dataset, args)
 
     dataset = filterAdditionalTfsFromDataset(dataset, args)
+
+
 
     # print(dataset["patterns"])
     # exit(0)
