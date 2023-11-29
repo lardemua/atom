@@ -13,6 +13,7 @@ import rospkg
 from colorama import Fore, Style
 
 from atom_core.utilities import atomError
+from atom_core.system import uriReader
 
 
 def dictionaries_have_same_keys(d1, d2):
