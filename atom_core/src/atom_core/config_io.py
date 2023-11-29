@@ -74,28 +74,6 @@ def verifyConfig(config, template_config):
             atomError('In config file, calibration_pattern ' + Fore.BLUE + calibration_pattern_key + Style.RESET_ALL + ' does not have the correct keys.\nKeys that should not exist: ' +
                       str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
 
-    exit(0)
-# def verifyConfig(config, template_config, upper_key=None):
-#     missing_keys = []
-#     for key in template_config:
-#         # print('Checking key ' + key)
-#         if not key in config:
-#             if upper_key is None:
-#                 missing_keys.append(key)
-#             else:
-#                 missing_keys.append(upper_key + '/' + key)
-#             # print(str(key) + ' is not here: ' + str(config))
-#         elif type(config[key]) is dict and not key == 'sensors' and not key == 'calibration_patterns':
-#             # print('key ' + key + ' is a dict')
-#
-#             if upper_key is None:
-#                 mk = verifyConfig(config[key], template_config[key], key)
-#             else:
-#                 mk = verifyConfig(config[key], template_config[key], upper_key + '/' + key)
-#             missing_keys.extend(mk)
-#
-#     return missing_keys
-
 
 def loadConfig(filename, check_paths=True):
     config = loadYMLConfig(filename)
