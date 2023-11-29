@@ -22,12 +22,6 @@ class ChessboardPattern(object):
         if not found:
             return {"detected": False, 'keypoints': corners, 'ids': []}
 
-        # WARNING: this is a quick hack to maintain the chessboard corners
-        # in the right place.
-        diff = corners[0][0][0] - corners[self.size[0] - 1][0][0]
-        if diff > 0:
-            corners = np.array(np.flipud(corners))
-
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 500, 0.0001)
         spcorners = cv2.cornerSubPix(gray, corners, (5, 5), (-1, -1), criteria)
         spcorners = corners
