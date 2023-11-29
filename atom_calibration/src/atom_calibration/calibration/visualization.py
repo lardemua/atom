@@ -476,7 +476,9 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
-    if dataset['calibration_config']['calibration_pattern']['fixed']:  # Draw single pattern for selected collection key
+    if dataset['calibration_config']['calibration_pattern']['fixed'] and \
+        dataset['calibration_config']['calibration_pattern']['parent_link'] == dataset['calibration_config']['world_link']:  
+        # Draw single pattern for selected collection key
         frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
                                 prefix='c' + selected_collection_key)
         ns = str(selected_collection_key)
