@@ -202,11 +202,13 @@ def createPatternLabels(args, dataset, step=0.02):
     # Create first guess for pattern pose
     # -----------------------------------
     config = dataset['calibration_config']
-    size = {'x': config['calibration_pattern']['dimension']['x'],
-            'y': config['calibration_pattern']['dimension']['y']}
-    length = config['calibration_pattern']['size']
-    inner_length = config['calibration_pattern']['inner_size']
-    dictionary = config['calibration_pattern']['dictionary']
+    # TODO only works for first pattern
+    first_pattern_key = list(config['calibration_patterns'].keys())[0]
+    size = {'x': config['calibration_patterns'][first_pattern_key]['dimension']['x'],
+            'y': config['calibration_patterns'][first_pattern_key]['dimension']['y']}
+    length = config['calibration_patterns'][first_pattern_key]['size']
+    inner_length = config['calibration_patterns'][first_pattern_key]['inner_size']
+    dictionary = config['calibration_patterns'][first_pattern_key]['dictionary']
 
     pattern = opencv_patterns.CharucoPattern(
         size, length, inner_length, dictionary)
@@ -250,7 +252,8 @@ def createPatternLabels(args, dataset, step=0.02):
                 np_ids = np.array(ids, dtype=int)
                 rvecs, tvecs = None, None
 
-                if config['calibration_pattern']['pattern_type'] == 'charuco':
+                # TODO only works for first pattern
+                if config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'charuco':
                     _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
                                                                          np_ids, pattern.board,
                                                                          K, D, rvecs, tvecs)
