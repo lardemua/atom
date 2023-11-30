@@ -38,6 +38,10 @@ if __name__ == "__main__":
 
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(args["json_file"])
+    
+    # Verify the dataset version
+    if float(dataset['_metadata']['version']) >= 3.0:
+        atomError('Your dataset is already in version 3.0 or higher. No need to update it.')
 
     # --------------------------------------------------------------------------
     # Save a backup of the old dataset
@@ -56,6 +60,11 @@ if __name__ == "__main__":
 
     if not 'additional_tfs' in dataset['calibration_config']:
         dataset['calibration_config']['additional_tfs'] = ''
+
+    if not 'calibration_patterns' in dataset['calibration_config'] and \
+        'calibration_pattern' in dataset['calibration_config']:
+        dataset['calibration_config']['calibration_patterns'] = {'pattern1': dataset['calibration_config']['calibration_pattern']}
+        del dataset['calibration_config']['calibration_pattern'] 
 
     if not 'package_name' in dataset['_metadata']:
         dataset['_metadata']['package_name'] = package_name
