@@ -126,7 +126,7 @@ joints:
   #  params_to_calibrate: ['position_bias']
 
 # The calibration requires a detectable pattern.
-# This section describes the properties of the calibration pattern used in th calibration.
+# This section describes the properties of the calibration pattern used in the calibration.
 calibration_patterns:
 
   pattern_1:

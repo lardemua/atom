@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Save a backup of the old dataset
     # --------------------------------------------------------------------------
     print('Backing up your dataset')
-    saveResultsJSON(args['json_file'] + '.bkp', dataset)
+    saveResultsJSON(args['json_file'] + '.old', dataset)
 
     # --------------------------------------
     # Produce a new dataset

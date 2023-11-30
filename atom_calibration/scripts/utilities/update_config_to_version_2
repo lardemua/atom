@@ -18,7 +18,8 @@ from atom_core.utilities import atomError, atomPrintOK
 # 3rd-party
 import rospkg
 from colorama import Style, Fore
-from atom_core.system import execute, loadYMLConfig
+from atom_core.system import execute 
+from atom_core.config_io import loadYMLConfig
 
 # local packages
 
@@ -61,11 +62,16 @@ if __name__ == "__main__":
     if existing_config is None:
         atomError(Fore.RED + 'Your config file ' + args['config_file'] +
                   ' could not be read. Aborting.' + Fore.RESET)
+                  
+    # Verify the config version
+    if 'version' in existing_config:
+        if float(existing_config['version']) >= 2.0:
+            atomError('Your config is already in version 2.0 or higher. No need to update it.')
 
     # --------------------------------------------------------------------------
     # Create a backup of the config.yml file
     # --------------------------------------------------------------------------
-    backup_file = args['config_file'][:-4] + '.old.yml'
+    backup_file = args['config_file'] + '.old'
     cmd = 'cp ' + args['config_file'] + ' ' + backup_file
     execute(cmd)
 
@@ -93,12 +99,16 @@ if __name__ == "__main__":
     print('Adding config.yml version ', end=''), atomPrintOK()
 
     # move additional_tfs: "" to additional_tfs:
+    if 'additional_tfs' not in c:
+        c['additional_tfs'] = ''
     if c['additional_tfs'] == "" or c['additional_tfs'] == None:
         c['additional_tfs'] = None
         print('Changing empty additional_tfs to new convention: ' + Fore.BLUE +
               "additional_tfs: " + Style.RESET_ALL, end=''), atomPrintOK()
 
     # move joints: "" to joints:
+    if 'joints' not in c:
+        c['joints'] = ''
     if c['joints'] == "" or c['joints'] == None:
         c['joints'] = None
         print('Changing empty joints to new convention: ' + Fore.BLUE +
@@ -107,6 +117,24 @@ if __name__ == "__main__":
     # move calibration_pattern: to calibration_patterns[0]:
     c['calibration_patterns'] = {'pattern_1': deepcopy(c['calibration_pattern'])}
     del c['calibration_pattern']
+    print('Changing pattern to new convention: ' + Fore.BLUE +
+            "calibration_patterns: {'pattern_1': calibration_pattern} " + Style.RESET_ALL, end=''), atomPrintOK()
+
+    # Add modality and throttle to each sensor
+    for sensor_key, sensor in c.get('sensors', {}).items():
+        if 'modality' not in sensor:
+            sensor['modality'] = ''
+        if sensor['modality'] == "" or sensor['modality'] == None:
+            sensor['modality'] = None
+            print('Adding empty modality param to sensor: ' + Fore.BLUE +
+                    sensor_key + ' ' + Style.RESET_ALL, end=''), atomPrintOK()
+
+        if 'throttle' not in sensor:
+            sensor['throttle'] = ''
+        if sensor['throttle'] == "" or sensor['throttle'] == None:
+            sensor['throttle'] = None
+            print('Adding empty throttle param to sensor: ' + Fore.BLUE +
+                    sensor_key + ' ' + Style.RESET_ALL, end=''), atomPrintOK()
 
     with open(config_yaml_file, 'wb') as f:
         output = template.render(c=c)
