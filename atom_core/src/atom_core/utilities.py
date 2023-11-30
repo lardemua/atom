@@ -171,9 +171,9 @@ def verifyAnchoredSensor(anchored_sensor, sensors):
     print('Checking if anchored sensor ' + Fore.BLUE + str(anchored_sensor) +
           Style.RESET_ALL + ' is valid ... ' + Style.RESET_ALL, end='')
 
-    if anchored_sensor != '' and not anchored_sensor in list(sensors.keys()):
+    if anchored_sensor is not None and not anchored_sensor in list(sensors.keys()):
         atomError('Anchored sensor ' + Fore.BLUE + anchored_sensor + Style.RESET_ALL +
-                  ' must be one of the configured sensors (or an empty string).')
+                  ' must be one of the configured sensors or an empty field.')
 
 
 def saveFileResults(train_json, test_json, results_name, table_to_save):

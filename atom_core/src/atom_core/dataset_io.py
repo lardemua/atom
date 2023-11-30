@@ -509,7 +509,7 @@ def filterSensorsFromDataset(dataset, args):
 
     if 'only_anchored_sensor' in args.keys():
         if args['only_anchored_sensor'] == True:
-            if dataset['calibration_config']['anchored_sensor'] == '':
+            if dataset['calibration_config']['anchored_sensor'] is None:
                 raise ValueError('Option only_anchored_sensor selected but there is no anchored sensor.')
 
             deleted = []

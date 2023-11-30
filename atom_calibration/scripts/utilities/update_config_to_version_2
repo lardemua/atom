@@ -98,6 +98,14 @@ if __name__ == "__main__":
     c['version'] = 2.0
     print('Adding config.yml version ', end=''), atomPrintOK()
 
+    # move anchored_sensor: "" to anchored_sensor:
+    if 'anchored_sensor' not in c:
+        c['anchored_sensor'] = ''
+    if c['anchored_sensor'] == "" or c['additional_tfs'] == None:
+        c['anchored_sensor'] = None
+        print('Changing empty anchored_sensor to new convention: ' + Fore.BLUE +
+              "anchored_sensor: " + Style.RESET_ALL, end=''), atomPrintOK()
+
     # move additional_tfs: "" to additional_tfs:
     if 'additional_tfs' not in c:
         c['additional_tfs'] = ''
