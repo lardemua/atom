@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 # stdlib
-import os
-from os.path import exists
 import argparse
+import copy
 
-from atom_core.utilities import atomError
+from atom_core.utilities import atomError, atomPrintOK
 
 
 # 3rd-party
@@ -54,22 +53,57 @@ if __name__ == "__main__":
     # --------------------------------------
     if not 'package_name' in dataset['calibration_config']:
         dataset['calibration_config']['package_name'] = package_name
+        print('Adding package name ' + Fore.BLUE + package_name + Style.RESET_ALL + ' to calibration_config', end=''), atomPrintOK()
         
-    if not 'joints' in dataset['calibration_config']:
-        dataset['calibration_config']['joints'] = ''
+    if not 'joints' in dataset['calibration_config'] or \
+        dataset['calibration_config']['joints'] == '':
 
-    if not 'additional_tfs' in dataset['calibration_config']:
-        dataset['calibration_config']['additional_tfs'] = ''
+        dataset['calibration_config']['joints'] = None
+        print('Adding empty joints parameter to calibration_config', end=''), atomPrintOK()
+
+    if not 'additional_tfs' in dataset['calibration_config'] or \
+        dataset['calibration_config']['additional_tfs'] == '':
+
+        dataset['calibration_config']['additional_tfs'] = None
+        print('Adding empty additional_tfs parameter to calibration_config', end=''), atomPrintOK()
+
+    if not 'anchored_sensor' in dataset['calibration_config'] or \
+        dataset['calibration_config']['anchored_sensor'] == '':
+
+        dataset['calibration_config']['anchored_sensor'] = None
+        print('Adding empty anchored_sensor parameter to calibration_config', end=''), atomPrintOK()
 
     if not 'calibration_patterns' in dataset['calibration_config'] and \
         'calibration_pattern' in dataset['calibration_config']:
         dataset['calibration_config']['calibration_patterns'] = {'pattern1': dataset['calibration_config']['calibration_pattern']}
         del dataset['calibration_config']['calibration_pattern'] 
+        print('Replacing single pattern on calibration_config with a dictionary of pattern with a single key', end=''), atomPrintOK()
 
     if not 'package_name' in dataset['_metadata']:
         dataset['_metadata']['package_name'] = package_name
+        print('Adding package name ' + Fore.BLUE + package_name + Style.RESET_ALL + ' to _metadata', end=''), atomPrintOK()
+
+    # Verify if no collection has the joint key
+    if all('joints' not in collection for collection in dataset['collections'].values()):
+        for collection in dataset['collections'].values():
+            collection['joints'] = {}
+        print('Adding empty joint dictionary to collections', end=''), atomPrintOK()
+    
+    # Verify if the 'detected' key is inside every label sub-dictionary
+    if all('detected' in sensor_label for collection in dataset['collections'].values() \
+        for sensor_label in collection['labels'].values()):
+        # If so, this means that the old pattern standard is being used
+        for collection in dataset['collections'].values():
+            labels = copy.deepcopy(collection['labels'])
+            collection['labels']['pattern_1'] = labels
+            keys_to_remove = [sensor_key for sensor_key in collection['labels'] if sensor_key != 'pattern_1']
+            for key in keys_to_remove:
+                collection['labels'].pop(key, None)
+
+        print('Moving labels inside a dictionary specific for the pattern used', end=''), atomPrintOK()
 
     dataset['_metadata']['version'] = '3.0'
+    print('Adding version ' + Fore.BLUE + '3.0' + Style.RESET_ALL + ' to _metadata', end=''), atomPrintOK()
 
     # --------------------------------------------------------------------------
     # Save the new dataset
