@@ -43,6 +43,7 @@ def createPatternLabels(args, dataset, step=0.02):
     :return: a dataset_chessboard dictionary
     """
 
+    # TODO #738 is this really operational right now?
     if 'patterns' in dataset:  # If we have a patterns that means that the pattern poses were already found and written to the dataset. In that case we use the poses that exist.
         print('Dataset already contains patterns.' + Fore.BLUE +
               ' Will skip generation of pattern labels and retrieve world to pattern transforms from the dataset.' +
@@ -65,15 +66,21 @@ def createPatternLabels(args, dataset, step=0.02):
                      }
         return patterns
 
-    nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
-    ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
-    square = dataset['calibration_config']['calibration_pattern']['size']
+    # TODO Make the calibrate script work with more that one pattern
+    # For now take only the first in the list
+
+    key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]  # take first pattern in the dictionary
+    calibration_pattern = dataset['calibration_config']['calibration_patterns'][key]
+
+    nx = calibration_pattern['dimension']['x']
+    ny = calibration_pattern['dimension']['y']
+    square = calibration_pattern['size']
     # Border can be a scalar or {'x': ..., 'y': ...}
-    if type(dataset['calibration_config']['calibration_pattern']['border_size']) is dict:
-        border_x = dataset['calibration_config']['calibration_pattern']['border_size']['x']
-        border_y = dataset['calibration_config']['calibration_pattern']['border_size']['y']
+    if type(calibration_pattern['border_size']) is dict:
+        border_x = calibration_pattern['border_size']['x']
+        border_y = calibration_pattern['border_size']['y']
     else:
-        border_x = border_y = dataset['calibration_config']['calibration_pattern']['border_size']
+        border_x = border_y = calibration_pattern['border_size']
 
     patterns = {  # All coordinates in the pattern's local coordinate system. Since z=0 for all points, it is omitted.
         # [{'idx': 0, 'x': 3, 'y': 4}, ..., ] # Pattern's visual markers
@@ -93,14 +100,14 @@ def createPatternLabels(args, dataset, step=0.02):
         'transforms_initial': {},  # {'collection_key': {'trans': ..., 'quat': 4}, ...}
     }
 
-    if dataset['calibration_config']['calibration_pattern']['pattern_type'] == 'chessboard':
+    if calibration_pattern['pattern_type'] == 'chessboard':
         # Chessboard: Origin on top left corner, X left to right, Y top to bottom
 
         # ---------------- Corners ----------------
         # idx left to right, top to bottom
         idx = 0
-        for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
-            for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
+        for row in range(0, calibration_pattern['dimension']['y']):
+            for col in range(0, calibration_pattern['dimension']['x']):
                 patterns['corners'].append(
                     {'id': idx, 'x': col * square, 'y': row * square})
                 idx += 1
@@ -146,14 +153,14 @@ def createPatternLabels(args, dataset, step=0.02):
         # pp.pprint(patterns)
         # exit(0)
 
-    elif dataset['calibration_config']['calibration_pattern']['pattern_type'] == 'charuco':
+    elif calibration_pattern['pattern_type'] == 'charuco':
         # Charuco: Origin on bottom left corner, X left to right, Y bottom to top
 
         # ---------------- Corners ----------------
         # idx left to right, bottom to top
         idx = 0
-        for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
-            for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
+        for row in range(0, calibration_pattern['dimension']['y']):
+            for col in range(0, calibration_pattern['dimension']['x']):
                 patterns['corners'].append(
                     {'id': idx, 'x': square + col * square, 'y': square + row * square})
                 idx += 1
@@ -182,21 +189,21 @@ def createPatternLabels(args, dataset, step=0.02):
 
         # -------------- Transitions ----------------
         # vertical
-        for col in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['x']):
+        for col in range(0, calibration_pattern['dimension']['x']):
             p0 = {'x': col * square, 'y': 0}
             p1 = {'x': col * square, 'y': (ny - 1) * square}
             pts = sampleLineSegment(p0, p1, step)
             patterns['transitions']['vertical'].extend(pts)
 
         # horizontal
-        for row in range(0, dataset['calibration_config']['calibration_pattern']['dimension']['y']):
+        for row in range(0, calibration_pattern['dimension']['y']):
             p0 = {'x': 0, 'y': row * square}
             p1 = {'x': (nx - 1) * square, 'y': row * square}
             pts = sampleLineSegment(p0, p1, step)
             patterns['transitions']['horizontal'].extend(pts)
     else:
         raise ValueError(
-            'Unknown pattern type: ' + dataset['calibration_config']['calibration_pattern']['pattern_type'])
+            'Unknown pattern type: ' + calibration_pattern['pattern_type'])
 
     # -----------------------------------
     # Create first guess for pattern pose
@@ -263,7 +270,7 @@ def createPatternLabels(args, dataset, step=0.02):
 
                 # Compute the pose of he chessboard w.r.t the pattern parent link
                 root_T_sensor = atom_core.atom.getTransform(
-                    dataset['calibration_config']['calibration_pattern']['parent_link'],
+                    calibration_pattern['parent_link'],
                     sensor['camera_info']['header']['frame_id'], collection['transforms'])
 
                 sensor_T_chessboard = traslationRodriguesToTransform(
@@ -274,8 +281,8 @@ def createPatternLabels(args, dataset, step=0.02):
 
                 # print('Creating first guess for collection ' + collection_key + ' using sensor ' + sensor_key)
 
-                parent = dataset['calibration_config']['calibration_pattern']['parent_link']
-                child = dataset['calibration_config']['calibration_pattern']['link']
+                parent = calibration_pattern['parent_link']
+                child = calibration_pattern['link']
                 patterns['transforms_initial'][
                     str(collection_key)] = {
                     'detected': True, 'sensor': sensor_key, 'parent': parent, 'child': child,
