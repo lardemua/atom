@@ -200,11 +200,11 @@ class DataCollectorAndLabeler:
                 if args['skip_sensor_labeling'](sensor_key):  # use the lambda expression csf
                     label_data = False
 
-            # TODO only works for first pattern
-            first_pattern_key = list(self.config['calibration_patterns'].keys())[0]
-            sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
-                                                    args['marker_size'], self.config['calibration_patterns'][first_pattern_key],
-                                                    color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
+            sensor_labeler = {}
+            for pattern_key, pattern in self.config['calibration_patterns'].items():
+                sensor_labeler[pattern_key] = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
+                                                        args['marker_size'], pattern,
+                                                        color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
@@ -227,9 +227,11 @@ class DataCollectorAndLabeler:
                 data_dict['topic'] = value['topic_name']
                 data_dict['msg_type'] = msg_type
 
-                sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
-                                                        args['marker_size'], self.config['calibration_pattern'],
-                                                        label_data=False)
+                sensor_labeler = {}
+                for pattern_key, pattern in self.config['calibration_patterns']:
+                    sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
+                                                            args['marker_size'], self.config['calibration_patterns'][first_pattern_key],
+                                                            label_data=False)
 
                 self.sensor_labelers[description] = sensor_labeler
                 self.additional_data[description] = data_dict
@@ -351,18 +353,21 @@ class DataCollectorAndLabeler:
 
     def lockAllLabelers(self):
         for sensor_name, sensor in self.sensors.items():
-            self.sensor_labelers[sensor_name].lock.acquire()
+            for pattern_key in self.config['calibration_patterns'].keys():
+                self.sensor_labelers[sensor_name][pattern_key].lock.acquire()
         print("Locked all labelers ")
 
     def unlockAllLabelers(self):
         for sensor_name, sensor in self.sensors.items():
-            self.sensor_labelers[sensor_name].lock.release()
+            for pattern_key in self.config['calibration_patterns'].keys():
+                self.sensor_labelers[sensor_name][pattern_key].lock.release()
         print("Unlocked all labelers ")
 
     def getLabelersTimeStatistics(self):
         stamps = []  # a list of the several time stamps of the stored messages
         for sensor_name, sensor in self.sensors.items():
-            stamps.append(copy.deepcopy(self.sensor_labelers[sensor_name].msg.header.stamp))
+            for pattern_key in self.config['calibration_patterns'].keys():
+                stamps.append(copy.deepcopy(self.sensor_labelers[sensor_name][pattern_key].msg.header.stamp))
 
         max_delta = getMaxTimeDelta(stamps)
         # TODO : this is because of Andre's bag file problem. We should go back to the getAverageTime
@@ -371,7 +376,8 @@ class DataCollectorAndLabeler:
 
         print('Times:')
         for stamp, sensor_name in zip(stamps, self.sensors):
-            printRosTime(stamp, prefix=sensor_name + ': ')
+            for pattern_key in self.config['calibration_patterns'].keys():
+                printRosTime(stamp, prefix=(sensor_name + '_' + pattern_key  + ': '))
 
         return stamps, average_time, max_delta
 
@@ -404,63 +410,64 @@ class DataCollectorAndLabeler:
 
         if self.collect_ground_truth:  # collect ground truth transforms
             pass
-            transforms_ground_truth = self.getTransforms(self.abstract_transforms,
+            transforms_ground_truth = self.getTra/home/nel/distrobox/ubuntu20/pr2_ws/src/tams/tams_pr2/tams_pr2_atom_calibration/calibration/config.yml.oldnsforms(self.abstract_transforms,
                                                          self.tf_buffer_ground_truth,
                                                          average_time)  # use average time of sensor msgs
 
         printRosTime(average_time, "Collected transforms for time ")
 
         # Create joint dict
-        joints_dict = {}
-        for config_joint_key, config_joint in self.config['joints'].items():
+        if self.config['joints'] is not None:
+            joints_dict = {}
+            for config_joint_key, config_joint in self.config['joints'].items():
 
-            # TODO should we set the position bias
-            config_joint_dict = {'transform_key': None, 'position_bias': 0.0, 'position': None}
+                # TODO should we set the position bias
+                config_joint_dict = {'transform_key': None, 'position_bias': 0.0, 'position': None}
 
-            # find joint in xacro
-            found_in_urdf = False
-            for urdf_joint in self.urdf_description.joints:
-                if config_joint['parent_link'] == urdf_joint.parent and config_joint['child_link'] == urdf_joint.child:
-                    x, y, z = urdf_joint.origin.xyz
-                    roll, pitch, yaw = urdf_joint.origin.rpy
-                    config_joint_dict['origin_x'] = x
-                    config_joint_dict['origin_y'] = y
-                    config_joint_dict['origin_z'] = z
-                    config_joint_dict['origin_roll'] = roll
-                    config_joint_dict['origin_pitch'] = pitch
-                    config_joint_dict['origin_yaw'] = yaw
+                # find joint in xacro
+                found_in_urdf = False
+                for urdf_joint in self.urdf_description.joints:
+                    if config_joint_key == urdf_joint.name:
+                        x, y, z = urdf_joint.origin.xyz
+                        roll, pitch, yaw = urdf_joint.origin.rpy
+                        config_joint_dict['origin_x'] = x
+                        config_joint_dict['origin_y'] = y
+                        config_joint_dict['origin_z'] = z
+                        config_joint_dict['origin_roll'] = roll
+                        config_joint_dict['origin_pitch'] = pitch
+                        config_joint_dict['origin_yaw'] = yaw
 
-                    ax, ay, az = urdf_joint.axis
-                    config_joint_dict['axis_x'] = ax
-                    config_joint_dict['axis_y'] = ay
-                    config_joint_dict['axis_z'] = az
-                    config_joint_dict['xacro_joint_name'] = urdf_joint.name
-                    config_joint_dict['xacro_joint_type'] = urdf_joint.type
-                    found_in_urdf = True
-                    break
+                        ax, ay, az = urdf_joint.axis
+                        config_joint_dict['axis_x'] = ax
+                        config_joint_dict['axis_y'] = ay
+                        config_joint_dict['axis_z'] = az
+                        config_joint_dict['parent_link'] = urdf_joint.parent
+                        config_joint_dict['child_link'] = urdf_joint.child
+                        found_in_urdf = True
+                        break
 
-            if not found_in_urdf:
-                atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                          ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
+                if not found_in_urdf:
+                    atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                            ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
 
-            # find joint in transforms pool
-            for transform_key, transform in transforms.items():
-                if config_joint['parent_link'] == transform['parent'] and config_joint['child_link'] == transform['child']:
-                    config_joint_dict['transform_key'] = transform_key
-                    break
+                # find joint in transforms pool
+                for transform_key, transform in transforms.items():
+                    if config_joint_dict['parent_link'] == transform['parent'] and config_joint_dict['child_link'] == transform['child']:
+                        config_joint_dict['transform_key'] = transform_key
+                        break
 
-            if config_joint_dict['transform_key'] is None:
-                atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                          ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
+                if config_joint_dict['transform_key'] is None:
+                    atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                            ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
 
-            if config_joint_key not in self.joint_state_position_dict:
-                atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                          ' from /joint_state messages.')
+                if config_joint_key not in self.joint_state_position_dict:
+                    atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                            ' from /joint_state messages.')
 
-            # Get current joint position from the joint state message
-            config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
+                # Get current joint position from the joint state message
+                config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
 
-            joints_dict[config_joint_key] = config_joint_dict
+                joints_dict[config_joint_key] = config_joint_dict
 
         # joint_state_dict = message_converter.convert_ros_message_to_dictionary(self.last_joint_state_msg)
 
@@ -470,21 +477,24 @@ class DataCollectorAndLabeler:
         # metadata={}
 
         for sensor_key, sensor in self.sensors.items():
-            print('Collecting data from ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ': sensor_key')
+            all_sensor_labels_dict[sensor_key] = {}
+            for pattern_key in self.config['calibration_patterns'].keys():
+                print('Collecting data from ' + Fore.BLUE + sensor_key + '_' + pattern_key + Style.RESET_ALL + ': sensor_key')
 
-            msg = copy.deepcopy(self.sensor_labelers[sensor_key].msg)
-            labels = copy.deepcopy(self.sensor_labelers[sensor_key].labels)
+                msg = copy.deepcopy(self.sensor_labelers[sensor_key][pattern_key].msg)
+                labels = copy.deepcopy(self.sensor_labelers[sensor_key][pattern_key].labels)
 
+
+                # Update sensor labels ---------------------------------------------
+                # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
+                #     all_sensor_labels_dict[sensor_key] = labels
+                if sensor['modality'] in ['rgb', 'lidar2d', 'depth', 'lidar3d']:
+                    all_sensor_labels_dict[sensor_key][pattern_key] = labels
+                else:
+                    raise ValueError('Unknown message type.')
             # Update the data dictionary for this data stamp
+            # This done outside of the loop since it does not depend on the pattern
             all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
-
-            # Update sensor labels ---------------------------------------------
-            # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
-            #     all_sensor_labels_dict[sensor_key] = labels
-            if sensor['modality'] in ['rgb', 'lidar2d', 'depth', 'lidar3d']:
-                all_sensor_labels_dict[sensor_key] = labels
-            else:
-                raise ValueError('Unknown message type.')
 
         for description, sensor in self.additional_data.items():
             msg = copy.deepcopy(self.sensor_labelers[description].msg)
