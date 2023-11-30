@@ -262,7 +262,7 @@ if __name__ == "__main__":
         topic_compressed = topic + '/compressed'
         if topic_compressed in bag_topics:  # Check if the topic is a compressed image topic
             topic = topic_compressed
-        if 'throttle' in config['sensors'][sensor_key]:
+        if config['sensors'][sensor_key]['throttle'] is not None:
             throttle = config['sensors'][sensor_key]['throttle']
             print('Sensor ' + sensor_key + ' throttled to ' + Fore.BLUE +
                   str(config['sensors'][sensor_key]['throttle']) + Style.RESET_ALL + ' Hz.')
