@@ -21,7 +21,7 @@ The system contains the following topics:
    - /tf_static
 
 
-Since this is a system designed to test calibration, where frame rate is not a critical issue, we restrained image and point cloud topics to 10Hz. 
+Since this is a system designed to test calibration, where frame rate is not a critical issue, we restrained image and point cloud topics to 10Hz.
 
 This is a simulated system, which can be seen in gazebo:
 
@@ -45,19 +45,19 @@ You can record a bag file using:
 
     roslaunch rgb_depth_system_bringup record.launch
 
-This will put the bag file into your $ROS_BAGS folder. 
+This will put the bag file into your $ROS_BAGS folder.
 
-# Calibration 
+# Calibration
 
 The calibration of any robotic system using **ATOM** may have several variants. We recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **rgb_depth_system**.
 
-To calibrate, we will need a bagfile called [rgb_depth_system_example_bag.bag](https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [rgb_depth_system_example_bag.bag](https://drive.google.com/file/d/1Z8mSfHqSesCOYEu3Ugx9F3VTpqe7j1gM/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 We produced the bagfile by bringing up the system and then recording a bagfile as described above.
-This is a medium sized bagfile with 60 seconds / 600MB for demonstration purposes. 
+This is a medium sized bagfile with 60 seconds / 600MB for demonstration purposes.
 
-Download the bagfile and put it in tour **$ROS_BAGS/rgb_depth_system** folder. 
+Download the bagfile and put it in tour **$ROS_BAGS/rgb_depth_system** folder.
 
 Next we describe each of the steps in the calibration pipeline.
 
@@ -91,7 +91,7 @@ To collect a dataset we run:
 
     roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_depth_system/dataset1 overwrite:=true
 
-And save a few collections. 
+And save a few collections.
 
 We will use as example the [rgb_depth_system_example_train_dataset](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing), which contains 4 collections, as shown bellow.
 
@@ -106,7 +106,7 @@ Collection |           rgb             |           depth
 4 | ![](docs/rgb_004.jpg) |  ![](docs/depth_004.png)
 5 | ![](docs/rgb_005.jpg) |  ![](docs/depth_005.png)
 
-## Using dataset playback to verify the labels 
+## Using dataset playback to verify the labels
 
 In ATOM, typically RGB sensors are very accurately auto-labeled, but for other modalities one should verify if the labels generated automatically during the dataset collection stage are correct.
 This is done using the dataset playback functionality.
@@ -119,21 +119,21 @@ and then the dataset playback node:
 
     rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset.json -ow
 
-We can use the left / right arrow keys to move between collections. 
+We can use the left / right arrow keys to move between collections.
 
 Move on to ***collection 004**. You should see this:
 
 ![dataset_playback](docs/dataset_playback.png)
 
-in the 3D you can see small grey points. These are the points that were labeled as belonging to the pattern. 
-Then you can see larger cubes, which are points annotated as belonging to the boundary of the pattern. 
+in the 3D you can see small grey points. These are the points that were labeled as belonging to the pattern.
+Then you can see larger cubes, which are points annotated as belonging to the boundary of the pattern.
 The latter are clearly incorrectly labeled as we can see in the 3D window that some of these points are on the floor, instead of being on the boundary of the pattern.
 
 To fix this we will use the manual correction of depth data. Draw a polygon around the pattern as shown in the image below:
 
 ![dataset_playback](docs/user_defined_polygon.png)
 
-once you close the polygon, i.e., click a point close to the initial point, a labeling procedure will start using the user defined polygon as input (which may take several seconds). 
+once you close the polygon, i.e., click a point close to the initial point, a labeling procedure will start using the user defined polygon as input (which may take several seconds).
 The result of this manual labeling is the following:
 
 ![manual_labeling_result](docs/manual_labeling_result.png)
@@ -165,7 +165,7 @@ Which shows subpixel accuracy for the rgb camera and half centimeter for the dep
 
 ## Evaluation
 
-The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets. 
+The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
 
 
 ##### Download and verification of Test dataset
