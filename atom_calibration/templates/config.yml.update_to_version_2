@@ -124,7 +124,7 @@ joints:
   {% for joint_key, joint_value in c.joints.items() %}
   {{ joint_key }}:
     {%- for prop_key, prop_value in joint_value.items() %}
-    {{ prop_key }}: "{{ prop_value }}"
+    {{ prop_key }}: {{ prop_value }}
     {%- endfor %}
   {% endfor %}
   {% endif %}

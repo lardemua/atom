@@ -108,7 +108,9 @@ def loadConfig(filename, check_paths=True):
     fullpath, name, uri = uriReader(config['bag_file'])
 
     # Check if calibration_pattern/mesh_file is ok
-    fullpath, name, uri = uriReader(config['calibration_pattern']['mesh_file'])
+
+    for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
+        fullpath, name, uri = uriReader(calibration_pattern['mesh_file'])
 
     return config
 

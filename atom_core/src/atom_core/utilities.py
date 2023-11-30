@@ -192,3 +192,15 @@ def verifyFixedPattern(dataset):
 
     if not dataset['calibration_config']['calibration_pattern']['fixed']:
         atomError('Calibration pattern is not fixed, inter collection evaluation is disabled')
+
+
+def getJointParentChild(joint_key, description):
+    # From the xacro, get the parent and child of this joint
+    parent = None
+    child = None
+    for joint in description.joints:
+        if joint.name == joint_key:
+            parent = joint.parent
+            child = joint.child
+
+    return joint.parent, joint.child

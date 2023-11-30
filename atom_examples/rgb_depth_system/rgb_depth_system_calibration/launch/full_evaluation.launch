@@ -35,7 +35,22 @@
     <!-- Evaluation -->
     <node type="depth_to_rgb_evaluation" pkg="atom_evaluation" 
         name="depth_to_rgb_evaluation"
-        args="-cs rgb -ds depth -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        args="-cs rgb -ds depth  -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="inter_collection_depth_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="inter_collection_depth_to_rgb_evaluation"
+        args="-cs rgb -ds depth  -wf world -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="inter_collection_rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="inter_collection_rgb_to_rgb_evaluation"
+        args="-ss rgb -st rgb -wf world -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="inter_collection_depth_to_depth_evaluation" pkg="atom_evaluation" 
+        name="inter_collection_depth_to_depth_evaluation"
+        args="-ss depth -st depth -wf world -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
         output="screen"/>
 
     
