@@ -75,7 +75,13 @@ sensors:
   {% for sensor_key, sensor_value in c.sensors.items() %}
   {{ sensor_key }}:
     {%- for prop_key, prop_value in sensor_value.items() %}
+    {%- if prop_value is not none and prop_key != 'throttle' %}
     {{ prop_key }}: "{{ prop_value }}"
+    {%- elif prop_value is none%}
+    {{ prop_key }}:
+    {%- elif prop_key == 'throttle' %}
+    {{ prop_key }}: {{ prop_value }}
+    {%- endif %}
     {%- endfor %}
   {% endfor %}
 
@@ -130,13 +136,17 @@ joints:
   {% endif %}
 
 # The calibration requires a detectable pattern.
-# This section describes the properties of the calibration pattern used in th calibration.
+# This section describes the properties of the calibration pattern used in the calibration.
 calibration_patterns:
   {%- if c.calibration_patterns.items is defined -%}
   {% for calibration_pattern_key, calibration_pattern_value in c.calibration_patterns.items() %}
   {{ calibration_pattern_key }}:
     {%- for prop_key, prop_value in calibration_pattern_value.items() %}
+    {%- if prop_key is not in ['fixed', 'border_size', 'dimension', 'size', 'inner_size'] %}
     {{ prop_key }}: "{{ prop_value }}"
+    {%- else %}
+    {{ prop_key }}: {{ prop_value }}
+    {%- endif %}
     {%- endfor %}
   {%- endfor -%}
   {% endif %}
@@ -149,10 +159,10 @@ calibration_patterns:
 anchored_sensor: "{{ c.anchored_sensor }}"
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
-max_duration_between_msgs: "{{ c.max_duration_between_msgs }}"
+max_duration_between_msgs: {{ c.max_duration_between_msgs }}
 
 # This parameter is automatically filled by ATOM, please only change if you know what you are doing
 package_name: "{{ c.package_name }}"
 
 # Automatically filled. Do not touch unless you know what you are doing.
-version: "{{ c.version }}"
+version: {{ c.version }}
