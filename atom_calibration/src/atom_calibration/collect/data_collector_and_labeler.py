@@ -29,7 +29,8 @@ from urdf_parser_py.urdf import URDF
 # local packages
 from atom_core.naming import generateKey
 from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
-from atom_core.system import execute, loadConfig
+from atom_core.config_io import loadConfig
+from atom_core.system import execute, resolvePath
 from atom_core.xacro_io import readXacroFile
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
@@ -40,7 +41,7 @@ class DataCollectorAndLabeler:
 
     def __init__(self, args, server, menu_handler):
 
-        self.output_folder = atom_core.config_io.resolvePath(args['output_folder'])
+        self.output_folder = resolvePath(args['output_folder'])
 
         if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
             print('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
@@ -115,7 +116,7 @@ class DataCollectorAndLabeler:
 
         print('Parsing description file ' + Fore.BLUE + description_file + Style.RESET_ALL)
         xacro_cmd = 'xacro ' + description_file + ' -o ' + urdf_file
-        atom_core.config_io.execute(xacro_cmd, verbose=True)  # create tmp urdf file
+        execute(xacro_cmd, verbose=True)  # create tmp urdf file
 
         if not os.path.exists(urdf_file):
             atomError('Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' +
@@ -198,8 +199,11 @@ class DataCollectorAndLabeler:
             if not args['skip_sensor_labeling'] is None:
                 if args['skip_sensor_labeling'](sensor_key):  # use the lambda expression csf
                     label_data = False
+
+            # TODO only works for first pattern
+            first_pattern_key = list(self.config['calibration_patterns'].keys())[0]
             sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
-                                                    args['marker_size'], self.config['calibration_pattern'],
+                                                    args['marker_size'], self.config['calibration_patterns'][first_pattern_key],
                                                     color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
 
             self.sensor_labelers[sensor_key] = sensor_labeler

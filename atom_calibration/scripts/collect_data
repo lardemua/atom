@@ -19,6 +19,7 @@ from colorama import Style, Fore
 
 # local packages
 from atom_calibration.collect.data_collector_and_labeler import DataCollectorAndLabeler
+from atom_core.system import resolvePath
 
 server = None
 menu_handler = MenuHandler()
@@ -32,7 +33,8 @@ def menuFeedback(feedback):
     elif handle == 2:
         print('Automatic data collection selected ')
         rospy.wait_for_service('/automatic_data_collector/toggle_automatic_data_collector')
-        toggle_automatic_data_collector = rospy.ServiceProxy('/automatic_data_collector/toggle_automatic_data_collector', atom_msgs.srv.ToggleAutomaticDataCollector)
+        toggle_automatic_data_collector = rospy.ServiceProxy(
+            '/automatic_data_collector/toggle_automatic_data_collector', atom_msgs.srv.ToggleAutomaticDataCollector)
         _ = toggle_automatic_data_collector()
 
 
@@ -134,7 +136,7 @@ if __name__ == "__main__":
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
     print("\nArgument list=" + str(args) + '\n')
 
-    output_folder = atom_core.config_io.resolvePath(args['output_folder'])
+    output_folder = resolvePath(args['output_folder'])
 
     if output_folder == os.getenv("HOME"):
         print('\nError: Dataset ' + Fore.RED + output_folder + Style.RESET_ALL +
