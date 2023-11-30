@@ -19,23 +19,25 @@ from tf import transformations
 class SimplePatternDetector:
 
     def __init__(self, args, config):
-
-        size = {'x': config['calibration_pattern']['dimension']['x'],
-                'y': config['calibration_pattern']['dimension']['y']}
-        length = config['calibration_pattern']['size']
-        inner_length = config['calibration_pattern']['inner_size']
-        dictionary = config['calibration_pattern']['dictionary']
+        # TODO only works for first pattern
+        first_pattern_key = list(config['calibration_patterns'].keys())[0]
+        size = {'x': config['calibration_patterns'][first_pattern_key]['dimension']['x'],
+                'y': config['calibration_patterns'][first_pattern_key]['dimension']['y']}
+        length = config['calibration_patterns'][first_pattern_key]['size']
+        inner_length = config['calibration_patterns'][first_pattern_key]['inner_size']
+        dictionary = config['calibration_patterns'][first_pattern_key]['dictionary']
         self.args = args
         self.config = config
 
-        if config['calibration_pattern']['pattern_type'] == 'charuco':
+        # TODO only works for first pattern
+        if config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'charuco':
             self.pattern = patterns.CharucoPattern(
                 size, length, inner_length, dictionary)
-        elif config['calibration_pattern']['pattern_type'] == 'chessboard':
+        elif config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'chessboard':
             self.pattern = patterns.ChessboardPattern(size, length)
         else:
             rospy.logerr("Unknown pattern '{}'".format(
-                config['calibration_pattern']['pattern_type']))
+                config['calibration_patterns'][first_pattern_key]['pattern_type']))
             sys.exit(1)
 
         # Get a camera_info message
@@ -66,8 +68,10 @@ class SimplePatternDetector:
         else:
             image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
 
-        nx = self.config['calibration_pattern']['dimension']['x']
-        ny = self.config['calibration_pattern']['dimension']['y']
+        # TODO only works for first pattern
+        first_pattern_key = list(self.config['calibration_patterns'].keys())[0]
+        nx = self.config['calibration_patterns'][first_pattern_key]['dimension']['x']
+        ny = self.config['calibration_patterns'][first_pattern_key]['dimension']['y']
         K = np.ndarray((3, 3), dtype=float,
                        buffer=np.array(self.camera_info_msg.K))
         D = np.ndarray((5, 1), dtype=float,
@@ -85,7 +89,8 @@ class SimplePatternDetector:
 
         if result['detected']:
             objp = np.zeros((nx * ny, 3), np.float32)
-            objp[:, :2] = self.config['calibration_pattern']['size'] * \
+            # TODO only works for first pattern
+            objp[:, :2] = self.config['calibration_patterns'][first_pattern_key]['size'] * \
                 np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
             # Build a numpy array with the chessboard corners
@@ -103,7 +108,8 @@ class SimplePatternDetector:
                 np_ids = np.array(ids, dtype=int)
                 rvecs, tvecs = None, None
 
-                if self.config['calibration_pattern']['pattern_type'] == 'charuco':
+                # TODO only works for first pattern
+                if self.config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'charuco':
                     _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
                                                                          np_ids, self.pattern.board,
                                                                          K, D, rvecs, tvecs)

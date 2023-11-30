@@ -80,8 +80,10 @@ if __name__ == "__main__":
 
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 
-        dy = config['calibration_pattern']['dimension']['y']
-        dx = config['calibration_pattern']['dimension']['x']
+        # TODO only works for first pattern
+        first_pattern_key = list(config['calibration_patterns'].keys())[0]
+        dy = config['calibration_patterns'][first_pattern_key]['dimension']['y']
+        dx = config['calibration_patterns'][first_pattern_key]['dimension']['x']
         objp = np.zeros((dy * dx, 3), np.float32)
         objp[:, :2] = np.mgrid[0:dx, 0:dy].T.reshape(-1, 2)
 
