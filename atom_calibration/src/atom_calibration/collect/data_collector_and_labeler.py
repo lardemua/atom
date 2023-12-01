@@ -147,6 +147,7 @@ class DataCollectorAndLabeler:
 
         # Go through the sensors in the calib config.
         sensor_idx = 0
+        label_data = {}
         for sensor_key, value in self.config['sensors'].items():
 
             # Create a dictionary that describes this sensor
@@ -195,22 +196,26 @@ class DataCollectorAndLabeler:
 
             print('config = ' + str(self.config))
 
-            label_data = True
+            label_data[sensor_key] = True
             if not args['skip_sensor_labeling'] is None:
                 if args['skip_sensor_labeling'](sensor_key):  # use the lambda expression csf
-                    label_data = False
+                    label_data[sensor_key] = False
 
-            sensor_labeler = {}
-            for pattern_key, pattern in self.config['calibration_patterns'].items():
-                sensor_labeler[pattern_key] = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
-                                                                     args['marker_size'], pattern,
-                                                                     color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
-
-            self.sensor_labelers[sensor_key] = sensor_labeler
-
-            print('Setup for sensor ' + sensor_key + ' is complete.')
+            print('Config for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
             sensor_idx += 1
+
+
+        sensor_idx = 0
+        for pattern_key, pattern in self.config['calibration_patterns'].items():
+            sensor_labeler = {}
+            for sensor_key, value in self.config['sensors'].items():
+                sensor_labeler[sensor_key] = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
+                                                                        args['marker_size'], pattern,
+                                                                        color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
+            self.sensor_labelers[pattern_key] = sensor_labeler
+            sensor_idx += 1
+        print('Labelers for pattern ' + pattern_key + ' are complete.')
 
         # Additional data loop
         if 'additional_data' in self.config:
@@ -354,20 +359,20 @@ class DataCollectorAndLabeler:
     def lockAllLabelers(self):
         for sensor_name, sensor in self.sensors.items():
             for pattern_key in self.config['calibration_patterns'].keys():
-                self.sensor_labelers[sensor_name][pattern_key].lock.acquire()
+                self.sensor_labelers[pattern_key][sensor_name].lock.acquire()
         print("Locked all labelers ")
 
     def unlockAllLabelers(self):
         for sensor_name, sensor in self.sensors.items():
             for pattern_key in self.config['calibration_patterns'].keys():
-                self.sensor_labelers[sensor_name][pattern_key].lock.release()
+                self.sensor_labelers[pattern_key][sensor_name].lock.release()
         print("Unlocked all labelers ")
 
     def getLabelersTimeStatistics(self):
         stamps = []  # a list of the several time stamps of the stored messages
         for sensor_name, sensor in self.sensors.items():
             for pattern_key in self.config['calibration_patterns'].keys():
-                stamps.append(copy.deepcopy(self.sensor_labelers[sensor_name][pattern_key].msg.header.stamp))
+                stamps.append(copy.deepcopy(self.sensor_labelers[pattern_key][sensor_name].msg.header.stamp))
 
         max_delta = getMaxTimeDelta(stamps)
         # TODO : this is because of Andre's bag file problem. We should go back to the getAverageTime
@@ -476,24 +481,25 @@ class DataCollectorAndLabeler:
         all_additional_data_dict = {}
         # metadata={}
 
-        for sensor_key, sensor in self.sensors.items():
-            all_sensor_labels_dict[sensor_key] = {}
-            for pattern_key in self.config['calibration_patterns'].keys():
+        for pattern_key in self.config['calibration_patterns'].keys():
+            all_sensor_labels_dict[pattern_key] = {}
+            for sensor_key, sensor in self.sensors.items():
                 print('Collecting data from ' + Fore.BLUE + sensor_key +
                       '_' + pattern_key + Style.RESET_ALL + ': sensor_key')
 
-                msg = copy.deepcopy(self.sensor_labelers[sensor_key][pattern_key].msg)
-                labels = copy.deepcopy(self.sensor_labelers[sensor_key][pattern_key].labels)
+                msg = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].msg)
+                labels = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].labels)
 
                 # Update sensor labels ---------------------------------------------
                 # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
                 #     all_sensor_labels_dict[sensor_key] = labels
                 if sensor['modality'] in ['rgb', 'lidar2d', 'depth', 'lidar3d']:
-                    all_sensor_labels_dict[sensor_key][pattern_key] = labels
+                    all_sensor_labels_dict[pattern_key][sensor_key] = labels
                 else:
                     raise ValueError('Unknown message type.')
+
+        for sensor_key, sensor in self.sensors.items():
             # Update the data dictionary for this data stamp
-            # This done outside of the loop since it does not depend on the pattern
             all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
         for description, sensor in self.additional_data.items():
