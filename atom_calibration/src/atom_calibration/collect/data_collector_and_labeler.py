@@ -146,7 +146,6 @@ class DataCollectorAndLabeler:
         print('Number of sensors: ' + str(len(self.config['sensors'])))
 
         # Go through the sensors in the calib config.
-        sensor_idx = 0
         label_data = {}
         for sensor_key, value in self.config['sensors'].items():
 
@@ -203,18 +202,17 @@ class DataCollectorAndLabeler:
 
             print('Config for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
-            sensor_idx += 1
 
 
-        sensor_idx = 0
         for pattern_key, pattern in self.config['calibration_patterns'].items():
             sensor_labeler = {}
+            sensor_idx = 0
             for sensor_key, value in self.config['sensors'].items():
-                sensor_labeler[sensor_key] = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
+                sensor_labeler[sensor_key] = InteractiveDataLabeler(self.server, self.menu_handler, self.sensors[sensor_key],
                                                                         args['marker_size'], pattern,
-                                                                        color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
+                                                                        color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data[sensor_key])
+                sensor_idx += 1
             self.sensor_labelers[pattern_key] = sensor_labeler
-            sensor_idx += 1
         print('Labelers for pattern ' + pattern_key + ' are complete.')
 
         # Additional data loop
@@ -232,14 +230,16 @@ class DataCollectorAndLabeler:
                 data_dict['topic'] = value['topic_name']
                 data_dict['msg_type'] = msg_type
 
+
+            for pattern_key, pattern in self.config['calibration_patterns'].items():
                 sensor_labeler = {}
-                for pattern_key, pattern in self.config['calibration_patterns']:
-                    sensor_labeler = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
-                                                            args['marker_size'], self.config['calibration_patterns'][first_pattern_key],
+                for description, value in self.config['additional_data'].items():
+                    sensor_labeler[description] = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
+                                                            args['marker_size'], pattern,
                                                             label_data=False)
 
-                self.sensor_labelers[description] = sensor_labeler
-                self.additional_data[description] = data_dict
+                self.sensor_labelers[pattern_key].update(sensor_labeler)
+                self.additional_data[pattern_key] = data_dict
 
         # Defining metadata
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
@@ -484,10 +484,9 @@ class DataCollectorAndLabeler:
         for pattern_key in self.config['calibration_patterns'].keys():
             all_sensor_labels_dict[pattern_key] = {}
             for sensor_key, sensor in self.sensors.items():
-                print('Collecting data from ' + Fore.BLUE + sensor_key +
-                      '_' + pattern_key + Style.RESET_ALL + ': sensor_key')
+                print('Collecting data from ' + Fore.BLUE + pattern_key +
+                      '_' + sensor_key + Style.RESET_ALL + ': sensor_key')
 
-                msg = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].msg)
                 labels = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].labels)
 
                 # Update sensor labels ---------------------------------------------
@@ -500,10 +499,13 @@ class DataCollectorAndLabeler:
 
         for sensor_key, sensor in self.sensors.items():
             # Update the data dictionary for this data stamp
+            # Since the message should be the same for each pattern, save for the last pattern
+            msg = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].msg) 
             all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
         for description, sensor in self.additional_data.items():
-            msg = copy.deepcopy(self.sensor_labelers[description].msg)
+            # Since the message should be the same for each pattern, save for the last pattern
+            msg = copy.deepcopy(self.sensor_labelers[pattern_key][description].msg)
             all_additional_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
