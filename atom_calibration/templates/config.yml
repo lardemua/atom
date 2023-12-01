@@ -178,7 +178,7 @@ calibration_patterns:
 
 # If your calibration problem is not fully constrained you should anchored one of the sensors.
 # This makes it immovable during the optimization.
-# This is typically referred to as gauge freedom.
+# Leave empty if no sensor is to be anchored.
 anchored_sensor:
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.

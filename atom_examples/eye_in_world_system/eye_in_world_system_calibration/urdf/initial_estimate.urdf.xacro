@@ -17,7 +17,7 @@
     <!-- Tables properties-->
     <xacro:property name="table_height" value="0.795"/>
     <xacro:property name="table_width" value=".9"/>
-    <xacro:property name="table_lenght" value="1.9"/>
+    <xacro:property name="table_lenght" value="0.9"/>
     <xacro:property name="table_tabletop_thickness" value="0.015"/>
     <xacro:property name="table_leg_radius" value="0.02"/>
 

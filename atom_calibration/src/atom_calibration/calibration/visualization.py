@@ -17,7 +17,7 @@ import colorama
 import cv2
 import atom_core.ros_numpy
 
-# import numpy as np  # TODO Eurico, line  fails if I don't do this
+# import numpy as np
 import rospy
 import numpy as np
 import tf
@@ -40,7 +40,8 @@ from matplotlib import cm
 # own packages
 from atom_core.drawing import drawSquare2D, drawCross2D
 from atom_core.naming import generateLabeledTopic, generateName
-from atom_core.system import execute, uriReader
+from atom_core.system import execute
+from atom_core.config_io import uriReader
 from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary, genCollectionPrefix)

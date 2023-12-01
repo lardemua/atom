@@ -23,7 +23,7 @@ from atom_calibration.calibration.objective_function import *
 from atom_calibration.collect.label_messages import *
 from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from atom_core.cache import Cache
-from atom_core.system import execute,
+from atom_core.system import execute
 from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (genCollectionPrefix, getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary)

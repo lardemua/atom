@@ -144,18 +144,18 @@ calibration_patterns:
 
     # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
     # See: description_file
-    mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
+    mesh_file: "package://atom_worlds/pattern/models/charuco_200x200_4x4/charuco_200x200_4x4.dae"
 
     # The border width from the edge corner to the pattern physical edge.
     # Used for 3D sensors and lidars.
     # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
-    border_size: { 'x': 0.05, 'y': 0.05 }
+    border_size: { 'x': 0.02, 'y': 0.02 }
 
     # The number of corners the pattern has in the X and Y dimensions.
     # Note: The charuco detector uses the number of squares per dimension in its detector.
     # Internally we add a +1 to Y and X dimensions to account for that.
     # Therefore, the number of corners should be used even for the charuco pattern.
-    dimension: { "x": 9, "y": 6 }
+    dimension: { "x": 7, "y": 7 }
 
     # The length of the square edge.
     size: 0.02

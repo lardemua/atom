@@ -203,8 +203,8 @@ class DataCollectorAndLabeler:
             sensor_labeler = {}
             for pattern_key, pattern in self.config['calibration_patterns'].items():
                 sensor_labeler[pattern_key] = InteractiveDataLabeler(self.server, self.menu_handler, sensor_dict,
-                                                        args['marker_size'], pattern,
-                                                        color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
+                                                                     args['marker_size'], pattern,
+                                                                     color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data)
 
             self.sensor_labelers[sensor_key] = sensor_labeler
 
@@ -377,7 +377,7 @@ class DataCollectorAndLabeler:
         print('Times:')
         for stamp, sensor_name in zip(stamps, self.sensors):
             for pattern_key in self.config['calibration_patterns'].keys():
-                printRosTime(stamp, prefix=(sensor_name + '_' + pattern_key  + ': '))
+                printRosTime(stamp, prefix=(sensor_name + '_' + pattern_key + ': '))
 
         return stamps, average_time, max_delta
 
@@ -411,14 +411,14 @@ class DataCollectorAndLabeler:
         if self.collect_ground_truth:  # collect ground truth transforms
             pass
             transforms_ground_truth = self.getTra/home/nel/distrobox/ubuntu20/pr2_ws/src/tams/tams_pr2/tams_pr2_atom_calibration/calibration/config.yml.oldnsforms(self.abstract_transforms,
-                                                         self.tf_buffer_ground_truth,
-                                                         average_time)  # use average time of sensor msgs
+                                                                                                                                                                   self.tf_buffer_ground_truth,
+                                                                                                                                                                   average_time)  # use average time of sensor msgs
 
         printRosTime(average_time, "Collected transforms for time ")
 
         # Create joint dict
+        joints_dict = {}
         if self.config['joints'] is not None:
-            joints_dict = {}
             for config_joint_key, config_joint in self.config['joints'].items():
 
                 # TODO should we set the position bias
@@ -448,7 +448,7 @@ class DataCollectorAndLabeler:
 
                 if not found_in_urdf:
                     atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                            ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
+                              ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
 
                 # find joint in transforms pool
                 for transform_key, transform in transforms.items():
@@ -458,11 +458,11 @@ class DataCollectorAndLabeler:
 
                 if config_joint_dict['transform_key'] is None:
                     atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                            ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
+                              ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
 
                 if config_joint_key not in self.joint_state_position_dict:
                     atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                            ' from /joint_state messages.')
+                              ' from /joint_state messages.')
 
                 # Get current joint position from the joint state message
                 config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
@@ -479,11 +479,11 @@ class DataCollectorAndLabeler:
         for sensor_key, sensor in self.sensors.items():
             all_sensor_labels_dict[sensor_key] = {}
             for pattern_key in self.config['calibration_patterns'].keys():
-                print('Collecting data from ' + Fore.BLUE + sensor_key + '_' + pattern_key + Style.RESET_ALL + ': sensor_key')
+                print('Collecting data from ' + Fore.BLUE + sensor_key +
+                      '_' + pattern_key + Style.RESET_ALL + ': sensor_key')
 
                 msg = copy.deepcopy(self.sensor_labelers[sensor_key][pattern_key].msg)
                 labels = copy.deepcopy(self.sensor_labelers[sensor_key][pattern_key].labels)
-
 
                 # Update sensor labels ---------------------------------------------
                 # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
