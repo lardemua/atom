@@ -10,7 +10,7 @@ from atom_core.utilities import atomError, atomPrintOK
 # 3rd-party
 import rospkg
 from colorama import Style, Fore
-from atom_core.dataset_io import loadResultsJSON, saveResultsJSON
+from atom_core.dataset_io import loadResultsJSON, createJSONFile
 
 # local packages
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # Save a backup of the old dataset
     # --------------------------------------------------------------------------
     print('Backing up your dataset')
-    saveResultsJSON(args['json_file'] + '.old', dataset)
+    createJSONFile(args['json_file'] + '.old', dataset)
 
     # --------------------------------------
     # Produce a new dataset
@@ -109,4 +109,4 @@ if __name__ == "__main__":
     # Save the new dataset
     # --------------------------------------------------------------------------
     print('Saving your updated dataset')
-    saveResultsJSON(args['json_file'], dataset)
+    createJSONFile(args['json_file'], dataset)
