@@ -17,21 +17,23 @@ def selectedPointsCallback(selected_point_cloud, selection, dataset):
         return
 
     # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+    sensor = list(dataset['collections'][collection_key]['labels'][first_pattern_key].keys())[
         int(gen_selected_points[0][4])]
 
     selected_idxs = []
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
-    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
+    idx_center = dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs']
 
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs'] = idx_center
 
-    if dataset['collections'][collection_key]['labels'][sensor]['idxs'] != [] and \
-            dataset['collections'][collection_key]['labels'][sensor]['detected'] == False:
-        dataset['collections'][collection_key]['labels'][sensor]['detected'] = True
+    if dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs'] != [] and \
+            dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['detected'] == False:
+        dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['detected'] = True
 
     print('Done.')
 
@@ -51,21 +53,23 @@ def selectedPointsBorderCallback(selected_point_cloud, selection, dataset):
         return
 
     # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+    sensor = list(dataset['collections'][collection_key]['labels'][first_pattern_key].keys())[
         int(gen_selected_points[0][4])]
 
     selected_idxs = []
     for point in gen_selected_points:
         selected_idxs.append(int(point[3]))
 
-    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
-    idx_border = dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points']
+    idx_center = dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs']
+    idx_border = dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs_limit_points']
 
     [idx_center.append(x) for x in selected_idxs if x not in idx_center]
     [idx_border.append(x) for x in selected_idxs if x not in idx_border]
 
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center
-    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs'] = idx_center
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs_limit_points'] = idx_border
 
 
     print('Done.')
@@ -85,7 +89,9 @@ def selectedPointsRemoveCallback(selected_point_cloud, selection, dataset):
         return
 
     # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+    sensor = list(dataset['collections'][collection_key]['labels'][first_pattern_key].keys())[
         int(gen_selected_points[0][4])]
 
     selected_idxs = []
@@ -93,14 +99,14 @@ def selectedPointsRemoveCallback(selected_point_cloud, selection, dataset):
         selected_idxs.append(int(point[3]))
 
     # remove these points from the idx and idxs_limit_points
-    idx_center = dataset['collections'][collection_key]['labels'][sensor]['idxs']
-    idx_border = dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points']
+    idx_center = dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs']
+    idx_border = dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs_limit_points']
 
     idx_center_new = [x for x in idx_center if x not in selected_idxs]
     idx_border_new = [x for x in idx_border if x not in selected_idxs]
 
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = idx_center_new
-    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = idx_border_new
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs'] = idx_center_new
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs_limit_points'] = idx_border_new
 
     print('Done.')
 
@@ -120,10 +126,12 @@ def selectedPointsClearAllCallback(selected_point_cloud, selection, dataset):
         return
 
     # sensor from the point cloud
-    sensor = list(dataset['collections'][collection_key]['labels'].keys())[
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+    sensor = list(dataset['collections'][collection_key]['labels'][first_pattern_key].keys())[
         int(gen_selected_points[0][4])]
 
-    dataset['collections'][collection_key]['labels'][sensor]['idxs'] = []
-    dataset['collections'][collection_key]['labels'][sensor]['idxs_limit_points'] = []
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs'] = []
+    dataset['collections'][collection_key]['labels'][first_pattern_key][sensor]['idxs_limit_points'] = []
 
     print('Done.')

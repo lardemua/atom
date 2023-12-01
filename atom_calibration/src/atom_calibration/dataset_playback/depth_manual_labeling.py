@@ -79,12 +79,13 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
             pattern_mask = getMaskFromPoints(clicked_points[collection_key][sensor_key]['points'], height, width)
 
             idxs_to_remove = [] 
-            for idx, linear_idx in enumerate(dataset['collections'][collection_key]['labels'][sensor_key]['idxs_limit_points']):
-                y = int(int(linear_idx) / int(width))
-                x = linear_idx - width * y
+            for pattern_key in dataset['calibration_config']['calibration_patterns'].keys():
+                for idx, linear_idx in enumerate(dataset['collections'][collection_key]['labels'][pattern_key][sensor_key]['idxs_limit_points']):
+                    y = int(int(linear_idx) / int(width))
+                    x = linear_idx - width * y
 
-                if pattern_mask[y,x] == 255: # point inside polygon
-                    idxs_to_remove.append(idx)
+                    if pattern_mask[y,x] == 255: # point inside polygon
+                        idxs_to_remove.append(idx)
 
             idxs_to_remove.reverse()
             for idx in idxs_to_remove:
@@ -190,7 +191,9 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
 
 
             # Update the idxs and idxs_limit labels
-            dataset['collections'][collection_key]['labels'][sensor_key] = labels
+            # TODO only works for first pattern
+            first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+            dataset['collections'][collection_key]['labels'][first_pattern_key][sensor_key] = labels
 
             clicked_points[collection_key][sensor_key]['valid_polygon'] = True
 
