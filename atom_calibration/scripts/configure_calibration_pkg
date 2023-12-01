@@ -262,6 +262,7 @@ if __name__ == "__main__":
         topic_compressed = topic + '/compressed'
         if topic_compressed in bag_topics:  # Check if the topic is a compressed image topic
             topic = topic_compressed
+
         if config['sensors'][sensor_key]['throttle'] is not None:
             throttle = config['sensors'][sensor_key]['throttle']
             print('Sensor ' + sensor_key + ' throttled to ' + Fore.BLUE +
@@ -360,10 +361,8 @@ if __name__ == "__main__":
     for sensor_key, sensor in config['sensors'].items():
         edge_in_config = (config['sensors'][sensor_key]['parent_link'], config['sensors'][sensor_key]['child_link'])
         if not edge_in_config in gx.edges():
-            raise ValueError(
-                'Error: sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
-                edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
-                ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
+            atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
+                      ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
     atomPrintOK()
 
     # Verify that the frame_id in the calibration.yaml->sensor->link field is the same as in the published messages (#514).
@@ -788,7 +787,7 @@ if __name__ == "__main__":
                 evaluation_description['args'] = f'-ss {sensor} -st {sensor} -wf {config["world_link"]}'
 
                 sensor_combinations_dict['inter_collection_' + sensor + '_to_' + sensor + '_' + calibration_pattern_key] =  \
-                     evaluation_description
+                    evaluation_description
 
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'wb') as f:

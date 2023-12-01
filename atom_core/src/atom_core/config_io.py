@@ -13,7 +13,7 @@ import rospkg
 from colorama import Fore, Style
 
 from atom_core.utilities import atomError
-from atom_core.system import uriReader
+from atom_core.system import resolvePath, expandToLaunchEnv
 
 
 def dictionaries_have_same_keys(d1, d2):
@@ -146,3 +146,31 @@ def validateLinks(world_link, sensors, urdf):
         return False
 
     return True
+
+
+def uriReader(resource):
+    uri = urlparse(str(resource))
+    # print(uri)
+    if uri.scheme == 'package':  # using a ros package uri
+        # print('This is a ros package')
+        rospack = rospkg.RosPack()
+        assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
+        fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
+        relpath = '$(find {}){}'.format(uri.netloc, uri.path)
+
+    elif uri.scheme == 'file':  # local file
+        # print('This is a local file')
+        fullpath = resolvePath(uri.netloc + uri.path)
+        relpath = fullpath
+    elif uri.scheme == '':  # no scheme, assume local file
+        # print('This is a local file')
+
+        fullpath = resolvePath(uri.path)
+        relpath = expandToLaunchEnv(uri.path)
+    else:
+        raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')
+
+    if not os.path.exists(fullpath):
+        atomError(Fore.BLUE + fullpath + Style.RESET_ALL + ' does not exist.')
+
+    return fullpath, os.path.basename(fullpath), relpath

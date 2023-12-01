@@ -10,7 +10,7 @@
 #  | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <
 #  |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
 #  https://github.com/lardemua/atom
-# Auto-generated file on {{ c.date }}
+# Auto-generated file on 01/12/2023 08:06:04
 
 # This yaml file describes your calibration!
 
@@ -32,14 +32,14 @@
 #   - ROS Package Reference
 #       Example: package://your_package/urdf/description.urdf.xacro
 #
-description_file: "{{ c.description_file }}"
+description_file: "package://eye_in_world_system_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "{{ c.bag_file }}"
+bag_file: "$ROS_BAGS/eye_in_world_system/train.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
-world_link: "{{ c.world_link }}"
+world_link: "world"
 
 # ATOM will calibrate the extrinsic parameters of your sensors.
 # In this section you should discriminate the sensors that will be part of the calibrations.
@@ -68,18 +68,15 @@ sensors:
   #   /world_camera/rgb/image_raw/compressed
   # you should not add the "compressed" part, use only:
   #   /world_camera/rgb/image_raw
-  {% for sensor_key, sensor_value in c.sensors.items() %}
-  {{ sensor_key }}:
-    {%- for prop_key, prop_value in sensor_value.items() %}
-    {%- if prop_value is not none and prop_key != 'throttle' %}
-    {{ prop_key }}: "{{ prop_value }}"
-    {%- elif prop_value is none%}
-    {{ prop_key }}:
-    {%- elif prop_key == 'throttle' %}
-    {{ prop_key }}: {{ prop_value }}
-    {%- endif %}
-    {%- endfor %}
-  {% endfor %}
+  #
+
+  rgb_world:
+    link: "rgb_world_optical_frame"
+    parent_link: "tripod_center_support"
+    child_link: "rgb_world_link"
+    topic_name: "/rgb_world/image_raw"
+    modality: "rgb"
+    throttle:
 
 # ATOM will calibrate the extrinsic parameters of your links.
 # In this section you should discriminate the additional transformations that will be part of the calibrations.
@@ -97,15 +94,6 @@ additional_tfs:
   #base_footprint_to_base_link:
   #  parent_link: "base_footprint"
   #  child_link: "base_link"
-  {%- if c.additional_tfs.items is defined -%}
-  {% for additional_tf_key, additional_tf_value in c.additional_tfs.items() %}
-  {{ additional_tf_key }}:
-    {%- for prop_key, prop_value in additional_tf_value.items() %}
-    {{ prop_key }}: "{{ prop_value }}"
-    {%- endfor %}
-  {% endfor %}
-  {% endif %}
-
 
 # ATOM can also calibrate several parameters of your joints.
 # In this section you should discriminate the joints that will be part of the calibrations.
@@ -122,47 +110,72 @@ joints:
   # EXAMPLE:
   #head_pan_joint:
   #  params_to_calibrate: ['position_bias']
-  {%- if c.joints.items is defined -%}
-  {% for joint_key, joint_value in c.joints.items() %}
-  {{ joint_key }}:
-    {%- for prop_key, prop_value in joint_value.items() %}
-    {{ prop_key }}: {{ prop_value }}
-    {%- endfor %}
-  {% endfor %}
-  {% endif %}
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in the calibration.
 calibration_patterns:
-  {%- if c.calibration_patterns.items is defined -%}
-  {% for calibration_pattern_key, calibration_pattern_value in c.calibration_patterns.items() %}
-  {{ calibration_pattern_key }}:
-    {%- for prop_key, prop_value in calibration_pattern_value.items() %}
-    {%- if prop_key is not in ['fixed', 'border_size', 'dimension', 'size', 'inner_size'] %}
-    {{ prop_key }}: "{{ prop_value }}"
-    {%- else %}
-    {{ prop_key }}: {{ prop_value }}
-    {%- endif %}
-    {%- endfor %}
-  {%- endfor -%}
-  {% endif %}
+
+  pattern_1:
+    # The frame id (or link) of the pattern.
+    # This link/transformation will be optimized.
+    link: "pattern_link"
+
+    # The parent frame id (or link) of the pattern.
+    # For example, in hand-eye calibration the parent link
+    # of the pattern can be the end-effector or the base of the arm
+    parent_link: "flange"
+
+    # Defines if the pattern link is the same in all collections (i.e. fixed=true),
+    # or each collection will have its own estimate of the link transformation.
+    # Note: if you plan to have the pattern fixed, while the moving the rigidly attached sensors,
+    # this is equivalent to having the sensors fixed and the pattern moving, so you should use fixed=false.
+    fixed: true
+
+    # The type of pattern used for the calibration.
+    # Supported pattern are:
+    # - chessboard
+    # - charuco
+    pattern_type: "charuco"
+
+    # If the pattern type is "charuco" you need to define
+    # the aruco dictionary used by the pattern.
+    # See https://docs.opencv.org/trunk/dc/df7/dictionary_8hpp.html
+    dictionary: "DICT_4X4_100"
+
+    # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
+    # See: description_file
+    mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
+
+    # The border width from the edge corner to the pattern physical edge.
+    # Used for 3D sensors and lidars.
+    # It can be a scalar (same border in x and y directions), or it can be {'x': ..., 'y': ,,,}
+    border_size: { 'x': 0.05, 'y': 0.05 }
+
+    # The number of corners the pattern has in the X and Y dimensions.
+    # Note: The charuco detector uses the number of squares per dimension in its detector.
+    # Internally we add a +1 to Y and X dimensions to account for that.
+    # Therefore, the number of corners should be used even for the charuco pattern.
+    dimension: { "x": 9, "y": 6 }
+
+    # The length of the square edge.
+    size: 0.02
+
+    # The length of the charuco inner marker.
+    inner_size: 0.015
+
 
 # Miscellaneous configuration
 
 # If your calibration problem is not fully constrained you should anchored one of the sensors.
 # This makes it immovable during the optimization.
 # This is typically referred to as gauge freedom.
-{%- if c.anchored_sensor is not none %}
-anchored_sensor: "{{ c.anchored_sensor }}"
-{%- else %}
 anchored_sensor:
-{%- endif %}
 
 # Max time delta (in milliseconds) between sensor data messages when creating a collection.
-max_duration_between_msgs: {{ c.max_duration_between_msgs }}
+max_duration_between_msgs: 1000
 
 # This parameter is automatically filled by ATOM, please only change if you know what you are doing
-package_name: "{{ c.package_name }}"
+package_name: "eye_in_world_system_calibration"
 
 # Automatically filled. Do not touch unless you know what you are doing.
-version: {{ c.version }}
+version: 2.0
