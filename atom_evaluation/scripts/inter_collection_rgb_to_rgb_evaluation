@@ -256,9 +256,11 @@ if __name__ == "__main__":
             gray_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2GRAY)
 
             # Get pattern number of corners
-            nx = mixed_dataset['calibration_config']['calibration_pattern']['dimension']['x']
-            ny = mixed_dataset['calibration_config']['calibration_pattern']['dimension']['y']
-            square = mixed_dataset['calibration_config']['calibration_pattern']['size']
+            # TODO only works for first pattern
+            first_pattern_key = list(mixed_dataset['calibration_config']['calibration_patterns'].keys())[0]
+            nx = mixed_dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']
+            ny = mixed_dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y']
+            square = mixed_dataset['calibration_config']['calibration_patterns'][first_pattern_key]['size']
 
             # Get corners and idxs for the source sensor
             corners_s = np.ones((3, len(collection_source['labels'][args['sensor_source']]['idxs'])), dtype=float)

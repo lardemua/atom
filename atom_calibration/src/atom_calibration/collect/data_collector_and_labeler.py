@@ -410,9 +410,9 @@ class DataCollectorAndLabeler:
 
         if self.collect_ground_truth:  # collect ground truth transforms
             pass
-            transforms_ground_truth = self.getTra/home/nel/distrobox/ubuntu20/pr2_ws/src/tams/tams_pr2/tams_pr2_atom_calibration/calibration/config.yml.oldnsforms(self.abstract_transforms,
-                                                                                                                                                                   self.tf_buffer_ground_truth,
-                                                                                                                                                                   average_time)  # use average time of sensor msgs
+            transforms_ground_truth = self.getTransforms(self.abstract_transforms,
+                                                         self.tf_buffer_ground_truth,
+                                                         average_time)  # use average time of sensor msgs
 
         printRosTime(average_time, "Collected transforms for time ")
 

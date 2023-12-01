@@ -196,7 +196,9 @@ if __name__ == "__main__":
     robot_poses_vec = robot_poses_vec.to_numpy()  # convert from pandas dataframe to np array
 
     # Create a pattern detector for usage later
-    pattern = D['calibration_config']['calibration_pattern']
+    # TODO only works for first pattern
+    first_pattern_key = list(config['calibration_patterns'].keys())[0]
+    pattern = D['calibration_config']['calibration_patterns'][first_pattern_key]
     if pattern['pattern_type'] == 'chessboard':
         pattern_detector = patterns.ChessboardPattern(pattern['dimension'], pattern['size'])
     elif pattern['pattern_type'] == 'charuco':
@@ -312,7 +314,8 @@ if __name__ == "__main__":
                 labels = {'detected': False, 'idxs': []}
 
             collections[image_idx]['data'][sensor_name] = data
-            collections[image_idx]['labels'][sensor_name] = labels
+            # TODO only works for first pattern
+            collections[image_idx]['labels'][first_pattern_key][sensor_name] = labels
             print('Created collection ' + image_idx + ' of ' + str(len(image_paths) - 1))
 
     D['collections'] = collections

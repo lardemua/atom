@@ -30,8 +30,10 @@ def cvStereoCalibrate(objp):
 
     for collection_key, collection in dataset['collections'].items():
         # Find the chess board corners
-        n_points = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-                   int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+        # TODO only works for first pattern
+        first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+        n_points = int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']) * \
+                   int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
         image_points_r = np.ones((n_points, 2), np.float32)
         image_points_l = np.ones((n_points, 2), np.float32)
 
@@ -122,8 +124,10 @@ if __name__ == '__main__':
 
     # Remove partial detections (OpenCV does not support them)
     collections_to_delete = []
-    number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-                        int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+    number_of_corners = int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']) * \
+                        int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor_key not in [left_camera, right_camera]:
@@ -155,10 +159,10 @@ if __name__ == '__main__':
     print ('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 
     # Pattern configs
-    nx = dataset['calibration_config']['calibration_pattern']['dimension']['x']
-    ny = dataset['calibration_config']['calibration_pattern']['dimension']['y']
-    square = dataset['calibration_config']['calibration_pattern']['size']
-    inner_square = dataset['calibration_config']['calibration_pattern']['inner_size']
+    nx = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']
+    ny = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y']
+    square = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['size']
+    inner_square = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['inner_size']
     objp = np.zeros((nx * ny, 3), np.float32)
     objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 

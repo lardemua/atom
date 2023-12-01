@@ -269,7 +269,7 @@ class InteractiveFirstGuess(object):
         self.menu.apply(self.server, marker.name)
 
     def checkAdditionalTfs(self):
-        return not self.config['additional_tfs'] == ''
+        return self.config['additional_tfs'] is not None
 
 if __name__ == "__main__":
     # Parse command line arguments

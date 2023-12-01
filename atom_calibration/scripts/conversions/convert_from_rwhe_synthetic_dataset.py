@@ -84,7 +84,9 @@ if __name__ == "__main__":
     print("\n")
 
     # Create a pattern detector for usage later
-    pattern = D['calibration_config']['calibration_pattern']
+    # TODO only works for first pattern
+    first_pattern_key = list(config['calibration_patterns'].keys())[0]
+    pattern = D['calibration_config']['calibration_patterns'][first_pattern_key]
     if pattern['pattern_type'] == 'chessboard':
         pattern_detector = patterns.ChessboardPattern(pattern['dimension'], pattern['size'])
     elif pattern['pattern_type'] == 'charuco':
@@ -164,7 +166,8 @@ if __name__ == "__main__":
 
         collection = {'data': {}, 'labels': {}, 'transforms': {}}
         collection['data'][args['sensor']] = data
-        collection['labels'][args['sensor']] = labels
+        # TODO only works for first pattern
+        collection['labels'][first_pattern_key][args['sensor']] = labels
         collection['transforms'] = transforms
 
         collection_idx = str(image_idx)
