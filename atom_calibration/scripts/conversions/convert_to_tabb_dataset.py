@@ -78,15 +78,17 @@ if __name__ == "__main__":
 
     # Create the calibration_object.txt file
     filename = args['dataset_out'] + '/' + 'calibration_object.txt'
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset_sensors['calibration_config']['calibration_patterns'].keys())[0]
     with open(filename, 'w') as file_handle:
         file_handle.write('chess_mm_height ' + str(
-            float(dataset_sensors['calibration_config']['calibration_pattern']['size']) * 1000) + '\n')
+            float(dataset_sensors['calibration_config']['calibration_patterns'][first_pattern_key]['size']) * 1000) + '\n')
         file_handle.write(
-            'chess_mm_width ' + str(float(dataset_sensors['calibration_config']['calibration_pattern']['size']) * 1000) + '\n')
+            'chess_mm_width ' + str(float(dataset_sensors['calibration_config']['calibration_patterns'][first_pattern_key]['size']) * 1000) + '\n')
         file_handle.write(
-            'chess_height ' + str(dataset_sensors['calibration_config']['calibration_pattern']['dimension']['y']) + '\n')
+            'chess_height ' + str(dataset_sensors['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y']) + '\n')
         file_handle.write(
-            'chess_width ' + str(dataset_sensors['calibration_config']['calibration_pattern']['dimension']['x']) + '\n')
+            'chess_width ' + str(dataset_sensors['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']) + '\n')
         file_handle.close()
         print('Created  ' + filename + '.')
 

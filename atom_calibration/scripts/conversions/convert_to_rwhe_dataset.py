@@ -80,8 +80,10 @@ if __name__ == "__main__":
 
     # Create the squaresize.txt file
     squaresize_txt = args['dataset_out'] + '/' + 'squaresize.txt'
+    # TODO only works for first pattern
+    first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
     with open(squaresize_txt, 'w') as file_handle:
-        file_handle.write(str(dataset['calibration_config']['calibration_pattern']['size']) + 'm')
+        file_handle.write(str(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['size']) + 'm')
         print('Created  ' + squaresize_txt + '.')
 
     # Create the RobotPosesVec.txt and RobotPoses.mat files
