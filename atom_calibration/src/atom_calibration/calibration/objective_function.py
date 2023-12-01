@@ -234,10 +234,10 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
 
 
 @Cache(args_to_ignore=['_dataset'])
-def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
+def getPointsInDepthSensorAsNPArray(_collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
     # getting image and detected idxs
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    idxs = _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key][_label_key]
 
     # getting information from camera info
     pinhole_camera_model = PinholeCameraModel()
@@ -278,10 +278,10 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _sensor_key, _label_key, _d
     return points
 
 
-def getPointsInDepthSensorAsNPArrayNonCached(_collection_key, _sensor_key, _label_key, _dataset):
+def getPointsInDepthSensorAsNPArrayNonCached(_collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
     # getting image and detected idxs
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    idxs = _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key][_label_key]
 
     # getting information from camera info
     pinhole_camera_model = PinholeCameraModel()
@@ -646,7 +646,8 @@ def objectiveFunction(data):
                     now_i = datetime.now()
 
                     # print("Depth calibration under construction")
-                    points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                    points_in_sensor = getPointsInDepthSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs', dataset)
 
                     # print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
                     now = datetime.now()
@@ -679,8 +680,8 @@ def objectiveFunction(data):
                     # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                     # ------------------------------------------------------------------------------------------------
                     now = datetime.now()
-                    detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(collection_key, sensor_key,
-                                                                                      'idxs_limit_points', dataset)
+                    detected_limit_points_in_sensor = getPointsInDepthSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
                     # print(detected_limit_points_in_sensor.shape)
                     # print('POINTS IN SENSOR LIMITS ' + sensor_key + ' took ' + str(
                     #     (datetime.now() - now).total_seconds()) + ' secs.')
