@@ -410,15 +410,15 @@ class DataCollectorAndLabeler:
 
         if self.collect_ground_truth:  # collect ground truth transforms
             pass
-            transforms_ground_truth = self.getTra/home/nel/distrobox/ubuntu20/pr2_ws/src/tams/tams_pr2/tams_pr2_atom_calibration/calibration/config.yml.oldnsforms(self.abstract_transforms,
+            transforms_ground_truth = self.getTransforms(self.abstract_transforms,
                                                          self.tf_buffer_ground_truth,
                                                          average_time)  # use average time of sensor msgs
 
         printRosTime(average_time, "Collected transforms for time ")
 
         # Create joint dict
+        joints_dict = {}
         if self.config['joints'] is not None:
-            joints_dict = {}
             for config_joint_key, config_joint in self.config['joints'].items():
 
                 # TODO should we set the position bias
