@@ -578,16 +578,16 @@ def filterCollectionsFromDataset(dataset, args):
                   ' because these are incomplete. If you want to use them set the use_incomplete_collections flag.')
 
     if args['remove_partial_detections']:
-        number_of_corners = int(dataset['calibration_config']['calibration_pattern']['dimension']['x']) * \
-            int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
-        # Deleting labels in which not all corners are found:
-        for collection_key, collection in dataset['collections'].items():
-            for sensor_key, sensor_label in dataset['sensors'].items():
-                if sensor_label['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
-                    if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
-                        print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                              collection_key + ', sensor ' + sensor_key)
-                        collection['labels'][sensor_key]['detected'] = False
+        for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+            number_of_corners = int(pattern['dimension']['x']) * int(pattern['dimension']['y'])
+            # Deleting labels in which not all corners are found:
+            for collection_key, collection in dataset['collections'].items():
+                for sensor_key, sensor_label in dataset['sensors'].items():
+                    if sensor_label['modality'] == 'rgb' and collection['labels'][pattern_key][sensor_key]['detected']:
+                        if not len(collection['labels'][pattern_key][sensor_key]['idxs']) == number_of_corners:
+                            print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                                  collection_key + ' and pattern ' + Fore.BLUE + pattern_key + Style.RESET_ALL + ', sensor ' + sensor_key)
+                            collection['labels'][pattern_key][sensor_key]['detected'] = False
 
     # It may occur that some collections do not have any detection in a camera sensor (because all detections were
     # partial and have been removed, or just because no detection existed). Since we need at lease one camera sensor

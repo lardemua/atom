@@ -58,7 +58,7 @@ def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
     return getCvImageFromDictionary(dictionary)
 
 
-def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
+def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset, graphics):
     markers = MarkerArray()
 
     # Draw pattern frame lines_sampled (top, left, right, bottom)
@@ -72,10 +72,10 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
                                     b=graphics['collections'][collection_key]['color'][2], a=1.0))
 
     pts = []
-    pts.extend(dataset['patterns']['frame']['lines_sampled']['left'])
-    pts.extend(dataset['patterns']['frame']['lines_sampled']['right'])
-    pts.extend(dataset['patterns']['frame']['lines_sampled']['top'])
-    pts.extend(dataset['patterns']['frame']['lines_sampled']['bottom'])
+    pts.extend(dataset['patterns'][pattern_key]['frame']['lines_sampled']['left'])
+    pts.extend(dataset['patterns'][pattern_key]['frame']['lines_sampled']['right'])
+    pts.extend(dataset['patterns'][pattern_key]['frame']['lines_sampled']['top'])
+    pts.extend(dataset['patterns'][pattern_key]['frame']['lines_sampled']['bottom'])
     for pt in pts:
         marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
 
@@ -91,11 +91,11 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
                                     g=graphics['collections'][collection_key]['color'][1],
                                     b=graphics['collections'][collection_key]['color'][2], a=1.0))
 
-    for idx_corner, pt in enumerate(dataset['patterns']['corners']):
+    for idx_corner, pt in enumerate(dataset['patterns'][pattern_key]['corners']):
         marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
-        marker.colors.append(ColorRGBA(r=graphics['pattern']['colormap'][idx_corner, 0],
-                                       g=graphics['pattern']['colormap'][idx_corner, 1],
-                                       b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
+        marker.colors.append(ColorRGBA(r=graphics['patterns'][pattern_key]['colormap'][idx_corner, 0],
+                                       g=graphics['patterns'][pattern_key]['colormap'][idx_corner, 1],
+                                       b=graphics['patterns'][pattern_key]['colormap'][idx_corner, 2], a=1))
 
     markers.markers.append(marker)
 
@@ -117,24 +117,19 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
     #
     # markers.markers.append(marker)
 
-    # Draw the mesh, if one is provided
-    if not dataset['calibration_config']['calibration_pattern']['mesh_file'] == "":
-        # rgba = graphics['collections'][collection_key]['color']
-        # color = ColorRGBA(r=rgba[0], g=rgba[1], b=rgba[2], a=1))
+    # Draw the mesh
+    m = Marker(header=Header(frame_id=frame_id, stamp=now),
+               ns=str(collection_key) + '-mesh', id=0, frame_locked=True,
+               type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
+               pose=Pose(position=Point(x=0, y=0, z=0),
+                         orientation=Quaternion(x=0, y=0, z=0, w=1)),
+               scale=Vector3(x=1.0, y=1.0, z=1.0),
+               color=ColorRGBA(r=1, g=1, b=1, a=1))
 
-        # print('Got the mesh it is: ' + dataset['calibration_config']['calibration_pattern']['mesh_file'])
-        m = Marker(header=Header(frame_id=frame_id, stamp=now),
-                   ns=str(collection_key) + '-mesh', id=0, frame_locked=True,
-                   type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
-                   pose=Pose(position=Point(x=0, y=0, z=0),
-                             orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                   scale=Vector3(x=1.0, y=1.0, z=1.0),
-                   color=ColorRGBA(r=1, g=1, b=1, a=1))
-
-        mesh_file, _, _ = uriReader(dataset['calibration_config']['calibration_pattern']['mesh_file'])
-        m.mesh_resource = 'file://' + mesh_file  # mesh_resource needs uri format
-        m.mesh_use_embedded_materials = True
-        markers.markers.append(m)
+    mesh_file, _, _ = uriReader(dataset['calibration_config']['calibration_patterns'][pattern_key]['mesh_file'])
+    m.mesh_resource = 'file://' + mesh_file  # mesh_resource needs uri format
+    m.mesh_use_embedded_materials = True
+    markers.markers.append(m)
 
     return markers  # return markers
 
@@ -146,7 +141,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     """
 
     # Create a python dictionary that will contain all the visualization related information
-    graphics = {'collections': {}, 'pattern': {}, 'ros': {'sensors': {}}, 'args': args}
+    graphics = {'collections': {}, 'patterns': {}, 'ros': {'sensors': {}, 'patterns': {}}, 'args': args}
 
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
@@ -189,9 +184,10 @@ def setupVisualization(dataset, args, selected_collection_key):
     #                     transform['fixed'] = False
 
     # Create colormaps to be used for coloring the elements. Each collection contains a color, each sensor likewise.
-    pattern = dataset['calibration_config']['calibration_pattern']
-    graphics['pattern']['colormap'] = cm.gist_rainbow(
-        np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
+    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+        graphics['patterns'][pattern_key] = {}
+        graphics['patterns'][pattern_key]['colormap'] = cm.gist_rainbow(
+            np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
     # graphics['collections']['colormap'] = cm.tab20b(np.linspace(0, 1, len(dataset['collections'].keys())))
     graphics['collections']['colormap'] = cm.Pastel2(np.linspace(0, 1, len(dataset['collections'].keys())))
@@ -208,11 +204,17 @@ def setupVisualization(dataset, args, selected_collection_key):
     # ----------------------------------------------------------------------------------------
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
-            # print(sensor_key)
-            if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
+
+            # check if sensor detects and of the patterns
+            flag_detects_at_leas_one_pattern = False
+            for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                if collection['labels'][pattern_key][sensor_key]['detected']:
+                    flag_detects_at_leas_one_pattern = True
+
+            # If in this collection, sensor did not detect any of the patterns, continue
+            if flag_detects_at_leas_one_pattern == False:
                 continue
 
-            # if sensor['msg_type'] == 'Image':
             if sensor['modality'] in ['rgb', 'depth']:
                 graphics['collections'][collection_key][str(sensor_key)] = {}
 
@@ -235,10 +237,17 @@ def setupVisualization(dataset, args, selected_collection_key):
     for sensor_key, sensor in dataset['sensors'].items():
         markers = MarkerArray()
         for collection_key, collection in dataset['collections'].items():
-            if not collection['labels'][str(sensor_key)]['detected']:  # not detected by sensor in collection
+
+            # check if sensor detects and of the patterns
+            flag_detects_at_leas_one_pattern = False
+            for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                if collection['labels'][pattern_key][sensor_key]['detected']:
+                    flag_detects_at_leas_one_pattern = True
+
+            # If in this collection, sensor did not detect any of the patterns, continue
+            if flag_detects_at_leas_one_pattern == False:
                 continue
 
-            # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
             if sensor['modality'] == 'lidar2d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
                 marker = Marker(header=Header(frame_id=frame_id, stamp=now),
@@ -477,24 +486,26 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -----------------------------------------------------------------------------------------------------
     # -------- Publish the pattern data
     # -----------------------------------------------------------------------------------------------------
-    if dataset['calibration_config']['calibration_pattern']['fixed'] and \
-            dataset['calibration_config']['calibration_pattern']['parent_link'] == dataset['calibration_config']['world_link']:
-        # Draw single pattern for selected collection key
-        frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
-                                prefix='c' + selected_collection_key)
-        ns = str(selected_collection_key)
-        markers = createPatternMarkers(frame_id, ns, selected_collection_key, now, dataset, graphics)
-    else:  # Draw a pattern per collection
-        markers = MarkerArray()
-        for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
-            frame_id = generateName(dataset['calibration_config']['calibration_pattern']['link'],
-                                    prefix='c' + collection_key)
-            ns = str(collection_key)
-            collection_markers = createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics)
-            markers.markers.extend(collection_markers.markers)
+
+    markers = MarkerArray()
+    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+        if pattern['fixed'] and pattern['parent_link'] == dataset['calibration_config']['world_link']:
+            # Draw single pattern for selected collection key
+            frame_id = generateName(pattern['link'], prefix='c' + selected_collection_key)
+            ns = selected_collection_key + '_' + pattern_key
+            markers = createPatternMarkers(frame_id, ns, selected_collection_key, pattern_key, now, dataset, graphics)
+        else:  # Draw a pattern per collection
+            for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
+                frame_id = generateName(pattern['link'],
+                                        prefix='c' + collection_key)
+                ns = collection_key + '_' + pattern_key
+                collection_markers = createPatternMarkers(
+                    frame_id, ns, collection_key, pattern_key, now, dataset, graphics)
+                markers.markers.extend(collection_markers.markers)
 
     graphics['ros']['MarkersPattern'] = markers
-    graphics['ros']['PubPattern'] = rospy.Publisher('~patterns', MarkerArray, queue_size=0, latch=True)
+    graphics['ros']['PubPattern'] = rospy.Publisher(
+        '~patterns', MarkerArray, queue_size=0, latch=True)
 
     # Create LaserBeams Publisher -----------------------------------------------------------
     # This one is recomputed every time in the objective function, so just create the generic properties.
@@ -502,8 +513,17 @@ def setupVisualization(dataset, args, selected_collection_key):
 
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
-            if not collection['labels'][sensor_key]['detected']:  # chess not detected by sensor in collection
+
+            # check if sensor detects and of the patterns
+            flag_detects_at_leas_one_pattern = False
+            for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                if collection['labels'][pattern_key][sensor_key]['detected']:
+                    flag_detects_at_leas_one_pattern = True
+
+            # If in this collection, sensor did not detect any of the patterns, continue
+            if flag_detects_at_leas_one_pattern == False:
                 continue
+
             # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
             if sensor['modality'] == 'lidar2d' or sensor['modality'] == 'lidar3d':
                 frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
@@ -648,40 +668,50 @@ def visualizationFunction(models):
     # ---------------------------------------------------------------------------------
     # Publish 2D labels
     # ---------------------------------------------------------------------------------
-    for collection_key, collection in collections.items():
-        for sensor_key, sensor in sensors.items():
-            if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
-                continue
+    if args['show_images']:
 
-            # if sensor['msg_type'] == 'Image':
-            if sensor['modality'] == 'rgb':
-                if args['show_images']:
+        for collection_key, collection in collections.items():
+            for sensor_key, sensor in sensors.items():
+
+                # check if sensor detects and of the patterns
+                flag_detects_at_leas_one_pattern = False
+                for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                    if collection['labels'][pattern_key][sensor_key]['detected']:
+                        flag_detects_at_leas_one_pattern = True
+
+                # If in this collection, sensor did not detect any of the patterns, continue
+                if flag_detects_at_leas_one_pattern == False:
+                    continue
+
+                if sensor['modality'] == 'rgb':
                     image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
                     width = collection['data'][sensor_key]['width']
                     height = collection['data'][sensor_key]['height']
                     diagonal = math.sqrt(width ** 2 + height ** 2)
-                    cm = graphics['pattern']['colormap']
 
-                    # Draw projected points (as dots)
-                    for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
-                        x = int(round(point['x']))
-                        y = int(round(point['y']))
-                        color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
+                    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
-                    # Draw ground truth points (as squares)
-                    for idx, point in enumerate(collection['labels'][sensor_key]['idxs']):
-                        x = int(round(point['x']))
-                        y = int(round(point['y']))
-                        color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
+                        cm = graphics['patterns'][pattern_key]['colormap']
+                        # Draw projected points (as dots)
+                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs_projected']):
+                            x = int(round(point['x']))
+                            y = int(round(point['y']))
+                            color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                            cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
 
-                    # Draw initial projected points (as crosses)
-                    for idx, point in enumerate(collection['labels'][sensor_key]['idxs_initial']):
-                        x = int(round(point['x']))
-                        y = int(round(point['y']))
-                        color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                        drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
+                        # Draw ground truth points (as squares)
+                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs']):
+                            x = int(round(point['x']))
+                            y = int(round(point['y']))
+                            color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                            drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
+
+                        # Draw initial projected points (as crosses)
+                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs_initial']):
+                            x = int(round(point['x']))
+                            y = int(round(point['y']))
+                            color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
+                            drawCross2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=1)
 
                     msg = CvBridge().cv2_to_imgmsg(image, "bgr8")
 
@@ -695,53 +725,55 @@ def visualizationFunction(models):
                     graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
 
-            elif sensor['modality'] == 'depth':
-                # Shortcut variables
-                collection = collections[collection_key]
-                image = copy.deepcopy(
-                    getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=10000.0))
+                elif sensor['modality'] == 'depth':
+                    # Shortcut variables
+                    collection = collections[collection_key]
+                    image = copy.deepcopy(
+                        getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=10000.0))
 
-                width = collection['data'][sensor_key]['width']
-                height = collection['data'][sensor_key]['height']
-                diagonal = math.sqrt(width ** 2 + height ** 2)/2
-                # print(width, height)
-                idxs = dataset['collections'][collection_key]['labels'][sensor_key]['idxs']
-                idxs_limit_points = dataset['collections'][collection_key]['labels'][sensor_key][
-                    'idxs_limit_points']
-                gui_image = np.zeros((height, width, 3), dtype=np.uint8)
-                max_value = 5
-                gui_image[:, :, 0] = image / max_value * 255
-                gui_image[:, :, 1] = image / max_value * 255
-                gui_image[:, :, 2] = image / max_value * 255
+                    width = collection['data'][sensor_key]['width']
+                    height = collection['data'][sensor_key]['height']
+                    diagonal = math.sqrt(width ** 2 + height ** 2)/2
+                    # print(width, height)
 
-                for idx in idxs:
-                    # convert from linear idx to x_pix and y_pix indices.
-                    y = int(idx / width)
-                    x = int(idx - y * width)
-                    cv2.line(gui_image, (x, y), (x, y), (0, 200, 255), 3)
-                for idx in idxs_limit_points:
-                    # convert from linear idx to x_pix and y_pix indices.
-                    y = int(idx / width)
-                    x = int(idx - y * width)
-                    drawSquare2D(gui_image, x, y, int(8E-3 * diagonal), (255, 0, 200), thickness=1)
+                    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
-                # Draw projected points (as dots)
-                for idx, point in enumerate(collection['labels'][sensor_key]['idxs_projected']):
-                    x = int(round(point['x']))
-                    y = int(round(point['y']))
-                    if x < width - 1 and y < height - 1:
-                        cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
+                        idxs = collection['labels'][pattern_key][sensor_key]['idxs']
+                        idxs_limit_points = collection['labels'][pattern_key][sensor_key]['idxs_limit_points']
+                        gui_image = np.zeros((height, width, 3), dtype=np.uint8)
+                        max_value = 5
+                        gui_image[:, :, 0] = image / max_value * 255
+                        gui_image[:, :, 1] = image / max_value * 255
+                        gui_image[:, :, 2] = image / max_value * 255
 
-                msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
+                        for idx in idxs:
+                            # convert from linear idx to x_pix and y_pix indices.
+                            y = int(idx / width)
+                            x = int(idx - y * width)
+                            cv2.line(gui_image, (x, y), (x, y), (0, 200, 255), 3)
+                        for idx in idxs_limit_points:
+                            # convert from linear idx to x_pix and y_pix indices.
+                            y = int(idx / width)
+                            x = int(idx - y * width)
+                            drawSquare2D(gui_image, x, y, int(8E-3 * diagonal), (255, 0, 200), thickness=1)
 
-                msg.header.frame_id = 'c' + collection_key + '_' + sensor['parent']
-                graphics['collections'][collection_key][sensor_key]['publisher'].publish(msg)
+                        # Draw projected points (as dots)
+                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs_projected']):
+                            x = int(round(point['x']))
+                            y = int(round(point['y']))
+                            if x < width - 1 and y < height - 1:
+                                cv2.line(gui_image, (x, y), (x, y), (0, 0, 255), 3)
 
-                # Publish camera info message
-                camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                                                      sensor['camera_info'])
-                camera_info_msg.header.frame_id = msg.header.frame_id
-                graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
-                    camera_info_msg)
+                    msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
+
+                    msg.header.frame_id = 'c' + collection_key + '_' + sensor['parent']
+                    graphics['collections'][collection_key][sensor_key]['publisher'].publish(msg)
+
+                    # Publish camera info message
+                    camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
+                                                                                          sensor['camera_info'])
+                    camera_info_msg.header.frame_id = msg.header.frame_id
+                    graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
+                        camera_info_msg)
 
     graphics['ros']['Rate'].sleep()

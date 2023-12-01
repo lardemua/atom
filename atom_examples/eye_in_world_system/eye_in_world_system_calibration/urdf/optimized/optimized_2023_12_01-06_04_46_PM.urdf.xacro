@@ -554,7 +554,7 @@
     <child link="tripod_center_support"/>
   </joint>
   <joint name="rgb_world_joint" type="fixed">
-    <origin xyz="0.0003300090003504614 4.439385181527105e-05 0.030099526391556698" rpy="3.093026387927702e-05 0.0010320398016228462 -0.001026892068148891"/>
+    <origin xyz="0.00032316276161688153 3.707019936029511e-05 0.030085099653141767" rpy="2.1525438196533998e-05 0.0010171673075574283 -0.0010211457189341906"/>
     <parent link="tripod_center_support"/>
     <child link="rgb_world_link"/>
   </joint>
