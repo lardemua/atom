@@ -406,7 +406,6 @@ def objectiveFunction(data):
     # print('Computing cost ...')
     r = {}  # Initialize residuals dictionary.
     for collection_key, collection in dataset['collections'].items():
-
         for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
             for sensor_key, sensor in dataset['sensors'].items():  # iterate all sensors
 
