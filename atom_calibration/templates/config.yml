@@ -48,25 +48,21 @@ sensors:
   # Each sensor definition must have the following properties:
   #       link:
   #           The frame of the sensor's data (i.e. the header.frame_id).
-  #
   #       parent_link:
   #           The parent link of the transformation (i.e. link) to be calibrated.
-  #
   #       child_link:
   #           This is the transformation (i.e. link) that we be optimized.
-  #
   #       topic_name:
   #           Name of the ROS topic that contains the data produced by this sensor.
   #           If you are calibrating an camera, you should use the raw image produced by the
   #           sensors. Additionally, it the topic is an image it will automatically use the
   #           respective `camera_info` topic.
-  # OPTIONAL
-  #       throttle:
-  #           Set throttle: desired_frame_rate. If you don't use throttle, collapse the throttle option
   #       modality:
   #           Set this to identify the sensor modality. If this flag is not set, the sensor will be
   #           identified by the message type.
   #           Current options: lidar3d, rgb, depth, lidar2d
+  #       throttle:
+  #           Set throttle: desired_frame_rate. If you don't use throttle, do not enter a value, i.e. "throttle: "
   #
   # If you are using an image compressed topic such as:
   #   /world_camera/rgb/image_raw/compressed
@@ -79,8 +75,8 @@ sensors:
     parent_link: "end_effector"
     child_link: "hand_camera"
     topic_name: "/hand_camera/image_raw"
-    throttle: 10
     modality: "rgb"
+    throttle: 10
 
 
   # You can have more than one sensor:
@@ -89,8 +85,8 @@ sensors:
     parent_link: "end_effector"
     child_link: "another_camera"
     topic_name: "/another_camera/image_raw"
-    throttle: 10
     modality: "rgb"
+    throttle:
 
 # ATOM will calibrate the extrinsic parameters of your links.
 # In this section you should discriminate the additional transformations that will be part of the calibrations.
@@ -157,8 +153,8 @@ calibration_patterns:
     dictionary: "DICT_5X5_100"
 
     # Mesh file (collada.dae or stl) for showing pattern on rviz. URI or regular path.
-    # See: description_file
-    mesh_file: "package://atom_calibration/meshes/charuco_5x5.dae"
+    # See: atom_worlds/patterns/models for options.
+    mesh_file: "package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"
 
     # The border width from the edge corner to the pattern physical edge.
     # Used for 3D sensors and lidars.

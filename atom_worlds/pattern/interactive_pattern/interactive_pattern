@@ -25,8 +25,7 @@ current_pose = Pose()
 current_pose.orientation.w = 1
 
 rospy.init_node("interactive_pattern")
-set_state_service = rospy.ServiceProxy(
-    '/gazebo/set_model_state', SetModelState)
+set_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 pub = rospy.Publisher('~pattern', MarkerArray, queue_size=0, latch=True)
 
 # local packages
@@ -36,10 +35,9 @@ menu_handler = MenuHandler()
 
 def makeBox(msg, pose, args):
 
-    marker = Marker(header=Header(frame_id="world", stamp=rospy.Time.now()),
+    marker = Marker(header=Header(frame_id="wrist_3_link", stamp=rospy.Time.now()),
                     ns=args['model_name'], id=0, frame_locked=False,
-                    type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(
-                        0),
+                    type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
                     pose=pose,
                     scale=Vector3(x=1.0, y=1.0, z=1.0),
                     color=ColorRGBA(r=1, g=1, b=1, a=1))
@@ -58,7 +56,7 @@ def makeBoxControl(msg, pose, args):
 
 def make6DofMarker(fixed, interaction_mode, pose, show_6dof=False, args=None):
     int_marker = InteractiveMarker()
-    int_marker.header.frame_id = "world"
+    int_marker.header.frame_id = "wrist_3_link"
     int_marker.pose = pose
     int_marker.scale = 0.3
 
@@ -183,12 +181,12 @@ def processFeedback(feedback, args):
         req.model_state.pose.orientation.y = pose.orientation.y
         req.model_state.pose.orientation.z = pose.orientation.z
         req.model_state.pose.orientation.w = pose.orientation.w
-        req.model_state.reference_frame = 'world'
+        req.model_state.reference_frame = 'wrist_3_link'
 
         global set_state_service
         result = set_state_service(req.model_state)
 
-        # print(result)
+        print(result)
         # state_msg = ModelState()
         # state_msg.model_name = model_name
         # state_msg.pose.position.x = pose.position.x
@@ -198,7 +196,7 @@ def processFeedback(feedback, args):
         # state_msg.pose.orientation.y = pose.orientation.y
         # state_msg.pose.orientation.z = pose.orientation.z
         # state_msg.pose.orientation.w = pose.orientation.w
-        # state_msg.reference_frame = 'world'
+        # state_msg.reference_frame = 'wrist_3_link'
 
         # print('set_model_state to:\n' + str(state_msg))
         # try:
@@ -208,7 +206,7 @@ def processFeedback(feedback, args):
         #     print("Service call failed: ")
 
         # markers = MarkerArray()
-        # m = Marker(header=Header(frame_id="world", stamp=rospy.Time.now()),
+        # m = Marker(header=Header(frame_id="wrist_3_link", stamp=rospy.Time.now()),
         #            ns=model_name, id=0, frame_locked=False,
         #            type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
         #            pose=Pose(position=Point(x=pose.position.x, y=pose.position.y, z=pose.position.z),
@@ -234,7 +232,7 @@ def processFeedback(feedback, args):
         #
         # t = geometry_msgs.msg.TransformStamped()
         # t.header.stamp = rospy.Time.now()
-        # t.header.frame_id = "world"
+        # t.header.frame_id = "wrist_3_link"
         # t.child_frame_id = frame_id
         #
         # t.transform.translation.x = pose.position.x
@@ -258,10 +256,9 @@ def callbackTimer(event):
 if __name__ == "__main__":
 
     # Parse command line arguments
-    ap = argparse.ArgumentParser(
-        description='Interactive manipulation of pattern pattern in rviz.')
+    ap = argparse.ArgumentParser(description='Interactive manipulation of pattern pattern in rviz.')
     ap.add_argument("-ms", "--mesh_resource", type=str, help='full path to calibration pattern dae.',
-                    default='package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae')
+                    default='package://atom_wrist_3_links/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae')
     ap.add_argument("-mn", "--model_name", type=str, help='Model name in gazebo.',
                     default='charuco_800x600_5x5_100')
 
@@ -279,7 +276,7 @@ if __name__ == "__main__":
         '/gazebo/get_model_state', GetModelState)
     # while True:
     print('Getting model state for model name ' + args["model_name"])
-    pose_gazebo = get_model_state_service(args['model_name'], 'world')
+    pose_gazebo = get_model_state_service(args['model_name'], 'wrist_3_link')
     print(pose_gazebo)
     # time.sleep(2)
 

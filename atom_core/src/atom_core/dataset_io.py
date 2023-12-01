@@ -21,7 +21,7 @@ from cv_bridge import CvBridge
 from colorama import Fore, Style
 from rospy_message_converter import message_converter
 from std_msgs.msg import Header
-from atom_core.system import uriReader
+from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)

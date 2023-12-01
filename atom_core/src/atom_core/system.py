@@ -2,6 +2,7 @@
 # Standard imports
 import os
 
+
 import re
 import subprocess
 
@@ -67,29 +68,3 @@ def expandToLaunchEnv(path):
         path += tail
 
     return path
-
-
-def uriReader(resource):
-    uri = urlparse(str(resource))
-    # print(uri)
-    if uri.scheme == 'package':  # using a ros package uri
-        # print('This is a ros package')
-        rospack = rospkg.RosPack()
-        assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
-        fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
-        relpath = '$(find {}){}'.format(uri.netloc, uri.path)
-
-    elif uri.scheme == 'file':  # local file
-        # print('This is a local file')
-        fullpath = resolvePath(uri.netloc + uri.path)
-        relpath = fullpath
-    elif uri.scheme == '':  # no scheme, assume local file
-        # print('This is a local file')
-
-        fullpath = resolvePath(uri.path)
-        relpath = expandToLaunchEnv(uri.path)
-    else:
-        raise ValueError('Cannot parse resource "' + resource + '", unknown scheme "' + uri.scheme + '".')
-
-    assert (os.path.exists(fullpath)), Fore.RED + fullpath + ' does not exist.'
-    return fullpath, os.path.basename(fullpath), relpath

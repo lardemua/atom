@@ -23,13 +23,14 @@ from atom_calibration.calibration.objective_function import *
 from atom_calibration.collect.label_messages import *
 from atom_calibration.dataset_playback.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
 from atom_core.cache import Cache
-from atom_core.system import execute, uriReader
+from atom_core.system import execute,
 from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (genCollectionPrefix, getCvImageFromDictionary, getCvImageFromDictionaryDepth,
                                   getPointCloudMessageFromDictionary)
 from atom_core.drawing import drawCross2D, drawSquare2D
 from atom_core.naming import generateLabeledTopic, generateName
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
+from atom_core.config_io import uriReader
 from colorama import Fore, Style
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Point, Pose, Quaternion, Transform, TransformStamped, Vector3

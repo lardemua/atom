@@ -78,7 +78,7 @@ if __name__ == "__main__":
     execute('chmod +x ' + configure_file)  # make file executable
 
     # Add template config.yml
-    config_yaml_file = package_path + '/calibration/config.yaml'
+    config_yaml_file = package_path + '/calibration/config.yml'
     template = env.get_template('config.yml')
     with open(config_yaml_file, 'wb') as f:
         output = template.render(c={'date': dt_string,
