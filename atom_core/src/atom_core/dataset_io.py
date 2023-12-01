@@ -487,17 +487,16 @@ def checkIfAtLeastOneLabeledCollectionPerSensor(dataset):
     :param dataset: the dataset
     """
 
-    for sensor_key in dataset['sensors']:
-        one_detection = False
-        for collection_key in dataset['collections'].keys():
-            if dataset['collections'][collection_key]['labels'][sensor_key]['detected']:
-                one_detection = True
+    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+        for sensor_key in dataset['sensors']:
+            one_detection = False
+            for collection_key in dataset['collections'].keys():
+                if dataset['collections'][collection_key]['labels'][pattern_key][sensor_key]['detected']:
+                    one_detection = True
 
-        if one_detection is False:
-            raise ValueError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL +
-                             ' does not have a single collection in which the pattern is labeled.' +
-                             Fore.RED + ' Cannot calibrate this sensor.' + Style.RESET_ALL +
-                             ' Add more collections or remove this sensor.')
+            if one_detection is False:
+                raise ValueError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' does not have a single collection in which the pattern ' +
+                                 pattern_key + ' is labeled.' + Fore.RED + ' Cannot calibrate this sensor.' + Style.RESET_ALL + ' Add more collections or remove this sensor.')
 
 
 def filterSensorsFromDataset(dataset, args):
@@ -565,10 +564,11 @@ def filterCollectionsFromDataset(dataset, args):
         deleted = []
         # Deleting collections where the pattern is not found by all sensors:
         for collection_key, collection in dataset['collections'].items():
-            for sensor_key, sensor in dataset['sensors'].items():
-                if not collection['labels'][sensor_key]['detected']:
-                    deleted.append(collection_key)
-                    break
+            for pattern_key, pattern in collection['labels'].items():
+                for sensor_label_key, sensor_label in pattern.items():
+                    if not sensor_label['detected']:  # one pattern not detected is enough for this to be an incomplete collection
+                        deleted.append(collection_key)
+                        break
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
@@ -582,8 +582,8 @@ def filterCollectionsFromDataset(dataset, args):
             int(dataset['calibration_config']['calibration_pattern']['dimension']['y'])
         # Deleting labels in which not all corners are found:
         for collection_key, collection in dataset['collections'].items():
-            for sensor_key, sensor in dataset['sensors'].items():
-                if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
+            for sensor_key, sensor_label in dataset['sensors'].items():
+                if sensor_label['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                     if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                         print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
                               collection_key + ', sensor ' + sensor_key)
@@ -593,22 +593,24 @@ def filterCollectionsFromDataset(dataset, args):
     # partial and have been removed, or just because no detection existed). Since we need at lease one camera sensor
     # detection of the pattern in a collection in order initialize the parameters (check calibrate line 133),
     # we will remove collections which do not have at least one detection by a camera.
-    flag_have_cameras = False  # do this only if we have at least one camera in the sensor list.
-    for sensor_key, sensor in dataset['sensors'].items():
-        if sensor['msg_type'] == 'Image':
-            flag_have_cameras = True
+    flag_has_rgb_modality = False  # do this only if we have at least one camera in the sensor list.
+    for sensor_key, sensor_label in dataset['sensors'].items():
+        if sensor_label['modality'] == 'rgb':
+            flag_has_rgb_modality = True
             break
 
-    if flag_have_cameras:
+    if flag_has_rgb_modality:
         deleted = []
+
         for collection_key, collection in dataset['collections'].items():
-            flag_have_at_least_one_camera_detection = False
-            for sensor_key, sensor in dataset['sensors'].items():
-                if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
-                    flag_have_at_least_one_camera_detection = True
+            flag_collection_has_at_least_one_rgb_detection = False
+            for pattern_key, pattern in collection['labels'].items():
+                for sensor_label_key, sensor_label in pattern.items():
+                    modality = dataset['sensors'][sensor_label_key]['modality']
+                    if modality == 'rgb' and sensor_label['detected']:
+                        flag_collection_has_at_least_one_rgb_detection = True
 
-            if not flag_have_at_least_one_camera_detection:  # delete collection without detection by cameras.
-
+            if not flag_collection_has_at_least_one_rgb_detection:  # delete collection without detection by cameras.
                 deleted.append(collection_key)
 
         for collection_key in deleted:
@@ -687,7 +689,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_rot = args['noisy_initial_guess'][1]
 
     # add noise to additional tfs for simulation
-    if not dataset['calibration_config']['additional_tfs'] == "":
+    if dataset['calibration_config']['additional_tfs'] is not None:
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']

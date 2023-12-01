@@ -151,8 +151,6 @@ def main():
 
     dataset = filterAdditionalTfsFromDataset(dataset, args)
 
-
-
     # print(dataset["patterns"])
     # exit(0)
 
@@ -218,23 +216,23 @@ def main():
 
     # Add parameters related to the sensors
     # remove anchored sensor if flagged as such.
+
+    anchored_transform_key = ""  # not transform is anchored
     if args['ignore_anchored_sensor']:
-        dataset["calibration_config"]["anchored_sensor"] = ''
+        dataset["calibration_config"]["anchored_sensor"] = None
 
-    anchored_sensor = dataset["calibration_config"]["anchored_sensor"]
-    print("Anchored sensor is " + Fore.GREEN + dataset["calibration_config"]["anchored_sensor"]
-          + Style.RESET_ALL)
+    if dataset["calibration_config"]["anchored_sensor"] is not None:
 
-    # Verify is anchored sensor is on dataset
-    verifyAnchoredSensor(anchored_sensor, dataset['sensors'])
+        print("Anchored sensor is " + Fore.GREEN + dataset["calibration_config"]["anchored_sensor"]
+              + Style.RESET_ALL)
 
-    if anchored_sensor in dataset["sensors"]:
-        anchored_parent = dataset["sensors"][anchored_sensor]["calibration_parent"]
-        anchored_child = dataset["sensors"][anchored_sensor]["calibration_child"]
-        anchored_transform_key = generateKey(
-            anchored_parent, anchored_child)
-    else:
-        anchored_transform_key = ""  # not transform is anchored
+        # Verify is anchored sensor is on dataset
+        verifyAnchoredSensor(dataset["calibration_config"]["anchored_sensor"], dataset['sensors'])
+
+        if dataset["calibration_config"]["anchored_sensor"] in dataset["sensors"]:
+            anchored_parent = dataset["sensors"][dataset["calibration_config"]["anchored_sensor"]]["calibration_parent"]
+            anchored_child = dataset["sensors"][dataset["calibration_config"]["anchored_sensor"]]["calibration_child"]
+            anchored_transform_key = generateKey(anchored_parent, anchored_child)
     # TODO If we want an anchored sensor we should search (and fix) all the transforms in its chain that do are
     #  being optimized
 
@@ -248,10 +246,9 @@ def main():
             sensor["calibration_parent"], sensor["calibration_child"])
         transforms_set.add(transform_key)
 
-    if not dataset['calibration_config']['additional_tfs'] == '':
+    if dataset['calibration_config']['additional_tfs'] is not None:
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
-            transform_key = generateKey(
-                additional_tf['parent_link'], additional_tf['child_link'])
+            transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
             transforms_set.add(transform_key)
 
     # push six parameters for each transform to be optimized.
@@ -290,74 +287,78 @@ def main():
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add pattern(s) parameters
     # ---------------------------------------
+
     # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
     if not args['anchor_patterns']:
-        # Pattern not fixed -----------------
-        if not dataset["calibration_config"]["calibration_pattern"]["fixed"]:
-            # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
-            # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
-            # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
-            # publishing ROS, but we must add this to the parameter name.
-            parent = dataset["calibration_config"]["calibration_pattern"]["parent_link"]
-            child = dataset["calibration_config"]["calibration_pattern"]["link"]
-            transform_key = generateKey(parent, child)
 
-            # iterate all collections
-            for collection_key, collection in dataset["collections"].items():
+        for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+
+            # Pattern not fixed -----------------
+            if not pattern["fixed"]:
+                # If pattern is not fixed there will be a transform for each collection. To tackle this reference link called
+                # according to what is on the dataset['calibration_config']['calibration_pattern']['link'] is prepended with
+                # a "c<collection_name>" appendix. This is done automatically for the collection['transforms'] when
+                # publishing ROS, but we must add this to the parameter name.
+                parent = pattern["parent_link"]
+                child = pattern["link"]
+                transform_key = generateKey(parent, child)
+
+                # iterate all collections
+                for collection_key, collection in dataset["collections"].items():
+
+                    # Set transform using the initial estimate of the transformations.
+                    initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][collection_key]
+                    if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
+                            not child == initial_estimate["child"]:
+                        atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL + "at collection " +
+                                  collection_key + '. You must run the calibration without this collection. Check how to use the csf flag.')
+
+                    collection["transforms"][transform_key] = {"parent": parent, "child": child,
+                                                               "trans": initial_estimate["trans"],
+                                                               "quat": initial_estimate["quat"]}
+
+                    # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
+                    #   a) The Getter will pick up transform from the collection collection_key;
+                    #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the corresponding collection.
+                    opt.pushParamVector(group_name="c" + collection_key + "_" + transform_key,
+                                        data_key="dataset", suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+                                        getter=partial(getterTransform, transform_key=transform_key,
+                                                       collection_name=collection_key),
+                                        setter=partial(setterTransform, transform_key=transform_key,
+                                                       collection_name=collection_key))
+
+            else:  # fixed pattern ----------------------------------------------------------------------------------
+                # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
+                # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
+                # 'link']
+                parent = pattern["parent_link"]
+                child = pattern["link"]
+                transform_key = generateKey(parent, child)
 
                 # Set transform using the initial estimate of the transformations.
-                initial_estimate = dataset["patterns"]["transforms_initial"][collection_key]
-                if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
-                        not child == initial_estimate["child"]:
-                    atomError("Cannot set initial estimate for pattern at collection " + collection_key +
-                              '. You must run the calibration without this collection. Check how to use the csf flag.')
+                initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][selected_collection_key]
+                if not initial_estimate["detected"] or not parent == initial_estimate["parent"] \
+                        or not child == initial_estimate["child"]:
+                    raise ValueError("Cannot set initial estimate for pattern " + Fore.BLUE +
+                                     pattern_key + Style.RESET_ALL + " at collection " + selected_collection_key)
 
-                collection["transforms"][transform_key] = {"parent": parent, "child": child,
-                                                           "trans": initial_estimate["trans"],
-                                                           "quat": initial_estimate["quat"]}
+                # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
+                for collection_key, collection in dataset["collections"].items():
+                    collection["transforms"][transform_key] = {"parent": parent, "child": child,
+                                                               "trans": initial_estimate["trans"],
+                                                               "quat": initial_estimate["quat"]}
 
                 # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
-                #   a) The Getter will pick up transform from the collection collection_key;
-                #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the corresponding collection.
-                opt.pushParamVector(group_name="c" + collection_key + "_" + transform_key,
-                                    data_key="dataset", suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+                #   a) The Getter will pick up the collection from one selected collection (it does not really matter which,
+                #       since they are replicas);
+                #   b) The Setter will received a transform value and copy that to all collection replicas, to ensure they
+                #       all have the same value. This is done by setting  "collection_name=None".
+                opt.pushParamVector(group_name=transform_key, data_key="dataset",
                                     getter=partial(getterTransform, transform_key=transform_key,
-                                                   collection_name=collection_key),
+                                                   collection_name=selected_collection_key),
                                     setter=partial(setterTransform, transform_key=transform_key,
-                                                   collection_name=collection_key))
-
-        else:  # fixed pattern ----------------------------------------------------------------------------------
-            # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
-            # reference link called according to what is on the dataset['calibration_config']['calibration_pattern'][
-            # 'link']
-            parent = dataset["calibration_config"]["calibration_pattern"]["parent_link"]
-            child = dataset["calibration_config"]["calibration_pattern"]["link"]
-            transform_key = generateKey(parent, child)
-
-            # Set transform using the initial estimate of the transformations.
-            initial_estimate = dataset["patterns"]["transforms_initial"][selected_collection_key]
-            if not initial_estimate["detected"] or not parent == initial_estimate["parent"] \
-                    or not child == initial_estimate["child"]:
-                raise ValueError(
-                    "Cannot set initial estimate for pattern at collection " + collection_key)
-
-            # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
-            for collection_key, collection in dataset["collections"].items():
-                collection["transforms"][transform_key] = {"parent": parent, "child": child,
-                                                           "trans": initial_estimate["trans"],
-                                                           "quat": initial_estimate["quat"]}
-
-            # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
-            #   a) The Getter will pick up the collection from one selected collection (it does not really matter which,
-            #       since they are replicas);
-            #   b) The Setter will received a transform value and copy that to all collection replicas, to ensure they
-            #       all have the same value. This is done by setting  "collection_name=None".
-            opt.pushParamVector(group_name=transform_key, data_key="dataset",
-                                getter=partial(getterTransform, transform_key=transform_key,
-                                               collection_name=selected_collection_key),
-                                setter=partial(
-                                    setterTransform, transform_key=transform_key, collection_name=None),
-                                suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"])
+                                                   collection_name=None),
+                                    suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add joint(s) parameters
@@ -381,9 +382,9 @@ def main():
 
                 group_name = 'joint-' + joint_key + '-' + param_key
                 getter = partial(getterJointParam, joint_key=joint_key,
-                                param_key=param_key, collection_name=selected_collection_key)
+                                 param_key=param_key, collection_name=selected_collection_key)
                 setter = partial(setterJointParam, joint_key=joint_key,
-                                param_key=param_key, collection_name=None)
+                                 param_key=param_key, collection_name=None)
                 opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter, setter=setter)
 
     opt.printParameters()
@@ -410,118 +411,116 @@ def main():
     print("RNG Seed: " + str(seed))
 
     for collection_key, collection in dataset["collections"].items():
-        for sensor_key, sensor in dataset["sensors"].items():
-            # if pattern not detected by sensor in collection
-            if not collection["labels"][sensor_key]["detected"]:
-                continue
+        for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+            for sensor_key, sensor in dataset["sensors"].items():
+                # if pattern not detected by sensor in collection
+                if not collection["labels"][pattern_key][sensor_key]["detected"]:
+                    continue
 
-            # Sensor related parameters
-            # sensors_transform_key = generateKey(
-            #     sensor["calibration_parent"], sensor["calibration_child"])
-            # params = opt.getParamsContainingPattern(sensors_transform_key)
+                # Sensor related parameters
+                # sensors_transform_key = generateKey(
+                #     sensor["calibration_parent"], sensor["calibration_child"])
+                # params = opt.getParamsContainingPattern(sensors_transform_key)
 
-            # Issue #543: Create the list of transformations that influence this residual by analyzing the transformation chain.
-            params = []
-            # because not sure if we can use a set for some of the next steps
-            transforms_list = list(transforms_set)
-            for transform_in_chain in sensor['chain']:
-                transform_key = generateKey(
-                    transform_in_chain["parent"], transform_in_chain["child"])
-                if transform_key in transforms_list:
-                    params.extend(
-                        opt.getParamsContainingPattern(transform_key))
+                # Issue #543: Create the list of transformations that influence this residual by analyzing the transformation chain.
+                params = []
+                # because not sure if we can use a set for some of the next steps
+                transforms_list = list(transforms_set)
+                for transform_in_chain in sensor['chain']:
+                    transform_key = generateKey(
+                        transform_in_chain["parent"], transform_in_chain["child"])
+                    if transform_key in transforms_list:
+                        params.extend(
+                            opt.getParamsContainingPattern(transform_key))
 
-            # Intrinsics parameters
-            if sensor["modality"] == "rgb" and args["optimize_intrinsics"]:
+                # Intrinsics parameters
+                if sensor["modality"] == "rgb" and args["optimize_intrinsics"]:
+                    params.extend(opt.getParamsContainingPattern(
+                        sensor_key + "_intrinsics"))
+
+                # Pattern related parameters
+                if pattern["fixed"]:
+                    pattern_transform_key = generateKey(pattern["parent_link"],
+                                                        pattern["link"])
+                else:
+                    pattern_transform_key = "c" + collection_key + "_" + generateKey(pattern["parent_link"],
+                                                                                     pattern["link"])
+
                 params.extend(opt.getParamsContainingPattern(
-                    sensor_key + "_intrinsics"))
+                    pattern_transform_key))  # pattern related params
 
-            # Pattern related parameters
-            if dataset["calibration_config"]["calibration_pattern"]["fixed"]:
-                pattern_transform_key = generateKey(
-                    dataset["calibration_config"]["calibration_pattern"]["parent_link"],
-                    dataset["calibration_config"]["calibration_pattern"]["link"])
-            else:
-                pattern_transform_key = "c" + collection_key + "_" + generateKey(
-                    dataset["calibration_config"]["calibration_pattern"]["parent_link"],
-                    dataset["calibration_config"]["calibration_pattern"]["link"])
+                # TODO Append joint params. Right now appending all joint params. Should be clever and know, from residual, which will affect
+                if not dataset['calibration_config']['joints'] == "":
+                    for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
+                        pattern = 'joint-' + joint_key
+                        params.extend(opt.getParamsContainingPattern(pattern))  # pattern related params
 
-            params.extend(opt.getParamsContainingPattern(
-                pattern_transform_key))  # pattern related params
+                if sensor["modality"] == "rgb":
+                    # Compute step as a function of residual sampling factor
+                    # using all pattern corners
+                    for idx in collection["labels"][pattern_key][sensor_key]["idxs"]:
+                        rname = "c" + str(collection_key) + "_" + "p_" + pattern_key + "_" +\
+                            str(sensor_key) + "_corner" + str(idx["id"])
+                        opt.pushResidual(name=rname, params=params)
 
-            # TODO Append joint params. Right now appending all joint params. Should be clever and know, from residual, which will affect
-            if not dataset['calibration_config']['joints'] == "":
-                for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
-                    pattern = 'joint-' + joint_key
-                    params.extend(opt.getParamsContainingPattern(pattern))  # pattern related params
+                elif sensor["modality"] == "lidar3d":
 
+                    # Laser beam error (or orthogonal error) ==
 
-            if sensor["modality"] == "rgb":
-                # Compute step as a function of residual sampling factor
-                # using all pattern corners
-                for idx in collection["labels"][sensor_key]["idxs"]:
-                    rname = "c" + str(collection_key) + "_" + \
-                        str(sensor_key) + "_corner" + str(idx["id"])
-                    opt.pushResidual(name=rname, params=params)
+                    # The number of residuals for this error can be huge.
+                    # Therefore, we do a random sample to reduce the number.
+                    # The sample percentage has the interval [0.1, 1.0]
+                    population = range(
+                        0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
+                    nsamples = int(
+                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
+                    samples = rng.sample(population, nsamples)
 
-            elif sensor["modality"] == "lidar3d":
+                    # Save it to be used in the objective function.
+                    collection["labels"][sensor_key]["samples"] = samples
 
-                # Laser beam error (or orthogonal error) ==
+                    for idx in samples:
+                        opt.pushResidual(
+                            name="c" + collection_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
 
-                # The number of residuals for this error can be huge.
-                # Therefore, we do a random sample to reduce the number.
-                # The sample percentage has the interval [0.1, 1.0]
-                population = range(
-                    0, len(collection["labels"][sensor_key]["idxs"]))
-                nsamples = int(
-                    max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
-                samples = rng.sample(population, nsamples)
+                    # Extrema (limits) displacement error
+                    for idx in range(0, len(collection["labels"][sensor_key]["idxs_limit_points"])):
+                        opt.pushResidual(
+                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
 
-                # Save it to be used in the objective function.
-                collection["labels"][sensor_key]["samples"] = samples
+                elif sensor["modality"] == "depth":
 
-                for idx in samples:
-                    opt.pushResidual(
-                        name="c" + collection_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
+                    population = range(
+                        0, len(collection["labels"][sensor_key]["idxs"]))
+                    nsamples = int(
+                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
+                    samples = rng.sample(population, nsamples)
 
-                # Extrema (limits) displacement error
-                for idx in range(0, len(collection["labels"][sensor_key]["idxs_limit_points"])):
-                    opt.pushResidual(
-                        name="c" + collection_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
+                    # Save it to be used in the objective function.
+                    collection["labels"][sensor_key]["samples"] = samples
 
-            elif sensor["modality"] == "depth":
+                    for idx in samples:
+                        opt.pushResidual(
+                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
 
-                population = range(
-                    0, len(collection["labels"][sensor_key]["idxs"]))
-                nsamples = int(
-                    max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
-                samples = rng.sample(population, nsamples)
+                    population_longitudinal = range(
+                        0, len(collection["labels"][sensor_key]["idxs_limit_points"]))
+                    nsamples_longitudinal = int(
+                        max(0.1, min(args["sample_longitudinal_residuals"], 1.0)) * len(population_longitudinal))
+                    samples_longitudinal = rng.sample(
+                        population_longitudinal, nsamples_longitudinal)
 
-                # Save it to be used in the objective function.
-                collection["labels"][sensor_key]["samples"] = samples
+                    # Save it to be used in the objective function.
+                    collection["labels"][sensor_key]["samples_longitudinal"] = samples_longitudinal
 
-                for idx in samples:
-                    opt.pushResidual(
-                        name="c" + collection_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
+                    # Extrema displacement error
+                    for idx in samples_longitudinal:
+                        opt.pushResidual(
+                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
 
-                population_longitudinal = range(
-                    0, len(collection["labels"][sensor_key]["idxs_limit_points"]))
-                nsamples_longitudinal = int(
-                    max(0.1, min(args["sample_longitudinal_residuals"], 1.0)) * len(population_longitudinal))
-                samples_longitudinal = rng.sample(
-                    population_longitudinal, nsamples_longitudinal)
-
-                # Save it to be used in the objective function.
-                collection["labels"][sensor_key]["samples_longitudinal"] = samples_longitudinal
-
-                # Extrema displacement error
-                for idx in samples_longitudinal:
-                    opt.pushResidual(
-                        name="c" + collection_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
-
-            # print(opt.residuals.keys())
-            # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
-            #       ' affected by parameters:\n' + str(params))
+                # print(opt.residuals.keys())
+                # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
+                #       ' affected by parameters:\n' + str(params))
 
     opt.printParameters()
     opt.printResiduals()
