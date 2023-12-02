@@ -130,6 +130,7 @@ if __name__ == "__main__":
 
     print('Loading bagfile ' + bag_file + ' ... ', end='')
     bag = rosbag.Bag(bag_file)
+    atomPrintOK()
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
     bag_topics = bag_info[1]
@@ -138,7 +139,6 @@ if __name__ == "__main__":
     for topic, msg, stamp in bag.read_messages():
         bag_initial_stamp = stamp
         break
-    atomPrintOK()
 
     # --------------------------------------------------------------------------
     # Setup the description file
