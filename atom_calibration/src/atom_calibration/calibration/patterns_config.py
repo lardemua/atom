@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Reads a set of data and labels from a group of sensors in a json file and calibrates the poses of these sensors.
 """

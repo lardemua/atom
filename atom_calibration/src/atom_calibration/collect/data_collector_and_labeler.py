@@ -7,7 +7,8 @@ import getpass
 from datetime import datetime, date
 
 import numpy as np
-from atom_core.utilities import atomError
+from atom_calibration.collect.patterns import estimatePatternPosesForCollection, initializePatternsDict
+from atom_core.utilities import atomError, atomPrintOK
 import tf2_ros
 import yaml
 import atom_core.config_io
@@ -141,6 +142,11 @@ class DataCollectorAndLabeler:
         self.subscriber_joint_states = rospy.Subscriber(
             '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1)
 
+        # Configure patterns (compute corners positions, etc.)
+        print('Initializing patterns ... ', end='')
+        self.patterns_dict = initializePatternsDict(self.config)
+        atomPrintOK()
+
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
         print('Number of sensors: ' + str(len(self.config['sensors'])))
@@ -203,14 +209,13 @@ class DataCollectorAndLabeler:
             print('Config for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
-
         for pattern_key, pattern in self.config['calibration_patterns'].items():
             sensor_labeler = {}
             sensor_idx = 0
             for sensor_key, value in self.config['sensors'].items():
                 sensor_labeler[sensor_key] = InteractiveDataLabeler(self.server, self.menu_handler, self.sensors[sensor_key],
-                                                                        args['marker_size'], pattern,
-                                                                        color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data[sensor_key])
+                                                                    args['marker_size'], pattern,
+                                                                    color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data[sensor_key])
                 sensor_idx += 1
             self.sensor_labelers[pattern_key] = sensor_labeler
         print('Labelers for pattern ' + pattern_key + ' are complete.')
@@ -230,13 +235,12 @@ class DataCollectorAndLabeler:
                 data_dict['topic'] = value['topic_name']
                 data_dict['msg_type'] = msg_type
 
-
             for pattern_key, pattern in self.config['calibration_patterns'].items():
                 sensor_labeler = {}
                 for description, value in self.config['additional_data'].items():
                     sensor_labeler[description] = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
-                                                            args['marker_size'], pattern,
-                                                            label_data=False)
+                                                                         args['marker_size'], pattern,
+                                                                         label_data=False)
 
                 self.sensor_labelers[pattern_key].update(sensor_labeler)
                 self.additional_data[pattern_key] = data_dict
@@ -500,7 +504,7 @@ class DataCollectorAndLabeler:
         for sensor_key, sensor in self.sensors.items():
             # Update the data dictionary for this data stamp
             # Since the message should be the same for each pattern, save for the last pattern
-            msg = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].msg) 
+            msg = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].msg)
             all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
         for description, sensor in self.additional_data.items():
@@ -514,15 +518,25 @@ class DataCollectorAndLabeler:
         if self.collect_ground_truth:
             collection_dict['transforms_ground_truth'] = transforms_ground_truth
 
-        collection_key = str(self.data_stamp).zfill(3)
+        collection_key = str(self.data_stamp).zfill(3)  # collection names are 000, 001, etc
         self.collections[collection_key] = collection_dict
         self.data_stamp += 1
 
+        # Update pattern dict with transform_initial of this collection
+        dataset = {'_metadata': self.metadata,
+                   'calibration_config': self.config,
+                   'collections': self.collections,
+                   'additional_sensor_data': self.additional_data,
+                   'sensors': self.sensors,
+                   'patterns': self.patterns_dict}
+
+        print('Estimating pattern poses for collection ...', end='')
+        estimatePatternPosesForCollection(dataset, collection_key)
+        atomPrintOK()
+
         # Save to json file.
-        D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data, 'collections': self.collections,
-             'calibration_config': self.config, '_metadata': self.metadata}
         output_file = self.output_folder + '/dataset.json'
-        atom_core.dataset_io.saveResultsJSON(output_file, D)
+        atom_core.dataset_io.saveResultsJSON(output_file, dataset)
         self.unlockAllLabelers()
 
     def getAllAbstractTransforms(self):
