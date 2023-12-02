@@ -171,7 +171,11 @@ The evaluation be conducted with a second dataset which has not been seen during
 
 ##### Download and verification of Test dataset
 
-Download the [rgb_depth_system_example_test_dataset](https://drive.google.com/file/d/1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_test_dataset**.
+Download the [test](https://drive.google.com/file/d/1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-/view?usp=sharing) dataset and decompress to **$ATOM_DATASETS/rgb_depth_system/test**:
+
+    export DP=$ATOM_DATASETS/rgb_depth_system && wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-' -O $DP/test.zip && unzip $DP/test.zip && rm $DP/test.zip
+
+
 We recommend that the labels in test dataset are also verified using the dataset playback:
 
     roslaunch rgb_depth_system_calibration dataset_playback.launch
