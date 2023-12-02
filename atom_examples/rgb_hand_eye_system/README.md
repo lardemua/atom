@@ -138,12 +138,13 @@ Collection 0 (top view)| ![](docs/5.png) |  ![](docs/6.png)
 
 ## Evaluation
 
-test bag file
-https://drive.google.com/file/d/1iKMODjk2m37TBB3tWavJfZlKlwx-WHWz/view?usp=sharing
+From the [test](https://drive.google.com/file/d/1iKMODjk2m37TBB3tWavJfZlKlwx-WHWz/view?usp=sharing) bagfile, we collected a test dataset.
 
 The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
 
-Download the [test](https://drive.google.com/file/d/16Vi6xo6kt2wEeFBWbTGrZdOL8DmT5ztt/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_hand_eye_system/test**.
+Download the [test](https://drive.google.com/file/d/16Vi6xo6kt2wEeFBWbTGrZdOL8DmT5ztt/view?usp=sharing) dataset, and decompress to **$ATOM_DATASETS/rgb_hand_eye_system/test**.
+
+Then, carry out the evaluation using:
 
     roslaunch rgb_hand_eye_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_hand_eye_system/test/dataset.json train_json:=$ATOM_DATASETS/rgb_hand_eye_system/train/atom_calibration.json
 
