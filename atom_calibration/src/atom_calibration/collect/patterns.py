@@ -316,8 +316,6 @@ def estimatePatternPosesForCollection(dataset, collection_key):
 
         for sensor_key, sensor in dataset['sensors'].items():
 
-            print('sensor_key = ' + sensor_key)
-
             # if pattern not detected by sensor in collection
             if not collection['labels'][pattern_key][sensor_key]['detected']:
                 continue
