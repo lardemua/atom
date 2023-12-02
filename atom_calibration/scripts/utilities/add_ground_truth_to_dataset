@@ -12,7 +12,6 @@ from functools import partial
 import numpy as np
 
 # Atom imports
-import atom_calibration.calibration.patterns_config as patterns
 from colorama import Fore, Style
 from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,

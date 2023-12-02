@@ -25,7 +25,6 @@ from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
 from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
-from atom_calibration.calibration.patterns_config import createPatternLabels
 
 # own packages
 

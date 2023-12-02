@@ -15,7 +15,6 @@ from functools import partial
 import numpy as np
 
 # Atom imports
-import atom_calibration.calibration.patterns_config as patterns
 from colorama import Fore, Style
 from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
@@ -134,26 +133,9 @@ def main():
     # --- Filter some collections, sensors, joints and additional tfs from the dataset
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
-    # dataset_filtered_collections = copy.deepcopy(dataset)
-
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
-
-    # For now we MUST have a camera to estimate the initial parameters
-    # related to the pattern pose (we use solve PNP for a camera).
-    # TODO: Solve this strange dependency.
-    # Verify if the dataset contains at least one RGB sensor
-    # if any(sensor.get('modality') == 'rgb' for sensor in dataset.get('sensors', {}).values()):
-    #     dataset["patterns"] = patterns.createPatternLabels(args, dataset)
-    # else:
-    #     dataset["patterns"] = patterns.createPatternLabels(args, dataset_filtered_collections)
-
     dataset = filterJointsFromDataset(dataset, args)
-
     dataset = filterAdditionalTfsFromDataset(dataset, args)
-
-    # print(dataset["patterns"])
-    # exit(0)
-
     print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
           " sensors and " + str(len(dataset["collections"].keys())) + " collections.")
 

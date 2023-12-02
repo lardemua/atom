@@ -23,7 +23,6 @@ from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
 from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveResultsJSON)
-from atom_calibration.calibration.patterns_config import createPatternLabels
 
 # own packages
 
@@ -90,12 +89,11 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
         elif key_char == 'd':  # Prints help.
 
             if depth_mode['mode'] == 'detect':
-                depth_mode['mode'] = 'delete'   
+                depth_mode['mode'] = 'delete'
             else:
-                depth_mode['mode'] = 'detect'   
+                depth_mode['mode'] = 'detect'
 
             print('Changed depth mode to ' + depth_mode['mode'])
-
 
     except AttributeError:
         if key == keyboard.Key.right:  # Save and move to collection + 1.
@@ -106,7 +104,7 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
                 saveResultsJSON(output_file, dataset, freeze_dataset=True)
 
                 # More intuitive if detect mode is True at the beginning of a new collection
-                depth_mode['mode'] = 'detect'   
+                depth_mode['mode'] = 'detect'
                 print('Changed depth mode to ' + depth_mode['mode'])
             else:
                 print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
@@ -118,7 +116,7 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
                 saveResultsJSON(output_file, dataset, freeze_dataset=True)
 
                 # More intuitive if detect mode is True at the beginning of a new collection
-                depth_mode['mode'] = 'detect'   
+                depth_mode['mode'] = 'detect'
                 print('Changed depth mode to ' + depth_mode['mode'])
 
             else:
@@ -138,7 +136,6 @@ def main():
                     help="Overwrites the data_corrected.json without asking for permission.", action='store_true')
     ap.add_argument("-rnb", "--remove_nan_border",
                     help="Option for the labeling of depth images. It Will run a detection of nan values in the image, searching for the actual area of the image which is used. Then, border detection will use this estimated area...", action='store_true')
-
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]

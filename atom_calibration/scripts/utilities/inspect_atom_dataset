@@ -10,7 +10,6 @@ import sys
 import argparse
 
 # Atom imports
-import atom_calibration.calibration.patterns_config as patterns
 from colorama import Fore, Style
 from atom_core.dataset_io import loadResultsJSON, filterSensorsFromDataset
 
@@ -51,13 +50,6 @@ def main():
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
-    # dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
-
-    # Create the chessboard dataset must be called before deleting the sensors to cope with the possibility of
-    # setting up an optimization without cameras. For now we MUST have a camera to estimate the initial parameters
-    # related to the pattern pose (we use solve PNP for a camera).
-    dataset['patterns'] = patterns.createPatternLabels(args, dataset)  # TODO: Solve this strange dependency.
-
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
 
     print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' + str(
