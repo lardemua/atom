@@ -505,8 +505,8 @@ def main():
                 # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
                 #       ' affected by parameters:\n' + str(params))
 
-    opt.printParameters()
-    opt.printResiduals()
+    # opt.printParameters()
+    # opt.printResiduals()
     # exit(0)
 
     # ---------------------------------------
@@ -558,7 +558,7 @@ def main():
     errorReport(dataset=dataset, residuals=objectiveFunction(
         opt.data_models), normalizer=normalizer, args=args)
 
-    opt.printParameters()
+    # opt.printParameters()
     print('\n\n')
     # ---------------------------------------
     # --- Save updated JSON file
