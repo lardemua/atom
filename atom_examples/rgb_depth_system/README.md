@@ -93,9 +93,12 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [rgb_depth_system_example_train_dataset](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing), which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing) dataset, which contains 4 collections, as shown bellow.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset**.
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_depth_system/train**:
+
+    export DP=$ATOM_DATASETS/rgb_depth_system && wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh' -O $DP/train.zip && unzip $DP/train.zip && rm $DP/train.zip
+
 
 Collection |           rgb             |           depth
 :----------------:|:-------------------------:|:-------------------------:
@@ -117,7 +120,7 @@ Since the **rgb_depth_system** contains a depth sensor, we are going to run data
 
 and then the dataset playback node:
 
-    rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset.json -ow
+    rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rgb_depth_system/train/dataset.json -ow
 
 We can use the left / right arrow keys to move between collections.
 
@@ -125,9 +128,7 @@ Move on to ***collection 004**. You should see this:
 
 ![dataset_playback](docs/dataset_playback.png)
 
-in the 3D you can see small grey points. These are the points that were labeled as belonging to the pattern.
-Then you can see larger cubes, which are points annotated as belonging to the boundary of the pattern.
-The latter are clearly incorrectly labeled as we can see in the 3D window that some of these points are on the floor, instead of being on the boundary of the pattern.
+in the 3D you can see small grey points. These are the points that were labeled as belonging to the pattern. Then you can see larger cubes, which are points annotated as belonging to the boundary of the pattern. The latter are clearly incorrectly labeled as we can see in the 3D window that some of these points are on the floor, instead of being on the boundary of the pattern.
 
 To fix this we will use the manual correction of depth data. Draw a polygon around the pattern as shown in the image below:
 
@@ -150,7 +151,7 @@ To calibrate, first setup visualization with:
 
 Then carry out the actual calibration, remembering to point to the corrected dataset and to add some noise (nig):
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_depth_system/rgb_depth_system_example_train_dataset/dataset_corrected.json -v -rv -nig 0.1 0.1
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_depth_system/train/dataset_corrected.json -v -rv -nig 0.1 0.1
 
 Which starts the calibration with these errors:
 

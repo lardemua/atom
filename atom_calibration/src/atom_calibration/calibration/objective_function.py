@@ -176,11 +176,11 @@ def getPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key, _dat
 
 
 @Cache(args_to_ignore=['_dataset'])
-def getDepthPointsInPatternAsNPArray(_collection_key, _sensor_key, _dataset):
+def getDepthPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key, _dataset):
     pts_in_pattern_list = []  # collect the points
 
-    for type in _dataset['patterns']['frame']['lines_sampled'].keys():
-        for point in _dataset['patterns']['frame']['lines_sampled'][type]:
+    for type in _dataset['patterns'][_pattern_key]['frame']['lines_sampled'].keys():
+        for point in _dataset['patterns'][_pattern_key]['frame']['lines_sampled'][type]:
             pts_in_pattern_list.append(point)
 
     return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
@@ -492,10 +492,10 @@ def objectiveFunction(data):
 
                     # --- Residuals: longitudinal error for extrema
                     pts = []
-                    pts.extend(patterns['frame']['lines_sampled']['left'])
-                    pts.extend(patterns['frame']['lines_sampled']['right'])
-                    pts.extend(patterns['frame']['lines_sampled']['top'])
-                    pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['left'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
                     pts_canvas_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
 
                     # pts_canvas_in_chessboard = patterns['limit_points'][0:2, :].transpose()
@@ -650,7 +650,7 @@ def objectiveFunction(data):
 
                     # print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
                     now = datetime.now()
-                    from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                    from_frame = dataset['calibration_config']['calibration_patterns'][pattern_key]['link']
                     to_frame = sensor['parent']
                     depth_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
 
@@ -664,7 +664,7 @@ def objectiveFunction(data):
                     now = datetime.now()
 
                     rname_pre = 'c' + collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_oe_'
-                    for idx in collection['labels'][sensor_key]['samples']:
+                    for idx in collection['labels'][pattern_key][sensor_key]['samples']:
                         # Compute the residual: absolute of z component
                         rname = rname_pre + str(idx)
                         r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['depth']
@@ -686,17 +686,17 @@ def objectiveFunction(data):
                     #     (datetime.now() - now).total_seconds()) + ' secs.')
                     now = datetime.now()
 
-                    from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                    from_frame = dataset['calibration_config']['calibration_patterns'][pattern_key]['link']
                     to_frame = sensor['parent']
                     pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
                     detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
                     # print('POINTS IN PATTERN LIMITS ' + sensor_key + ' took ' + str(
                     #     (datetime.now() - now).total_seconds()) + ' secs.')
                     pts = []
-                    pts.extend(patterns['frame']['lines_sampled']['left'])
-                    pts.extend(patterns['frame']['lines_sampled']['right'])
-                    pts.extend(patterns['frame']['lines_sampled']['top'])
-                    pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['left'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
                     ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                     float)
                     now = datetime.now()
@@ -710,7 +710,7 @@ def objectiveFunction(data):
                     #     print(detected_limit_points_in_pattern[0:2, :].shape)
                     #     print(len(collection['labels'][sensor_key]['samples_longitudinal']))
 
-                    for idx in collection['labels'][sensor_key]['samples_longitudinal']:
+                    for idx in collection['labels'][pattern_key][sensor_key]['samples_longitudinal']:
                         m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
                         rname = 'c' + collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_ld_' + str(idx)
                         r[rname] = np.min(distance.cdist(m_pt,
@@ -725,14 +725,14 @@ def objectiveFunction(data):
                     # print(r.keys())
 
                     # PROJECT CORNER POINTS TO SENSOR
-                    pts_in_pattern = getDepthPointsInPatternAsNPArray(collection_key, sensor_key, dataset)
+                    pts_in_pattern = getDepthPointsInPatternAsNPArray(collection_key, pattern_key, sensor_key, dataset)
 
                     w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
                     K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
                     D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
 
                     from_frame = sensor['parent']
-                    to_frame = dataset['calibration_config']['calibration_pattern']['link']
+                    to_frame = dataset['calibration_config']['calibration_patterns'][pattern_key]['link']
                     sensor_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
                     pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
@@ -742,10 +742,11 @@ def objectiveFunction(data):
                     idxs_projected = []
                     for idx in range(0, pts_in_image.shape[1]):
                         idxs_projected.append({'x': pts_in_image[0][idx], 'y': pts_in_image[1][idx]})
-                    collection['labels'][sensor_key]['idxs_projected'] = idxs_projected  # store projections
+                    collection['labels'][pattern_key][sensor_key]['idxs_projected'] = idxs_projected  # store projections
 
-                    if 'idxs_initial' not in collection['labels'][sensor_key]:  # store the first projections
-                        collection['labels'][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
+                    # store the first projections
+                    if 'idxs_initial' not in collection['labels'][pattern_key][sensor_key]:
+                        collection['labels'][pattern_key][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
                 else:
                     raise ValueError("Unknown sensor msg_type or modality")
 

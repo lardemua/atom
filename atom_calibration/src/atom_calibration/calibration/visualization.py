@@ -354,7 +354,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
-                points = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                points = getPointsInDepthSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
                 for idx in range(0, points.shape[1]):
                     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
@@ -373,7 +373,8 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
-                points = getPointsInDepthSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+                points = getPointsInDepthSensorAsNPArray(
+                    collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
                 for idx in range(0, points.shape[1]):
                     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 

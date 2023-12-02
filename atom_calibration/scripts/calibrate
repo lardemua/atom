@@ -455,9 +455,9 @@ def main():
                     # The sample percentage has the interval [0.1, 1.0]
                     population = range(
                         0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
-                    nsamples = int(
+                    number_of_samples = int(
                         max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
-                    samples = rng.sample(population, nsamples)
+                    samples = rng.sample(population, number_of_samples)
 
                     # Save it to be used in the objective function.
                     collection["labels"][sensor_key]["samples"] = samples
@@ -473,28 +473,25 @@ def main():
 
                 elif sensor["modality"] == "depth":
 
-                    population = range(
-                        0, len(collection["labels"][sensor_key]["idxs"]))
-                    nsamples = int(
-                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
-                    samples = rng.sample(population, nsamples)
+                    population = range(0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
+                    number_of_samples = int(max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
+                    samples = rng.sample(population, number_of_samples)
 
                     # Save it to be used in the objective function.
-                    collection["labels"][sensor_key]["samples"] = samples
+                    collection["labels"][pattern_key][sensor_key]["samples"] = samples
 
                     for idx in samples:
                         opt.pushResidual(
                             name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
 
                     population_longitudinal = range(
-                        0, len(collection["labels"][sensor_key]["idxs_limit_points"]))
-                    nsamples_longitudinal = int(
+                        0, len(collection["labels"][pattern_key][sensor_key]["idxs_limit_points"]))
+                    number_of_samples_longitudinal = int(
                         max(0.1, min(args["sample_longitudinal_residuals"], 1.0)) * len(population_longitudinal))
-                    samples_longitudinal = rng.sample(
-                        population_longitudinal, nsamples_longitudinal)
+                    samples_longitudinal = rng.sample(population_longitudinal, number_of_samples_longitudinal)
 
                     # Save it to be used in the objective function.
-                    collection["labels"][sensor_key]["samples_longitudinal"] = samples_longitudinal
+                    collection["labels"][pattern_key][sensor_key]["samples_longitudinal"] = samples_longitudinal
 
                     # Extrema displacement error
                     for idx in samples_longitudinal:
@@ -564,11 +561,9 @@ def main():
     # --- Save updated JSON file
     # ---------------------------------------
     if args["output_json"] is None:
-        filename_results_json = os.path.dirname(
-            json_file) + "/atom_calibration.json"
+        filename_results_json = os.path.dirname(json_file) + "/atom_calibration.json"
     else:
-        filename_results_json = os.path.dirname(
-            json_file) + "/" + args["output_json"]
+        filename_results_json = os.path.dirname(json_file) + "/" + args["output_json"]
 
     # to store all sensors that existed in the dataset, regardless of which were optimized
     # If a sensor_key exists in the original dataset but not in the optimized dataset, then it was removed from the optimization and we should copy it back to the dataset before saving.
