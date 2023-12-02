@@ -160,7 +160,7 @@ def loadResultsJSON(json_file, collection_selection_function=None):
     return dataset, json_file
 
 
-def saveResultsJSON(output_file, dataset_in, freeze_dataset=False):
+def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
     if freeze_dataset:  # to make sure our changes only affect the dictionary to save
         dataset = copy.deepcopy(dataset_in)
     else:

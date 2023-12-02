@@ -7,7 +7,7 @@ from colorama import Style, Fore
 
 # 3rd-party
 import rospkg
-from atom_core.dataset_io import loadResultsJSON, createJSONFile
+from atom_core.dataset_io import loadResultsJSON, createJSONFile, saveAtomDataset
 from atom_core.utilities import atomError, atomPrintOK
 from atom_calibration.collect.patterns import initializePatternsDict, estimatePatternPosesForCollection
 
@@ -123,4 +123,4 @@ if __name__ == "__main__":
     # Save the new dataset
     # --------------------------------------------------------------------------
     print('Saving your updated dataset')
-    createJSONFile(args['json_file'], dataset)
+    saveAtomDataset(args['json_file'], dataset)

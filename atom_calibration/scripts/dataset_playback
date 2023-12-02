@@ -22,7 +22,7 @@ from atom_calibration.dataset_playback.depth_manual_labeling import clickedPoint
 from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
 from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
-                                  saveResultsJSON)
+                                  saveAtomDataset)
 
 # own packages
 
@@ -77,10 +77,10 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
         key_char = key.char
         # print(key_char)
         if key_char == 's':  # Saves dataset.
-            saveResultsJSON(output_file, dataset, freeze_dataset=True)
+            saveAtomDataset(output_file, dataset, freeze_dataset=True)
             print('A new dataset was saved in ' + output_file)
         elif key_char == 'q':  # Saves dataset and quits.
-            saveResultsJSON(output_file, dataset, freeze_dataset=True)
+            saveAtomDataset(output_file, dataset, freeze_dataset=True)
             print('A new dataset was saved in ' + output_file)
             print('Exiting ...')
             selection['exit'] = True
@@ -101,7 +101,7 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
                 selection['previous_collection_key'] = selection['collection_key']
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection+1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
-                saveResultsJSON(output_file, dataset, freeze_dataset=True)
+                saveAtomDataset(output_file, dataset, freeze_dataset=True)
 
                 # More intuitive if detect mode is True at the beginning of a new collection
                 depth_mode['mode'] = 'detect'
@@ -113,7 +113,7 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
                 selection['previous_collection_key'] = selection['collection_key']
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
-                saveResultsJSON(output_file, dataset, freeze_dataset=True)
+                saveAtomDataset(output_file, dataset, freeze_dataset=True)
 
                 # More intuitive if detect mode is True at the beginning of a new collection
                 depth_mode['mode'] = 'detect'

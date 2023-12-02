@@ -299,7 +299,7 @@ class DataCollectorAndLabeler:
             D = {'sensors': self.sensors, 'additional_sensor_data': self.additional_data,
                  'collections': self.collections, 'calibration_config': self.config}
             output_file = self.output_folder + '/dataset.json'
-            atom_core.dataset_io.saveResultsJSON(output_file, D)
+            atom_core.dataset_io.saveAtomDataset(output_file, D)
 
             print(Fore.YELLOW + 'Deleted collection ' + request.collection_name + Style.RESET_ALL)
         else:
@@ -536,7 +536,7 @@ class DataCollectorAndLabeler:
 
         # Save to json file.
         output_file = self.output_folder + '/dataset.json'
-        atom_core.dataset_io.saveResultsJSON(output_file, dataset)
+        atom_core.dataset_io.saveAtomDataset(output_file, dataset)
         self.unlockAllLabelers()
 
     def getAllAbstractTransforms(self):

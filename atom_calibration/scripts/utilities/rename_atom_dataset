@@ -24,7 +24,7 @@ from atom_calibration.dataset_playback.depth_manual_labeling import clickedPoint
 from atom_calibration.dataset_playback.lidar3d_manual_labeling import *
 from atom_calibration.dataset_playback.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
-                                  saveResultsJSON)
+                                  saveAtomDataset)
 
 # own packages
 
@@ -73,7 +73,7 @@ def main():
         if '_metadata' in dataset:
             print('File contains metadata. Changing dataset_name ...')
             dataset['_metadata']['dataset_name'] = args['name']
-            saveResultsJSON(json_file, dataset)
+            saveAtomDataset(json_file, dataset)
 
 
 if __name__ == "__main__":

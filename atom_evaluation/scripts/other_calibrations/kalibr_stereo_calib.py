@@ -20,7 +20,7 @@ import sys
 # from collections import OrderedDict
 from atom_evaluation.utilities import atomicTfFromCalibration
 # from atom_core.atom import getTransform
-from atom_core.dataset_io import saveResultsJSON
+from atom_core.dataset_io import saveAtomDataset
 
 
 def KalibrStereoCalibration(camchain_file):
@@ -32,7 +32,6 @@ def KalibrStereoCalibration(camchain_file):
             print(exc)
             sys.exit(2)
 
-
     # ---------------------------------------
     # --- Get intrinsic data for both sensors
     # ---------------------------------------
@@ -43,13 +42,13 @@ def KalibrStereoCalibration(camchain_file):
     K_l = np.zeros((3, 3), np.float32)
     D_l = np.zeros((5, 1), np.float32)
 
-    K_l[0,0] = K[0]
-    K_l[0,2] = K[2]
-    K_l[1,1] = K[1]
-    K_l[1,2] = K[3]
-    K_l[2,2] = 1
+    K_l[0, 0] = K[0]
+    K_l[0, 2] = K[2]
+    K_l[1, 1] = K[1]
+    K_l[1, 2] = K[3]
+    K_l[2, 2] = 1
 
-    D_l[:4,0] = D
+    D_l[:4, 0] = D
 
     # Target sensor
     K = kalibr['cam1']['intrinsics']
@@ -58,19 +57,19 @@ def KalibrStereoCalibration(camchain_file):
     K_r = np.zeros((3, 3), np.float32)
     D_r = np.zeros((5, 1), np.float32)
 
-    K_r[0,0] = K[0]
-    K_r[0,2] = K[2]
-    K_r[1,1] = K[1]
-    K_r[1,2] = K[3]
-    K_r[2,2] = 1
+    K_r[0, 0] = K[0]
+    K_r[0, 2] = K[2]
+    K_r[1, 1] = K[1]
+    K_r[1, 2] = K[3]
+    K_r[2, 2] = 1
 
-    D_r[:4,0] = D
+    D_r[:4, 0] = D
 
     # Transformation
     T = np.array(kalibr['cam1']['T_cn_cnm1'])
 
     camera_model = dict([('K_l', K_l), ('K_r', K_r), ('D_l', D_l), ('D_r', D_r), ('T', T)])
-    left_camera  = kalibr['cam0']['rostopic'].split('/')[1]
+    left_camera = kalibr['cam0']['rostopic'].split('/')[1]
     right_camera = kalibr['cam1']['rostopic'].split('/')[1]
 
     return camera_model, left_camera, right_camera
@@ -99,7 +98,7 @@ if __name__ == '__main__':
     D_r = calib_model['D_r']
     K_l = calib_model['K_l']
     D_l = calib_model['D_l']
-    T   = calib_model['T']
+    T = calib_model['T']
 
     res = atomicTfFromCalibration(dataset, right_camera, left_camera, T)
 
@@ -128,5 +127,4 @@ if __name__ == '__main__':
 
     # Save results to a json file
     filename_results_json = os.path.dirname(json_file) + '/kalibr_calibration.json'
-    saveResultsJSON(filename_results_json, dataset)
-
+    saveAtomDataset(filename_results_json, dataset)

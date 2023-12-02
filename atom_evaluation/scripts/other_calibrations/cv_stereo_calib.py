@@ -19,7 +19,7 @@ from colorama import Style, Fore
 from collections import OrderedDict
 from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
-from atom_core.dataset_io import saveResultsJSON
+from atom_core.dataset_io import saveAtomDataset
 
 
 def cvStereoCalibrate(objp):
@@ -33,7 +33,7 @@ def cvStereoCalibrate(objp):
         # TODO only works for first pattern
         first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
         n_points = int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']) * \
-                   int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
+            int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
         image_points_r = np.ones((n_points, 2), np.float32)
         image_points_l = np.ones((n_points, 2), np.float32)
 
@@ -72,7 +72,7 @@ def cvStereoCalibrate(objp):
     width = dataset['sensors'][right_camera]['camera_info']['width']
     image_size = (height, width)
 
-    print ('\n---------------------\n Starting stereo calibration ...')
+    print('\n---------------------\n Starting stereo calibration ...')
 
     # Extrinsic stereo calibration
     stereocalib_criteria = (cv2.TERM_CRITERIA_MAX_ITER +
@@ -84,7 +84,7 @@ def cvStereoCalibrate(objp):
                                                               D_r, image_size,
                                                               criteria=stereocalib_criteria, flags=flags)
 
-    print ('\n---------------------\n Done!\n\n------\nCalibration results:\n------\n')
+    print('\n---------------------\n Done!\n\n------\nCalibration results:\n------\n')
 
     print('K_left', K_l)
     print('D_left', D_l)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     # TODO only works for first pattern
     first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
     number_of_corners = int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']) * \
-                        int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
+        int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor_key not in [left_camera, right_camera]:
@@ -136,8 +136,8 @@ if __name__ == '__main__':
             if sensor['msg_type'] == 'Image' and collection['labels'][sensor_key]['detected']:
                 if not len(collection['labels'][sensor_key]['idxs']) == number_of_corners:
                     print(
-                            Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                            collection_key + ', sensor ' + sensor_key)
+                        Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                        collection_key + ', sensor ' + sensor_key)
 
                     collections_to_delete.append(collection_key)
                     break
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     for collection_key in collections_to_delete:
         del dataset['collections'][collection_key]
 
-    print ('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
+    print('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 
     # Pattern configs
     nx = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']
@@ -206,4 +206,4 @@ if __name__ == '__main__':
 
     # Save results to a json file
     filename_results_json = os.path.dirname(json_file) + '/cv_calibration.json'
-    saveResultsJSON(filename_results_json, dataset)
+    saveAtomDataset(filename_results_json, dataset)

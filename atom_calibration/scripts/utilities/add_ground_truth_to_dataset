@@ -20,7 +20,7 @@ from atom_calibration.calibration.objective_function import errorReport, objecti
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
-                                  saveResultsJSON)
+                                  saveAtomDataset)
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
@@ -62,7 +62,7 @@ def main():
 
         collection[key] = copy.deepcopy(collection['transforms'])
 
-    saveResultsJSON(args['json_dataset_out'], dataset)
+    saveAtomDataset(args['json_dataset_out'], dataset)
 
 
 if __name__ == "__main__":

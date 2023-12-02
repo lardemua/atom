@@ -23,7 +23,7 @@ from atom_calibration.calibration.objective_function import errorReport, objecti
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
-                                  saveResultsJSON, filterJointsFromDataset, filterAdditionalTfsFromDataset)
+                                  saveAtomDataset, filterJointsFromDataset, filterAdditionalTfsFromDataset)
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
@@ -576,7 +576,7 @@ def main():
         if not sensor_key in dataset['sensors']:
             dataset['sensors'][sensor_key] = sensor
 
-    saveResultsJSON(filename_results_json, dataset)
+    saveAtomDataset(filename_results_json, dataset)
 
     # ---------------------------------------
     # --- Save updated xacro

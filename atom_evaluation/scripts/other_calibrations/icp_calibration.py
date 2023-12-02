@@ -22,8 +22,9 @@ import tf
 from colorama import Style, Fore
 from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
-from atom_core.dataset_io import addNoiseToInitialGuess, saveResultsJSON
+from atom_core.dataset_io import addNoiseToInitialGuess, saveAtomDataset
 from atom_core.vision import depthToPointCloud
+
 
 def drawRegistrationResults(source, target, transformation, initial_transformation):
     """
@@ -38,6 +39,7 @@ def drawRegistrationResults(source, target, transformation, initial_transformati
     source_temp.transform(transformation)
     source_initial_temp.transform(initial_transformation)
     o3d.visualization.draw_geometries([source_initial_temp, source_temp, target_temp])
+
 
 def pickPoints(pcd):
     """
@@ -58,6 +60,7 @@ def pickPoints(pcd):
     vis.destroy_window()
     print("")
     return vis.get_picked_points()
+
 
 def ICPCalibration(source_point_cloud, target_point_cloud, threshold, T_init, show_images):
     """
@@ -91,9 +94,9 @@ def saveICPCalibration(dataset, sensor_source, sensor_target, transform, json_fi
         dataset['collections'][collection_key]['transforms'][frame]['trans'] = res[0:3, 3]
 
     # Save results to a json file
-    filename_results_json = os.path.dirname(json_file) + f'/ICPCalibration_{sensor_source}_to_{sensor_target}_{descriptor}.json'
-    saveResultsJSON(filename_results_json, dataset)
-
+    filename_results_json = os.path.dirname(
+        json_file) + f'/ICPCalibration_{sensor_source}_to_{sensor_target}_{descriptor}.json'
+    saveAtomDataset(filename_results_json, dataset)
 
 
 def main():
@@ -103,8 +106,10 @@ def main():
     ap.add_argument("-ss", "--sensor_source", help="Name of the sensor to be aligned.", type=str, required=True)
     ap.add_argument("-st", "--sensor_target", help="Name of the anchored sensor.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
-    ap.add_argument("-ma", "--manual_alignment", help="If true, the user has the possibility to align the pointclouds", action='store_true', default=False)
-    ap.add_argument("-ssd", "--sub_sample_depth", help="If a depth sensor is used, subsample its pixels by this amount.", type=int, default=1)
+    ap.add_argument("-ma", "--manual_alignment",
+                    help="If true, the user has the possibility to align the pointclouds", action='store_true', default=False)
+    ap.add_argument("-ssd", "--sub_sample_depth",
+                    help="If a depth sensor is used, subsample its pixels by this amount.", type=int, default=1)
     ap.add_argument("-seed", "--sample_seed", help="Sampling seed", type=int)
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
                     help="Percentage of noise to add to the initial guess atomic transformations set before.",
@@ -145,7 +150,7 @@ def main():
                 pointclouds[sensor] = point_cloud
             elif dataset['calibration_config']['sensors'][sensor]['modality'] == 'depth':
                 filename = os.path.dirname(json_file) + '/' + \
-                            dataset['collections'][selected_collection_key]['data'][sensor]['data_file']
+                    dataset['collections'][selected_collection_key]['data'][sensor]['data_file']
                 img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
                 pixels = img.shape[0] * img.shape[1]
                 idxs_to_trim = range(pixels)
@@ -154,9 +159,8 @@ def main():
                 print('Reading point cloud from idxs')
                 pointclouds[sensor] = point_cloud
             else:
-                print('The sensor ' + sensor +  ' does not have a pointcloud to retrieve, so ICP would not work.\nShutting down...')
+                print('The sensor ' + sensor + ' does not have a pointcloud to retrieve, so ICP would not work.\nShutting down...')
                 exit(0)
-
 
         source_point_cloud = pointclouds[args['sensor_source']]
         target_point_cloud = pointclouds[args['sensor_target']]
@@ -164,7 +168,7 @@ def main():
         # Get the transformation from target to frame
         if not args['manual_alignment']:
             T_target_to_source = getTransform(target_frame, source_frame,
-                                            dataset['collections'][selected_collection_key]['transforms'])
+                                              dataset['collections'][selected_collection_key]['transforms'])
         else:
             # Align the pointclouds
             print('\nAligning pointclouds for a better calibration')
@@ -178,11 +182,12 @@ def main():
             elif not (len(source_picked_points) >= 3 and len(target_picked_points) >= 3):
                 print('\nYou have chosen less than 3 points in at least one of the last two pointclouds, please redo them.')
                 collections_list.insert(list_idx, selected_collection_key)
-                continue            
+                continue
             if not (len(source_picked_points) == len(target_picked_points)):
-                print(f'\nYou have chosen {len(source_picked_points)} and {len(target_picked_points)} points, which needed to be equal, please redo them.')
+                print(
+                    f'\nYou have chosen {len(source_picked_points)} and {len(target_picked_points)} points, which needed to be equal, please redo them.')
                 collections_list.insert(list_idx, selected_collection_key)
-                continue           
+                continue
 
             corr = np.zeros((len(source_picked_points), 2))
             corr[:, 0] = source_picked_points
@@ -192,8 +197,8 @@ def main():
             print("Compute a rough transform using the correspondences given by user")
             p2p = o3d.pipelines.registration.TransformationEstimationPointToPoint()
             T_target_to_source = p2p.compute_transformation(source_point_cloud, target_point_cloud,
-                                                    o3d.utility.Vector2iVector(corr))
-        
+                                                            o3d.utility.Vector2iVector(corr))
+
         # Calibrate using ICP
         print('Using ICP to calibrate')
         print('T_target_to_source = \n' + str(T_target_to_source))
@@ -204,12 +209,12 @@ def main():
         if reg_p2p.inlier_rmse < min_rmse:
             min_transform = reg_p2p.transformation
             min_rmse = reg_p2p.inlier_rmse
-        
+
         # Define dataset as used
         used_datasets += 1
 
     # Average the initial transforms
-    transform = transforms / used_datasets 
+    transform = transforms / used_datasets
 
     # Saving Json files
     print(Fore.YELLOW + '\nSaving two calibrations, one with the average transformation and other with the transformation with the least error.')
@@ -217,6 +222,5 @@ def main():
     saveICPCalibration(dataset, args['sensor_source'], args['sensor_target'], min_transform, json_file, 'best')
 
 
-
 if __name__ == '__main__':
-   main() 
+    main()
