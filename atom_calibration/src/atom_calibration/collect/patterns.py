@@ -294,7 +294,6 @@ def estimatePatternPosesForCollection(dataset, collection_key):
     collection = dataset['collections'][collection_key]
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
-        print('pattern_key = ' + pattern_key)
         nx = pattern['dimension']['x']
         ny = pattern['dimension']['y']
         square = pattern['size']

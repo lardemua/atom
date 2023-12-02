@@ -123,4 +123,4 @@ if __name__ == "__main__":
     # Save the new dataset
     # --------------------------------------------------------------------------
     print('Saving your updated dataset')
-    saveAtomDataset(args['json_file'], dataset)
+    saveAtomDataset(args['json_file']+'.test', dataset)

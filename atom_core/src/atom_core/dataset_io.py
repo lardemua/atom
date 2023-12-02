@@ -3,6 +3,7 @@ import copy
 # Standard imports
 import json
 import os
+from os.path import exists
 
 import numpy as np
 
@@ -167,6 +168,8 @@ def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
         dataset = dataset_in
 
     output_folder = os.path.dirname(output_file)
+    if output_folder == '':
+        output_folder = '.'
     print('output_folder is: ' + output_folder)
     bridge = CvBridge()
 
@@ -184,8 +187,8 @@ def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
 
 
 def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):
-    if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d' or sensor[
-            'modality'] == 'depth'):
+    if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or
+            sensor['modality'] == 'lidar2d' or sensor['modality'] == 'depth'):
         return
 
     # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
@@ -202,8 +205,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         create_data_file = True
 
     if create_data_file:
-        # print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key)
-        #   + ' msg type ' + sensor['msg_type'])
+        print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key)
+              + ' msg type ' + sensor['msg_type'])
         pass
 
     if create_data_file and sensor['modality'] == 'rgb':  # save image.
@@ -217,8 +220,12 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
                 cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
                 dataset['collections'][collection_key][data_type][sensor_key]['encoding'] = 'bgr8'
 
-            cv2.imwrite(filename, cv_image)
-            print('Saved file ' + filename + '.')
+            if not exists(filename):
+                # print('Starting to save file ' + filename + '.')
+                cv2.imwrite(filename, cv_image)
+                print('Saved file ' + filename + '.')
+            else:
+                print('File ' + filename + ' already exists, skipping save ...')
 
         # Add data_file field, and remove data field
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
