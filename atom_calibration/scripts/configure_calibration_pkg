@@ -117,27 +117,28 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     bag_file, _, bag_file_rel = atom_core.config_io.uriReader(config['bag_file'])
     if is_rosbag2(bag_file):
-        print(f"{bag_file} is a rosbag2 file. Converting to rosbag1 format")
+        print('Bagfile ' + Fore.BLUE + bag_file + Style.RESET_ALL +
+              ' is in rosbag2 format. Converting to rosbag1 format ... ', end='')
         rosbag2_file = convert_rosbag2_to_rosbag1(bag_file)
+        atomPrintOK()
         if rosbag2_file:
-            print("Converted successfully, destination file: " + rosbag2_file)
+            print("Converted successfully, destination file: " + Fore.BLUE + rosbag2_file + Style.RESET_ALL)
             bag_file = rosbag2_file
             bag_file_rel = bag_file
         else:
-            print('Error converting rosbag2 to rosbag1')
-            exit(1)
+            atomError('Converting rosbag2 to rosbag1 failed.')
 
-    print('Loading bagfile ' + bag_file)
+    print('Loading bagfile ' + bag_file + ' ... ', end='')
     bag = rosbag.Bag(bag_file)
     bag_info = bag.get_type_and_topic_info()
     bag_types = bag_info[0]
     bag_topics = bag_info[1]
-    # print('\n' + str(bag_topics))
 
     # Get initial stamp to compute mission time
     for topic, msg, stamp in bag.read_messages():
         bag_initial_stamp = stamp
         break
+    atomPrintOK()
 
     # --------------------------------------------------------------------------
     # Setup the description file

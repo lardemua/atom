@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 rosbag2 format utilities
 """
@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from rosbags.convert.converter import convert_2to1
+
 
 def is_rosbag2(bag_path: str):
     """
@@ -15,11 +16,11 @@ def is_rosbag2(bag_path: str):
     :return: True if the file is a rosbag2 file, False otherwise
     """
 
-    if os.path.isdir(bag_path):        
+    if os.path.isdir(bag_path):
         metadata_file = os.path.join(bag_path, 'metadata.yaml')
         if os.path.exists(metadata_file):
             return True
-        
+
     return False
 
 
@@ -41,5 +42,5 @@ def convert_rosbag2_to_rosbag1(bag_path: str):
         except Exception as e:
             print(e)
             return ""
-        
+
     return dst_path.as_posix()
