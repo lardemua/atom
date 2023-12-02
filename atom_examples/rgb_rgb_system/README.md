@@ -8,14 +8,14 @@ The system is composed of two rgb cameras mounted on a tripod.
 Cameras are called **rgb_left** (red) and **rgb_right** (green).
 The system contains the following topics:
 
-  - /rgb_left/camera_info 
-  - /rgb_left/image_raw 
+  - /rgb_left/camera_info
+  - /rgb_left/image_raw
   - /rgb_right/camera_info
-  - /rgb_right/image_raw 
+  - /rgb_right/image_raw
   - /tf
   - /tf_static
 
-Since this is a systems to test calibration, where frame rate is not a critical issue, we restrained images topics to 10Hz. 
+Since this is a systems to test calibration, where frame rate is not a critical issue, we restrained images topics to 10Hz.
 This is a simulated system, which can be seen in gazebo:
 
 ![gazebo](docs/gazebo.png)
@@ -38,9 +38,9 @@ You can record a bag file using:
 
     roslaunch rgb_rgb_system_bringup record.launch
 
-This will put the bag file into your $ROS_BAGS folder. 
+This will put the bag file into your $ROS_BAGS folder.
 
-# Calibration 
+# Calibration
 
 The calibration of any robotic system using **ATOM** may have several variants. We recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
 
@@ -50,7 +50,7 @@ To calibrate, we will need a bagfile called [rgb_rgb_system_example_bag.bag](htt
 We produced the bagfile by bringing up the system and then recording a bagfile as described above.
 This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
 
-Download the bagfile and put it in **$ROS_BAGS/rgb_rgb_system**. 
+Download the bagfile and put it in **$ROS_BAGS/rgb_rgb_system**.
 
 Next we describe each of the steps in the calibration pipeline.
 
@@ -68,7 +68,7 @@ Using ATOM conventions, we define name of the calibration package as **rgb_rgb_s
 ## Configuring the calibration
 
 
-This is the [config.yml](https://github.com/lardemua/atom/blob/miguelriemoliveira/issue629/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a charuco marker.
+This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/rgb_rgb_system/rgb_rgb_system_calibration/calibration/config.yml) that we wrote to define the calibration. There are two sensors to be calibrated, named **rgb_left** and **rgb_right**. The pattern is a charuco marker.
 The configuration file points to the bagfile mentioned above, and the _anchored_sensor_ is defined as the **rgb_left** sensor.
 
 To configure run:
@@ -84,11 +84,11 @@ To collect a dataset we run:
 
     roslaunch rgb_rgb_system_calibration collect_data.launch output_folder:=$ATOM_DATASETS/rgb_rgb_system/dataset1 overwrite:=true
 
-And save a few collections. 
+And save a few collections.
 
-We will use as example the [rgb_rgb_system_example_train_dataset](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing), which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing) dataset, which contains 4 collections, as shown bellow.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset**.
+Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/train**.
 
 Collection |           rgb_left             |           rgb_right
 :----------------:|:-------------------------:|:-------------------------:
@@ -106,19 +106,19 @@ To calibrate, first setup visualization with:
 
 Then carry out the actual calibration using:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_dataset/dataset.json -v -rv
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/train/dataset.json -v -rv
 
 This will produce a table of residuals per iteration, like this:
 
 ![](docs/calibration_output.png)
 
 This is the table presented once calibration is complete, which shows average reprojection errors of under 1 pixel. Sub-pixel accuracy is considered a good result for rgb camera calibration.
- 
+
  Since this is a simulation, the original pose of the cameras is actually the one used by gazebo to produce the images. This means that the cameras are already positioned in the actual ground truth pose, which means that the calibration did not do much in this case. In a real system, the sensors will not be positioned at the ground truth pose. In fact, for real systems, we do not know where the ground truth is.
 
 To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset/dataset.json -v -rv -nig 0.1 0.1
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rgb_rgb_system/train/dataset.json -v -rv -nig 0.1 0.1
 
 Which starts the calibration with these errors:
 
@@ -133,8 +133,8 @@ Which again, have subpixel accuracy. This means the procedure achieved a success
 
 ## Evaluation
 
-The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets. 
+The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
 
-Download the [rgb_rgb_system_example_test_dataset](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) and decompress to **$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset**.
+Download the [test](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) dataset and decompress to **$ATOM_DATASETS/rgb_rgb_system/test**.
 
-    roslaunch rgb_rgb_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_test_dataset/dataset.json train_json:=$ATOM_DATASETS/rgb_rgb_system/rgb_rgb_system_example_train_dataset/atom_calibration.json
+    roslaunch rgb_rgb_system_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rgb_rgb_system/test/dataset.json train_json:=$ATOM_DATASETS/rgb_rgb_system/train/atom_calibration.json

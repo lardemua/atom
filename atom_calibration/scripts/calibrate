@@ -370,7 +370,7 @@ def main():
                                  param_key=param_key, collection_name=None)
                 opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter, setter=setter)
 
-    opt.printParameters()
+    # opt.printParameters()
 
     # ---------------------------------------
     # --- Define THE OBJECTIVE FUNCTION
