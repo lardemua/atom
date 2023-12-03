@@ -126,6 +126,10 @@ def main():
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
     dataset, json_file = loadResultsJSON(
         args["json_file"], args["collection_selection_function"])
+
+    if float(dataset['_metadata']['version']) < 3.0:
+        atomError('Your dataset not version 3.0. Before running a calibration, you need to update it first with:\nrosrun atom_calibration update_dataset_from_version_2_to_3.')
+
     # make a copy before filtering out collections and sensors
     dataset_original = copy.deepcopy(dataset)
 
