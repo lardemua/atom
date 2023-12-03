@@ -56,3 +56,11 @@ For this reason we have to define the coordinate system of the patterns in accor
 
 
 ![chessboard](docs/chessboard_meshlab.png)
+
+Important tutorials:
+
+https://blender.stackexchange.com/questions/36401/how-do-i-add-material-textures-to-only-one-face-of-an-object
+
+https://blender.stackexchange.com/questions/31367/how-to-set-object-dimension
+
+https://www.youtube.com/watch?v=Xhsn3aDkvWA
