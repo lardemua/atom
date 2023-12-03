@@ -1,0 +1,58 @@
+# url should be copied using the share->copy_link, Then the id should be extracted like in the example below:
+# https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=drive_link
+# one must take only id  1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa
+rgb_rgb_system:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG
+        test:
+            file: test.zip
+            extract_to: test
+            id: 1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB
+rgb_depth_system:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1Z8mSfHqSesCOYEu3Ugx9F3VTpqe7j1gM
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh
+        test:
+            file: test.zip
+            extract_to: test
+            id: 1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-
+rgb_rgb_system_chessboard:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1zucjVjg27plyvN-vWpAyo3-utY7Xro--
+        test:
+            file: test.bag
+            id: 1KM6wJbjLzbsPRNbhN5VmbAzu87jwG1RS
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1FOd4HHPMB0Yn7lCSDMu2wveZW3I-k6QM
+        test:
+            file: test.zip
+            extract_to: test
+            id: 1bvHr2iXsNS3snF9Af8gJ0mJJbPwUcTpJ
+rgb_hand_eye_system:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1_YYIaJfvP8G7_mBr3oT7S7RkVTymu2pb
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1YlFdik-38zhtI8fByY27XR7pxYdN-h_9

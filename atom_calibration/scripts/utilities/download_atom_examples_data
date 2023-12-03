@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+
+# Standard imports
+import argparse  # to read command line arguments
+import xml.etree.ElementTree as ET
+
+from colorama import Fore, Style
+import argparse
+import os
+import rospkg
+from tqdm import tqdm
+import yaml
+import wget
+import zipfile
+
+# Atom imports
+from atom_core.utilities import atomStartupPrint, atomError, execute
+
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+import sys
+import requests
+
+
+def download_file_from_google_drive(id, destination):
+    URL = "https://docs.google.com/uc?export=download&confirm=1"
+
+    session = requests.Session()
+
+    response = session.get(URL, params={"id": id}, stream=True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = {"id": id, "confirm": token}
+        response = session.get(URL, params=params, stream=True)
+
+    save_response_content(response, destination)
+
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            return value
+
+    return None
+
+
+def save_response_content(response, destination):
+    CHUNK_SIZE = 32768
+    total = int(response.headers.get('content-length', 0))
+
+    with open(destination, 'wb') as file, tqdm(desc=destination,
+                                               total=total,
+                                               unit='iB',
+                                               unit_scale=True,
+                                               unit_divisor=1024,
+                                               ) as bar:
+        for data in response.iter_content(chunk_size=CHUNK_SIZE):
+            size = file.write(data)
+            bar.update(size)
+
+
+#
+#     with open(destination, "wb") as f:
+#         for chunk in response.iter_content(CHUNK_SIZE):
+#             if chunk:  # filter out keep-alive new chunks
+#                 f.write(chunk)
+#
+
+# def main():
+#     if len(sys.argv) >= 3:
+#         file_id = sys.argv[1]
+#         destination = sys.argv[2]
+#     else:
+#         file_id = "TAKE_ID_FROM_SHAREABLE_LINK"
+#         destination = "DESTINATION_FILE_ON_YOUR_DISK"
+#     print(f"dowload {file_id} to {destination}")
+#     download_file_from_google_drive(file_id, destination)
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+def main():
+    atomStartupPrint('Download atom examples datasets and bagfiles')
+
+    # ---------------------------------------
+    # --- Parse command line argument
+    # ---------------------------------------
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-ow", "--overwrite", help="Overwrite existing folders.", action='store_true')
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # Get environment variables
+    # ---------------------------------------
+    environment_variables = os.environ
+
+    if 'ROS_BAGS' in environment_variables:
+        ROS_BAGS = environment_variables['ROS_BAGS']
+    else:
+        atomError('ROS_BAGS environment variable does not exist. ')
+
+    if 'ATOM_DATASETS' in environment_variables:
+        ATOM_DATASETS = environment_variables['ATOM_DATASETS']
+    else:
+        atomError('ATOM_DATASETS environment variable does not exist. ')
+
+    rospack = rospkg.RosPack()
+    atom_calibration_path = rospack.get_path('atom_calibration')
+    config_filename = atom_calibration_path + '/scripts/utilities/atom_examples.yml'
+    with open(config_filename, 'r') as file:
+        config = yaml.safe_load(file)
+
+    for system_name, system in config.items():
+        print('\nDownloading data for ' + Style.DIM + Fore.GREEN + system_name + Style.RESET_ALL)
+#
+        if system['bagfiles'] is not None:
+            for bagfile_name, bagfile in system['bagfiles'].items():
+                file_name = ROS_BAGS + '/' + system_name + '/' + bagfile['file']
+
+                if os.path.isfile(file_name) and not args['overwrite']:
+                    print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
+                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... skipping download.')
+                    continue
+
+                if os.path.isfile(file_name) and args['overwrite']:
+                    backup_file = '/tmp/' + system_name + '_' + bagfile['file']
+                    print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
+                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... moving to ' + backup_file)
+                    execute('mv ' + file_name + ' ' + backup_file, verbose=False)
+
+                print("Downloading bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' to '
+                      + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
+
+                # local_file_name = wget.download(url, file_name)
+                download_file_from_google_drive(bagfile['id'], file_name)
+
+        if system['datasets'] is not None:
+            for dataset_name, dataset in system['datasets'].items():
+                file_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['file']
+                folder_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['extract_to']
+
+                if os.path.isdir(folder_name) and not args['overwrite']:
+                    print("dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
+                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... skipping download.')
+                    continue
+
+                # In case th folder is there
+                if os.path.isdir(folder_name) and args['overwrite']:
+                    backup_folder = '/tmp/' + system_name + '_' + dataset['extract_to']
+                    print("Dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
+                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... moving to ' + backup_folder)
+                    execute('mv ' + folder_name + ' ' + backup_folder, verbose=False)
+
+                # In case the file.zip is there as well
+                if os.path.isfile(file_name) and args['overwrite']:
+                    execute('rm ' + file_name, verbose=False)
+
+                print("Downloading dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' to '
+                      + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
+                download_file_from_google_drive(dataset['id'], file_name)
+
+                print("\nDecompressing from:" + Fore.BLUE + file_name + Style.RESET_ALL +
+                      " into " + Fore.BLUE + folder_name + Style.RESET_ALL)
+                with zipfile.ZipFile(file_name, 'r') as zf:
+                    # zip_ref.extractall(folder_name)
+                    for member in tqdm(zf.infolist(), desc='Extracting '):
+                        try:
+                            zf.extract(member, folder_name)
+                        except zipfile.error as e:
+                            pass
+
+                if os.path.isfile(file_name) and args['overwrite']:
+                    execute('rm ' + file_name, verbose=False)
+
+
+if __name__ == "__main__":
+    main()

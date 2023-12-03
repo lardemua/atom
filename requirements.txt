@@ -19,5 +19,6 @@ pytictoc
 scikit-image
 transformations
 rosbags
+wget
 
 
