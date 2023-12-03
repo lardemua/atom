@@ -20,24 +20,32 @@ class SimplePatternDetector:
 
     def __init__(self, args, config):
         # TODO only works for first pattern
-        first_pattern_key = list(config['calibration_patterns'].keys())[0]
-        size = {'x': config['calibration_patterns'][first_pattern_key]['dimension']['x'],
-                'y': config['calibration_patterns'][first_pattern_key]['dimension']['y']}
-        length = config['calibration_patterns'][first_pattern_key]['size']
-        inner_length = config['calibration_patterns'][first_pattern_key]['inner_size']
-        dictionary = config['calibration_patterns'][first_pattern_key]['dictionary']
+        self.pattern_key = args['pattern_name']
+        print(config['calibration_patterns'][self.pattern_key]['dimension'])
+        d = config['calibration_patterns'][self.pattern_key]['dimension']
+        print('777')
+        print(type(d))
+        d['x']
+        print('777.5')
+        print(config['calibration_patterns'][self.pattern_key]['dimension']['x'])
+        print('888')
+        size = {'x': config['calibration_patterns'][self.pattern_key]['dimension']['x'],
+                'y': config['calibration_patterns'][self.pattern_key]['dimension']['y']}
+        length = config['calibration_patterns'][self.pattern_key]['size']
+        inner_length = config['calibration_patterns'][self.pattern_key]['inner_size']
+        dictionary = config['calibration_patterns'][self.pattern_key]['dictionary']
         self.args = args
         self.config = config
 
         # TODO only works for first pattern
-        if config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'charuco':
+        if config['calibration_patterns'][self.pattern_key]['pattern_type'] == 'charuco':
             self.pattern = patterns.CharucoPattern(
                 size, length, inner_length, dictionary)
-        elif config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'chessboard':
+        elif config['calibration_patterns'][self.pattern_key]['pattern_type'] == 'chessboard':
             self.pattern = patterns.ChessboardPattern(size, length)
         else:
             rospy.logerr("Unknown pattern '{}'".format(
-                config['calibration_patterns'][first_pattern_key]['pattern_type']))
+                config['calibration_patterns'][self.pattern_key]['pattern_type']))
             sys.exit(1)
 
         # Get a camera_info message
@@ -153,6 +161,8 @@ def main():
                         type=str, required=False, default=None)
     parser.add_argument("-sn", "--sensor_name", help="Sensor to test as named in the config file.", type=str,
                         required=True)
+    parser.add_argument("-pn", "--pattern_name", help="Pattern to test as named in the config file.", type=str,
+                        required=True)
     parser.add_argument("-e3d", "--estimate_3d", help="Sensor to test as named in the config file.",
                         action="store_true")
     parser.add_argument("-uir", "--use_ir", help="Sensor to test as named in the config file.",
@@ -162,6 +172,7 @@ def main():
     # Read config file
     config = atom_core.config_io.loadConfig(args['config_file'])
 
+    # first_pattern_key = list(config['calibration_patterns'][self.pattern_key].keys())[0]
     # Create detector
     SimplePatternDetector(args, config)
     rospy.spin()
