@@ -5,8 +5,8 @@
             <author>VCGLab</author>
             <authoring_tool>VCGLib | MeshLab</authoring_tool>
         </contributor>
-        <created>Thu Nov 30 18:09:46 2023 GMT</created>
-        <modified>Thu Nov 30 18:09:46 2023 GMT</modified>
+        <created>Sun Dec 3 03:55:40 2023 GMT</created>
+        <modified>Sun Dec 3 03:55:40 2023 GMT</modified>
         <up_axis>Y_UP</up_axis>
     </asset>
     <library_images>
@@ -25,7 +25,7 @@
                 <newparam sid="texture0-surface">
                     <surface type="2D">
                         <init_from>texture0</init_from>
-                        <format>A8R8G8B8</format>
+                        <format>R8G8B8</format>
                     </surface>
                 </newparam>
                 <newparam sid="texture0-sampler">
@@ -49,7 +49,7 @@
         <geometry id="shape0-lib" name="shape0">
             <mesh>
                 <source id="shape0-lib-positions" name="position">
-                    <float_array id="shape0-lib-positions-array" count="24">-0.0400721 0.160219 0.000578573 -0.0400721 -0.0397811 0.000578582 0.159928 0.160219 0.000578573 0.159928 -0.0397811 0.000578582 -0.0400721 0.160219 0.0105786 -0.0400721 -0.0397811 0.0105786 0.159928 0.160219 0.0105786 0.159928 -0.0397811 0.0105786</float_array>
+                    <float_array id="shape0-lib-positions-array" count="24">-0.0199875 0.180274 0.000578573 -0.0199875 -0.0197259 0.000578582 0.180013 0.180274 0.000578573 0.180013 -0.0197259 0.000578582 -0.0199875 0.180274 0.0105786 -0.0199875 -0.0197259 0.0105786 0.180013 0.180274 0.0105786 0.180013 -0.0197259 0.0105786</float_array>
                     <technique_common>
                         <accessor count="8" source="#shape0-lib-positions-array" stride="3">
                             <param name="X" type="float"/>
@@ -59,7 +59,7 @@
                     </technique_common>
                 </source>
                 <source id="shape0-lib-normals" name="normal">
-                    <float_array id="shape0-lib-normals-array" count="36">-4.37114e-08 1 -4.37114e-08 1 4.37114e-08 0 -1.91069e-15 4.37114e-08 1 4.37114e-08 -1 4.37114e-08 -1 -4.37114e-08 0 -4.37114e-08 1 -4.37114e-08 1 4.37114e-08 0 -1.91069e-15 4.37114e-08 1 4.37114e-08 -1 4.37114e-08 -1 -4.37114e-08 0 1.91069e-15 -4.37114e-08 -1 1.91069e-15 -4.37114e-08 -1</float_array>
+                    <float_array id="shape0-lib-normals-array" count="36">0 1 0 1 0 0 0 0 1 0 -1 0 -1 0 0 0 1 0 1 0 0 0 0 1 0 -1 0 -1 0 0 0 -4.51109e-08 -1 0 -4.51109e-08 -1</float_array>
                     <technique_common>
                         <accessor count="12" source="#shape0-lib-normals-array" stride="3">
                             <param name="X" type="float"/>
