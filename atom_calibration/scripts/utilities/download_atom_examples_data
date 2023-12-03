@@ -144,6 +144,7 @@ def main():
             for dataset_name, dataset in system['datasets'].items():
                 file_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['file']
                 folder_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['extract_to']
+                system_folder = ATOM_DATASETS + '/' + system_name
 
                 if os.path.isdir(folder_name) and not args['overwrite']:
                     print("dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
@@ -171,7 +172,7 @@ def main():
                     # zip_ref.extractall(folder_name)
                     for member in tqdm(zf.infolist(), desc='Extracting '):
                         try:
-                            zf.extract(member, folder_name)
+                            zf.extract(member, system_folder)
                         except zipfile.error as e:
                             pass
 
