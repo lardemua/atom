@@ -70,6 +70,7 @@ if __name__ == "__main__":
     package_base_path = os.path.dirname(package_path)  # parent path where the package is located
 
     rviz_file_template = atom_calibration_path + '/templates/config.rviz'
+    rviz_playbag = 'playbag.rviz'
     rviz_set_initial_estimate = 'set_initial_estimate.rviz'
     rviz_collect_data = 'collect_data.rviz'
     rviz_calibrate = 'calibrate.rviz'
@@ -630,7 +631,7 @@ if __name__ == "__main__":
                                     'use_tfs': args['use_tfs'],
                                     'collect_ground_truth': args['collect_ground_truth'],
                                     'package_name': package_name,
-                                    'rviz_set_initial_estimate': rviz_set_initial_estimate,
+                                    'rviz_playbag': rviz_playbag,
                                     'use_compressed_topics': bool(compressed_topics),
                                     'compressed_topics': compressed_topics,
                                     'throttle_topics': throttle_topics
@@ -825,6 +826,70 @@ if __name__ == "__main__":
 
     rendered = env.get_template('/rviz/RobotModel.rviz').render(c={'Name': 'RobotModel'})
     core_displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+    # --------------------------------------------------------------------------
+    # Create the rviz config file for the playbag
+    # --------------------------------------------------------------------------
+    print('Setting up ' + Fore.BLUE + rviz_playbag + Style.RESET_ALL + ' ...')
+
+    rviz = yaml.load(open(rviz_file_template), Loader=yaml.SafeLoader)
+    rviz['Visualization Manager']['Global Options']['Fixed Frame'] = config['world_link']
+    displays = deepcopy(core_displays)  # start with the core displays
+
+    # Create interactive marker display for moving the sensors
+    rendered = env.get_template('/rviz/InteractiveMarker.rviz').render(c={'Name': 'MoveSensors-InteractiveMarker',
+                                                                          'Update_Topic': 'set_initial_estimate/update'}
+                                                                       )
+    displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+    # Generate rviz displays according to the sensor types
+    # Iterate alphabetically through the sensors dict keys https://github.com/lardemua/atom/issues/409
+    for idx, sensor_key in enumerate(sorted(list(config['sensors'].keys()))):
+        color = atom_core.drawing.colormapToRVizColor(cm_sensors[idx, :])
+        topic = config['sensors'][sensor_key]['topic_name']
+        topic_compressed = topic + '/compressed'
+        modality = config['sensors'][sensor_key]['modality']
+
+        print('\tGenerating rviz displays for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL +
+              ' with topic ' + Fore.BLUE + topic + Style.RESET_ALL + ' (' + Fore.CYAN + modality + Style.RESET_ALL + ')')
+
+        if modality == 'rgb' or modality == 'depth':
+
+            # Raw image
+            rendered = env.get_template('/rviz/Image.rviz').render(c={'Name': sensor_key + '-Image',
+                                                                      'Image_Topic': topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+            # Camera
+            rendered = env.get_template('/rviz/Camera.rviz').render(c={'Name': sensor_key + '-Camera',
+                                                                       'Image_Topic': topic})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+        elif modality == 'lidar2d':
+            # Raw data
+            rendered = env.get_template('/rviz/LaserScan.rviz').render(c={'Name': sensor_key + '-LaserScan',
+                                                                          'Topic': topic,
+                                                                          'Color': color})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+        # elif msg_type == 'sensor_msgs/PointCloud2':
+        elif modality == 'lidar3d':
+            # Raw data
+            rendered = env.get_template('/rviz/PointCloud2.rviz').render(c={'Name': sensor_key + '-PointCloud2',
+                                                                            'Topic': topic,
+                                                                            'Color': color,
+                                                                            'Color_Transformer': 'FlatColor',
+                                                                            'Style': 'Spheres',
+                                                                            'Size__m_': 0.02,
+                                                                            'Alpha': 1})
+            displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
+
+        else:
+            atomError('Warning: Cannot generate rviz configuration for sensor ' + sensor_key + ' with topic '
+                      + topic + ' (' + modality + ')' + Style.RESET_ALL)
+
+    rviz['Visualization Manager']['Displays'] = displays
+    yaml.dump(rviz, open(package_path + '/rviz/' + rviz_playbag, 'w'))
 
     # --------------------------------------------------------------------------
     # Create the rviz config file for the set_initial_estimate

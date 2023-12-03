@@ -34,7 +34,7 @@
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
-    <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_set_initial_estimate }}"/>
+    <arg name="rviz_file" default="$(find {{ c.package_name }})/rviz/{{ c.rviz_playbag }}"/>
     <arg name="description_file" default="$(find {{ c.package_name }})/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
     <arg name="description_file" default="$(find {{ c.package_name }})/urdf/optimized.urdf.xacro"
