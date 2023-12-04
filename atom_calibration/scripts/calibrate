@@ -464,14 +464,14 @@ def main():
                     samples = rng.sample(population, number_of_samples)
 
                     # Save it to be used in the objective function.
-                    collection["labels"][sensor_key]["samples"] = samples
+                    collection["labels"][pattern_key][sensor_key]["samples"] = samples
 
                     for idx in samples:
                         opt.pushResidual(
                             name="c" + collection_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
 
                     # Extrema (limits) displacement error
-                    for idx in range(0, len(collection["labels"][sensor_key]["idxs_limit_points"])):
+                    for idx in range(0, len(collection["labels"][pattern_key][sensor_key]["idxs_limit_points"])):
                         opt.pushResidual(
                             name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
 

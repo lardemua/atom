@@ -261,7 +261,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                 )
 
                 # Get laser points that belong to the chessboard (labelled)
-                idxs = collection['labels'][sensor_key]['idxs']
+                idxs = collection['labels'][pattern_key][sensor_key]['idxs']
                 rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
                 thetas = [collection['data'][sensor_key]['angle_min'] +
                           collection['data'][sensor_key]['angle_increment'] * idx for idx in idxs]
@@ -293,7 +293,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                 marker.color.a = 0.5
 
                 marker.points = []  # Reset the list of marker points
-                for edge_idx in collection['labels'][sensor_key]['edge_idxs']:  # add edge points
+                for edge_idx in collection['labels'][pattern_key][sensor_key]['edge_idxs']:  # add edge points
                     p = Point()
                     p.x = rhos[edge_idx] * math.cos(thetas[edge_idx])
                     p.y = rhos[edge_idx] * math.sin(thetas[edge_idx])
@@ -315,7 +315,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
-                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                points = getPointsInSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
                 for idx in range(0, points.shape[1]):
                     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
@@ -334,7 +334,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                                                 b=graphics['collections'][collection_key]['color'][2], a=0.5)
                                 )
 
-                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
+                points = getPointsInSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
                 for idx in range(0, points.shape[1]):
                     marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
