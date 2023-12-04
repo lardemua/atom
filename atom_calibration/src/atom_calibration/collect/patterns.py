@@ -306,7 +306,8 @@ def estimatePatternPosesForCollection(dataset, collection_key):
         inner_length = pattern['inner_size']
         dictionary = pattern['dictionary']
 
-        opencv_pattern = opencv_patterns.CharucoPattern(size, length, inner_length, dictionary)
+        if pattern['pattern_type'] == 'charuco':
+            opencv_pattern = opencv_patterns.CharucoPattern(size, length, inner_length, dictionary)
 
         flg_detected_pattern = False
 
