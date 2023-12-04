@@ -10,7 +10,7 @@ import os
 import rospkg
 from tqdm import tqdm
 import yaml
-import wget
+import pathlib
 import zipfile
 
 # Atom imports
@@ -121,7 +121,8 @@ def main():
 #
         if system['bagfiles'] is not None:
             for bagfile_name, bagfile in system['bagfiles'].items():
-                file_name = ROS_BAGS + '/' + system_name + '/' + bagfile['file']
+                folder_name = ROS_BAGS + '/' + system_name + '/'
+                file_name = folder_name + bagfile['file']
 
                 if os.path.isfile(file_name) and not args['overwrite']:
                     print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
@@ -138,6 +139,8 @@ def main():
                       + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
 
                 # local_file_name = wget.download(url, file_name)
+                # Create the folder if it does not exist
+                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True) 
                 download_file_from_google_drive(bagfile['id'], file_name)
 
         if system['datasets'] is not None:
@@ -164,6 +167,8 @@ def main():
 
                 print("Downloading dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' to '
                       + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
+                # Create the folder if it does not exist
+                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True) 
                 download_file_from_google_drive(dataset['id'], file_name)
 
                 print("\nDecompressing from:" + Fore.BLUE + file_name + Style.RESET_ALL +
