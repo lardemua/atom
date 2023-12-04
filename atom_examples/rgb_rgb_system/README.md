@@ -82,7 +82,7 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=sharing) dataset, which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=drive_link) dataset, which contains 4 collections, as shown bellow.
 
 Download and decompress the dataset to **$ATOM_DATASETS/rgb_rgb_system/train**.
 
