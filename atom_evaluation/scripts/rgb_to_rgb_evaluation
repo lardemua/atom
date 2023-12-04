@@ -154,6 +154,7 @@ if __name__ == "__main__":
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
+    ap.add_argument("-pn", "--pattern_name", help="Name of the pattern for which the evaluation will be performed", type=str, default='')
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
@@ -180,7 +181,7 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
+    original_mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors
@@ -188,335 +189,346 @@ if __name__ == "__main__":
     # Source sensor
     K_s = np.zeros((3, 3), np.float32)
     D_s = np.zeros((5, 1), np.float32)
-    K_s[0, :] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][0:3]
-    K_s[1, :] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][3:6]
-    K_s[2, :] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][6:9]
-    D_s[:, 0] = mixed_dataset['sensors'][args['sensor_source']]['camera_info']['D'][0:5]
+    K_s[0, :] = original_mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][0:3]
+    K_s[1, :] = original_mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][3:6]
+    K_s[2, :] = original_mixed_dataset['sensors'][args['sensor_source']]['camera_info']['K'][6:9]
+    D_s[:, 0] = original_mixed_dataset['sensors'][args['sensor_source']]['camera_info']['D'][0:5]
 
     # Target sensor
     K_t = np.zeros((3, 3), np.float32)
     D_t = np.zeros((5, 1), np.float32)
-    K_t[0, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][0:3]
-    K_t[1, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][3:6]
-    K_t[2, :] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][6:9]
-    D_t[:, 0] = mixed_dataset['sensors'][args['sensor_target']]['camera_info']['D'][0:5]
+    K_t[0, :] = original_mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][0:3]
+    K_t[1, :] = original_mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][3:6]
+    K_t[2, :] = original_mixed_dataset['sensors'][args['sensor_target']]['camera_info']['K'][6:9]
+    D_t[:, 0] = original_mixed_dataset['sensors'][args['sensor_target']]['camera_info']['D'][0:5]
 
     # Defining frames
-    ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
-    st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+    ss_frame = original_mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+    st_frame = original_mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
-    # Deleting collections where the pattern is not found by all sensors:
-    collections_to_delete = []
-    for collection_key, collection in mixed_dataset['collections'].items():
-        for sensor_key, sensor in mixed_dataset['sensors'].items():
-            if not collection['labels'][sensor_key]['detected'] and (
-                    sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
-                print(
-                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
 
-                collections_to_delete.append(collection_key)
-                break
-
-    for collection_key in collections_to_delete:
-        del mixed_dataset['collections'][collection_key]
-
-    # Reprojection error graphics definitions
-    colors = cm.tab20b(np.linspace(0, 1, len(mixed_dataset['collections'].items())))
-
-    e = {}  # dictionary with all the errors
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        e[collection_key] = {}  # init the dictionary of errors for this collection
-
-        # Read image data
-        path_s = os.path.dirname(test_json_file) + '/' + collection['data'][args['sensor_source']]['data_file']
-        path_t = os.path.dirname(test_json_file) + '/' + collection['data'][args['sensor_target']]['data_file']
-
-        image_s = cv2.imread(path_s)
-        gray_s = cv2.cvtColor(image_s, cv2.COLOR_BGR2GRAY)
-        image_t = cv2.imread(path_t)
-        gray_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2GRAY)
-
-        # Get pattern number of corners
-        # TODO only works for first pattern
-        first_pattern_key = list(mixed_dataset['calibration_config']['calibration_patterns'].keys())[0]
-        nx = mixed_dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']
-        ny = mixed_dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y']
-        square = mixed_dataset['calibration_config']['calibration_patterns'][first_pattern_key]['size']
-
-        # Get corners and idxs for the source sensor
-        corners_s = np.ones((3, len(collection['labels'][args['sensor_source']]['idxs'])), dtype=float)
-        idxs_s = list(range(0, len(collection['labels'][args['sensor_source']]['idxs'])))
-        for idx, point in enumerate(collection['labels'][args['sensor_source']]['idxs']):
-            corners_s[0, idx] = point['x']
-            corners_s[1, idx] = point['y']
-            idxs_s[idx] = point['id']
-
-        # Get corners and idxs for the target sensor
-        corners_t = np.ones((3, len(collection['labels'][args['sensor_target']]['idxs'])), dtype=float)
-        idxs_t = list(range(0, len(collection['labels'][args['sensor_target']]['idxs'])))
-        for idx, point in enumerate(collection['labels'][args['sensor_target']]['idxs']):
-            corners_t[0, idx] = point['x']
-            corners_t[1, idx] = point['y']
-            idxs_t[idx] = point['id']
-
-        # for each labeled point in the source image, project in to the target image and measure the distance to the
-        # detection in the target image
-
-        # -------------------------------------------------------------
-        # STEP 1: Define corner coordinates in the pattern's local coordinate frame.
-        # -------------------------------------------------------------
-        objp = np.zeros((nx * ny, 4), float)
-        objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
-        objp[:, 3] = 1
-
-        # -------------------------------------------------------------
-        # STEP 2. Compute sa_T_p
-        # -------------------------------------------------------------
-        _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
-                                       K_s, D_s)
-        ss_T_p = traslationRodriguesToTransform(tvecs, rvecs)
-        # print('ss_T_p =\n' + str(ss_T_p))
-
-        # STEP 3. Compute sb_T_p
-        ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
-        st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
-        st_T_ss = getTransform(st_frame, ss_frame, mixed_dataset['collections'][collection_key]['transforms'])
-
-        st_T_p = np.dot(st_T_ss, ss_T_p)
-        # print('st_T_p =\n' + str(st_T_p))
-
-        # -------------------------------------------------------------
-        # STEP 4: Compute homography matrices for both sensors and the combined homography
-        # -------------------------------------------------------------
-        ss_H_p = np.dot(K_s, homographyFromTransform(ss_T_p))
-        st_H_p = np.dot(K_t, homographyFromTransform(st_T_p))
-        st_H_ss = np.dot(st_H_p, np.linalg.inv(ss_H_p))  # combined homography
-        # print('ss_H_p =\n' + str(ss_H_p))
-        # print('st_H_p =\n' + str(st_H_p))
-        # print('st_H_ss =\n' + str(st_H_ss))
-
-        # -------------------------------------------------------------
-        # STEP 5: Remove distortion from source sensor corners
-        # -------------------------------------------------------------
-        ucorners_s = undistortCorners(corners_s, K_s, D_s)
-
-        # -------------------------------------------------------------
-        # STEP 6: Project from source sensor to target sensor
-        # -------------------------------------------------------------
-        ucorners_s_proj_to_t = np.dot(st_H_ss, ucorners_s)
-        # Normalize pixel coordinates to have w = 1
-        ucorners_s_proj_to_t = ucorners_s_proj_to_t / np.tile(ucorners_s_proj_to_t[2, :], (3, 1))
-
-        # -------------------------------------------------------------
-        # STEP 7: adding distortion to the projections.
-        # -------------------------------------------------------------
-        # print(ucorners_s_proj_to_t)
-        corners_s_proj_to_t = distortCorners(ucorners_s_proj_to_t, K_t, D_t)
-        # print(corners_s_proj_to_t)
-
-        # -------------------------------------------------------------
-        # STEP 8: Compute the error whenever a detection of a given corner is successfull in the source and also the target sensors.
-        # -------------------------------------------------------------
-        x_errors = []
-        y_errors = []
-        rms_errors = []
-        for label_s_idx, label_s in enumerate(collection['labels'][args['sensor_source']]['idxs']):
-            has_corresponding_id = False
-            # Search for corresponding label id in target sensor?
-            for label_t_idx, label_t in enumerate(collection['labels'][args['sensor_target']]['idxs']):
-                if label_s['id'] == label_t['id']:
-                    has_corresponding_id = True
+    # Patterns to evaluate
+    if args['pattern_name'] == '':
+        patterns_to_evaluate = original_mixed_dataset['calibration_config']['calibration_patterns'].keys()
+    else:
+        patterns_to_evaluate = [args['pattern_name']]
+    
+    for pattern_key in patterns_to_evaluate:
+        mixed_dataset = deepcopy(original_mixed_dataset)
+        # Deleting collections where the pattern is not found by all sensors:
+        collections_to_delete = []
+        for collection_key, collection in mixed_dataset['collections'].items():
+            for sensor_key, sensor in mixed_dataset['sensors'].items():
+                if not collection['labels'][pattern_key][sensor_key]['detected'] and (
+                        sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
+                    print(
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
+    
+                    collections_to_delete.append(collection_key)
                     break
 
-            if has_corresponding_id:
-                x_t, y_t = corners_t[0, label_t_idx], corners_t[1, label_t_idx]
-                x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0, label_s_idx], corners_s_proj_to_t[1, label_s_idx]
+        for collection_key in collections_to_delete:
+            del mixed_dataset['collections'][collection_key]
 
-                x_errors.append(abs(x_t - x_s_proj_to_t))
-                y_errors.append(abs(y_t - y_s_proj_to_t))
-                rms_errors.append(math.sqrt((x_t - x_s_proj_to_t)**2 + (y_t - y_s_proj_to_t)**2))
-                continue
+        # Reprojection error graphics definitions
+        colors = cm.tab20b(np.linspace(0, 1, len(mixed_dataset['collections'].items())))
 
-        e[collection_key]['x'] = np.average(x_errors)
-        e[collection_key]['y'] = np.average(y_errors)
-        e[collection_key]['rms'] = rootMeanSquare(rms_errors)
+        e = {}  # dictionary with all the errors
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
 
-        # -------------------------------------------------------------
-        # STEP 9: Compute translation and rotation errors (This is from Eurico, did not change style)
-        # -------------------------------------------------------------
-        delta_total = []
-        terr = []
-        rerr = []
-        common_frame = mixed_dataset['calibration_config']['world_link']
-        source_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
-        target_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+        for collection_key, collection in od.items():
+            e[collection_key] = {}  # init the dictionary of errors for this collection
 
-        _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_t],
-                                       np.array(corners_t[0: 2, :].T, dtype=np.float32),
-                                       K_t, D_t)
-        pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
+            # Read image data
+            path_s = os.path.dirname(test_json_file) + '/' + collection['data'][args['sensor_source']]['data_file']
+            path_t = os.path.dirname(test_json_file) + '/' + collection['data'][args['sensor_target']]['data_file']
 
-        bTp = getTransform(common_frame, target_frame,
-                           mixed_dataset['collections'][collection_key]['transforms'])
+            image_s = cv2.imread(path_s)
+            gray_s = cv2.cvtColor(image_s, cv2.COLOR_BGR2GRAY)
+            image_t = cv2.imread(path_t)
+            gray_t = cv2.cvtColor(image_t, cv2.COLOR_BGR2GRAY)
 
-        pattern_pose_target = np.dot(bTp, pattern_pose_target)
+            # Get pattern number of corners
+            nx = mixed_dataset['calibration_config']['calibration_patterns'][pattern_key]['dimension']['x']
+            ny = mixed_dataset['calibration_config']['calibration_patterns'][pattern_key]['dimension']['y']
+            square = mixed_dataset['calibration_config']['calibration_patterns'][pattern_key]['size']
 
-        ret, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
-                                         K_s, D_s)
-        pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
+            # Get corners and idxs for the source sensor
+            corners_s = np.ones((3, len(collection['labels'][pattern_key][args['sensor_source']]['idxs'])), dtype=float)
+            idxs_s = list(range(0, len(collection['labels'][pattern_key][args['sensor_source']]['idxs'])))
+            for idx, point in enumerate(collection['labels'][pattern_key][args['sensor_source']]['idxs']):
+                corners_s[0, idx] = point['x']
+                corners_s[1, idx] = point['y']
+                idxs_s[idx] = point['id']
 
-        bTp = getTransform(common_frame, source_frame,
-                           mixed_dataset['collections'][collection_key]['transforms'])
+            # Get corners and idxs for the target sensor
+            corners_t = np.ones((3, len(collection['labels'][pattern_key][args['sensor_target']]['idxs'])), dtype=float)
+            idxs_t = list(range(0, len(collection['labels'][pattern_key][args['sensor_target']]['idxs'])))
+            for idx, point in enumerate(collection['labels'][pattern_key][args['sensor_target']]['idxs']):
+                corners_t[0, idx] = point['x']
+                corners_t[1, idx] = point['y']
+                idxs_t[idx] = point['id']
 
-        pattern_pose_source = np.dot(bTp, pattern_pose_source)
+            # for each labeled point in the source image, project in to the target image and measure the distance to the
+            # detection in the target image
 
-        delta = np.dot(np.linalg.inv(pattern_pose_source), pattern_pose_target)
+            # -------------------------------------------------------------
+            # STEP 1: Define corner coordinates in the pattern's local coordinate frame.
+            # -------------------------------------------------------------
+            objp = np.zeros((nx * ny, 4), float)
+            objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+            objp[:, 3] = 1
 
-        deltaT = delta[0:3, 3]
-        deltaR = matrixToRodrigues(delta[0:3, 0:3])
+            # -------------------------------------------------------------
+            # STEP 2. Compute sa_T_p
+            # -------------------------------------------------------------
+            _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
+                                        K_s, D_s)
+            ss_T_p = traslationRodriguesToTransform(tvecs, rvecs)
+            # print('ss_T_p =\n' + str(ss_T_p))
 
-        e[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
-        e[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
+            # STEP 3. Compute sb_T_p
+            ss_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+            st_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
+            st_T_ss = getTransform(st_frame, ss_frame, mixed_dataset['collections'][collection_key]['transforms'])
 
-        # -------------------------------------------------------------
-        # STEP 10: Show projections (optional)
-        # -------------------------------------------------------------
-        if args['show_images']:
-            width = collection['data'][args['sensor_target']]['width']
-            height = collection['data'][args['sensor_target']]['height']
-            diagonal = math.sqrt(width ** 2 + height ** 2)
+            st_T_p = np.dot(st_T_ss, ss_T_p)
+            # print('st_T_p =\n' + str(st_T_p))
 
-            window_name_s = 'Sensor ' + args['sensor_source'] + ' (source) - Collection ' + collection_key
-            window_name_t = 'Sensor ' + args['sensor_target'] + ' (target) - Collection ' + collection_key
-            cv2.namedWindow(window_name_s, cv2.WINDOW_NORMAL)
-            cv2.namedWindow(window_name_t, cv2.WINDOW_NORMAL)
-            image_gui_s = deepcopy(image_s)
-            image_gui_t = deepcopy(image_t)
-            cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+            # -------------------------------------------------------------
+            # STEP 4: Compute homography matrices for both sensors and the combined homography
+            # -------------------------------------------------------------
+            ss_H_p = np.dot(K_s, homographyFromTransform(ss_T_p))
+            st_H_p = np.dot(K_t, homographyFromTransform(st_T_p))
+            st_H_ss = np.dot(st_H_p, np.linalg.inv(ss_H_p))  # combined homography
+            # print('ss_H_p =\n' + str(ss_H_p))
+            # print('st_H_p =\n' + str(st_H_p))
+            # print('st_H_ss =\n' + str(st_H_ss))
 
-            # Iterate all corner detections in the source image and, if the same corner was detected on the target image, draw in color.
-            for label_s_idx, label_s in enumerate(collection['labels'][args['sensor_source']]['idxs']):
+            # -------------------------------------------------------------
+            # STEP 5: Remove distortion from source sensor corners
+            # -------------------------------------------------------------
+            ucorners_s = undistortCorners(corners_s, K_s, D_s)
+
+            # -------------------------------------------------------------
+            # STEP 6: Project from source sensor to target sensor
+            # -------------------------------------------------------------
+            ucorners_s_proj_to_t = np.dot(st_H_ss, ucorners_s)
+            # Normalize pixel coordinates to have w = 1
+            ucorners_s_proj_to_t = ucorners_s_proj_to_t / np.tile(ucorners_s_proj_to_t[2, :], (3, 1))
+
+            # -------------------------------------------------------------
+            # STEP 7: adding distortion to the projections.
+            # -------------------------------------------------------------
+            # print(ucorners_s_proj_to_t)
+            corners_s_proj_to_t = distortCorners(ucorners_s_proj_to_t, K_t, D_t)
+            # print(corners_s_proj_to_t)
+
+            # -------------------------------------------------------------
+            # STEP 8: Compute the error whenever a detection of a given corner is successfull in the source and also the target sensors.
+            # -------------------------------------------------------------
+            x_errors = []
+            y_errors = []
+            rms_errors = []
+            for label_s_idx, label_s in enumerate(collection['labels'][pattern_key][args['sensor_source']]['idxs']):
                 has_corresponding_id = False
                 # Search for corresponding label id in target sensor?
-                for label_t_idx, label_t in enumerate(collection['labels'][args['sensor_target']]['idxs']):
+                for label_t_idx, label_t in enumerate(collection['labels'][pattern_key][args['sensor_target']]['idxs']):
                     if label_s['id'] == label_t['id']:
                         has_corresponding_id = True
                         break
 
-                x_t, y_t = corners_t[0, label_t_idx], corners_t[1, label_t_idx]
-                x_s, y_s = corners_s[0, label_s_idx], corners_s[1, label_s_idx]
-                x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0, label_s_idx], corners_s_proj_to_t[1, label_s_idx]
-
                 if has_corresponding_id:
-                    color = (cmap[label_s['id'], 2] * 255, cmap[label_s['id'], 1] * 255, cmap[label_s['id'], 0] * 255)
+                    x_t, y_t = corners_t[0, label_t_idx], corners_t[1, label_t_idx]
+                    x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0, label_s_idx], corners_s_proj_to_t[1, label_s_idx]
 
-                    # Draw labels on source image (crosses)
-                    drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
+                    x_errors.append(abs(x_t - x_s_proj_to_t))
+                    y_errors.append(abs(y_t - y_s_proj_to_t))
+                    rms_errors.append(math.sqrt((x_t - x_s_proj_to_t)**2 + (y_t - y_s_proj_to_t)**2))
+                    continue
 
-                    # Draw labels on target image (squares)
-                    drawSquare2D(image_gui_t, x_t, y_t, 6, color=color, thickness=1)
+            e[collection_key]['x'] = np.average(x_errors)
+            e[collection_key]['y'] = np.average(y_errors)
+            e[collection_key]['rms'] = rootMeanSquare(rms_errors)
 
-                    # Draw projections of source to target, i.e. proj_to_t (crosses)
-                    drawCross2D(image_gui_t, x_s_proj_to_t, y_s_proj_to_t, 5, color=color, thickness=1)
+            # -------------------------------------------------------------
+            # STEP 9: Compute translation and rotation errors (This is from Eurico, did not change style)
+            # -------------------------------------------------------------
+            delta_total = []
+            terr = []
+            rerr = []
+            common_frame = mixed_dataset['calibration_config']['world_link']
+            source_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
+            target_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
-                else:
-                    color = (140, 140, 140)
-                    # Draw labels on source image (gray crosses)
-                    drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
+            _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_t],
+                                        np.array(corners_t[0: 2, :].T, dtype=np.float32),
+                                        K_t, D_t)
+            pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
-            cv2.resizeWindow(window_name_s, 800, int(800/image_gui_s.shape[1] * image_gui_s.shape[0]))
-            cv2.resizeWindow(window_name_t, 800, int(800/image_gui_t.shape[1] * image_gui_t.shape[0]))
-            cv2.imshow(window_name_s, image_gui_s)
-            cv2.imshow(window_name_t, image_gui_t)
+            bTp = getTransform(common_frame, target_frame,
+                            mixed_dataset['collections'][collection_key]['transforms'])
 
-            print('Errors for collection ' + collection_key + ':\n' + str(e[collection_key]))
+            pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
-            key = cv2.waitKey(0)
-            cv2.destroyWindow(window_name_s)
-            cv2.destroyWindow(window_name_t)
+            ret, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
+                                            K_s, D_s)
+            pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
-            if key == ord('c') or key == ord('q'):
-                print('q pressed. Continuing ...')
-                args['show_images'] = False
+            bTp = getTransform(common_frame, source_frame,
+                            mixed_dataset['collections'][collection_key]['transforms'])
 
-    # -------------------------------------------------------------
-    # STEP 11: Print output table
-    # -------------------------------------------------------------
-    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'Trans (mm)', 'Rot (deg)']
-    table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+            pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    for collection_key, collection in od.items():
-        row = [collection_key,
-               '%.4f' % e[collection_key]['rms'],
-               '%.4f' % e[collection_key]['x'],
-               '%.4f' % e[collection_key]['y'],
-               '%.4f' % e[collection_key]['trans'],
-               '%.4f' % e[collection_key]['rot']]
+            delta = np.dot(np.linalg.inv(pattern_pose_source), pattern_pose_target)
 
-        table.add_row(row)
-        table_to_save.add_row(row)
+            deltaT = delta[0:3, 3]
+            deltaR = matrixToRodrigues(delta[0:3, 0:3])
 
-    # Compute averages and add a bottom row
-    bottom_row = []  # Compute averages and add bottom row to table
-    bottom_row_save = []
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
-            bottom_row_save.append('Averages')
-            continue
+            e[collection_key]['trans'] = np.linalg.norm(deltaT) * 1000
+            e[collection_key]['rot'] = np.linalg.norm(deltaR) * 180.0 / np.pi
 
-        total = 0
-        count = 0
-        for row in table.rows:
-            # if row[col_idx].isnumeric():
-            try:
-                value = float(row[col_idx])
-                total += float(value)
-                count += 1
-            except:
-                pass
+            # -------------------------------------------------------------
+            # STEP 10: Show projections (optional)
+            # -------------------------------------------------------------
+            if args['show_images']:
+                width = collection['data'][args['sensor_target']]['width']
+                height = collection['data'][args['sensor_target']]['height']
+                diagonal = math.sqrt(width ** 2 + height ** 2)
 
-        value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
-        bottom_row_save.append(value)
+                window_name_s = 'Sensor ' + args['sensor_source'] + ' (source) - Collection ' + collection_key
+                window_name_t = 'Sensor ' + args['sensor_target'] + ' (target) - Collection ' + collection_key
+                cv2.namedWindow(window_name_s, cv2.WINDOW_NORMAL)
+                cv2.namedWindow(window_name_t, cv2.WINDOW_NORMAL)
+                image_gui_s = deepcopy(image_s)
+                image_gui_t = deepcopy(image_t)
+                cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
 
-    table.add_row(bottom_row)
-    table_to_save.add_row(bottom_row_save)
+                # Iterate all corner detections in the source image and, if the same corner was detected on the target image, draw in color.
+                for label_s_idx, label_s in enumerate(collection['labels'][args['sensor_source']]['idxs']):
+                    has_corresponding_id = False
+                    # Search for corresponding label id in target sensor?
+                    for label_t_idx, label_t in enumerate(collection['labels'][args['sensor_target']]['idxs']):
+                        if label_s['id'] == label_t['id']:
+                            has_corresponding_id = True
+                            break
 
-    # Put larger errors in red per column (per sensor)
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:  # nothing to do
-            continue
+                    x_t, y_t = corners_t[0, label_t_idx], corners_t[1, label_t_idx]
+                    x_s, y_s = corners_s[0, label_s_idx], corners_s[1, label_s_idx]
+                    x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0, label_s_idx], corners_s_proj_to_t[1, label_s_idx]
 
-        max = 0
-        max_row_idx = 0
-        for row_idx, row in enumerate(table.rows[:-1]):  # ignore bottom row
-            try:
-                value = float(row[col_idx])
-            except:
+                    if has_corresponding_id:
+                        color = (cmap[label_s['id'], 2] * 255, cmap[label_s['id'], 1] * 255, cmap[label_s['id'], 0] * 255)
+
+                        # Draw labels on source image (crosses)
+                        drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
+
+                        # Draw labels on target image (squares)
+                        drawSquare2D(image_gui_t, x_t, y_t, 6, color=color, thickness=1)
+
+                        # Draw projections of source to target, i.e. proj_to_t (crosses)
+                        drawCross2D(image_gui_t, x_s_proj_to_t, y_s_proj_to_t, 5, color=color, thickness=1)
+
+                    else:
+                        color = (140, 140, 140)
+                        # Draw labels on source image (gray crosses)
+                        drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
+
+                cv2.resizeWindow(window_name_s, 800, int(800/image_gui_s.shape[1] * image_gui_s.shape[0]))
+                cv2.resizeWindow(window_name_t, 800, int(800/image_gui_t.shape[1] * image_gui_t.shape[0]))
+                cv2.imshow(window_name_s, image_gui_s)
+                cv2.imshow(window_name_t, image_gui_t)
+
+                print('Errors for collection ' + collection_key + ':\n' + str(e[collection_key]))
+
+                key = cv2.waitKey(0)
+                cv2.destroyWindow(window_name_s)
+                cv2.destroyWindow(window_name_t)
+
+                if key == ord('c') or key == ord('q'):
+                    print('q pressed. Continuing ...')
+                    args['show_images'] = False
+
+        # -------------------------------------------------------------
+        # STEP 11: Print output table
+        # -------------------------------------------------------------
+        table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'Trans (mm)', 'Rot (deg)']
+        table = PrettyTable(table_header)
+        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        for collection_key, collection in od.items():
+            row = [collection_key,
+                '%.4f' % e[collection_key]['rms'],
+                '%.4f' % e[collection_key]['x'],
+                '%.4f' % e[collection_key]['y'],
+                '%.4f' % e[collection_key]['trans'],
+                '%.4f' % e[collection_key]['rot']]
+
+            table.add_row(row)
+            table_to_save.add_row(row)
+
+        # Compute averages and add a bottom row
+        bottom_row = []  # Compute averages and add bottom row to table
+        bottom_row_save = []
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:
+                bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
+                bottom_row_save.append('Averages')
                 continue
 
-            if value > max:
-                max = value
-                max_row_idx = row_idx
+            total = 0
+            count = 0
+            for row in table.rows:
+                # if row[col_idx].isnumeric():
+                try:
+                    value = float(row[col_idx])
+                    total += float(value)
+                    count += 1
+                except:
+                    pass
 
-        # set the max column value to red
-        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+            value = '%.4f' % (total / count)
+            bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
+            bottom_row_save.append(value)
 
-    table.align = 'c'
-    table_to_save.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
-    print(table)
+        table.add_row(bottom_row)
+        table_to_save.add_row(bottom_row_save)
 
-    # save results in csv file 
-    if args['save_file_results']: 
-        if args['save_file_results_name'] is None:
-            results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
-            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
-        else: 
-            with open(args['save_file_results_name'], 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+        # Put larger errors in red per column (per sensor)
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:  # nothing to do
+                continue
+
+            max = 0
+            max_row_idx = 0
+            for row_idx, row in enumerate(table.rows[:-1]):  # ignore bottom row
+                try:
+                    value = float(row[col_idx])
+                except:
+                    continue
+
+                if value > max:
+                    max = value
+                    max_row_idx = row_idx
+
+            # set the max column value to red
+            table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+
+        table.align = 'c'
+        table_to_save.align = 'c'
+        print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+        print(table)
+
+        # save results in csv file 
+        if args['save_file_results']: 
+            if args['save_file_results_name'] is None:
+                results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+            else: 
+                with open(args['save_file_results_name'], 'w', newline='') as f_output:
+                    f_output.write(table_to_save.get_csv_string())
+
+    print('Ending script...')
+    exit()

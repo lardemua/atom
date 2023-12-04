@@ -187,11 +187,10 @@ def saveFileResults(train_json, test_json, results_name, table_to_save):
         f_output.write(table_to_save.get_csv_string())
 
 
-def verifyFixedPattern(dataset):
-    print('Checking if calibration pattern is fixed ...', end='')
+def verifyFixedPattern(dataset, pattern_key):
+    print(f'Checking if calibration pattern {Fore.BLUE}{pattern_key}{Style.RESET_ALL} is fixed ...', end='')
 
-    if not dataset['calibration_config']['calibration_pattern']['fixed']:
-        atomError('Calibration pattern is not fixed, inter collection evaluation is disabled')
+    return dataset['calibration_config']['calibration_patterns'][pattern_key]['fixed']
 
 
 def getJointParentChild(joint_key, description):

@@ -182,12 +182,12 @@ def depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs):
     return points_in_depth
 
 
-def depthToImage(dataset, selected_collection_key, json_file, ss, ts, tf):
+def depthToImage(dataset, selected_collection_key, json_file, pattern_key, ss, ts, tf):
     """
     Convert a depth image to points inside an rgb image
     """
 
-    idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
+    idxs = dataset['collections'][selected_collection_key]['labels'][pattern_key][ss]['idxs_limit_points']
     points_in_depth = depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs)
 
     points_in_cam = np.dot(tf, points_in_depth)
@@ -215,12 +215,12 @@ def depthToPointCloud(dataset, selected_collection_key, json_file, ss, idxs):
 
     return point_cloud
 
-def depthInImage(dataset, selected_collection_key, ss):
+def depthInImage(dataset, selected_collection_key, pattern_key, ss):
     """
     Converts depth idxs_limit_points to points inside the depth image
     """
 
-    idxs = dataset['collections'][selected_collection_key]['labels'][ss]['idxs_limit_points']
+    idxs = dataset['collections'][selected_collection_key]['labels'][pattern_key][ss]['idxs_limit_points']
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
         'sensor_msgs/CameraInfo', dataset['sensors'][ss]['camera_info']))
@@ -240,13 +240,13 @@ def depthInImage(dataset, selected_collection_key, ss):
     return points_in_depth
 
 
-def rangeToImage(mixed_dataset, collection, json_file, ss, ts, tf):
+def rangeToImage(mixed_dataset, collection, json_file, pattern_key, ss, ts, tf):
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
     msg = read_pcd(filename)
     collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
 
     cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
-    idxs = collection['labels'][ss]['idxs_limit_points']
+    idxs = collection['labels'][pattern_key][ss]['idxs_limit_points']
 
     pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points_in_vel = np.zeros((4, pc.shape[0]))

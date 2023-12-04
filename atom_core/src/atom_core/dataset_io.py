@@ -787,7 +787,7 @@ def getMixedDataset(train_dataset, test_dataset):
     # Replace optimized transformations in the test dataset copying from the train dataset
     for _, sensor in train_dataset['sensors'].items():
         copyTFToDataset(sensor['calibration_parent'], sensor['calibration_child'], train_dataset, mixed_dataset)
-    if not train_dataset['calibration_config']['additional_tfs'] == "":
+    if train_dataset['calibration_config']['additional_tfs']:
         for _, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
             copyTFToDataset(additional_tf['parent_link'], additional_tf['child_link'], train_dataset, mixed_dataset)
 
