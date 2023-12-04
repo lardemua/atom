@@ -12,7 +12,7 @@ import argparse
 
 import jinja2
 
-from atom_core.utilities import atomError, atomPrintOK
+from atom_core.utilities import atomError, atomPrintOK, atomStartupPrint
 
 
 # 3rd-party
@@ -30,6 +30,9 @@ if __name__ == "__main__":
     ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
                     type=str, required=False, default=None)
     args = vars(ap.parse_args())
+
+    atomStartupPrint('Updating config from package ' + Fore.BLUE + args['package_name'] 
+                    + Style.RESET_ALL + ' to version 3.0')
 
     # --------------------------------------------------------------------------
     # Setup packages and paths
@@ -61,8 +64,8 @@ if __name__ == "__main__":
 
     # Verify the config version
     if 'version' in existing_config:
-        if float(existing_config['version']) >= 2.0:
-            atomError('Your config is already in version 2.0 or higher. No need to update it.')
+        if float(existing_config['version']) >= 3.0:
+            atomError('Your config is already in version 3.0 or higher. No need to update it.')
 
     # --------------------------------------------------------------------------
     # Create a backup of the config.yml file
@@ -78,71 +81,81 @@ if __name__ == "__main__":
     file_loader = FileSystemLoader(atom_calibration_path + '/templates')
     env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
     env.add_extension('jinja2.ext.do')
-    template = env.get_template('config.yml.update_to_version_2')
+    template = env.get_template('config.yml.update_to_version_3')
 
     # Add template config.yml
     config_yaml_file = args['config_file']
 
     c = existing_config
 
+    print('Adding date ... ', end='')
     c['date'] = dt_string
-    print('Adding date ... ', end=''), atomPrintOK()
+    atomPrintOK()
 
+    print('Adding package name ' + Fore.BLUE + package_name + Style.RESET_ALL + ' ... ', end='')
     c['package_name'] = package_name
-    print('Adding package name ' + Fore.BLUE + package_name + Style.RESET_ALL, end=''), atomPrintOK()
+    atomPrintOK()
 
-    c['version'] = 2.0
-    print('Adding config.yml version ', end=''), atomPrintOK()
+    print('Adding config.yml version ... ', end='') 
+    c['version'] = 3.0
+    atomPrintOK()
 
     # move anchored_sensor: "" to anchored_sensor:
     if 'anchored_sensor' not in c:
         c['anchored_sensor'] = ''
     if c['anchored_sensor'] == "" or c['additional_tfs'] == None:
-        c['anchored_sensor'] = None
         print('Changing empty anchored_sensor to new convention: ' + Fore.BLUE +
-              "anchored_sensor: " + Style.RESET_ALL, end=''), atomPrintOK()
+              "anchored_sensor: " + Style.RESET_ALL + ' ... ', end='')
+        c['anchored_sensor'] = None
+        atomPrintOK()
 
     # move additional_tfs: "" to additional_tfs:
     if 'additional_tfs' not in c:
         c['additional_tfs'] = ''
     if c['additional_tfs'] == "" or c['additional_tfs'] == None:
-        c['additional_tfs'] = None
         print('Changing empty additional_tfs to new convention: ' + Fore.BLUE +
-              "additional_tfs: " + Style.RESET_ALL, end=''), atomPrintOK()
+              "additional_tfs: " + Style.RESET_ALL + ' ... ', end='')
+        c['additional_tfs'] = None
+        atomPrintOK()
 
     # move joints: "" to joints:
     if 'joints' not in c:
         c['joints'] = ''
     if c['joints'] == "" or c['joints'] == None:
-        c['joints'] = None
         print('Changing empty joints to new convention: ' + Fore.BLUE +
-              "joints: " + Style.RESET_ALL, end=''), atomPrintOK()
+              "joints: " + Style.RESET_ALL + ' ... ', end='') 
+        c['joints'] = None
+        atomPrintOK()
 
     # move calibration_pattern: to calibration_patterns[0]:
+    print('Changing pattern to new convention: ' + Fore.BLUE +
+          "calibration_patterns: {'pattern_1': calibration_pattern}" + Style.RESET_ALL + ' ... ', end='')
     c['calibration_patterns'] = {'pattern_1': deepcopy(c['calibration_pattern'])}
     del c['calibration_pattern']
-    print('Changing pattern to new convention: ' + Fore.BLUE +
-          "calibration_patterns: {'pattern_1': calibration_pattern} " + Style.RESET_ALL, end=''), atomPrintOK()
+    atomPrintOK()
 
     # Add modality and throttle to each sensor
     for sensor_key, sensor in c.get('sensors', {}).items():
         if 'modality' not in sensor:
             sensor['modality'] = ''
         if sensor['modality'] == "" or sensor['modality'] == None:
-            sensor['modality'] = None
             print('Adding empty modality param to sensor: ' + Fore.BLUE +
-                  sensor_key + ' ' + Style.RESET_ALL, end=''), atomPrintOK()
+                  sensor_key + Style.RESET_ALL + ' ... ', end=''), 
+            sensor['modality'] = None
+            atomPrintOK()
 
         if 'throttle' not in sensor:
             sensor['throttle'] = ''
         if sensor['throttle'] == "" or sensor['throttle'] == None:
-            sensor['throttle'] = None
             print('Adding empty throttle param to sensor: ' + Fore.BLUE +
-                  sensor_key + ' ' + Style.RESET_ALL, end=''), atomPrintOK()
+                  sensor_key + Style.RESET_ALL + ' ... ', end='') 
+            sensor['throttle'] = None
+            atomPrintOK()
 
     with open(config_yaml_file, 'wb') as f:
         output = template.render(c=c)
         f.write(output.encode('utf-8'))
 
     print('Created a backup file of old config.yml in ' + Fore.BLUE + backup_file + Style.RESET_ALL)
-    print('Rendered ' + Fore.BLUE + args['config_file'] + Style.RESET_ALL + ' to version 2.0')
+    print('Rendered ' + Fore.BLUE + args['config_file'] + Style.RESET_ALL + ' to version 3.0')
+
