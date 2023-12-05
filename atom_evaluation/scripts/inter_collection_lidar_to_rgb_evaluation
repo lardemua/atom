@@ -92,6 +92,7 @@ if __name__ == "__main__":
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
+    ap.add_argument("-pn", "--pattern_name", help="Name of the pattern for which the evaluation will be performed", type=str, default='')
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
@@ -117,205 +118,217 @@ if __name__ == "__main__":
     annotations, annotations_file = readAnnotationFile(args['test_json_file'], args['camera_sensor'])
 
     # --- Get mixed json (calibrated transforms from train and the rest from test)
-    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+    original_mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
-    # ---------------------------------------
-    # --- Verify if pattern is fixed
-    # ---------------------------------------
-    verifyFixedPattern(mixed_dataset)
-
-    # ---------------------------------------
-    # --- INITIALIZATION Read evaluation data from file ---> if desired <---
-    # ---------------------------------------
-    # Deleting collections where the pattern is not found by all sensors:
-    collections_to_delete = []
-    for collection_key, collection in mixed_dataset['collections'].items():
-        for sensor_key, sensor in mixed_dataset['sensors'].items():
-            if not collection['labels'][sensor_key]['detected'] and (
-                    sensor_key == args['camera_sensor'] or sensor_key == args['range_sensor']):
-                print(
-                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
-
-                collections_to_delete.append(collection_key)
-                break
-
-    for collection_key in collections_to_delete:
-        del mixed_dataset['collections'][collection_key]
-
-    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
-
-    camera_frame = mixed_dataset['calibration_config']['sensors'][args['camera_sensor']]['link']
-    range_frame = mixed_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
+    camera_frame = original_mixed_dataset['calibration_config']['sensors'][args['camera_sensor']]['link']
+    range_frame = original_mixed_dataset['calibration_config']['sensors'][args['range_sensor']]['link']
     world_frame = args['world_frame']
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
-    e = {}  # dictionary with all the errors
-    collection_tuples_to_skip = []
-    for collection_source_key, collection_source in od.items():
-        e[collection_source_key] = {}  # init the dictionary of errors for this collection
-        for collection_target_key, collection_target in od_target.items():
-            e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
-            # ---------------------------------------
-            # --- Range to image projection
-            # ---------------------------------------
-            w_T_cs_cs = getTransform(world_frame, camera_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
-            w_T_rs_ct = getTransform(world_frame, range_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
-            cs_T_rs = np.dot(np.linalg.inv(w_T_cs_cs), w_T_rs_ct)
-            # vel2cam = getTransform(camera_frame, range_frame,
-            #                        mixed_dataset['collections'][collection_source_key]['transforms'])
-            pts_in_image = rangeToImage(collection_target, args['test_json_file'], args['range_sensor'],
-                                        args['camera_sensor'], cs_T_rs)
 
-            # ---------------------------------------
-            # --- Get evaluation data for current collection
-            # ---------------------------------------
-            filename = os.path.dirname(args['test_json_file']
-                                    ) + '/' + collection_source['data'][args['camera_sensor']]['data_file']
-            image = cv2.imread(filename)
+    # Patterns to evaluate
+    if args['pattern_name'] == '':
+        patterns_to_evaluate = original_mixed_dataset['calibration_config']['calibration_patterns'].keys()
+    else:
+        patterns_to_evaluate = [args['pattern_name']]
+    
+    for pattern_key in patterns_to_evaluate:
+        mixed_dataset = deepcopy(original_mixed_dataset)
 
-            if args['show_images']:  # draw all ground truth annotations
-                for side in annotations[collection_source_key].keys():
-                    for x, y in zip(annotations[collection_source_key][side]['ixs'],
-                                    annotations[collection_source_key][side]['iys']):
-                        cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
+        # ---------------------------------------
+        # --- Verify if pattern is fixed
+        # ---------------------------------------
+        if not verifyFixedPattern(mixed_dataset, pattern_key):
+            print(f'{pattern_key} is not fixed, inter collection evaluation is disabled')
+            continue
 
-            # ---------------------------------------
-            # --- Evaluation metrics - reprojection error
-            # ---------------------------------------
-            # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
-            x_errors = []
-            y_errors = []
-            errors = []
-            for idx in range(0, pts_in_image.shape[1]):
-                x_proj = pts_in_image[0, idx]
-                y_proj = pts_in_image[1, idx]
+        # ---------------------------------------
+        # --- INITIALIZATION Read evaluation data from file ---> if desired <---
+        # ---------------------------------------
+        # Deleting collections where the pattern is not found by all sensors:
+        collections_to_delete = []
+        for collection_key, collection in mixed_dataset['collections'].items():
+            for sensor_key, sensor in mixed_dataset['sensors'].items():
+                if not collection['labels'][pattern_key][sensor_key]['detected'] and (
+                        sensor_key == args['camera_sensor'] or sensor_key == args['range_sensor']):
+                    print(
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
 
-                # Do not consider points that are re-projected outside of the image
-                if x_proj > image.shape[1] or x_proj < 0 or y_proj > image.shape[0] or y_proj < 0:
+                    collections_to_delete.append(collection_key)
+                    break
+
+        for collection_key in collections_to_delete:
+            del mixed_dataset['collections'][collection_key]
+
+        print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
+
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        od_target = deepcopy(od)
+        e = {}  # dictionary with all the errors
+        collection_tuples_to_skip = []
+        for collection_source_key, collection_source in od.items():
+            e[collection_source_key] = {}  # init the dictionary of errors for this collection
+            for collection_target_key, collection_target in od_target.items():
+                e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
+                # ---------------------------------------
+                # --- Range to image projection
+                # ---------------------------------------
+                w_T_cs_cs = getTransform(world_frame, camera_frame, mixed_dataset['collections'][collection_source_key]['transforms'])
+                w_T_rs_ct = getTransform(world_frame, range_frame, mixed_dataset['collections'][collection_target_key]['transforms'])
+                cs_T_rs = np.dot(np.linalg.inv(w_T_cs_cs), w_T_rs_ct)
+                # vel2cam = getTransform(camera_frame, range_frame,
+                #                        mixed_dataset['collections'][collection_source_key]['transforms'])
+                pts_in_image = rangeToImage(collection_target, args['test_json_file'], pattern_key,
+                                            args['range_sensor'], args['camera_sensor'], cs_T_rs)
+
+                # ---------------------------------------
+                # --- Get evaluation data for current collection
+                # ---------------------------------------
+                filename = os.path.dirname(args['test_json_file']
+                                        ) + '/' + collection_source['data'][args['camera_sensor']]['data_file']
+                image = cv2.imread(filename)
+
+                if args['show_images']:  # draw all ground truth annotations
+                    for side in annotations[collection_source_key].keys():
+                        for x, y in zip(annotations[collection_source_key][side]['ixs'],
+                                        annotations[collection_source_key][side]['iys']):
+                            cv2.circle(image, (int(round(x)), int(round(y))), 1, (0, 255, 0), -1)
+
+                # ---------------------------------------
+                # --- Evaluation metrics - reprojection error
+                # ---------------------------------------
+                # -- For each reprojected limit point, find the closest ground truth point and compute the distance to it
+                x_errors = []
+                y_errors = []
+                errors = []
+                for idx in range(0, pts_in_image.shape[1]):
+                    x_proj = pts_in_image[0, idx]
+                    y_proj = pts_in_image[1, idx]
+
+                    # Do not consider points that are re-projected outside of the image
+                    if x_proj > image.shape[1] or x_proj < 0 or y_proj > image.shape[0] or y_proj < 0:
+                        continue
+
+                    min_error = sys.float_info.max  # a very large value
+                    x_min = None
+                    y_min = None
+                    for side in annotations[collection_source_key].keys():
+                        for x, y in zip(annotations[collection_source_key][side]['ixs'],
+                                        annotations[collection_source_key][side]['iys']):
+                            error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
+                            if error < min_error:
+                                min_error = error
+                                x_min = x
+                                y_min = y
+
+                    x_errors.append(abs(x_proj - x_min))
+                    y_errors.append(abs(y_proj - y_min))
+                    errors.append(min_error)
+
+                    if args['show_images']:
+                        cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
+                        cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
+                                (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
+
+                if not errors:
+                    print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
+                    collection_tuples_to_skip.append((collection_source_key, collection_target_key))
                     continue
 
-                min_error = sys.float_info.max  # a very large value
-                x_min = None
-                y_min = None
-                for side in annotations[collection_source_key].keys():
-                    for x, y in zip(annotations[collection_source_key][side]['ixs'],
-                                    annotations[collection_source_key][side]['iys']):
-                        error = math.sqrt((x_proj-x)**2 + (y_proj-y)**2)
-                        if error < min_error:
-                            min_error = error
-                            x_min = x
-                            y_min = y
-
-                x_errors.append(abs(x_proj - x_min))
-                y_errors.append(abs(y_proj - y_min))
-                errors.append(min_error)
+                e[collection_source_key][collection_target_key]['x'] = np.average(x_errors)
+                e[collection_source_key][collection_target_key]['y'] = np.average(y_errors)
+                e[collection_source_key][collection_target_key]['rms'] = rootMeanSquare(errors)
 
                 if args['show_images']:
-                    cv2.circle(image, (int(round(x_proj)), int(round(y_proj))), 5, (255, 0, 0), -1)
-                    cv2.line(image, (int(round(x_proj)), int(round(y_proj))),
-                            (int(round(x_min)), int(round(y_min))), (0, 255, 255, 1))
+                    print('Errors collection ' + collection_source_key + '\n' + str(e[collection_source_key]))
+                    window_name = 'Collection ' + collection_source_key
+                    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+                    cv2.imshow(window_name, image)
+                    key = cv2.waitKey(0)
+                    cv2.destroyWindow(window_name)
+                    if key == ord('q') or key == ord('c'):
+                        args['show_images'] = False
 
-            if not errors:
-                print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
-                collection_tuples_to_skip.append((collection_source_key, collection_target_key))
+        # -------------------------------------------------------------
+        # Print output table
+        # -------------------------------------------------------------
+        table_header = ['Collection Pair', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
+        table = PrettyTable(table_header)
+        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        od_target = deepcopy(od)
+        for collection_source_key, collection_source in od.items():
+            for collection_target_key, collection_target in od_target.items():
+                if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
+                    continue
+                row = [collection_source_key + '-' + collection_target_key,
+                    '%.4f' % e[collection_source_key][collection_target_key]['rms'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['x'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['y']]
+
+                table.add_row(row)
+                table_to_save.add_row(row)
+
+        # Compute averages and add a bottom row
+        bottom_row = []  # Compute averages and add bottom row to table
+        bottom_row_save = []
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:
+                bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
+                bottom_row_save.append('Averages')
                 continue
 
-            e[collection_source_key][collection_target_key]['x'] = np.average(x_errors)
-            e[collection_source_key][collection_target_key]['y'] = np.average(y_errors)
-            e[collection_source_key][collection_target_key]['rms'] = rootMeanSquare(errors)
+            total = 0
+            count = 0
+            for row in table.rows:
+                # if row[col_idx].isnumeric():
+                try:
+                    value = float(row[col_idx])
+                    total += float(value)
+                    count += 1
+                except:
+                    pass
 
-            if args['show_images']:
-                print('Errors collection ' + collection_source_key + '\n' + str(e[collection_source_key]))
-                window_name = 'Collection ' + collection_source_key
-                cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-                cv2.imshow(window_name, image)
-                key = cv2.waitKey(0)
-                cv2.destroyWindow(window_name)
-                if key == ord('q') or key == ord('c'):
-                    args['show_images'] = False
+            value = '%.4f' % (total / count)
+            bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
+            bottom_row_save.append(value)
 
-    # -------------------------------------------------------------
-    # Print output table
-    # -------------------------------------------------------------
-    table_header = ['Collection Pair', 'RMS (pix)', 'X err (pix)', 'Y err (pix)']
-    table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+        table.add_row(bottom_row)
+        table_to_save.add_row(bottom_row_save)
 
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
-    for collection_source_key, collection_source in od.items():
-        for collection_target_key, collection_target in od_target.items():
-            if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
-                continue
-            row = [collection_source_key + '-' + collection_target_key,
-                '%.4f' % e[collection_source_key][collection_target_key]['rms'],
-                '%.4f' % e[collection_source_key][collection_target_key]['x'],
-                '%.4f' % e[collection_source_key][collection_target_key]['y']]
-
-            table.add_row(row)
-            table_to_save.add_row(row)
-
-    # Compute averages and add a bottom row
-    bottom_row = []  # Compute averages and add bottom row to table
-    bottom_row_save = []
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
-            bottom_row_save.append('Averages')
-            continue
-
-        total = 0
-        count = 0
-        for row in table.rows:
-            # if row[col_idx].isnumeric():
-            try:
-                value = float(row[col_idx])
-                total += float(value)
-                count += 1
-            except:
-                pass
-
-        value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
-        bottom_row_save.append(value)
-
-    table.add_row(bottom_row)
-    table_to_save.add_row(bottom_row_save)
-
-    # Put larger errors in red per column (per sensor)
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:  # nothing to do
-            continue
-
-        max = 0
-        max_row_idx = 0
-        for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
-            try:
-                value = float(row[col_idx])
-            except:
+        # Put larger errors in red per column (per sensor)
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:  # nothing to do
                 continue
 
-            if value > max:
-                max = value
-                max_row_idx = row_idx
+            max = 0
+            max_row_idx = 0
+            for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
+                try:
+                    value = float(row[col_idx])
+                except:
+                    continue
 
-        # set the max column value to red
-        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+                if value > max:
+                    max = value
+                    max_row_idx = row_idx
 
-    table.align = 'c'
-    table_to_save.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
-    print(table)
+            # set the max column value to red
+            table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
 
-    # save results in csv file 
-    if args['save_file_results']: 
-        if args['save_file_results_name'] is None:
-            results_name = f'inter_collection_{args["range_sensor"]}_to_{args["camera_sensor"]}_results.csv'
-            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
-        else: 
-            with open(args['save_file_results_name'], 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+        table.align = 'c'
+        table_to_save.align = 'c'
+        print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+        print(table)
+
+        # save results in csv file 
+        if args['save_file_results']: 
+            if args['save_file_results_name'] is None:
+                results_name = f'inter_collection_{args["range_sensor"]}_to_{args["camera_sensor"]}_results.csv'
+                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+            else: 
+                with open(args['save_file_results_name'], 'w', newline='') as f_output:
+                    f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
     sys.exit()

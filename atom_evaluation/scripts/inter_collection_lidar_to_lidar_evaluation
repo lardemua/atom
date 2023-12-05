@@ -27,41 +27,9 @@ from atom_core.ros_numpy import numpify
 
 # Atom imports
 from atom_core.atom import getTransform
+from atom_core.vision import rangeToImage
 from atom_core.dataset_io import getMixedDataset, getPointCloudMessageFromDictionary, read_pcd, loadResultsJSON, filterCollectionsFromDataset
 from atom_core.utilities import saveFileResults, verifyFixedPattern
-
-# -------------------------------------------------------------------------------
-# --- FUNCTIONS
-# -------------------------------------------------------------------------------
-
-
-def rangeToImage(collection, json_file, ss):
-    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
-    msg = read_pcd(filename)
-    collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
-
-    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
-    # idxs = collection['labels'][ss]['idxs_limit_points']
-    idxs = collection['labels'][ss]['idxs']
-
-    pc = numpify(cloud_msg)[idxs]
-    points_in_vel = np.zeros((4, pc.shape[0]))
-    points_in_vel[0, :] = pc['x']
-    points_in_vel[1, :] = pc['y']
-    points_in_vel[2, :] = pc['z']
-    points_in_vel[3, :] = 1
-
-    # points_in_cam = np.dot(tf, points_in_vel)
-
-    # # -- Project them to the image
-    # w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    # K = np.ndarray((3, 3), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
-    # D = np.ndarray((5, 1), buffer=np.array(test_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
-    #
-    # lidar_pts_in_img, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
-
-    return points_in_vel
-
 
 # -------------------------------------------------------------------------------
 # --- MAIN
@@ -86,6 +54,7 @@ if __name__ == "__main__":
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
     # ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-pn", "--pattern_name", help="Name of the pattern for which the evaluation will be performed", type=str, default='')
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
@@ -113,200 +82,211 @@ if __name__ == "__main__":
     test_dataset = filterCollectionsFromDataset(test_dataset, args)  # filter collections
 
     # --- Get mixed json (calibrated transforms from train and the rest from test)
-    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+    original_mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
-    # ---------------------------------------
-    # --- Verify if pattern is fixed
-    # ---------------------------------------
-    verifyFixedPattern(mixed_dataset)
-
-    # Declare output dict to save the evaluation data if desire
-    delta_total = []
-    output_dict = {}
-    output_dict['ground_truth_pts'] = {}
-
-    # Deleting collections where the pattern is not found by all sensors:
-    collections_to_delete = []
-    for collection_key, collection in mixed_dataset['collections'].items():
-        for sensor_key, sensor in mixed_dataset['sensors'].items():
-            if (not collection['labels'][sensor_key]['detected'] or len(collection['labels'][sensor_key]['idxs']) == 0) and (
-                    sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
-                print(
-                    Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
-                    sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
-
-                collections_to_delete.append(collection_key)
-                break
-
-    for collection_key in collections_to_delete:
-        del mixed_dataset['collections'][collection_key]
+    source_frame = original_mixed_dataset['calibration_config']['sensors'][sensor_source]['link']
+    target_frame = original_mixed_dataset['calibration_config']['sensors'][sensor_target]['link']
+    world_frame = args['world_frame']
 
     print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
 
+    # Patterns to evaluate
+    if args['pattern_name'] == '':
+        patterns_to_evaluate = original_mixed_dataset['calibration_config']['calibration_patterns'].keys()
+    else:
+        patterns_to_evaluate = [args['pattern_name']]
+    
+    for pattern_key in patterns_to_evaluate:
+        mixed_dataset = deepcopy(original_mixed_dataset)
+        # ---------------------------------------
+        # --- Verify if pattern is fixed
+        # ---------------------------------------
+        if not verifyFixedPattern(mixed_dataset, pattern_key):
+            print(f'{pattern_key} is not fixed, inter collection evaluation is disabled')
+            continue
 
-    source_frame = mixed_dataset['calibration_config']['sensors'][sensor_source]['link']
-    target_frame = mixed_dataset['calibration_config']['sensors'][sensor_target]['link']
-    world_frame = args['world_frame']
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
-    e = {}  # dictionary with all the errors
-    collection_tuples_to_skip = []
-    for collection_source_key, collection_source in od.items():
-        e[collection_source_key] = {}  # init the dictionary of errors for this collection
-        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
-            od_target.pop(collection_source_key)
-        for collection_target_key, collection_target in od_target.items():
-            e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
+        # Declare output dict to save the evaluation data if desire
+        delta_total = []
+        output_dict = {}
+        output_dict['ground_truth_pts'] = {}
 
-            # Check for same sensor same collection
-            if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
-                continue
-        
-            # ---------------------------------------
-            # --- Range to image projection
-            # ---------------------------------------
-            world_to_lidar_source = getTransform(world_frame, source_frame,
-                                                        mixed_dataset['collections'][collection_source_key]['transforms'])
-            world_to_lidar_target = getTransform(world_frame, source_frame,
-                                                        mixed_dataset['collections'][collection_target_key]['transforms'])
+        # Deleting collections where the pattern is not found by all sensors:
+        collections_to_delete = []
+        for collection_key, collection in mixed_dataset['collections'].items():
+            for sensor_key, sensor in mixed_dataset['sensors'].items():
+                if (not collection['labels'][pattern_key][sensor_key]['detected'] or len(collection['labels'][pattern_key][sensor_key]['idxs']) == 0) and (
+                        sensor_key == args['sensor_source'] or sensor_key == args['sensor_target']):
+                    print(
+                        Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
+                        sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
 
-            lidar_target_to_lidar_source = np.dot(np.linalg.inv(world_to_lidar_target), world_to_lidar_source)
-            lidar_pts_source = rangeToImage(collection_source, test_json_file, sensor_source)
-            lidar_pts_target = rangeToImage(collection_target, test_json_file, sensor_target)
-            lidar_pts_source_in_lidar_target = np.dot(lidar_target_to_lidar_source, lidar_pts_source)
-            # ---------------------------------------
-            # --- Get evaluation data for current collection
-            # ---------------------------------------
-            delta_pts = []
-            distances = []
-            for idx in range(lidar_pts_target.shape[1]):
-                lidar_pt = np.reshape(lidar_pts_target[0:3, idx], (1, 3))
-                dist = distance.cdist(lidar_pt, lidar_pts_source_in_lidar_target.transpose()[:, :3], 'euclidean')
-                delta_pts.append((np.min(dist)))
-                coords = np.where(dist == np.min(dist))
+                    collections_to_delete.append(collection_key)
+                    break
 
-                min_dist_pt = lidar_pts_source_in_lidar_target.transpose()[coords[1]][0, :3]
-                dist = abs(lidar_pt - min_dist_pt)
-                distances.append(dist)
-                delta_total.append(dist)
+        for collection_key in collections_to_delete:
+            del mixed_dataset['collections'][collection_key]
 
 
-            if len(delta_pts) == 0:
-                print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
-                collection_tuples_to_skip.append((collection_source_key, collection_target_key))
-                continue
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        od_target = deepcopy(od)
+        e = {}  # dictionary with all the errors
+        collection_tuples_to_skip = []
+        for collection_source_key, collection_source in od.items():
+            e[collection_source_key] = {}  # init the dictionary of errors for this collection
+            if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+                od_target.pop(collection_source_key)
+            for collection_target_key, collection_target in od_target.items():
+                e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
 
-            # ---------------------------------------
-            # --- Compute error metrics
-            # ---------------------------------------
-            total_pts = len(delta_pts)
-            delta_pts = np.array(delta_pts, np.float32)
-            # avg_error = np.sum(np.abs(delta_pts)) / total_pts
-            rms = np.sqrt((delta_pts ** 2).mean())
-
-            delta_xy = np.array(distances, np.float32)
-            delta_xy = delta_xy[:, 0]
-            avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
-            avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
-            stdev_xy = np.std(delta_xy, axis=0)
+                # Check for same sensor same collection
+                if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
+                    continue
             
+                # ---------------------------------------
+                # --- Range to image projection
+                # ---------------------------------------
+                world_to_lidar_source = getTransform(world_frame, source_frame,
+                                                            mixed_dataset['collections'][collection_source_key]['transforms'])
+                world_to_lidar_target = getTransform(world_frame, source_frame,
+                                                            mixed_dataset['collections'][collection_target_key]['transforms'])
 
-            # Recording the errors
-            e[collection_source_key][collection_target_key]['rms'] = rms
-            e[collection_source_key][collection_target_key]['avg_error_x'] = avg_error_x
-            e[collection_source_key][collection_target_key]['avg_error_y'] = avg_error_y
-            e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
-            e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
+                lidar_target_to_lidar_source = np.dot(np.linalg.inv(world_to_lidar_target), world_to_lidar_source)
+                lidar_pts_source = rangeToImage(collection_source, test_json_file, pattern_key, sensor_source)
+                lidar_pts_target = rangeToImage(collection_target, test_json_file, pattern_key, sensor_target)
+                lidar_pts_source_in_lidar_target = np.dot(lidar_target_to_lidar_source, lidar_pts_source)
+                # ---------------------------------------
+                # --- Get evaluation data for current collection
+                # ---------------------------------------
+                delta_pts = []
+                distances = []
+                for idx in range(lidar_pts_target.shape[1]):
+                    lidar_pt = np.reshape(lidar_pts_target[0:3, idx], (1, 3))
+                    dist = distance.cdist(lidar_pt, lidar_pts_source_in_lidar_target.transpose()[:, :3], 'euclidean')
+                    delta_pts.append((np.min(dist)))
+                    coords = np.where(dist == np.min(dist))
 
-   
-    # -------------------------------------------------------------
-    # Print output table
-    # -------------------------------------------------------------
-    table_header = ['Collection Pair', 'RMS (m)', 'X err (m)', 'Y err (m)', 'X StDev (m)', 'Y StDev (m)']
-    table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+                    min_dist_pt = lidar_pts_source_in_lidar_target.transpose()[coords[1]][0, :3]
+                    dist = abs(lidar_pt - min_dist_pt)
+                    distances.append(dist)
+                    delta_total.append(dist)
 
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
-    for collection_source_key, collection_source in od.items():
-        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
-            od_target.pop(collection_source_key)
-        for collection_target_key, collection_target in od_target.items():
-            if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
-                # Remove every pairing removed in the previous for cycle
+
+                if len(delta_pts) == 0:
+                    print('No LiDAR point mapped into the image for collection ' + str(collection_source_key))
+                    collection_tuples_to_skip.append((collection_source_key, collection_target_key))
+                    continue
+
+                # ---------------------------------------
+                # --- Compute error metrics
+                # ---------------------------------------
+                total_pts = len(delta_pts)
+                delta_pts = np.array(delta_pts, np.float32)
+                # avg_error = np.sum(np.abs(delta_pts)) / total_pts
+                rms = np.sqrt((delta_pts ** 2).mean())
+
+                delta_xy = np.array(distances, np.float32)
+                delta_xy = delta_xy[:, 0]
+                avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
+                avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
+                stdev_xy = np.std(delta_xy, axis=0)
+                
+
+                # Recording the errors
+                e[collection_source_key][collection_target_key]['rms'] = rms
+                e[collection_source_key][collection_target_key]['avg_error_x'] = avg_error_x
+                e[collection_source_key][collection_target_key]['avg_error_y'] = avg_error_y
+                e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
+                e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
+
+    
+        # -------------------------------------------------------------
+        # Print output table
+        # -------------------------------------------------------------
+        table_header = ['Collection Pair', 'RMS (m)', 'X err (m)', 'Y err (m)', 'X StDev (m)', 'Y StDev (m)']
+        table = PrettyTable(table_header)
+        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        od_target = deepcopy(od)
+        for collection_source_key, collection_source in od.items():
+            if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+                od_target.pop(collection_source_key)
+            for collection_target_key, collection_target in od_target.items():
+                if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
+                    # Remove every pairing removed in the previous for cycle
+                    continue
+                if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
+                    continue
+                row = [collection_source_key + '-' + collection_target_key,
+                    '%.4f' % e[collection_source_key][collection_target_key]['rms'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['avg_error_y'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['stdev_x'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['stdev_y']]
+
+                table.add_row(row)
+                table_to_save.add_row(row)
+
+        # Compute averages and add a bottom row
+        bottom_row = []  # Compute averages and add bottom row to table
+        bottom_row_save = []
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:
+                bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
+                bottom_row_save.append('Averages')
                 continue
-            if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
-                continue
-            row = [collection_source_key + '-' + collection_target_key,
-                '%.4f' % e[collection_source_key][collection_target_key]['rms'],
-                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
-                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_y'],
-                '%.4f' % e[collection_source_key][collection_target_key]['stdev_x'],
-                '%.4f' % e[collection_source_key][collection_target_key]['stdev_y']]
 
-            table.add_row(row)
-            table_to_save.add_row(row)
+            total = 0
+            count = 0
+            for row in table.rows:
+                # if row[col_idx].isnumeric():
+                try:
+                    value = float(row[col_idx])
+                    total += float(value)
+                    count += 1
+                except:
+                    pass
 
-    # Compute averages and add a bottom row
-    bottom_row = []  # Compute averages and add bottom row to table
-    bottom_row_save = []
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
-            bottom_row_save.append('Averages')
-            continue
+            value = '%.4f' % (total / count)
+            bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
+            bottom_row_save.append(value)
 
-        total = 0
-        count = 0
-        for row in table.rows:
-            # if row[col_idx].isnumeric():
-            try:
-                value = float(row[col_idx])
-                total += float(value)
-                count += 1
-            except:
-                pass
+        table.add_row(bottom_row)
+        table_to_save.add_row(bottom_row_save)
 
-        value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
-        bottom_row_save.append(value)
-
-    table.add_row(bottom_row)
-    table_to_save.add_row(bottom_row_save)
-
-    # Put larger errors in red per column (per sensor)
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:  # nothing to do
-            continue
-
-        max = 0
-        max_row_idx = 0
-        for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
-            try:
-                value = float(row[col_idx])
-            except:
+        # Put larger errors in red per column (per sensor)
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:  # nothing to do
                 continue
 
-            if value > max:
-                max = value
-                max_row_idx = row_idx
+            max = 0
+            max_row_idx = 0
+            for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
+                try:
+                    value = float(row[col_idx])
+                except:
+                    continue
 
-        # set the max column value to red
-        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+                if value > max:
+                    max = value
+                    max_row_idx = row_idx
 
-    table.align = 'c'
-    table_to_save.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
-    print(table)
+            # set the max column value to red
+            table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
 
-    # save results in csv file 
-    if args['save_file_results']: 
-        if args['save_file_results_name'] is None:
-            results_name = f'inter_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
-            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
-        else: 
-            with open(args['save_file_results_name'], 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+        table.align = 'c'
+        table_to_save.align = 'c'
+        print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+        print(table)
+
+        # save results in csv file 
+        if args['save_file_results']: 
+            if args['save_file_results_name'] is None:
+                results_name = f'inter_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+            else: 
+                with open(args['save_file_results_name'], 'w', newline='') as f_output:
+                    f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
     sys.exit()

@@ -52,6 +52,7 @@ if __name__ == "__main__":
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
+    ap.add_argument("-pn", "--pattern_name", help="Name of the pattern for which the evaluation will be performed", type=str, default='')
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
@@ -81,212 +82,223 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+    original_mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
-    # ---------------------------------------
-    # --- Verify if pattern is fixed
-    # ---------------------------------------
-    verifyFixedPattern(mixed_dataset)
+    source_frame = original_mixed_dataset['calibration_config']['sensors'][depth_sensor_source]['link']
+    target_frame = original_mixed_dataset['calibration_config']['sensors'][depth_sensor_target]['link']
+    world_frame = args['world_frame']
 
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
     print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
 
-    # Declare output dict to save the evaluation data if desire
-    delta_total = []
-    output_dict = {}
-    output_dict['ground_truth_pts'] = {}
+    # Patterns to evaluate
+    if args['pattern_name'] == '':
+        patterns_to_evaluate = original_mixed_dataset['calibration_config']['calibration_patterns'].keys()
+    else:
+        patterns_to_evaluate = [args['pattern_name']]
+    
+    for pattern_key in patterns_to_evaluate:
+        mixed_dataset = deepcopy(original_mixed_dataset)
+        # ---------------------------------------
+        # --- Verify if pattern is fixed
+        # ---------------------------------------
+        if not verifyFixedPattern(mixed_dataset, pattern_key):
+            print(f'{pattern_key} is not fixed, inter collection evaluation is disabled')
+            continue
 
-    source_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor_source]['link']
-    target_frame = mixed_dataset['calibration_config']['sensors'][depth_sensor_target]['link']
-    world_frame = args['world_frame']
+        # Declare output dict to save the evaluation data if desire
+        delta_total = []
+        output_dict = {}
+        output_dict['ground_truth_pts'] = {}
 
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
-    e = {}  # dictionary with all the errors
-    collection_tuples_to_skip = []
-    for collection_source_key, collection_source in od.items():
-        e[collection_source_key] = {}  # init the dictionary of errors for this collection
-        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
-            od_target.pop(collection_source_key)
-        for collection_target_key, collection_target in od_target.items():
-            e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
-            # Check for same sensor same collection
-            if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
-                continue
-            # ---------------------------------------
-            # --- Depth to Depth projection
-            # ---------------------------------------
-            depth_source_2_world_cs = getTransform(world_frame, source_frame,
-                                                        mixed_dataset['collections'][collection_source_key]['transforms'])
-            world_2_depth_target_ct = getTransform(target_frame, world_frame,
-                                                        mixed_dataset['collections'][collection_target_key]['transforms'])
-            depth_source_2_depth_target = np.dot(world_2_depth_target_ct, depth_source_2_world_cs)
 
-            # ---------------------------------------
-            # --- Get evaluation data for current collection
-            # ---------------------------------------
-            filename = os.path.dirname(test_json_file) + '/' + collection_target['data'][depth_sensor_target]['data_file']
-            image = cv2.imread(filename)
-            target_depth_pts_in_img_target = depthInImage(mixed_dataset, collection_target_key, depth_sensor_target)
-            source_depth_pts_in_img_target = depthToImage(
-                mixed_dataset, collection_source_key, test_json_file, depth_sensor_source, depth_sensor_target, depth_source_2_depth_target)
-            
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        od_target = deepcopy(od)
+        e = {}  # dictionary with all the errors
+        collection_tuples_to_skip = []
+        for collection_source_key, collection_source in od.items():
+            e[collection_source_key] = {}  # init the dictionary of errors for this collection
+            if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+                od_target.pop(collection_source_key)
+            for collection_target_key, collection_target in od_target.items():
+                e[collection_source_key][collection_target_key] = {}  # init the dictionary of errors for this collection
+                # Check for same sensor same collection
+                if args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key:
+                    continue
+                # ---------------------------------------
+                # --- Depth to Depth projection
+                # ---------------------------------------
+                depth_source_2_world_cs = getTransform(world_frame, source_frame,
+                                                            mixed_dataset['collections'][collection_source_key]['transforms'])
+                world_2_depth_target_ct = getTransform(target_frame, world_frame,
+                                                            mixed_dataset['collections'][collection_target_key]['transforms'])
+                depth_source_2_depth_target = np.dot(world_2_depth_target_ct, depth_source_2_world_cs)
 
-            delta_pts = []
-            distances = []
-            w, h = collection_target['data'][depth_sensor_target]['width'], collection_target['data'][depth_sensor_target]['height']
-
-            for idx in range(source_depth_pts_in_img_target.shape[1]):
-                x = source_depth_pts_in_img_target[0][idx]
-                y = source_depth_pts_in_img_target[1][idx]
+                # ---------------------------------------
+                # --- Get evaluation data for current collection
+                # ---------------------------------------
+                filename = os.path.dirname(test_json_file) + '/' + collection_target['data'][depth_sensor_target]['data_file']
+                image = cv2.imread(filename)
+                target_depth_pts_in_img_target = depthInImage(mixed_dataset, collection_target_key, pattern_key, depth_sensor_target)
+                source_depth_pts_in_img_target = depthToImage(
+                    mixed_dataset, collection_source_key, test_json_file, pattern_key, depth_sensor_source, depth_sensor_target, depth_source_2_depth_target)
                 
-                # If the points are near or surpassing the image limits, do not count them for the errors
-                if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
-                    y > h * (1 - border_tolerance) or y < h * border_tolerance:
+
+                delta_pts = []
+                distances = []
+                w, h = collection_target['data'][depth_sensor_target]['width'], collection_target['data'][depth_sensor_target]['height']
+
+                for idx in range(source_depth_pts_in_img_target.shape[1]):
+                    x = source_depth_pts_in_img_target[0][idx]
+                    y = source_depth_pts_in_img_target[1][idx]
+                    
+                    # If the points are near or surpassing the image limits, do not count them for the errors
+                    if x > w * (1 - border_tolerance) or x < w * border_tolerance or \
+                        y > h * (1 - border_tolerance) or y < h * border_tolerance:
+                        continue
+
+                    depth_target_pts = np.reshape(source_depth_pts_in_img_target[0:2, idx], (1, 2))
+                    delta_pts.append(np.min(distance.cdist(depth_target_pts, target_depth_pts_in_img_target.transpose()[:, :2], 'euclidean')))
+                    coords = np.where(distance.cdist(depth_target_pts, target_depth_pts_in_img_target.transpose()[:, :2], 'euclidean') == np.min(
+                        distance.cdist(depth_target_pts, target_depth_pts_in_img_target.transpose()[:, :2], 'euclidean')))
+                    min_dist_pt = target_depth_pts_in_img_target.transpose()[coords[1]][0]
+                    dist = abs(depth_target_pts - min_dist_pt)
+                    distances.append(dist)
+                    delta_total.append(dist)
+
+                    if show_images:
+                        image = cv2.line(image, (int(depth_target_pts.transpose()[0]), int(depth_target_pts.transpose()[1])),
+                                        (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 3)
+
+                if len(delta_pts) == 0:
+                    print('No target depth point mapped into the image for collection pair' + str((collection_source_key, collection_target_key)))
+                    collection_tuples_to_skip.append((collection_source_key, collection_target_key))
                     continue
 
-                depth_target_pts = np.reshape(source_depth_pts_in_img_target[0:2, idx], (1, 2))
-                delta_pts.append(np.min(distance.cdist(depth_target_pts, target_depth_pts_in_img_target.transpose()[:, :2], 'euclidean')))
-                coords = np.where(distance.cdist(depth_target_pts, target_depth_pts_in_img_target.transpose()[:, :2], 'euclidean') == np.min(
-                    distance.cdist(depth_target_pts, target_depth_pts_in_img_target.transpose()[:, :2], 'euclidean')))
-                min_dist_pt = target_depth_pts_in_img_target.transpose()[coords[1]][0]
-                dist = abs(depth_target_pts - min_dist_pt)
-                distances.append(dist)
-                delta_total.append(dist)
+                # ---------------------------------------
+                # --- Compute error metrics
+                # ---------------------------------------
+                total_pts = len(delta_pts)
+                delta_pts = np.array(delta_pts, np.float32)
+                avg_error = np.sum(np.abs(delta_pts)) / total_pts
+                rms = np.sqrt((delta_pts ** 2).mean())
 
-                if show_images:
-                    image = cv2.line(image, (int(depth_target_pts.transpose()[0]), int(depth_target_pts.transpose()[1])),
-                                    (int(min_dist_pt[0]), int(min_dist_pt[1])), (0, 255, 255), 3)
+                delta_xy = np.array(distances, np.float32)
+                delta_xy = delta_xy[:, 0]
+                avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
+                avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
+                stdev_xy = np.std(delta_xy, axis=0)
 
-            if len(delta_pts) == 0:
-                print('No target depth point mapped into the image for collection pair' + str((collection_source_key, collection_target_key)))
-                collection_tuples_to_skip.append((collection_source_key, collection_target_key))
+                # Recording the errors
+                e[collection_source_key][collection_target_key]['rms'] = rms
+                e[collection_source_key][collection_target_key]['avg_error_x'] = avg_error_x
+                e[collection_source_key][collection_target_key]['avg_error_y'] = avg_error_y
+                e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
+                e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
+
+                # ---------------------------------------
+                # --- Drawing ...
+                # ---------------------------------------
+                if show_images is True:
+                    for idx in range(0, source_depth_pts_in_img_target.shape[1]):
+                        image = cv2.circle(image, (int(source_depth_pts_in_img_target[0, idx]), int(
+                            source_depth_pts_in_img_target[1, idx])), 5, (255, 0, 0), -1)
+                    for idx in range(0, target_depth_pts_in_img_target.shape[1]):
+                        image = cv2.circle(image, (int(target_depth_pts_in_img_target[0, idx]), int(
+                            target_depth_pts_in_img_target[1, idx])), 5, (0, 0, 255), -1)
+                    cv2.imshow("Depth to Depth reprojection - collection pair " + str((collection_source_key, collection_target_key)), image)
+                    cv2.waitKey()
+
+        # -------------------------------------------------------------
+        # Print output table
+        # -------------------------------------------------------------
+        table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'X StDev (pix)', 'Y StDev (pix)']
+        table = PrettyTable(table_header)
+        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+
+        od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
+        od_target = deepcopy(od)
+        for collection_source_key, collection_source in od.items():
+            if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
+                od_target.pop(collection_source_key)
+            for collection_target_key, collection_target in od_target.items():
+                if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
+                    # Remove every pairing removed in the previous for cycle
+                    continue
+                if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
+                    continue
+                row = [collection_source_key + '-' + collection_target_key,
+                    '%.4f' % e[collection_source_key][collection_target_key]['rms'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['avg_error_y'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['stdev_x'],
+                    '%.4f' % e[collection_source_key][collection_target_key]['stdev_y']]
+
+                table.add_row(row)
+                table_to_save.add_row(row)
+
+        # Compute averages and add a bottom row
+        bottom_row = []  # Compute averages and add bottom row to table
+        bottom_row_save = []
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:
+                bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
+                bottom_row_save.append('Averages')
                 continue
 
-            # ---------------------------------------
-            # --- Compute error metrics
-            # ---------------------------------------
-            total_pts = len(delta_pts)
-            delta_pts = np.array(delta_pts, np.float32)
-            avg_error = np.sum(np.abs(delta_pts)) / total_pts
-            rms = np.sqrt((delta_pts ** 2).mean())
+            total = 0
+            count = 0
+            for row in table.rows:
+                # if row[col_idx].isnumeric():
+                try:
+                    value = float(row[col_idx])
+                    total += float(value)
+                    count += 1
+                except:
+                    pass
 
-            delta_xy = np.array(distances, np.float32)
-            delta_xy = delta_xy[:, 0]
-            avg_error_x = np.sum(np.abs(delta_xy[:, 0])) / total_pts
-            avg_error_y = np.sum(np.abs(delta_xy[:, 1])) / total_pts
-            stdev_xy = np.std(delta_xy, axis=0)
+            value = '%.4f' % (total / count)
+            bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
+            bottom_row_save.append(value)
 
-            # Recording the errors
-            e[collection_source_key][collection_target_key]['rms'] = rms
-            e[collection_source_key][collection_target_key]['avg_error_x'] = avg_error_x
-            e[collection_source_key][collection_target_key]['avg_error_y'] = avg_error_y
-            e[collection_source_key][collection_target_key]['stdev_x'] = stdev_xy[0]
-            e[collection_source_key][collection_target_key]['stdev_y'] = stdev_xy[1]
+        table.add_row(bottom_row)
+        table_to_save.add_row(bottom_row_save)
 
-            # ---------------------------------------
-            # --- Drawing ...
-            # ---------------------------------------
-            if show_images is True:
-                for idx in range(0, source_depth_pts_in_img_target.shape[1]):
-                    image = cv2.circle(image, (int(source_depth_pts_in_img_target[0, idx]), int(
-                        source_depth_pts_in_img_target[1, idx])), 5, (255, 0, 0), -1)
-                for idx in range(0, target_depth_pts_in_img_target.shape[1]):
-                    image = cv2.circle(image, (int(target_depth_pts_in_img_target[0, idx]), int(
-                        target_depth_pts_in_img_target[1, idx])), 5, (0, 0, 255), -1)
-                cv2.imshow("Depth to Depth reprojection - collection pair " + str((collection_source_key, collection_target_key)), image)
-                cv2.waitKey()
-
-    # -------------------------------------------------------------
-    # Print output table
-    # -------------------------------------------------------------
-    table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'X StDev (pix)', 'Y StDev (pix)']
-    table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
-
-    od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
-    od_target = deepcopy(od)
-    for collection_source_key, collection_source in od.items():
-        if args['sensor_source'] == args['sensor_target']: # if the sensors are the same, use one-way pairings instead of two-way
-            od_target.pop(collection_source_key)
-        for collection_target_key, collection_target in od_target.items():
-            if (args['sensor_source'] == args['sensor_target'] and collection_source_key == collection_target_key):
-                # Remove every pairing removed in the previous for cycle
-                continue
-            if (collection_source_key, collection_target_key) in collection_tuples_to_skip:
-                continue
-            row = [collection_source_key + '-' + collection_target_key,
-                '%.4f' % e[collection_source_key][collection_target_key]['rms'],
-                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_x'],
-                '%.4f' % e[collection_source_key][collection_target_key]['avg_error_y'],
-                '%.4f' % e[collection_source_key][collection_target_key]['stdev_x'],
-                '%.4f' % e[collection_source_key][collection_target_key]['stdev_y']]
-
-            table.add_row(row)
-            table_to_save.add_row(row)
-
-    # Compute averages and add a bottom row
-    bottom_row = []  # Compute averages and add bottom row to table
-    bottom_row_save = []
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:
-            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Style.RESET_ALL)
-            bottom_row_save.append('Averages')
-            continue
-
-        total = 0
-        count = 0
-        for row in table.rows:
-            # if row[col_idx].isnumeric():
-            try:
-                value = float(row[col_idx])
-                total += float(value)
-                count += 1
-            except:
-                pass
-
-        value = '%.4f' % (total / count)
-        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
-        bottom_row_save.append(value)
-
-    table.add_row(bottom_row)
-    table_to_save.add_row(bottom_row_save)
-
-    # Put larger errors in red per column (per sensor)
-    for col_idx, _ in enumerate(table_header):
-        if col_idx == 0:  # nothing to do
-            continue
-
-        max = 0
-        max_row_idx = 0
-        for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
-            try:
-                value = float(row[col_idx])
-            except:
+        # Put larger errors in red per column (per sensor)
+        for col_idx, _ in enumerate(table_header):
+            if col_idx == 0:  # nothing to do
                 continue
 
-            if value > max:
-                max = value
-                max_row_idx = row_idx
+            max = 0
+            max_row_idx = 0
+            for row_idx, row in enumerate(table.rows[: -1]):  # ignore bottom row
+                try:
+                    value = float(row[col_idx])
+                except:
+                    continue
 
-        # set the max column value to red
-        table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
+                if value > max:
+                    max = value
+                    max_row_idx = row_idx
 
-    table.align = 'c'
-    table_to_save.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
-    print(table)
+            # set the max column value to red
+            table.rows[max_row_idx][col_idx] = Fore.RED + table.rows[max_row_idx][col_idx] + Style.RESET_ALL
 
-    # save results in csv file 
-    if args['save_file_results']: 
-        if args['save_file_results_name'] is None:
-            results_name = f'inter_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
-            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
-        else: 
-            with open(args['save_file_results_name'], 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
+        table.align = 'c'
+        table_to_save.align = 'c'
+        print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
+        print(table)
+
+        # save results in csv file 
+        if args['save_file_results']: 
+            if args['save_file_results_name'] is None:
+                results_name = f'inter_collection_{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+                saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+            else: 
+                with open(args['save_file_results_name'], 'w', newline='') as f_output:
+                    f_output.write(table_to_save.get_csv_string())
 
     print('Ending script...')
     sys.exit()
