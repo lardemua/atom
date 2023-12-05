@@ -452,6 +452,7 @@ class DataCollectorAndLabeler:
                         config_joint_dict['axis_z'] = az
                         config_joint_dict['parent_link'] = urdf_joint.parent
                         config_joint_dict['child_link'] = urdf_joint.child
+                        config_joint_dict['joint_type'] = urdf_joint.type
                         found_in_urdf = True
                         break
 
@@ -520,7 +521,6 @@ class DataCollectorAndLabeler:
 
         collection_key = str(self.data_stamp).zfill(3)  # collection names are 000, 001, etc
         self.collections[collection_key] = collection_dict
-        self.data_stamp += 1
 
         # Update pattern dict with transform_initial of this collection
         dataset = {'_metadata': self.metadata,
@@ -533,6 +533,8 @@ class DataCollectorAndLabeler:
         print('Estimating pattern poses for collection ...', end='')
         estimatePatternPosesForCollection(dataset, collection_key)
         atomPrintOK()
+
+        self.data_stamp += 1
 
         # Save to json file.
         output_file = self.output_folder + '/dataset.json'
