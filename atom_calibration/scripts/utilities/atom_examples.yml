@@ -56,3 +56,13 @@ rgb_hand_eye_system:
             file: train.zip
             extract_to: train
             id: 1YlFdik-38zhtI8fByY27XR7pxYdN-h_9
+rlbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1UftkcLSTQV2VeQiz9n5vq8vPDwF5jnLp
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1kM3D4aUORKMxdsz9krnpeDSXNrmXxltp
