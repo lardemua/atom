@@ -206,29 +206,29 @@ def setupVisualization(dataset, args, selected_collection_key):
         for sensor_key, sensor in dataset['sensors'].items():
 
             # check if sensor detects and of the patterns
-            flag_detects_at_leas_one_pattern = False
+            flag_detects_at_least_one_pattern = False
             for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
                 if collection['labels'][pattern_key][sensor_key]['detected']:
-                    flag_detects_at_leas_one_pattern = True
+                    flag_detects_at_least_one_pattern = True
 
             # If in this collection, sensor did not detect any of the patterns, continue
-            if flag_detects_at_leas_one_pattern == False:
+            if flag_detects_at_least_one_pattern == False:
                 continue
 
             if sensor['modality'] in ['rgb', 'depth']:
-                graphics['collections'][collection_key][str(sensor_key)] = {}
+                graphics['collections'][collection_key][sensor_key] = {}
 
                 # Image msg setup.
                 labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
                                                      collection_key=collection_key, type='2d')
-                graphics['collections'][collection_key][str(sensor_key)]['publisher'] = rospy.Publisher(
+                graphics['collections'][collection_key][sensor_key]['publisher'] = rospy.Publisher(
                     labeled_topic, sensor_msgs.msg.Image, queue_size=0, latch=True)
 
                 # Camera info msg setup.
                 labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
                                                      collection_key=collection_key, type='2d', suffix='/camera_info')
                 # topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
-                graphics['collections'][collection_key][str(sensor_key)]['publisher_camera_info'] = rospy.Publisher(
+                graphics['collections'][collection_key][sensor_key]['publisher_camera_info'] = rospy.Publisher(
                     labeled_topic, sensor_msgs.msg.CameraInfo, queue_size=0, latch=True)
 
     # ----------------------------------------------------------------------------------------
@@ -239,146 +239,151 @@ def setupVisualization(dataset, args, selected_collection_key):
         for collection_key, collection in dataset['collections'].items():
 
             # check if sensor detects and of the patterns
-            flag_detects_at_leas_one_pattern = False
+            flag_detects_at_least_one_pattern = False
             for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
                 if collection['labels'][pattern_key][sensor_key]['detected']:
-                    flag_detects_at_leas_one_pattern = True
+                    flag_detects_at_least_one_pattern = True
 
             # If in this collection, sensor did not detect any of the patterns, continue
-            if flag_detects_at_leas_one_pattern == False:
+            if flag_detects_at_least_one_pattern == False:
                 continue
 
-            if sensor['modality'] == 'lidar2d':
-                frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.03, y=0.03, z=0),
-                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=1.0)
-                                )
+            for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                if sensor['modality'] == 'lidar2d':
+                    frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                    ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
+                                    type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                    pose=Pose(position=Point(x=0, y=0, z=0),
+                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                    scale=Vector3(x=0.03, y=0.03, z=0),
+                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                    g=graphics['collections'][collection_key]['color'][1],
+                                                    b=graphics['collections'][collection_key]['color'][2], a=1.0)
+                                    )
 
-                # Get laser points that belong to the chessboard (labelled)
-                idxs = collection['labels'][sensor_key]['idxs']
-                rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
-                thetas = [collection['data'][sensor_key]['angle_min'] +
-                          collection['data'][sensor_key]['angle_increment'] * idx for idx in idxs]
+                    # Get laser points that belong to the chessboard (labelled)
+                    idxs = collection['labels'][sensor_key]['idxs']
+                    rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
+                    thetas = [collection['data'][sensor_key]['angle_min'] +
+                              collection['data'][sensor_key]['angle_increment'] * idx for idx in idxs]
 
-                for idx, (rho, theta) in enumerate(zip(rhos, thetas)):
-                    marker.points.append(Point(x=rho * math.cos(theta), y=rho * math.sin(theta), z=0))
+                    for idx, (rho, theta) in enumerate(zip(rhos, thetas)):
+                        marker.points.append(Point(x=rho * math.cos(theta), y=rho * math.sin(theta), z=0))
 
-                markers.markers.append(copy.deepcopy(marker))
+                    markers.markers.append(copy.deepcopy(marker))
 
-                # Draw extrema points
-                marker.ns = str(collection_key) + '-' + str(sensor_key)
-                marker.type = Marker.SPHERE_LIST
-                marker.id = 1
-                marker.scale.x = 0.1
-                marker.scale.y = 0.1
-                marker.scale.z = 0.1
-                marker.color.a = 0.5
-                marker.points = [marker.points[0], marker.points[-1]]
+                    # Draw extrema points
+                    marker.ns = str(collection_key) + '-' + str(sensor_key)
+                    marker.type = Marker.SPHERE_LIST
+                    marker.id = 1
+                    marker.scale.x = 0.1
+                    marker.scale.y = 0.1
+                    marker.scale.z = 0.1
+                    marker.color.a = 0.5
+                    marker.points = [marker.points[0], marker.points[-1]]
 
-                markers.markers.append(copy.deepcopy(marker))
+                    markers.markers.append(copy.deepcopy(marker))
 
-                # Draw detected edges
-                marker.ns = str(collection_key) + '-' + str(sensor_key)
-                marker.type = Marker.CUBE_LIST
-                marker.id = 2
-                marker.scale.x = 0.05
-                marker.scale.y = 0.05
-                marker.scale.z = 0.05
-                marker.color.a = 0.5
+                    # Draw detected edges
+                    marker.ns = str(collection_key) + '-' + str(sensor_key)
+                    marker.type = Marker.CUBE_LIST
+                    marker.id = 2
+                    marker.scale.x = 0.05
+                    marker.scale.y = 0.05
+                    marker.scale.z = 0.05
+                    marker.color.a = 0.5
 
-                marker.points = []  # Reset the list of marker points
-                for edge_idx in collection['labels'][sensor_key]['edge_idxs']:  # add edge points
-                    p = Point()
-                    p.x = rhos[edge_idx] * math.cos(thetas[edge_idx])
-                    p.y = rhos[edge_idx] * math.sin(thetas[edge_idx])
-                    p.z = 0
-                    marker.points.append(p)
-                markers.markers.append(copy.deepcopy(marker))
+                    marker.points = []  # Reset the list of marker points
+                    for edge_idx in collection['labels'][sensor_key]['edge_idxs']:  # add edge points
+                        p = Point()
+                        p.x = rhos[edge_idx] * math.cos(thetas[edge_idx])
+                        p.y = rhos[edge_idx] * math.sin(thetas[edge_idx])
+                        p.z = 0
+                        marker.points.append(p)
+                    markers.markers.append(copy.deepcopy(marker))
 
-            # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ----------------------------
-            elif sensor['modality'] == 'lidar3d':
-                # Add labelled points to the marker
-                frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.02, y=0.02, z=0.02),
-                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                )
+                # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ----------------------------
+                elif sensor['modality'] == 'lidar3d':
+                    # Add labelled points to the marker
+                    frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                    ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
+                                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                    pose=Pose(position=Point(x=0, y=0, z=0),
+                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                    scale=Vector3(x=0.02, y=0.02, z=0.02),
+                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                    g=graphics['collections'][collection_key]['color'][1],
+                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                                    )
 
-                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
-                for idx in range(0, points.shape[1]):
-                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                    points = getPointsInSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
+                    for idx in range(0, points.shape[1]):
+                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
-                markers.markers.append(copy.deepcopy(marker))
+                    markers.markers.append(copy.deepcopy(marker))
 
-                # Add limit points to the marker, this time with larger spheres
-                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
-                                frame_locked=True,
-                                type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                pose=Pose(position=Point(x=0, y=0, z=0),
-                                          orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.07, y=0.07, z=0.07),
-                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                )
+                    # Add limit points to the marker, this time with larger spheres
+                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                    ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
+                                    frame_locked=True,
+                                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                    pose=Pose(position=Point(x=0, y=0, z=0),
+                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                    scale=Vector3(x=0.07, y=0.07, z=0.07),
+                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                    g=graphics['collections'][collection_key]['color'][1],
+                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                                    )
 
-                points = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs_limit_points', dataset)
-                for idx in range(0, points.shape[1]):
-                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                    points = getPointsInSensorAsNPArray(collection_key, pattern_key,
+                                                        sensor_key, 'idxs_limit_points', dataset)
+                    for idx in range(0, points.shape[1]):
+                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
-                markers.markers.append(copy.deepcopy(marker))
+                    markers.markers.append(copy.deepcopy(marker))
 
-            # Setup visualization for depth
-            elif sensor['modality'] == 'depth':  # -------- Publish the depth  ----------------------------
-                # Add labelled points to the marker
-                frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.01, y=0.01, z=0.01),
-                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                )
+                # Setup visualization for depth
+                elif sensor['modality'] == 'depth':  # -------- Publish the depth  ----------------------------
+                    # Add labelled points to the marker
+                    frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                    ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
+                                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                    pose=Pose(position=Point(x=0, y=0, z=0),
+                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                    scale=Vector3(x=0.01, y=0.01, z=0.01),
+                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                    g=graphics['collections'][collection_key]['color'][1],
+                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                                    )
 
-                points = getPointsInDepthSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
-                for idx in range(0, points.shape[1]):
-                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                    points = getPointsInDepthSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
+                    for idx in range(0, points.shape[1]):
+                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
-                markers.markers.append(copy.deepcopy(marker))
+                    markers.markers.append(copy.deepcopy(marker))
 
-                # Add limit points to the marker, this time with larger spheres
-                marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
-                                frame_locked=True,
-                                type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                pose=Pose(position=Point(x=0, y=0, z=0),
-                                          orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.05, y=0.05, z=0.05),
-                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                )
+                    # Add limit points to the marker, this time with larger spheres
+                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
+                                    ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
+                                    frame_locked=True,
+                                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
+                                    pose=Pose(position=Point(x=0, y=0, z=0),
+                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                                    scale=Vector3(x=0.05, y=0.05, z=0.05),
+                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
+                                                    g=graphics['collections'][collection_key]['color'][1],
+                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
+                                    )
 
-                points = getPointsInDepthSensorAsNPArray(
-                    collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
-                for idx in range(0, points.shape[1]):
-                    marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                    points = getPointsInDepthSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
+                    for idx in range(0, points.shape[1]):
+                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
 
-                markers.markers.append(copy.deepcopy(marker))
+                    markers.markers.append(copy.deepcopy(marker))
 
             graphics['ros']['sensors'][sensor_key] = {}
             graphics['ros']['sensors'][sensor_key]['MarkersLabeled'] = markers
@@ -516,13 +521,13 @@ def setupVisualization(dataset, args, selected_collection_key):
         for sensor_key, sensor in dataset['sensors'].items():
 
             # check if sensor detects and of the patterns
-            flag_detects_at_leas_one_pattern = False
+            flag_detects_at_least_one_pattern = False
             for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
                 if collection['labels'][pattern_key][sensor_key]['detected']:
-                    flag_detects_at_leas_one_pattern = True
+                    flag_detects_at_least_one_pattern = True
 
             # If in this collection, sensor did not detect any of the patterns, continue
-            if flag_detects_at_leas_one_pattern == False:
+            if flag_detects_at_least_one_pattern == False:
                 continue
 
             # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':

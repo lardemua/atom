@@ -457,23 +457,21 @@ def main():
                     # The number of residuals for this error can be huge.
                     # Therefore, we do a random sample to reduce the number.
                     # The sample percentage has the interval [0.1, 1.0]
-                    population = range(
-                        0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
-                    number_of_samples = int(
-                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
+                    population = range(0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
+                    number_of_samples = int(max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
                     samples = rng.sample(population, number_of_samples)
 
                     # Save it to be used in the objective function.
-                    collection["labels"][sensor_key]["samples"] = samples
+                    collection["labels"][pattern_key][sensor_key]["samples"] = samples
 
                     for idx in samples:
-                        opt.pushResidual(
-                            name="c" + collection_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
+                        rname = "c" + collection_key + "_p_" + pattern_key + '_' + sensor_key + "_oe_" + str(idx)
+                        opt.pushResidual(name=rname, params=params)
 
                     # Extrema (limits) displacement error
-                    for idx in range(0, len(collection["labels"][sensor_key]["idxs_limit_points"])):
-                        opt.pushResidual(
-                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
+                    for idx in range(0, len(collection["labels"][pattern_key][sensor_key]["idxs_limit_points"])):
+                        rname = "c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx)
+                        opt.pushResidual(name=rname, params=params)
 
                 elif sensor["modality"] == "depth":
 

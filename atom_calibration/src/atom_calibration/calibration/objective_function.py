@@ -198,9 +198,9 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _pattern_key, _sensor_key
 
 
 @Cache(args_to_ignore=['_dataset'])
-def getPointsInSensorAsNPArray(_collection_key, _sensor_key, _label_key, _dataset):
+def getPointsInSensorAsNPArray(_collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
     cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
-    idxs = _dataset['collections'][_collection_key]['labels'][_sensor_key][_label_key]
+    idxs = _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key][_label_key]
     pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points = np.zeros((4, pc.shape[0]))
     points[0, :] = pc['x']
@@ -516,10 +516,10 @@ def objectiveFunction(data):
 
                     # --- Residuals: Longitudinal distance for inner points
                     pts = []
-                    pts.extend(patterns['frame']['lines_sampled']['left'])
-                    pts.extend(patterns['frame']['lines_sampled']['right'])
-                    pts.extend(patterns['frame']['lines_sampled']['top'])
-                    pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['left'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
                     pts_inner_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
                     # pts_inner_in_chessboard = patterns['inner_points'][0:2, :].transpose()
                     edges2d_in_chessboard = pts_in_chessboard[0:2,
@@ -592,13 +592,14 @@ def objectiveFunction(data):
 
                     now = datetime.now()
                     # Get the 3D LiDAR labelled points for the given collection
-                    points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key, 'idxs', dataset)
+                    points_in_sensor = getPointsInSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs', dataset)
 
                     # ------------------------------------------------------------------------------------------------
                     # --- Orthogonal Distance Residuals: Distance from 3D range sensor point to chessboard plan
                     # ------------------------------------------------------------------------------------------------
                     # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
-                    from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                    from_frame = pattern['link']
                     to_frame = sensor['parent']
                     lidar_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
 
@@ -607,7 +608,7 @@ def objectiveFunction(data):
                     points_in_pattern = np.dot(lidar_to_pattern, points_in_sensor)
 
                     rname_pre = 'c' + collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_oe_'
-                    for idx in collection['labels'][sensor_key]['samples']:
+                    for idx in collection['labels'][pattern_key][sensor_key]['samples']:
                         # Compute the residual: absolute of z component
                         rname = rname_pre + str(idx)
                         r[rname] = float(abs(points_in_pattern[2, idx])) / normalizer['lidar3d']
@@ -615,19 +616,19 @@ def objectiveFunction(data):
                     # ------------------------------------------------------------------------------------------------
                     # --- Pattern Extrema Residuals: Distance from the extremas of the pattern to the extremas of the cloud
                     # ------------------------------------------------------------------------------------------------
-                    detected_limit_points_in_sensor = getPointsInSensorAsNPArray(collection_key, sensor_key,
-                                                                                 'idxs_limit_points', dataset)
+                    detected_limit_points_in_sensor = getPointsInSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
 
-                    from_frame = dataset['calibration_config']['calibration_pattern']['link']
+                    from_frame = pattern['link']
                     to_frame = sensor['parent']
                     pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
                     detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
 
                     pts = []
-                    pts.extend(patterns['frame']['lines_sampled']['left'])
-                    pts.extend(patterns['frame']['lines_sampled']['right'])
-                    pts.extend(patterns['frame']['lines_sampled']['top'])
-                    pts.extend(patterns['frame']['lines_sampled']['bottom'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['left'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
+                    pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
                     ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
                                                                     float)
 
