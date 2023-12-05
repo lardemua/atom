@@ -1,0 +1,432 @@
+#!/usr/bin/env python3
+
+# stdlib
+import os
+import argparse
+from os.path import exists
+import numpy as np
+
+import matplotlib
+import atom_core.config_io
+import atom_core.drawing
+
+# 3rd-party
+import numpy
+import rospkg
+import rosbag
+from pytictoc import TicToc
+
+# local packages
+from atom_core.utilities import atomPrintOK, atomError, atomStartupPrint
+from atom_core.system import execute
+from colorama import Style, Fore
+from graphviz import Digraph
+import networkx as nx
+import graphviz
+from urdf_parser_py.urdf import URDF
+from matplotlib import cm
+
+
+if __name__ == "__main__":
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-n", "--name", help='package name', type=str, required=True)
+    ap.add_argument("-utf", "--use_tfs", action="store_true",
+                    help='Use transformations in the bag file instead of generating new tfs from the xacro, '
+                         'joint_state_msgs and robot state publisher.')
+    ap.add_argument("-cgt", "--collect_ground_truth", action="store_true",
+                    help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
+    ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
+                    type=str, required=False, default=None)
+    args = vars(ap.parse_args())
+
+    # --------------------------------------------------------------------------
+    # Initial setup
+    # --------------------------------------------------------------------------
+    tictoc = TicToc()
+    tictoc.tic()
+
+    package_name = os.path.basename(args['name'])
+    atomStartupPrint('View calibration config ' + Fore.BLUE + package_name + Style.RESET_ALL)
+
+    rospack = rospkg.RosPack()
+    atom_calibration_path = rospack.get_path('atom_calibration')
+
+    if not package_name in rospack.list():  # Check if package is under $ROS_PACKAGE_PATH, abort if not
+        atomError('ROS package ' + Fore.BLUE + package_name + Style.RESET_ALL + ' not found under ROS. Are you sure the package in under a directory listed in $ROS_PACKAGE_PATH? Can you run:\n\n' +
+                  Fore.BLUE + 'roscd ' + package_name + Style.RESET_ALL + '\n\nPlease fix this before running your package configuration.')
+
+    package_path = rospack.get_path(package_name)  # full path to the package, including its name.
+    package_base_path = os.path.dirname(package_path)  # parent path where the package is located
+
+    # --------------------------------------------------------------------------
+    # Read the config.yml file
+    # --------------------------------------------------------------------------
+    if args['config_file'] is None:
+        args['config_file'] = package_path + '/calibration/config.yml'
+    else:
+        args['config_file'] = package_path + '/calibration/' + args['config_file']
+        if not exists(args['config_file']):
+            args['config_file'] = package_path + '/calibration/config.yml'
+
+    print('Loading config_file ' + Fore.BLUE + str(args['config_file']) + Style.RESET_ALL)
+    config = atom_core.config_io.loadConfig(args['config_file'])
+
+    # Sensors colormap. Access with:  color_map_sensors[idx, :]
+    cm_sensors = cm.Set3(numpy.linspace(0, 1, len(config['sensors'].keys())))
+
+    # --------------------------------------------------------------------------
+    # Read the bag file
+    # --------------------------------------------------------------------------
+    bag_file, _, bag_file_rel = atom_core.config_io.uriReader(config['bag_file'])
+    print('Loading bagfile ' + bag_file + ' ... ', end='')
+    bag = rosbag.Bag(bag_file)
+    atomPrintOK()
+    bag_info = bag.get_type_and_topic_info()
+    bag_types = bag_info[0]
+    bag_topics = bag_info[1]
+
+    # Get initial stamp to compute mission time
+    for topic, msg, stamp in bag.read_messages():
+        bag_initial_stamp = stamp
+        break
+
+    # --------------------------------------------------------------------------
+    # Setup the description file
+    # --------------------------------------------------------------------------
+    description_file, _, _ = atom_core.config_io.uriReader(config['description_file'])
+    description_file_out_initial_estimate = package_path + '/urdf/initial_estimate.urdf.xacro'
+    execute('cp ' + description_file + ' ' + description_file_out_initial_estimate,
+            verbose=False)  # Copy the xacro to the initial_estimate file
+
+    # Check the description file
+    urdf_file = '/tmp/description.urdf'
+    if os.path.exists(urdf_file):
+        # print('Deleting temporary file ' + urdf_file)
+        os.remove(urdf_file)
+
+    print('Parsing description file ' + Fore.BLUE + description_file + Style.RESET_ALL)
+    xacro_cmd = 'xacro ' + description_file + ' -o ' + urdf_file
+    execute(xacro_cmd, verbose=True)  # create tmp urdf file
+
+    if not os.path.exists(urdf_file):
+        atomError('Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' +
+                  Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
+
+    description = URDF.from_xml_file(urdf_file)  # read the urdf file
+
+    # --------------------------------------------------------------------------
+    # Support functions
+    # --------------------------------------------------------------------------
+
+    def is_world_link(link, config):
+        if config['world_link'] == link:
+            return True
+        else:
+            return False
+
+    def has_pattern_link(link, config):
+        for pattern_key, pattern in config['calibration_patterns'].items():
+            if link == pattern['link']:
+                return pattern_key
+
+        return None
+
+    def has_sensor_data(link, config):
+        for sensor_key, sensor in config['sensors'].items():
+            if link == sensor['link']:
+                return sensor_key
+
+        return None
+
+    def is_transformation_calibrated(parent, child, config):
+        for sensor_key, sensor in config['sensors'].items():
+            if parent == sensor['parent_link'] and child == sensor['child_link']:
+                return True
+
+        for additional_tf_key, additional_tf in config['additional_tfs'].items():
+            if parent == additional_tf['parent_link'] and child == additional_tf['child_link']:
+                return True
+
+        return False
+
+    def get_joint_name(parent, child, description):
+        for joint in description.joints:
+            if parent == joint.parent and child == joint.child:
+                return joint.name
+
+        return None
+
+    def joint_params_calibrated(joint_name, config):
+
+        for joint_key, joint in config['joints'].items():
+            # Search for a joint with the same name in the urdf
+            if joint_key == joint_name:
+                return joint['params_to_calibrate']
+
+        return None
+
+    # --------------------------------------------------------------------------
+    # Create a tf graph to support the creation of the graphviz object
+    # --------------------------------------------------------------------------
+    gx = nx.DiGraph()
+    if not args['use_tfs']:  # create a graph using the information in the urdf
+        print('Creating transformation tree using the urdf robot description ...')
+
+        for link in description.links:  # A graph node for each link in the urdf
+            gx.add_node(link.name,
+                        is_world=is_world_link(link.name, config),
+                        pattern=has_pattern_link(link.name, config),
+                        sensor_data=has_sensor_data(link.name, config))
+
+        # Graph node for each calibration pattern
+        for pattern_key, pattern in config['calibration_patterns'].items():
+            gx.add_node(pattern['link'],
+                        is_world=is_world_link(pattern['link'], config),
+                        pattern=has_pattern_link(pattern['link'], config),
+                        sensor_data=has_sensor_data(pattern['link'], config))
+
+        # Graph edges from joints in description
+        for joint in description.joints:
+            parent = joint.parent
+            child = joint.child
+            gx.add_edge(parent, child, weight=1, type=joint.type,
+                        parent=parent, child=child,
+                        is_transformation_calibrated=is_transformation_calibrated(parent, child, config),
+                        joint_params_calibrated=joint_params_calibrated(joint.name, config),
+                        joint_name=joint.name)
+
+        # Graph edges from calibration patterns
+        for pattern_key, pattern in config['calibration_patterns'].items():
+            if pattern['fixed']:
+                edge_type = 'fixed'
+            else:
+                edge_type = 'multiple'
+
+            parent = pattern['parent_link']
+            child = pattern['link']
+            gx.add_edge(parent, child, weight=1, type=edge_type,
+                        parent=parent, child=child,
+                        is_transformation_calibrated=True,
+                        joint_params_calibrated=joint_params_calibrated(
+                            get_joint_name(parent, child, description), config),
+                        joint_name=None)
+
+    else:
+        print('Creating transformation tree using the tfs in the bagfile ...')
+
+        for topic, msg, t in bag.read_messages(topics=['/tf']):
+            for transform in msg.transforms:
+                if not gx.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
+                    # print(transform.header.frame_id, transform.child_frame_id)
+                    gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='dynamic')
+
+        for topic, msg, t in bag.read_messages(topics=['/tf_static']):
+            for transform in msg.transforms:
+                if not gx.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
+                    # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
+                    gx.add_edge(transform.header.frame_id.replace('/', ''),
+                                transform.child_frame_id.replace('/', ''), weight=1, type='static')
+
+    # --------------------------------------------------------------------------
+    # Create dot calibration graph (used for printing out a summary)
+    # --------------------------------------------------------------------------
+    g = Digraph('G', filename='summary', directory='/tmp/', graph_attr={'title': 'graph'})  # create a graph
+
+    colormap = cm.Pastel1(np.linspace(0, 1, 8))
+    # https://matplotlib.org/stable/users/explain/colors/colormaps.html
+    color_grey = matplotlib.colors.rgb2hex([0.6, 0.6, 0.6])
+    color_world_link = matplotlib.colors.rgb2hex(colormap[1, :])
+    color_sensor_data = matplotlib.colors.rgb2hex(colormap[2, :])
+    color_pattern = matplotlib.colors.rgb2hex(colormap[5, :])
+    color_transform_optimized = matplotlib.colors.rgb2hex([0.8, 0, 0])
+    color_joint_optimized = matplotlib.colors.rgb2hex([0.94, 0.43, 0])
+
+    for node_key, node in gx.nodes().items():  # Define the graphviz nodes
+
+        # Define the label and color per node
+        label = node_key
+
+        if node['is_world']:
+            rgb = color_world_link
+            label += '\n(world link)'
+        elif not node['sensor_data'] is None:
+            rgb = color_sensor_data
+            label += '\n(data from sensor ' + node['sensor_data'] + ')'
+        elif not node['pattern'] is None:
+            rgb = color_pattern
+            label += '\n(' + config['calibration_patterns'][node['pattern']]['pattern_type'] + ' calibration pattern)'
+        else:
+            rgb = matplotlib.colors.rgb2hex([0, 0, 0])
+
+        # Create the node
+        g.node(node_key, label=label, _attributes={'penwidth': '2', 'color': rgb}, )
+
+    for edge_key, edge in gx.edges().items():  # Define the graphviz nodes
+
+        print('\nedge ' + str(edge_key) + ':' + str(edge))
+        rgb = matplotlib.colors.rgb2hex([0, 0, 0])
+        rgb_font = matplotlib.colors.rgb2hex([0, 0, 0])
+
+        if edge['type'] == 'fixed' and edge['is_transformation_calibrated']:
+            label = ' static\n calibrate transform'
+            rgb_font = rgb = color_transform_optimized
+
+        elif edge['type'] == 'multiple' and edge['is_transformation_calibrated']:
+            label = ' dynamic\n calibrate multiple transforms'
+            rgb_font = rgb = color_transform_optimized
+
+        elif edge['type'] == 'revolute' and edge['joint_params_calibrated']:
+            label = ' ' + edge['joint_name'] + '\n (revolute)\n calibrate ' + str(edge['joint_params_calibrated'])
+            rgb_font = matplotlib.colors.rgb2hex([0.6, 0, 0.6])
+            rgb_font = rgb = color_joint_optimized
+
+        elif edge['type'] == 'prismatic' and edge['joint_params_calibrated']:
+            label = ' ' + edge['joint_name'] + '\n (prismatic)\n calibrate ' + str(edge['joint_params_calibrated'])
+            rgb_font = rgb = color_joint_optimized
+
+        elif edge['type'] == 'continuous' and edge['joint_params_calibrated']:
+            label = ' ' + edge['joint_name'] + '\n (continuous)\n calibrate ' + str(edge['joint_params_calibrated'])
+            rgb_font = rgb = color_joint_optimized
+
+        elif edge['type'] == 'revolute':
+            label = edge['joint_name'] + '\n (revolute)'
+            rgb_font = color_grey
+
+        elif edge['type'] == 'prismatic':
+            label = edge['joint_name'] + '\n (prismatic)'
+            rgb_font = color_grey
+
+        elif edge['type'] == 'continuous':
+            label = edge['joint_name'] + '\n (continuous)'
+            rgb_font = color_grey
+
+        elif edge['type'] == 'fixed':
+            label = ' static'
+            rgb_font = color_grey
+        else:
+            label = 'Unknown case'
+            rgb_font = matplotlib.colors.rgb2hex([1, 0, 0])
+
+        g.edge(edge['parent'], edge['child'], color=rgb, style='solid',
+               _attributes={'penwidth': '1', 'fontcolor': rgb_font},
+               label=label)
+
+    # rgb = matplotlib.colors.rgb2hex([0, 0, 0])
+#         print('Creating transformation tree using the urdf robot description ...')
+#         for link in description.links:  # A graph node for each link in the urdf
+#             label = link.name
+#             g.node(link.name, label=label, _attributes={'penwidth': '2', 'color': rgb}, )
+#
+#         for joint in description.joints:  # atomic transformations are given by the joints
+#             if joint.type == 'fixed':
+#                 label = ''
+#             else:
+#                 label = joint.name
+#
+#             g.edge(joint.parent, joint.child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor': rgb},
+#                    label=label)
+#
+
+#     if not args['use_tfs']:  # create a graph using the information in the urdf
+#
+#
+#     else:
+#         print('Creating transformation tree using the tfs in the bagfile ...')
+#
+#         for topic, msg, t in bag.read_messages(topics=['/tf']):
+#             for transform in msg.transforms:
+#                 if not g.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
+#                     # print(transform.header.frame_id, transform.child_frame_id)
+#                     g.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='dynamic')
+#
+#         for topic, msg, t in bag.read_messages(topics=['/tf_static']):
+#             for transform in msg.transforms:
+#                 if not g.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
+#                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
+#                     g.add_edge(transform.header.frame_id.replace('/', ''),
+#                                transform.child_frame_id.replace('/', ''), weight=1, type='static')
+
+    # set world link in red, and add world link annotation
+    # for node in g.nodes:  # A graph node for each link in the urdf
+    # print(node)
+
+
+#     for link in gx.nodes:  # A graph node for each link in the urdf
+#         rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
+#         label = link
+#         if config['world_link'] == link:
+#             label += '\n(world link)'
+#             rgb = matplotlib.colors.rgb2hex([1, 0, 0])
+#
+#         for sensor_key, sensor in config['sensors'].items():
+#             if sensor['link'] == link:
+#                 label += '\n(data from sensor ' + sensor_key + ')'
+#                 rgb = matplotlib.colors.rgb2hex([0, 0.8, 0])
+#
+#         g.node(link, label=label, _attributes={'penwidth': '2', 'color': rgb}, )
+
+    # Add node with the pattern link
+    # rgb = matplotlib.colors.rgb2hex([0.8, 0.8, 0])
+    # for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
+        # g.node(calibration_pattern['link'], label=' ' + calibration_pattern['link'] +
+        #    ' \n (' + calibration_pattern_key + ') ', _attributes={'penwidth': '2', 'color': rgb}, )
+#
+#     for parent, child, edge_data in gx.edges(data=True):  # atomic transformations are given by the joints
+#         label = ''
+#         type = edge_data['type']
+#         rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
+#         to_be_calibrated = False  # If this transform is to be calibrated, change the label on the edge
+#         joint_calibration = False
+#
+#         for sensor_key, sensor in config['sensors'].items():  # if the joint is marked for calibration
+#             if sensor['parent_link'] == parent and sensor['child_link'] == child:
+#                 label += ' To be calibrated \n'
+#                 rgb = matplotlib.colors.rgb2hex([0, 0, 1])
+#                 to_be_calibrated = True
+#
+#         if config['additional_tfs'] is not None:
+#             for additional_tf_key, additional_tf in config['additional_tfs'].items():
+#                 if additional_tf['parent_link'] == parent and additional_tf['child_link'] == child:
+#                     label += ' To be calibrated \n'
+#                     rgb = matplotlib.colors.rgb2hex([0, 0, 1])
+#                     to_be_calibrated = True
+#
+#         if config['joints'] is not None:
+#             for joint_key, joint in config['joints'].items():
+#
+#                 joint_parent, joint_child = getJointParentChild(joint_key, description)
+#
+#                 if parent == joint_parent and child == joint_child:
+#                     label += '  Joint calibration\n  ' + str(joint['params_to_calibrate']) + '\n'
+#                     rgb = matplotlib.colors.rgb2hex([1, 0.6, 0])
+#                     joint_calibration = True
+#
+#         if joint_calibration:
+#             pass
+#         elif not to_be_calibrated:
+#             label += ' ' + type + ' '  # add word "static" or "dynamic"
+#         else:
+#             if type == 'static':
+#                 label += ' (single transform) '
+#             else:
+#                 label += ' (multiple transforms) '
+#
+#         g.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor': rgb},
+#                label=label)
+#
+#     # Add edge with the connection to the pattern link
+#     for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
+#         if calibration_pattern['fixed']:
+#             label = ' To be calibrated \n (single transform) '
+#         else:
+#             label = ' To be calibrated \n (multiple transforms) '
+#
+#         rgb = matplotlib.colors.rgb2hex([0, 0, 1])  # blue for dynamic
+#         g.edge(calibration_pattern['parent_link'],
+#                calibration_pattern['link'], color=rgb, style='solid',
+#                _attributes={'penwidth': '1', 'fontcolor': rgb},
+#                label=label)
+
+    # g.view()
+    g.render(filename='summary', directory=package_path + '/calibration', cleanup=True)

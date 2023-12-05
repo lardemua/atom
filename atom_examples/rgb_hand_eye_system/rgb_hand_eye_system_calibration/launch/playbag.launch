@@ -34,7 +34,7 @@
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
-    <arg name="rviz_file" default="$(find rgb_hand_eye_system_calibration)/rviz/set_initial_estimate.rviz"/>
+    <arg name="rviz_file" default="$(find rgb_hand_eye_system_calibration)/rviz/playbag.rviz"/>
     <arg name="description_file" default="$(find rgb_hand_eye_system_calibration)/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
     <arg name="description_file" default="$(find rgb_hand_eye_system_calibration)/urdf/optimized.urdf.xacro"
