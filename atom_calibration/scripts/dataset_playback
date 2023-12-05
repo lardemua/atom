@@ -52,7 +52,7 @@ def printHelp():
     print(s)
 
 
-def keyPressedCallback(key, selection, dataset, args, depth_mode):
+def keyPressedCallback(key, selection, dataset, args, depth_mode, output_file):
 
     if key is None:
         return
@@ -62,16 +62,10 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode):
     # print("previous_collection_key = " + str(selection['previous_collection_key']))
 
     # Shortcut variables
-    # print('getting idx')
-    # print(list(dataset['collections'].keys()))
     idx_collection = list(dataset['collections'].keys()).index(selection['collection_key'])
-    # print("idx_collection = " + str(idx_collection))
     idx_max_collection = len(dataset['collections'].keys()) - 1
 
-    output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
-
     # Convert from type to string to keep uniform.
-    # key = str(key)
 
     try:
         key_char = key.char
@@ -158,7 +152,8 @@ def main():
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
     # dataset = filterCollectionsFromDataset(dataset, args)  # During dataset review there is no need to filter out collections
-    output_file = '/'.join(args['json_file'].split('/')[:-1]) + '/dataset_corrected.json'
+
+    output_file = os.path.join(os.path.dirname(args['json_file']), 'dataset_corrected.json')
     if os.path.exists(output_file) and args['json_file'] != output_file and not args['overwrite']:
         ans = input('The file dataset_corrected.json already exists.'
                     ' Do you want to overwrite? (Y/n)')
@@ -232,7 +227,7 @@ def main():
     # --- Define callback to navigate through collections
     # ---------------------------------------
     listener = keyboard.Listener(on_press=partial(keyPressedCallback, selection=selection, dataset=dataset, args=args,
-                                                  depth_mode=depth_mode))
+                                                  depth_mode=depth_mode, output_file=output_file))
     listener.start()
 
     # ---------------------------------------
