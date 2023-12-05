@@ -169,8 +169,8 @@ def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
 
     output_folder = os.path.dirname(output_file)
     if output_folder == '':
-        output_folder = '.'
-    print('output_folder is: ' + output_folder)
+        output_folder = './'
+
     bridge = CvBridge()
 
     # Process the dataset to remove data from the data fields and, if needed, write the files.
@@ -205,8 +205,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         create_data_file = True
 
     if create_data_file:
-        print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key)
-              + ' msg type ' + sensor['msg_type'])
+        # print('Collection ' + str(collection_key) + '. Creating data file for sensor ' + str(sensor_key)
+        #   + ' msg type ' + sensor['msg_type'])
         pass
 
     if create_data_file and sensor['modality'] == 'rgb':  # save image.
