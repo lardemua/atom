@@ -18,4 +18,4 @@ To download all the bagfiles and datasets required to run the atom examples, use
 
 which puts the bagfiles in the folder defined in your $BAG_FILES environment variable. See the [ATOM documentation](https://lardemua.github.io/atom_documentation/getting_started/#set-environment-variables)
 
-In the specific instructions for each example, the links to download bagfiles and datasets are given. However, **if downloaded all atom examples data using the above instruction you can ignore those parts**.
+In the specific instructions for each example, the links to download bagfiles and datasets are given. However, **if you downloaded all atom examples data using the above instruction you can ignore those parts**.
