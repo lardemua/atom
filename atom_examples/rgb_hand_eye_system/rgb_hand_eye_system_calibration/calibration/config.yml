@@ -91,9 +91,9 @@ additional_tfs:
   #           This is the transformation (i.e. link) that we be optimized.
   #
   # EXAMPLE:
-  base_footprint_to_base_link:
-    parent_link: "tabletop_table"
-    child_link: "base_link"
+  # base_footprint_to_base_link:
+    # parent_link: "tabletop_table"
+    # child_link: "base_link"
 
 
 # ATOM can also calibrate several parameters of your joints.

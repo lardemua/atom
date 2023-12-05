@@ -144,9 +144,10 @@ if __name__ == "__main__":
             if parent == sensor['parent_link'] and child == sensor['child_link']:
                 return True
 
-        for additional_tf_key, additional_tf in config['additional_tfs'].items():
-            if parent == additional_tf['parent_link'] and child == additional_tf['child_link']:
-                return True
+        if config['additional_tfs'] is not None:
+            for additional_tf_key, additional_tf in config['additional_tfs'].items():
+                if parent == additional_tf['parent_link'] and child == additional_tf['child_link']:
+                    return True
 
         return False
 
