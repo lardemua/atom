@@ -45,7 +45,7 @@ The calibration of any robotic system using **ATOM** may have several variants. 
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **rlbot**.
 
-To calibrate, we will use the [$ROS_BAGS/rlbot/train.bag](https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=sharing) bagfile, which contains a recording of the system's data when viewing a calibration pattern in several positions. We produced the bagfile by bringing up the system and then recording a bagfile as described above. This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
+To calibrate, we will use the [$ROS_BAGS/rlbot/train.bag](https://drive.google.com/file/d/1UftkcLSTQV2VeQiz9n5vq8vPDwF5jnLp/view?usp=sharing) bagfile, which contains a recording of the system's data when viewing a calibration pattern in several positions. We produced the bagfile by bringing up the system and then recording a bagfile as described above. This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
 
 Next we describe each of the steps in the calibration pipeline.
 
@@ -81,16 +81,16 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=drive_link) dataset, which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/1kM3D4aUORKMxdsz9krnpeDSXNrmXxltp/view?usp=sharing) dataset, which contains 4 collections, as shown bellow.
 
 Download and decompress the dataset to **$ATOM_DATASETS/rlbot/train**.
 
-Collection |           rgb_left             |           rgb_right
+Collection |           rgb_left             |           lidar_right
 :----------------:|:-------------------------:|:-------------------------:
-0 | ![](docs/rgb_left_000.jpg) |  ![](docs/rgb_right_000.jpg)
-1 | ![](docs/rgb_left_001.jpg) |  ![](docs/rgb_right_001.jpg)
-2 | ![](docs/rgb_left_002.jpg) |  ![](docs/rgb_right_002.jpg)
-3 | ![](docs/rgb_left_003.jpg) |  ![](docs/rgb_right_003.jpg)
+0 | ![](docs/rgb_left_000.jpg) |  ![](docs/lidar_right_000.png)
+1 | ![](docs/rgb_left_001.jpg) |  ![](docs/lidar_right_001.png)
+2 | ![](docs/rgb_left_002.jpg) |  ![](docs/lidar_right_002.png)
+3 | ![](docs/rgb_left_003.jpg) |  ![](docs/lidar_right_003.png)
 
 
 ## Running the Calibration
@@ -130,6 +130,6 @@ Which again, have subpixel accuracy. This means the procedure achieved a success
 
 The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
 
-Download the [test](https://drive.google.com/file/d/1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB/view?usp=sharing) dataset and decompress to **$ATOM_DATASETS/rlbot/test**.
+Download the [test]() dataset and decompress to **$ATOM_DATASETS/rlbot/test**.
 
     roslaunch rlbot_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rlbot/test/dataset.json train_json:=$ATOM_DATASETS/rlbot/train/atom_calibration.json
