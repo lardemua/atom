@@ -15,7 +15,7 @@ rrbot:
             file: test.zip
             extract_to: test
             id: 1AvjQxncY1G0BbCZu_mgYIyefeFztsHpB
-rgb_depth_system:
+rdbot:
     bagfiles:
         train:
             file: train.bag

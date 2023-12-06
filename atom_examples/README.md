@@ -5,7 +5,7 @@ ATOM examples are a set of robotic systems which are used to exemplify the capab
 System |           Name   |   Description
 :---:|:---:|:---:
  <img src="rrbot/docs/system.png" width="100%"/> | [rrbot](rrbot)|**R**GB **R**GB *Ro**bot** is a simulated system with two rgb cameras mounted on a tripod. The calibration pattern is a Charuco 800x600mm, that moves around the scene.
- <img src="rgb_depth_system/docs/system.png" width="100%"/> | [rgb_depth_system](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rgb_depth_system) |An RGBD camera, i.e., one rgb camera and a depth camera, both mounted on a tripod. Charuco 800x600mm, moving around the scene.
+ <img src="rdbot/docs/system.png" width="100%"/> | [rdbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rdbot) |An RGBD camera, i.e., one rgb camera and a depth camera, both mounted on a tripod. Charuco 800x600mm, moving around the scene.
  <img src="rrbot_chessboard/docs/system.png" width="100%"/> | [rrbot_chessboard](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rrbot_chessboard) |Two rgb cameras mounted on a tripod. Chessboard 1200x900mm, moving around the scene.
  <img src="rgb_hand_eye_system/docs/system.png" width="100%"/> | [rgb_hand_eye_system](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rgb_hand_eye_system) | An rgb camera mounted on the end-effector of a robotic manipulator. Charuco 800x600mm, static on top of table.
  <img src="eye_in_world_system/docs/system.png" width="100%"/> | [eye_in_world_system](https://drive.google.com/file/d/1uh4TjKMwsrK8L6OX9dyneeQFAPJDe1Yy/view?usp=drive_link) | An rgb camera mounted on a tripod, facing a robotic manipulator with a pattern attached to the end-effector. Charuco 200x200mm, static mounted on the end_effector.
@@ -14,7 +14,7 @@ System |           Name   |   Description
 Old name | Full new name | acronym
 :---:|:---:|:---:
 rrbot | rgb_rgb_robot | rrbot
-rgb_depth_system |rgb_depth_robot | rdbot
+rdbot |rgb_depth_robot | rdbot
 rrbot_chessboard | rgb_rgb_chessboard_robot | rrcbot
 rgb_hand_eye_system | rgb_in_hand_robot | rihbot
 eye_in_world_system | rgb_in_world_robot | riwbot
