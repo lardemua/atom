@@ -11,7 +11,7 @@
     <selfCollide>false</selfCollide>
   </gazebo>
   <joint name="rgb_left_joint" type="fixed">
-    <origin xyz="0.01499999999999973 4.4235800317919876e-16 0.012000000000000363" rpy="1.7919698028817578e-16 -1.6496624799986315e-16 3.044825394601969e-16"/>
+    <origin xyz="-0.011328553605678485 -0.0007904393497224584 0.057834561745854274" rpy="-0.03314179209955277 0.019268126046103878 -0.043098622758723004"/>
     <parent link="tripod_left_support"/>
     <child link="rgb_left_link"/>
   </joint>
@@ -79,7 +79,7 @@
     </sensor>
   </gazebo>
   <joint name="lidar_right_base_mount_joint" type="fixed">
-    <origin xyz="0.01485146032842397 0.0014461736260616986 0.007501559534371605" rpy="0.000993946727425168 0.0003097740485704978 0.5015175467878488"/>
+    <origin xyz="-0.025171315911244045 0.001344045154552824 0.07032571681871581" rpy="-0.01939002567910195 0.03612406661117678 0.4565789758970469"/>
     <parent link="tripod_right_support"/>
     <child link="lidar_right_base_link"/>
   </joint>

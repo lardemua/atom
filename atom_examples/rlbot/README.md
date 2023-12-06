@@ -45,7 +45,7 @@ The calibration of any robotic system using **ATOM** may have several variants. 
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **rlbot**.
 
-To calibrate, we will use the [$ROS_BAGS/rlbot/train.bag](https://drive.google.com/file/d/1UftkcLSTQV2VeQiz9n5vq8vPDwF5jnLp/view?usp=sharing) bagfile, which contains a recording of the system's data when viewing a calibration pattern in several positions. We produced the bagfile by bringing up the system and then recording a bagfile as described above. This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
+To calibrate, we will use the [$ROS_BAGS/rlbot/train.bag](https://drive.google.com/file/d/1UftkcLSTQV2VeQiz9n5vq8vPDwF5jnLp/view?usp=sharing) bagfile, which contains a recording of the system's data when viewing a calibration pattern in several positions. We produced the bagfile by bringing up the system and then recording a bagfile as described above.
 
 Next we describe each of the steps in the calibration pipeline.
 
@@ -81,7 +81,7 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/1kM3D4aUORKMxdsz9krnpeDSXNrmXxltp/view?usp=sharing) dataset, which contains 4 collections, as shown bellow.
+We will use as example the [train](https://drive.google.com/file/d/1kM3D4aUORKMxdsz9krnpeDSXNrmXxltp/view?usp=sharing) dataset, which contains several collection, 4 of them shown bellow.
 
 Download and decompress the dataset to **$ATOM_DATASETS/rlbot/train**.
 
@@ -99,37 +99,23 @@ To calibrate, first setup visualization with:
 
     roslaunch rlbot_calibration calibrate.launch
 
-Then carry out the actual calibration using:
-
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/rlbot/train/dataset.json -v -rv
-
-This will produce a table of residuals per iteration, like this:
-
-![](docs/calibration_output.png)
-
-This is the table presented once calibration is complete, which shows average reprojection errors of under 1 pixel. Sub-pixel accuracy is considered a good result for rgb camera calibration.
-
- Since this is a simulation, the original pose of the cameras is actually the one used by gazebo to produce the images. This means that the cameras are already positioned in the actual ground truth pose, which means that the calibration did not do much in this case. In a real system, the sensors will not be positioned at the ground truth pose. In fact, for real systems, we do not know where the ground truth is.
-
 To make sure this ATOM is actually calibrating sensor poses in simulated experiments, we use the --noise_initial_guess (-nig) flag. This makes the calibrate script add a random variation to the initial pose of the cameras, to be sure they are not located at the ground truth:
 
     rosrun atom_calibration calibrate -json $ATOM_DATASETS/rlbot/train/dataset.json -v -rv -nig 0.1 0.1
 
-Which starts the calibration with these errors:
+Which ends the calibration with these results:
 
-![](docs/calibration_output2.png)
-
-which are quite high, because of the incorrect pose of the sensors,  and ends up converging into these figures:
-
-![](docs/calibration_output3.png)
-
-Which again, have subpixel accuracy. This means the procedure achieved a successful calibration.
+![](docs/calibration_output.png)
 
 
-## Evaluation
+Subpixel accuracy for the **rgb_left** sensor, and 4 millimeters error for the **lidar_right**. This means the procedure achieved a successful calibration.
 
-The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
+The following image shows the system at the start of the calibration:
 
-Download the [test]() dataset and decompress to **$ATOM_DATASETS/rlbot/test**.
+![](docs/before_calibration.png)
 
-    roslaunch rlbot_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rlbot/test/dataset.json train_json:=$ATOM_DATASETS/rlbot/train/atom_calibration.json
+and the next image shows the system after calibration:
+
+![](docs/after_calibration.png)
+
+Notice how the **lidar_right** is positioned in the correct pose. Also, notice how the spheres, which denote labeled pattern boundary points, align much better with the estimated pattern poses.
