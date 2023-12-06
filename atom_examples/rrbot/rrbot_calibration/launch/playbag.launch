@@ -44,10 +44,10 @@
     <!-- Throttle topics -->
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_left"
           args="messages /rgb_left/image_raw/compressed_to_throttle 10 /rgb_left/image_raw/compressed"/>
-
+    
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_right"
           args="messages /rgb_right/image_raw/compressed_to_throttle 10 /rgb_right/image_raw/compressed"/>
-
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Load robot description and tf generators -->
     <param name="robot_description" command="$(find xacro)/xacro $(arg description_file)"/>

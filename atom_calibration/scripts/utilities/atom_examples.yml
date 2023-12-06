@@ -1,7 +1,7 @@
 # url should be copied using the share->copy_link, Then the id should be extracted like in the example below:
 # https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=drive_link
 # one must take only id  1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa
-rgb_rgb_system:
+rrbot:
     bagfiles:
         train:
             file: train.bag

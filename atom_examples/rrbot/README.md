@@ -1,6 +1,6 @@
-# RGB_RGB_SYSTEM
+# RRBOT
 
-The **rrbot** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
+The **rrbot**, i.e, RGB RGB roBot is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
 
 ![gazebo](docs/system.png)
 
