@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""
+Generates the TSNE embedding for the joint states of each collection.
+This then is plotted and colored accordingly to the residual of that collection at the end of the calibration.
+The objective is to figure out if there is any connection between the joint states and the errors.
+"""
+
+# Standard imports
+import numpy as np
+import os
+import argparse
+import csv
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+
+# Atom imports
+from atom_core.dataset_io import loadResultsJSON
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+def main():
+    # ---------------------------------------
+    # --- Parse command line argument
+    # ---------------------------------------
+    # Use argparse to parse command-line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
+    args = vars(ap.parse_args())
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read data from file
+    # ---------------------------------------
+    # Load dataset from JSON file
+    dataset, _ = loadResultsJSON(args['json_file'])
+
+    # Load residuals
+    residuals_path = os.path.dirname(args['json_file']) + '/calibration_results.csv'
+    if not os.path.isfile(residuals_path):
+        raise ValueError(f'Residuals file {residuals_path} does not exist.')
+
+    # Read calibration errors from CSV file
+    calibration_errors = np.zeros(len(dataset['collections'].keys()))
+    with open(residuals_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for idx, lines in enumerate(csv_reader):
+            if idx == 0 or lines[0] == 'Averages':
+                continue
+            if lines[1] == '\x1b[90m---\x1b[0m':
+                lines[1] = 0
+            calibration_errors[int(lines[0])] = float(lines[1])
+
+    # Create a matrix of joint states for each collection
+    collection_joint_state_matrix = np.zeros((len(dataset['collections'].keys()), len(dataset['calibration_config']['joints'].keys())))
+    for i, collection in enumerate(dataset['collections'].values()):
+        for j, joint in enumerate(collection['joints'].values()):
+           collection_joint_state_matrix[i][j] = joint['position']
+
+    # Perform TSNE on joint state matrix
+    tsne = TSNE(verbose=1, n_iter=10000)
+    tsne_results = tsne.fit_transform(collection_joint_state_matrix)
+
+    # Identify collections to delete based on calibration errors
+    collections_to_delete = np.where(calibration_errors == 0)[0]
+
+    # Remove corresponding rows from both tsne_results and calibration_errors
+    tsne_results = np.delete(tsne_results, collections_to_delete, axis=0)
+    calibration_errors = np.delete(calibration_errors, collections_to_delete, axis=0)
+
+    # Plot TSNE results with color-coded calibration errors
+    plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=calibration_errors, cmap='hot')
+    plt.colorbar()
+    plt.show()
+
+if __name__ == "__main__":
+    main()
