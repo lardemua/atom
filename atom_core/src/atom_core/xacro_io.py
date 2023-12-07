@@ -2,6 +2,7 @@
 import os
 from datetime import datetime
 from colorama import Fore, Style
+from copy import deepcopy
 
 # Ros imports
 import rospkg
@@ -10,7 +11,7 @@ import tf
 
 # Atom imports
 from urdf_parser_py.urdf import Pose as URDFPose
-from urdf_parser_py.urdf import URDF
+from urdf_parser_py.urdf import URDF, Link, Joint, Mesh, Visual, JointCalibration
 from atom_core.system import execute
 from atom_core.config_io import uriReader
 from atom_core.naming import generateKey
@@ -64,45 +65,84 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
 
         if not found:
             raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
+    
+
+        calibration_config = dataset['calibration_config']
+        if calibration_config['joints'] is not None:
+            for joint_key, joint_dict in dataset['collections'][selected_collection_key]['joints'].items():
+                for joint in xml_robot.joints:
+                    if joint_key != joint.name:
+                        continue
+
+                    joint.origin.xyz = [joint_dict['origin_x'], joint_dict['origin_y'], joint_dict['origin_z']]
+                    joint.origin.rpy = [joint_dict['origin_roll'], joint_dict['origin_pitch'], joint_dict['origin_yaw']]
+
+                    if hasattr(joint, "calibration"):
+                        if hasattr(joint.calibration, 'rising') and joint.calibration.rising != 0:
+                            joint.calibration.rising = deepcopy(joint.calibration.rising) + joint_dict['position_bias']
+                        elif hasattr(joint.calibration, 'falling') and joint.calibration.falling != 0:
+                            joint.calibration.falling = deepcopy(joint.calibration.falling) + joint_dict['position_bias']
+                    elif joint_dict['position_bias'] != 0:
+                        calibration = JointCalibration(rising=joint_dict['position_bias'])
+                        joint.calibration = calibration
+
+
 
     time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     file_name = "optimized_" + time + ".urdf.xacro"
 
-    # TODO we should assume all datasets have a _metadata field.
-    if "_metadata" not in dataset:
-        # if args['output_xacro'] is None:
-        filename_results_xacro = "/tmp/" + file_name
-        print("The dataset does not have the metadata field.")
-        with open(filename_results_xacro, "w") as out:
-            out.write(URDF.to_xml_string(xml_robot))
-    else:
-        # urdf_file, _, _ = atom_core.config_io.uriReader(dataset['calibration_config']['description_file'])
-        # urdf_path = os.path.dirname(urdf_file)
-        # path_to_file = urdf_path + '/optimized/'
+    rospack = rospkg.RosPack()
 
-        rospack = rospkg.RosPack()
+    package_name = dataset["_metadata"]["package_name"]
 
-        # Defining the package name to be compatible with 2.0 dataset version (see #653 for more details)
-        if "package_name" in dataset["_metadata"]:
-            package_name = dataset["_metadata"]["package_name"]
-        else:
-            package_name = dataset["_metadata"]["robot_name"] + "_calibration"
+    path_to_urdf_directory = (rospack.get_path(package_name) + "/urdf/")
+    path_to_optimized_directory = (path_to_urdf_directory + "optimized/")
 
-        path_to_urdf_directory = (rospack.get_path(package_name) + "/urdf/")
-        path_to_optimized_directory = (path_to_urdf_directory + "optimized/")
+    if not os.path.exists(path_to_optimized_directory):
+        os.mkdir(path_to_optimized_directory)
+    filename_results_xacro = path_to_optimized_directory + file_name
+    with open(filename_results_xacro, "w") as out:
+        out.write(URDF.to_xml_string(xml_robot))
 
-        if not os.path.exists(path_to_optimized_directory):
-            os.mkdir(path_to_optimized_directory)
-        filename_results_xacro = path_to_optimized_directory + file_name
-        with open(filename_results_xacro, "w") as out:
-            out.write(URDF.to_xml_string(xml_robot))
-
-        optimized_urdf_file = path_to_urdf_directory + 'optimized.urdf.xacro'
-        with open(optimized_urdf_file, "w", ) as out:
-            out.write(URDF.to_xml_string(xml_robot))
+    optimized_urdf_file = path_to_urdf_directory + 'optimized.urdf.xacro'
+    with open(optimized_urdf_file, "w", ) as out:
+        out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
     print("Optimized xacro saved to " + str(filename_results_xacro) + " . You can use it as a ROS robot_description.")
+
+    # Save optimized xacro with patterns
+    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+        if not pattern['fixed']:
+            continue
+        pattern_mesh = Mesh(filename=pattern['mesh_file'])
+        pattern_visual = Visual(name=pattern_key + '_visual',
+                                geometry=pattern_mesh,
+                                origin=URDFPose(xyz=[0,0,0], rpy=[0,0,0]))
+        pattern_link = Link(name=pattern['link'],
+                            visual=pattern_visual,
+                            origin=URDFPose(xyz=[0,0,0], rpy=[0,0,0]))
+        xml_robot.add_link(pattern_link)
+        
+        transform_key = generateKey(pattern['parent_link'], pattern['link'], suffix='')
+        trans = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["trans"])
+        quat = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["quat"])
+        rpy = list(tf.transformations.euler_from_quaternion(quat, axes="sxyz"))
+
+        pattern_joint = Joint(name= pattern['parent_link'] + '-' + pattern['link'],
+                              parent=pattern['parent_link'],
+                              child=pattern['link'],
+                              joint_type='fixed',
+                              origin=URDFPose(xyz=trans, rpy=rpy))
+        
+        xml_robot.add_joint(pattern_joint)
+
+        optimized_w_pattern_urdf_file = path_to_urdf_directory + 'optimized_w_pattern.urdf.xacro'
+        with open(optimized_w_pattern_urdf_file, "w", ) as out:
+            out.write(URDF.to_xml_string(xml_robot))
+
+    print("Optimized xacro with pattern saved to " + str(optimized_w_pattern_urdf_file) + " . You can use it as a ROS robot_description.")
+
 
     print("You can use it as a ROS robot_description by launching:\n" +
           Fore.BLUE + 'roslaunch ' + package_name + ' playbag.launch optimized:=true' + Style.RESET_ALL)
