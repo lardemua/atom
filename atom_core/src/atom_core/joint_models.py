@@ -9,7 +9,7 @@ from atom_core.utilities import atomError
 
 def getTransformationFromRevoluteJoint(joint):
 
-    if joint['joint_type'] is None:
+    if joint['xacro_joint_type'] is None:
         atomError('Cannot model non revolute joint.')
 
     # STEP 1: compute the rotation matrix due to the joint revolution position

@@ -27,6 +27,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabel
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
+from atom_core.results_yml_io import saveResultsYml
 
 
 # -------------------------------------------------------------------------------
@@ -548,6 +549,9 @@ def main():
                'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
+    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,
+               'diff_step': None, 'x_scale': 'jac', 'max_nfev': 1}
+
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:
@@ -558,7 +562,8 @@ def main():
         opt.data_models), normalizer=normalizer, args=args)
 
     # opt.printParameters()
-    print('\n\n')
+    # print('\n\n')
+
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
@@ -578,8 +583,13 @@ def main():
     # ---------------------------------------
     # --- Save updated xacro
     # ---------------------------------------
-    # saveResultsXacro(dataset, selected_collection_key)
     saveResultsXacro(dataset, selected_collection_key, list(transforms_set))
+
+    # ---------------------------------------
+    # --- Save results into yaml
+    # ---------------------------------------
+    filename_results_yml = os.path.dirname(json_file) + "/" + 'atom_calibrate_params.yml'
+    saveResultsYml(dataset, selected_collection_key, filename_results_yml)
 
 
 if __name__ == "__main__":
