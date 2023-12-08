@@ -188,4 +188,4 @@ max_duration_between_msgs: 1000
 package_name: "{{ c.package_name }}"
 
 # Automatically filled. Do not touch unless you know what you are doing.
-version: 2.0
+version: 3.0
