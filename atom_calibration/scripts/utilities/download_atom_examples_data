@@ -86,7 +86,7 @@ def save_response_content(response, destination):
 # --- MAIN
 # -------------------------------------------------------------------------------
 def main():
-    atomStartupPrint('Download atom examples datasets and bagfiles')
+    atomStartupPrint('Download datasets and bagfiles for atom examples.')
 
     # ---------------------------------------
     # --- Parse command line argument
@@ -140,7 +140,7 @@ def main():
 
                 # local_file_name = wget.download(url, file_name)
                 # Create the folder if it does not exist
-                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True) 
+                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
                 download_file_from_google_drive(bagfile['id'], file_name)
 
         if system['datasets'] is not None:
@@ -168,7 +168,7 @@ def main():
                 print("Downloading dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' to '
                       + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
                 # Create the folder if it does not exist
-                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True) 
+                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
                 download_file_from_google_drive(dataset['id'], file_name)
 
                 print("\nDecompressing from:" + Fore.BLUE + file_name + Style.RESET_ALL +

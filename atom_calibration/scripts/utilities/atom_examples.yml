@@ -46,7 +46,7 @@ rrcbot:
             file: test.zip
             extract_to: test
             id: 1bvHr2iXsNS3snF9Af8gJ0mJJbPwUcTpJ
-rgb_hand_eye_system:
+rihbot:
     bagfiles:
         train:
             file: train.bag
@@ -56,6 +56,19 @@ rgb_hand_eye_system:
             file: train.zip
             extract_to: train
             id: 1YlFdik-38zhtI8fByY27XR7pxYdN-h_9
+riwbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 16EIEOZ0kGgmp23PnAnJB0oqW3TtDZWf0
+        test:
+            file: test.bag
+            id: 1qhVFjA9B3YKG5xVX_bfysweIr1mf3Ev9
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1dWxMm-bXD5CsXjjAE09Gq0dODXhCfT1h
 rlbot:
     bagfiles:
         train:
