@@ -549,8 +549,8 @@ def main():
                'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
-    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,
-               'diff_step': None, 'x_scale': 'jac', 'max_nfev': 1}
+    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,
+    #    'diff_step': None, 'x_scale': 'jac', 'max_nfev': 1}
 
     opt.startOptimization(optimization_options=options)
 
@@ -588,7 +588,7 @@ def main():
     # ---------------------------------------
     # --- Save results into yaml
     # ---------------------------------------
-    filename_results_yml = os.path.dirname(json_file) + "/" + 'atom_calibrate_params.yml'
+    filename_results_yml = os.path.dirname(json_file) + "/" + 'atom_calibration_params.yml'
     saveResultsYml(dataset, selected_collection_key, filename_results_yml)
 
 
