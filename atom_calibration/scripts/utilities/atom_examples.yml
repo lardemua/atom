@@ -29,7 +29,7 @@ rdbot:
             file: test.zip
             extract_to: test
             id: 1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-
-rgb_rgb_system_chessboard:
+rrcbot:
     bagfiles:
         train:
             file: train.bag

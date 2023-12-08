@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- rrcbot is a simple robotic system containing two rgb cameras on top of a tripop.  -->
+
+    <!-- Define  properties -->
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    <material name="Orange">
+        <color rgba="1.0 0.4 0.0 1.0" />
+    </material>
+
+    <!-- Colors -->
+    <material name="tripod_color">
+        <color rgba="0.21 0.21 .21 1" />
+    </material>
+
+
+    <!-- Includes -->
+    <xacro:include filename="$(find rrcbot_description)/urdf/robot.gazebo.xacro" />
+    <xacro:include filename="$(find rrcbot_description)/urdf/rgb_camera.urdf.xacro" />
+
+    <!-- Left Camera -->
+    <xacro:rgb_camera parent="tripod_left_support" prefix="rgb_left" color_gazebo="Red">
+        <origin xyz="0.015 0 0.012" rpy="0 0 0" />
+        <color_rgb_rviz>
+            <material name="red">
+                <color rgba="0.9 0 0 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+    <!-- Right Camera -->
+    <xacro:rgb_camera parent="tripod_right_support" prefix="rgb_right" color_gazebo="Green">
+        <origin xyz="0.015 0 0.012" rpy="0 0 0" />
+        <color_rgb_rviz>
+            <material name="green">
+                <color rgba="0 0.9 0 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+
+    <!-- Define links and joints -->
+    <link name="world" />
+
+    <!-- Tripod link-->
+    <link name="tripod">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://rrcbot_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
+            </geometry>
+            <material name="tripod_color" />
+        </visual>
+        <collision name="tripod_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://rrcbot_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+
+    <!-- parent to tripod -->
+    <joint name="world_to_tripod" type="fixed">
+        <parent link="world" />
+        <child link="tripod" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+
+    <link name="tripod_plate">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.4 0.015" />
+            </geometry>
+            <material name="tripod_color" />
+        </visual>
+        <collision name="tripod_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.15 0.015" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- tripod to tripod plate-->
+    <joint name="tripod_to_tripod_plate" type="fixed">
+        <parent link="tripod" />
+        <child link="tripod_plate" />
+        <origin xyz=".01 .03 1.65" rpy="0 0.314 0" />
+    </joint>
+
+    <!-- Tripod left support-->
+    <link name="tripod_left_support" />
+
+    <!-- tripod plate to tripod left support -->
+    <joint name="tripod_plate_to_tripod_left_support" type="fixed">
+        <parent link="tripod_plate" />
+        <child link="tripod_left_support" />
+        <origin xyz="0 0.18 0.0075" rpy="0 0 0" />
+    </joint>
+
+    <!-- Tripod right support-->
+    <link name="tripod_right_support" />
+
+    <!-- tripod plate to tripod right support -->
+    <joint name="tripod_plate_to_tripod_right_support" type="fixed">
+        <parent link="tripod_plate" />
+        <child link="tripod_right_support" />
+        <origin xyz="0 -0.18 0.0075" rpy="0 0 0" />
+    </joint>
+
+</robot>
