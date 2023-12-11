@@ -40,18 +40,7 @@ The instructions in [How to Run](#how-to-run) will produce a bagfile that will c
 
     rosrun atom_calibration add_noise_to_joint_state_in_bag -bfi $ROS_BAGS/jcpbbot/train.bag -bfo $ROS_BAGS/jcpbbot/train_with_noise.bag -jn shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint shoulder_pan_joint -jb 0.034 -0.03 0.05 0.01 -0.03 -0.01
 
-which means we are introducing a bias in the joints values recorded in the bag as follows:
-
-Joint name | Inserted bias (degrees)
-:---:|:---:
-shoulder_lift_joint | 1.95
-elbow_joint | -1.72
-wrist_1_joint | 2.87
-wrist_2_joint | 0.57
-wrist_3_joint | -1.72
-shoulder_pan_joint |-0.57
-
-These are errors of non-neglectable magnitude, which should present a challenge for the calibration.
+which means we are introducing a bias in the joints values of non-neglectable magnitude, which should present a challenge for the calibration.
 
 You can download [train_with_noise.bag](https://drive.google.com/file/d/19xjwTXsZkcx5NNL_K3OPWv_Dv6El9ym0/view?usp=sharing) if you wish to skip this step.
 
@@ -96,7 +85,7 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train]() dataset, which contains 11 collections. Some are shown below.
+We will use as example the [train](https://drive.google.com/file/d/1WjbzB9MRPmGcowggLKX-zDOaKnj89yRF/view?usp=sharing) dataset, which was created using the train_with_noise bagfile and thus contains joint position errors. The dataset contains 11 collections. Some are shown below.
 
 Download and decompress the dataset to **$ATOM_DATASETS/jcpbbot/train**.
 
@@ -104,8 +93,8 @@ Collection |           rgb_hand
 :----------------:|:-------------------------:
 0 | ![](docs/rgb_hand_000.jpg)
 1 | ![](docs/rgb_hand_001.jpg)
-2 | ![](docs/rgb_hand_009.jpg)
-3 | ![](docs/rgb_hand_010.jpg)
+7 | ![](docs/rgb_hand_007.jpg)
+8 | ![](docs/rgb_hand_008.jpg)
 
 
 ## Running the Calibration
@@ -114,17 +103,21 @@ To calibrate, first setup visualization with:
 
     roslaunch jcpbbot_calibration calibrate.launch
 
-This is useful to visualize the collections stored in the dataset.
+This is useful to visualize the collections stored in the dataset. Here you can see a visual representation of all collections and the corresponding camera at the start of the optimization.
 
 ![gazebo](docs/calibration.png)
 
-Then carry out the actual calibration including noise, using:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/jcpbbot/train/dataset.json -v -rv -nig 0.1 0.1
+Carry out the actual calibration including noise, using:
 
-This will produce a table of residuals per iteration, like this:
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/jcpbbot/train/dataset.json -v -rv -nig 0.1 0.1 --phased -pp
 
-Which starts the calibration with these errors:
+The **--phased** flag will make the optimization halt before starting to change the parameters. With it it is possible to see the visual representation of the initial values of the parameters.
+Because we used the nig flag, zooming into a single collection shows the camera is misplaced.
+
+![gazebo](docs/before.png)
+
+After calibration, the script will produce a table of residuals per iteration which starts the calibration with these errors:
 
 ![](docs/calibration_output_initial.png)
 
@@ -134,29 +127,26 @@ which are quite high, because of the incorrect pose of the sensors,  and ends up
 
 Which shows subpixel accuracy. This means the procedure achieved a successful calibration.
 
-During calibration We can see all collections in the system and, as the calibration progresses, the estimated transformations will be applied to the visualization. The table below shows the positioning of the **rgb_hand** sensor before the calibration starts (using nig 0.1 0.1), and after the calibration is carried out.
+After calibration, the same collection shows the camera in place:
 
+![gazebo](docs/after.png)
 
-View |           Before calibration             |           After calibration
-:----------------:|:-------------------------:|:-------------------------:
-All collections | ![](docs/3.png) |  ![](docs/4.png)
-Collection 0 | ![](docs/1.png) |  ![](docs/2.png)
-Collection 0 (top view)| ![](docs/5.png) |  ![](docs/6.png)
+Moreover, because we used the **--print_parameters** (-pp) flag, the script will print, at the end of the optimization, the estimated values of the calibrated parameters.
+The following table shows the estimated parameters vs the imposed biases.
+
+Joint name | Inserted bias (radians) | Estimated bias (radians)
+:---:|:---:|:---:
+shoulder_lift_joint | 0.034 | -0.031488
+elbow_joint | -0.03 |0.029642
+wrist_1_joint | 0.05 |-0.050033
+wrist_2_joint | 0.01 |-0.010048
+wrist_3_joint | -0.03 |0.019378
+shoulder_pan_joint |-0.01 |0.009886
+
+This shows that the optimization was able to compensate for the errors introduced in the joints, by estimating compensation bias which are very close to corresponding induced errors.
+The largest difference between the induced error and the estimated bias occurs in the shoulder_lift_joint and it has a magnitude of 0.034 -0.031488 =0.00252 radians = 0.15 degrees.
+
 
 ## Evaluation
 
-From the [test](https://drive.google.com/file/d/1iKMODjk2m37TBB3tWavJfZlKlwx-WHWz/view?usp=sharing) bagfile, we collected a test dataset.
-
-The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
-
-Download the [test](https://drive.google.com/file/d/16Vi6xo6kt2wEeFBWbTGrZdOL8DmT5ztt/view?usp=sharing) dataset, and decompress to **$ATOM_DATASETS/jcpbbot/test**.
-
-Then, carry out the evaluation using:
-
-    roslaunch jcpbbot_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/jcpbbot/test/dataset.json train_json:=$ATOM_DATASETS/jcpbbot/train/atom_calibration.json
-
-Since we have a single sensor, we do not have reprojection errors. The error w.r.t. the ground truth is:
-
-![](docs/ground_truth_results.png)
-
-which shows sub-millimeter accuracy.
+...

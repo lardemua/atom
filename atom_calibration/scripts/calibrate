@@ -111,8 +111,8 @@ def main():
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
     ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
                     type=str, required=False, default=None)
-
-    # save results of calibration in a csv file
+    ap.add_argument("-pp", "--print_parameters",
+                    help="Will print the value of the estimated parameters at the end of the optimization.", action="store_true", default=False)
     ap.add_argument("-sfr", "--save_file_results",
                     help="Output folder to where the results will be stored.", type=str, required=False)
 
@@ -561,8 +561,8 @@ def main():
     errorReport(dataset=dataset, residuals=objectiveFunction(
         opt.data_models), normalizer=normalizer, args=args)
 
-    # opt.printParameters()
-    # print('\n\n')
+    if args['print_parameters']:
+        opt.printParameters()
 
     # ---------------------------------------
     # --- Save updated JSON file
