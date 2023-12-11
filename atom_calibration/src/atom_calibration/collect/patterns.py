@@ -2,6 +2,7 @@ from copy import deepcopy
 import math
 import cv2
 import numpy as np
+from atom_core.utilities import atomError
 
 from tf import transformations
 from atom_core.geometry import traslationRodriguesToTransform
@@ -374,8 +375,10 @@ def estimatePatternPosesForCollection(dataset, collection_key):
                 break  # don't search for this collection's chessboard on anymore sensors
 
         if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
-            raise ValueError('Collection ' + collection_key + ' could not find pattern.')
+            atomError('Could not find pattern for collection ' + collection_key +
+                      ' in any of the existing rgb sensors. This dependency will be removed in the future, but for now we do need at least one rgb detection.')
             # TODO come up with a better plan here. Randomize de patterns pose?
+            # See https://github.com/lardemua/atom/issues/765
 
 
 def sampleLineSegment(p0, p1, step):
