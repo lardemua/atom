@@ -50,7 +50,7 @@ Visualization Manager:
       Z: 0
     Plane: XY
     Plane Cell Count: 10
-    Reference Frame: base_link
+    Reference Frame: world
     Value: true
   - Class: rviz/TF
     Enabled: true
@@ -88,7 +88,7 @@ Visualization Manager:
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: base_link
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:

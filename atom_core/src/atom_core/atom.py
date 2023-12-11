@@ -26,6 +26,10 @@ def getChain(from_frame, to_frame, transform_pool):
     # import matplotlib.pyplot as plt
     # plt.show()
 
+    print('transform pool keys: ' + str(list(transform_pool.keys())))
+
+    print('from_frame ' + from_frame)
+    print('to_frame ' + to_frame)
     path = nx.shortest_path(graph, from_frame, to_frame)  # compute the path between given reference frames
     for idx in range(0, len(path) - 1):  # get the chain as a list of dictionaries from the path
         parent = path[idx]

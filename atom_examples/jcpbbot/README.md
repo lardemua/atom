@@ -67,7 +67,7 @@ Using ATOM conventions, we define name of the calibration package as **jcpbbot_c
 
 ## Configuring the calibration
 
-This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/jcpbbot/jcpbbot_calibration/calibration/config.yml) that we wrote to define the calibration. There is a single sensor to be calibrated, named **rgb_hand**. The pattern is a charuco marker.
+This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/jcpbbot/jcpbbot_calibration/calibration/config.yml) that we wrote to define the calibration. There is a single sensor to be calibrated, named **rgb_hand**. The pattern is a charuco marker. Notice that we are using the **train_with_noise.bag** bagfile.
 
 
 To configure run:
@@ -79,6 +79,12 @@ Which will run a series of checks and produce several files inside the **jcpbbot
 The configuration produces a [visual schematic summarizing](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/jcpbbot/jcpbbot_calibration/calibration/summary.pdf) the calibration you have setup.
 
 ![](docs/summary.png)
+
+As we can see the calibration configuration will estimate the parameters of a complete static transformation, from **flange** to **rgb_hand_link**. These are the parameters that will position the rgb_hand sensor w.r.t. the end effector of the robotic manipulator. This component is a classical eye-in-hand calibration, as discussed in the [rihbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rihbot) example.
+
+The additional complexity comes from the calibration of the **position_bias** parameters of all of the manipulator's revolute joints, which is also visible in the image.
+
+Finally, the system will use a single calibration pattern, a charuco which is static in the scene.
 
 It is advisable to inspect this document carefully to make sure that the calibration is well configured.
 

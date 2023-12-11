@@ -22,7 +22,7 @@
     Sets up image decompressors if needed, reads the urdf robot description.
 
 @arg bag_file  Absolute path to the playing bag.
-    default: $(env ROS_BAGS)/jcpbbot/train.bag
+    default: $(env ROS_BAGS)/jcpbbot/train_with_noise.bag
 @arg bag_start Playback starting time (in seconds). default: 0.0
 @arg bag_rate  Playback rate. default: 1.0
 @arg use_tfs  Use tfs in the bag file or generate new ones using the urdf, joint state messages and the robot state publisher. default: False
@@ -30,7 +30,7 @@
 
 <launch>
 
-    <arg name="bag_file" default="$(env ROS_BAGS)/jcpbbot/train.bag"/>
+    <arg name="bag_file" default="$(env ROS_BAGS)/jcpbbot/train_with_noise.bag"/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
