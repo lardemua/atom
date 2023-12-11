@@ -12,6 +12,7 @@ from datetime import date, datetime
 
 import matplotlib
 import atom_core.config_io
+from atom_core.config_visualization import createDotGraph, createNxGraph
 import atom_core.drawing
 
 # 3rd-party
@@ -193,35 +194,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create a tf graph to support verifications
     # --------------------------------------------------------------------------
-    gx = nx.DiGraph()
-    if not args['use_tfs']:  # create a graph using the information in the urdf
-        print('Creating transformation tree using the urdf robot description ...')
-        for link in description.links:  # A graph node for each link in the urdf
-            gx.add_node(link.name)
-
-        for joint in description.joints:  # atomic transformations are given by the joints
-            if joint.type == 'fixed':
-                gx.add_edge(joint.parent, joint.child, weight=1, type='static')
-            else:
-                gx.add_edge(joint.parent, joint.child, weight=1, type='dynamic')
-    else:
-        print('Creating transformation tree using the tfs in the bagfile ...')
-
-        for topic, msg, t in bag.read_messages(topics=['/tf']):
-            for transform in msg.transforms:
-                if not gx.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
-                    # print(transform.header.frame_id, transform.child_frame_id)
-                    gx.add_edge(transform.header.frame_id, transform.child_frame_id, weight=1, type='dynamic')
-
-        for topic, msg, t in bag.read_messages(topics=['/tf_static']):
-            for transform in msg.transforms:
-                if not gx.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
-                    # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
-                    gx.add_edge(transform.header.frame_id.replace('/', ''),
-                                transform.child_frame_id.replace('/', ''), weight=1, type='static')
-
-    # nx.draw(gx, with_labels=True)
-    # plt.show()
+    nx_graph = createNxGraph(args, description, config, bag)
 
     # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
@@ -327,20 +300,20 @@ if __name__ == "__main__":
             edge_in_config = (config['additional_tfs'][additional_tf_key]['parent_link'],
                               config['additional_tfs'][additional_tf_key]['child_link'])
 
-            if not edge_in_config in gx.edges():
+            if not edge_in_config in nx_graph.edges():
                 atomError('Additional_tfs ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW +
                           edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK + ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
 
         for additional_tf_key, additional_tf in config['additional_tfs'].items():
 
             # Check if frames exits
-            if additional_tf['child_link'] not in gx.nodes:
+            if additional_tf['child_link'] not in nx_graph.nodes:
                 atomError('Additional tf for child link ' + Fore.BLUE + additional_tf['child_link'] + Style.RESET_ALL + ' not found.\nCheck the frames you entered in the config.yaml. Consider using the ' +
                           Fore.GREEN + '-utf/--use_tfs' + Style.RESET_ALL + ' option to use the tranforms on the /tf and /tf_static topics.')
 
             # path between root and additional_tfs data frame
             print('\nChecking path from ' + config['world_link'] + ' to ' + additional_tf['child_link'])
-            paths = nx.shortest_path(gx, config['world_link'], additional_tf['child_link'])
+            paths = nx.shortest_path(nx_graph, config['world_link'], additional_tf['child_link'])
 
             print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET +
                   ' to additional_tfs ' + Fore.LIGHTMAGENTA_EX + additional_tf_key + Fore.RESET + ':')
@@ -364,7 +337,7 @@ if __name__ == "__main__":
 
     # Checking if all tf frames exist
     for key, frame in frames_to_verify.items():
-        if not frame in gx:
+        if not frame in nx_graph:
             atomError('Frame ' + Fore.BLUE + frame + Style.RESET_ALL + ' given in config file for ' +
                       Fore.BLUE + key + Style.RESET_ALL + ' does not exist. Check config file ' +
                       Fore.BLUE + args['config_file'] + Style.RESET_ALL)
@@ -374,7 +347,7 @@ if __name__ == "__main__":
     print('Checking if transforms in config.yml are direct transformations ... ', end='')
     for sensor_key, sensor in config['sensors'].items():
         edge_in_config = (config['sensors'][sensor_key]['parent_link'], config['sensors'][sensor_key]['child_link'])
-        if not edge_in_config in gx.edges():
+        if not edge_in_config in nx_graph.edges():
             atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
                       ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
     atomPrintOK()
@@ -394,13 +367,13 @@ if __name__ == "__main__":
     atomPrintOK()
 
     # if nx.is_connected(gx):
-    if nx.is_weakly_connected(gx):
+    if nx.is_weakly_connected(nx_graph):
         print('Checking if TF tree is connected ... ', end='')
     else:
-        pos = nx.random_layout(gx)
-        edges, weights = zip(*nx.get_edge_attributes(gx, 'weight').items())
-        edge_labels = nx.draw_networkx_edge_labels(gx, pos)
-        nx.draw(gx, with_labels=True)
+        pos = nx.random_layout(nx_graph)
+        edges, weights = zip(*nx.get_edge_attributes(nx_graph, 'weight').items())
+        edge_labels = nx.draw_networkx_edge_labels(nx_graph, pos)
+        nx.draw(nx_graph, with_labels=True)
         plt.show()
         raise ValueError('TF tree is not connected. Aborting.')
 
@@ -414,7 +387,8 @@ if __name__ == "__main__":
         + Fore.RESET + ', ' + Fore.GREEN + 'dynamic transformation' + Fore.RESET + ', ' + Fore.LIGHTMAGENTA_EX +
         'sensor data frame' + Fore.RESET + '.')
     for sensor_key, sensor in config['sensors'].items():
-        paths = nx.shortest_path(gx, config['world_link'], sensor['link'])  # path between root and sensor data frame
+        paths = nx.shortest_path(nx_graph, config['world_link'], sensor['link']
+                                 )  # path between root and sensor data frame
         print('Path from ' + Fore.RED + config['world_link'] + Fore.RESET + ' to sensor ' + Fore.LIGHTMAGENTA_EX +
               sensor_key + Fore.RESET + ':')
         s = '['
@@ -441,9 +415,9 @@ if __name__ == "__main__":
     for sensor_key, sensor in config['sensors'].items():
         parent = sensor['parent_link']
         child = sensor['child_link']
-        edge = gx.get_edge_data(parent, child)
+        edge = nx_graph.get_edge_data(parent, child)
 
-        if not edge['type'] == 'static':
+        if not edge['type'] == 'fixed':
             atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent +
                       ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
 
@@ -451,9 +425,9 @@ if __name__ == "__main__":
         for additional_tf_key, additional_tf in config['additional_tfs'].items():
             parent = additional_tf['parent_link']
             child = additional_tf['child_link']
-            edge = gx.get_edge_data(parent, child)
+            edge = nx_graph.get_edge_data(parent, child)
 
-            if not edge['type'] == 'static':
+            if not edge['type'] == 'fixed':
                 atomError('Additional_tf  ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX +
                           parent + ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
 
@@ -536,86 +510,12 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Create dot calibration graph (used for printing out a summary)
     # --------------------------------------------------------------------------
-    g = Digraph('G', filename='summary', directory='/tmp/', graph_attr={'title': 'graph'})  # create a graph
+    dot_graph = createDotGraph(nx_graph, config)
+    # dot_graph.view()
+    dot_graph.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
 
-    for link in gx.nodes:  # A graph node for each link in the urdf
-        rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
-        label = link
-        if config['world_link'] == link:
-            label += '\n(world link)'
-            rgb = matplotlib.colors.rgb2hex([1, 0, 0])
-
-        for sensor_key, sensor in config['sensors'].items():
-            if sensor['link'] == link:
-                label += '\n(data from sensor ' + sensor_key + ')'
-                rgb = matplotlib.colors.rgb2hex([0, 0.8, 0])
-
-        g.node(link, label=label, _attributes={'penwidth': '2', 'color': rgb}, )
-
-    # Add node with the pattern link
-    rgb = matplotlib.colors.rgb2hex([0.8, 0.8, 0])
-    for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
-        g.node(calibration_pattern['link'], label=' ' + calibration_pattern['link'] +
-               ' \n (' + calibration_pattern_key + ') ', _attributes={'penwidth': '2', 'color': rgb}, )
-
-    for parent, child, edge_data in gx.edges(data=True):  # atomic transformations are given by the joints
-        label = ''
-        type = edge_data['type']
-        rgb = matplotlib.colors.rgb2hex([0, 0, 0])  # black by default
-        to_be_calibrated = False  # If this transform is to be calibrated, change the label on the edge
-        joint_calibration = False
-
-        for sensor_key, sensor in config['sensors'].items():  # if the joint is marked for calibration
-            if sensor['parent_link'] == parent and sensor['child_link'] == child:
-                label += ' To be calibrated \n'
-                rgb = matplotlib.colors.rgb2hex([0, 0, 1])
-                to_be_calibrated = True
-
-        if config['additional_tfs'] is not None:
-            for additional_tf_key, additional_tf in config['additional_tfs'].items():
-                if additional_tf['parent_link'] == parent and additional_tf['child_link'] == child:
-                    label += ' To be calibrated \n'
-                    rgb = matplotlib.colors.rgb2hex([0, 0, 1])
-                    to_be_calibrated = True
-
-        if config['joints'] is not None:
-            for joint_key, joint in config['joints'].items():
-
-                joint_parent, joint_child = getJointParentChild(joint_key, description)
-
-                if parent == joint_parent and child == joint_child:
-                    label += '  Joint calibration\n  ' + str(joint['params_to_calibrate']) + '\n'
-                    rgb = matplotlib.colors.rgb2hex([1, 0.6, 0])
-                    joint_calibration = True
-
-        if joint_calibration:
-            pass
-        elif not to_be_calibrated:
-            label += ' ' + type + ' '  # add word "static" or "dynamic"
-        else:
-            if type == 'static':
-                label += ' (single transform) '
-            else:
-                label += ' (multiple transforms) '
-
-        g.edge(parent, child, color=rgb, style='solid', _attributes={'penwidth': '1', 'fontcolor': rgb},
-               label=label)
-
-    # Add edge with the connection to the pattern link
-    for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
-        if calibration_pattern['fixed']:
-            label = ' To be calibrated \n (single transform) '
-        else:
-            label = ' To be calibrated \n (multiple transforms) '
-
-        rgb = matplotlib.colors.rgb2hex([0, 0, 1])  # blue for dynamic
-        g.edge(calibration_pattern['parent_link'],
-               calibration_pattern['link'], color=rgb, style='solid',
-               _attributes={'penwidth': '1', 'fontcolor': rgb},
-               label=label)
-
-    # g.view()
-    g.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
+    # dot_graph.view()
+    dot_graph.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
 
     # --------------------------------------------------------------------------
     # Create the playback launch file
