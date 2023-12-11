@@ -1,6 +1,6 @@
-# RGB_HAND_EYE_SYSTEM
+# RIHBOT
 
-The **rihbot** is a robotic system used to evaluate hand eye calibrations in ATOM.
+The **R**GB **i**n **h**and ro**bot** (**rihbot**) is a simulated robotic system used to evaluate hand eye calibrations in ATOM.
 
 ![gazebo](docs/system.png)
 
