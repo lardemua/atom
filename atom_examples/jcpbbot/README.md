@@ -65,8 +65,6 @@ Using ATOM conventions, we define name of the calibration package as **jcpbbot_c
 
 **NOTE**: This procedure is carried out only once, and was done already. As such, this ros package is already [included in the atom repo](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/jcpbbot/jcpbbot_calibration). Therefore, you **should not execute this instruction** for the jcpbbot.
 
-
-
 ## Configuring the calibration
 
 This is the [config.yml](https://github.com/lardemua/atom/blob/noetic-devel/atom_examples/jcpbbot/jcpbbot_calibration/calibration/config.yml) that we wrote to define the calibration. There is a single sensor to be calibrated, named **rgb_hand**. The pattern is a charuco marker.
