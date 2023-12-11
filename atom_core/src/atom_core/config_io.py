@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 import yaml
 import rospkg
+from rospkg.common import ResourceNotFound
 from colorama import Fore, Style
 
 from atom_core.utilities import atomError
@@ -154,7 +155,11 @@ def uriReader(resource):
     if uri.scheme == 'package':  # using a ros package uri
         # print('This is a ros package')
         rospack = rospkg.RosPack()
-        assert (rospack.get_path(uri.netloc)), 'Package ' + uri.netloc + ' does not exist.'
+        try:
+            rospack.get_path(uri.netloc)
+        except ResourceNotFound:
+            atomError('Package ' + uri.netloc + ' does not exist.')
+
         fullpath = resolvePath(rospack.get_path(uri.netloc) + uri.path)
         relpath = '$(find {}){}'.format(uri.netloc, uri.path)
 
