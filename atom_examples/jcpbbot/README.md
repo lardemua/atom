@@ -134,18 +134,17 @@ After calibration, the same collection shows the camera in place:
 Moreover, because we used the **--print_parameters** (-pp) flag, the script will print, at the end of the optimization, the estimated values of the calibrated parameters.
 The following table shows the estimated parameters vs the imposed biases.
 
-Joint name | Inserted bias (radians) | Estimated bias (radians)
-:---:|:---:|:---:
-shoulder_lift_joint | 0.034 | -0.031488
-elbow_joint | -0.03 |0.029642
-wrist_1_joint | 0.05 |-0.050033
-wrist_2_joint | 0.01 |-0.010048
-wrist_3_joint | -0.03 |0.019378
-shoulder_pan_joint |-0.01 |0.009886
+Joint name | Inserted bias (rad) | Estimated bias (rad) | error (rad) | error (deg)
+:---:|:---:|:---:|:---:|:---:
+shoulder_lift_joint | 0.034 | -0.031488 | 0.002512 | 0.144
+elbow_joint | -0.03 |0.029642 | 0.001358 | 0.078
+wrist_1_joint | 0.05 |-0.050033 |0.000033 |0.001
+wrist_2_joint | 0.01 |-0.010048 |0.000048 | 0.003
+wrist_3_joint | -0.03 |0.019378 | 0.010622 |0.609
+shoulder_pan_joint |-0.01 |0.009886 |0.000114 |0.007
 
 This shows that the optimization was able to compensate for the errors introduced in the joints, by estimating compensation bias which are very close to corresponding induced errors.
-The largest difference between the induced error and the estimated bias occurs in the shoulder_lift_joint and it has a magnitude of 0.034 -0.031488 =0.00252 radians = 0.15 degrees.
-
+The largest difference between the induced error and the estimated bias occurs in case of the wrist_3_joint, and has a magnitude of just 0.6 degrees.
 
 ## Evaluation
 
