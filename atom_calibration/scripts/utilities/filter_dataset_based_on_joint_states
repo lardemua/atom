@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+import os
+import numpy as np
+from colorama import Fore, Style
+from sklearn.cluster import DBSCAN
+from copy import deepcopy
+
+# Atom imports
+from atom_core.dataset_io import (saveAtomDataset, loadJSONFile)
+from atom_core.utilities import atomError
+
+
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+def cluster_joint_states(joint_state_dict, threshold):
+    joint_state_list = [joint_state_dict[collection_key]['joint_state'] for collection_key in joint_state_dict.keys()]
+
+    # Convert the list of floats to a numpy array
+    data = np.array(joint_state_list).reshape(-1, 1)
+
+    # Initialize the DBSCAN algorithm
+    dbscan = DBSCAN(eps=threshold, min_samples=2)  # Adjust min_samples as needed
+
+    # Fit the model and predict clusters
+    labels = dbscan.fit_predict(data)
+
+    for idx, value_dict in enumerate(joint_state_dict.values()):
+        value_dict['label'] = labels[idx]
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-json", "--json_file", type=str, required=True,
+                    help="Json file containing input dataset.", )
+    ap.add_argument("-j", "--joint", help='Joint name to filter the dataset', type=str, required=True)
+    ap.add_argument("-t", "--threshold", help='Threshold for DBSCAN', type=float, default=0.1)
+
+    # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
+    arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
+    args = vars(ap.parse_args(args=arglist))
+
+    # --------------------------------------------------------------------------
+    # Read the dataset json file
+    # --------------------------------------------------------------------------
+    print('Loading dataset ' + Fore.BLUE + str(args['json_file']) + Style.RESET_ALL)
+
+    # Loads a json file containing the dataset
+    dataset = loadJSONFile(args['json_file'])
+
+    # --------------------------------------------------------------------------
+    # Verify that the joints are on the dataset
+    # --------------------------------------------------------------------------
+    if args['joint'] not in dataset['calibration_config']['joints'].keys():
+        atomError(f'Joint {args["joint"]} not found in dataset. Aborting.')
+    
+    # --------------------------------------------------------------------------
+    # Filter joint states
+    # --------------------------------------------------------------------------    
+    joint_state_dict = {collection_key: {'joint_state': collection['joints'][args['joint']]['position']}\
+                        for collection_key, collection in dataset['collections'].items()}
+    cluster_joint_states(joint_state_dict, args['threshold'])
+
+    # --------------------------------------
+    # Produce new datasets
+    # --------------------------------------
+    new_datasets = {}
+    for collection_key in joint_state_dict.keys():
+        label = joint_state_dict[collection_key]['label']
+        if label not in new_datasets.keys():
+            new_datasets[label] = deepcopy(dataset)
+            del new_datasets[label]['collections']
+            new_datasets[label]['collections'] = {}
+        new_datasets[label]['collections'][collection_key] = dataset['collections'][collection_key]
+
+
+    # --------------------------------------------------------------------------
+    # Save the new dataset
+    # --------------------------------------------------------------------------
+    for label, new_dataset in new_datasets.items():
+        file_no_extension, _ = os.path.splitext(args['json_file'])
+        new_file_path = f'{file_no_extension}_{args["joint"]}_{label}.json'
+        print(f'Saving dataset on {Fore.BLUE + new_file_path + Style.RESET_ALL} ')
+        saveAtomDataset(new_file_path, new_dataset)
+
+
+
+if __name__ == "__main__":
+    main()

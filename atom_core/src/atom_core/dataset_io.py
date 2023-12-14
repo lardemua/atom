@@ -39,10 +39,7 @@ def printImageInfo(image, text=None):
 
 def loadResultsJSON(json_file, collection_selection_function=None):
 
-    json_file, _, _ = uriReader(json_file)
-
-    f = open(json_file, 'r')
-    dataset = json.load(f)
+    dataset = loadJSONFile(json_file)
     dataset_folder = os.path.dirname(json_file)
     bridge = CvBridge()
 
@@ -406,6 +403,19 @@ def createJSONFile(output_file, data):
     f.write(json.dumps(D, indent=2, sort_keys=True, cls=NpEncoder))
     f.close()
     print("Saved json output file to " + str(output_file) + ".")
+
+def loadJSONFile(json_file):
+    """
+    Loads the json file containing the dataset, without the data.
+    :param json_file: json file to load.
+    """
+
+    json_file, _, _ = uriReader(json_file)
+
+    f = open(json_file, 'r')
+    dataset = json.load(f)
+
+    return dataset
 
 
 def is_jsonable(x):

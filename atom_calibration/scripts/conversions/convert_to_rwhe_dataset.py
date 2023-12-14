@@ -120,6 +120,6 @@ if __name__ == "__main__":
         # Open the file for writing
         with open(detections_file, 'w') as file_handle:
             # Iterate through detections in the current collection
-            for detection in collection['labels'][args['eye']]['idxs']:
+            for detection in collection['labels'][first_pattern_key][args['eye']]['idxs']:
                 # Write the detection coordinates to the file
                 file_handle.write(f'{detection["x"]} {detection["y"]}\n')    
