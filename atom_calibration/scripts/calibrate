@@ -27,6 +27,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabel
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
+from atom_core.results_yml_io import saveResultsYml
 
 
 # -------------------------------------------------------------------------------
@@ -110,8 +111,8 @@ def main():
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
     ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
                     type=str, required=False, default=None)
-
-    # save results of calibration in a csv file
+    ap.add_argument("-pp", "--print_parameters",
+                    help="Will print the value of the estimated parameters at the end of the optimization.", action="store_true", default=False)
     ap.add_argument("-sfr", "--save_file_results",
                     help="Output folder to where the results will be stored.", type=str, required=False)
 
@@ -548,6 +549,9 @@ def main():
                'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,
+    #    'diff_step': None, 'x_scale': 'jac', 'max_nfev': 1}
+
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:
@@ -557,8 +561,9 @@ def main():
     errorReport(dataset=dataset, residuals=objectiveFunction(
         opt.data_models), normalizer=normalizer, args=args)
 
-    # opt.printParameters()
-    print('\n\n')
+    if args['print_parameters']:
+        opt.printParameters()
+
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
@@ -578,8 +583,13 @@ def main():
     # ---------------------------------------
     # --- Save updated xacro
     # ---------------------------------------
-    # saveResultsXacro(dataset, selected_collection_key)
     saveResultsXacro(dataset, selected_collection_key, list(transforms_set))
+
+    # ---------------------------------------
+    # --- Save results into yaml
+    # ---------------------------------------
+    filename_results_yml = os.path.dirname(json_file) + "/" + 'atom_calibration_params.yml'
+    saveResultsYml(dataset, selected_collection_key, filename_results_yml)
 
 
 if __name__ == "__main__":

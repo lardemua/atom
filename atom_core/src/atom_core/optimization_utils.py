@@ -378,7 +378,7 @@ class Optimizer:
     #                                                   'diff_step': 1e-4}):
 
     def startOptimization(self, optimization_options={'x_scale': 'jac', 'ftol': 1e-10, 'xtol': 1e-10, 'gtol': 1e-10,
-                                                          'diff_step': 1e-4}):
+                                                      'diff_step': 1e-4}):
         """ Initializes the optimization procedure.
 
         :param optimization_options: dict with options for the least squares scipy function.
@@ -611,7 +611,7 @@ class Optimizer:
                      group.bound_max[i]])
 
         if text is None:
-            print('\nParameters:')
+            print('\n\nParameters:')
         else:
             print(text)
 
