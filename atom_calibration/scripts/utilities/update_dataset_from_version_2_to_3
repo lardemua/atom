@@ -7,7 +7,7 @@ from colorama import Style, Fore
 
 # 3rd-party
 import rospkg
-from atom_core.dataset_io import loadResultsJSON, createJSONFile, saveAtomDataset
+from atom_core.dataset_io import loadJSONFile, createJSONFile, saveAtomDataset
 from atom_core.utilities import atomError, atomPrintOK, atomStartupPrint
 from atom_calibration.collect.patterns import initializePatternsDict, estimatePatternPosesForCollection
 
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     print('Loading dataset ' + Fore.BLUE + str(args['json_file']) + Style.RESET_ALL)
 
-    # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
-    dataset, json_file = loadResultsJSON(args["json_file"])
+    # Loads a json file without data
+    dataset, _ = loadJSONFile(args["json_file"])
 
     # Verify the dataset version
     if float(dataset['_metadata']['version']) >= 3.0:
