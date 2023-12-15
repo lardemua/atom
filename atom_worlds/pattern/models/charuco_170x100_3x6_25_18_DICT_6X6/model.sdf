@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <sdf version="1.4">
-  <model name="charuco_200x200_4x4">
+  <model name="charuco_170x100_3x6_25_18_DICT_6X6">
     <static>1</static>
     <link name="charuco">
       <pose>0 0 0 0 0 0</pose>
-      <visual name="charuco_200x200_4x4_visual">
+      <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://charuco_200x200_4x4/charuco_200x200_4x4.dae</uri>
+            <uri>model://charuco_170x100_3x6_25_18_DICT_6X6/model.dae</uri>
           </mesh>
         </geometry>
       </visual>
-      <collision name="charuco_200x200_4x4_collision">
+      <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://charuco_200x200_4x4/charuco_200x200_4x4.dae</uri>
+            <uri>model://charuco_170x100_3x6_25_18_DICT_6X6/model.dae</uri>
           </mesh>
         </geometry>
       </collision>

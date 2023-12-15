@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import argparse
+
+import cv2
+import numpy as np
+import atom_core.config_io
+import rospy
+import tf
+from sensor_msgs.msg import Image, CameraInfo
+from cv_bridge import CvBridge
+from atom_calibration.collect import patterns
+from atom_core.geometry import traslationRodriguesToTransform
+from tf import transformations
+from cv2 import aruco
+
+bridge = CvBridge()
+
+camera_info_msg = None
+
+
+def onImageReceived(image_msg):
+
+    image = bridge.imgmsg_to_cv2(image_msg, 'bgr8')
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # size = {'x': 7, 'y': 7}
+    # charuco_dictionary = cv2.aruco.DICT_4X4_100
+    # length = 0.02
+    # marker_length = 0.015
+    # start_id = 0
+
+    # size = {'x': 2, 'y': 6}
+    # charuco_dictionary = cv2.aruco.DICT_6X6_100
+    # length = 0.02
+    # marker_length = 0.015
+    # start_id = 0
+
+    size = {'x': 2, 'y': 5}
+    charuco_dictionary = cv2.aruco.DICT_7X7_100
+    length = 0.02
+    marker_length = 0.015
+    start_id = 0
+
+    if cv2.__version__ == '4.6.0':
+
+        dictionary = cv2.aruco.Dictionary_get(charuco_dictionary)
+        board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length,
+                                              dictionary)
+        values = list(range(start_id, int(start_id+(size['x']+1)*(size['y']+1)/2)))
+        # print(values)
+        ids_to_search = np.asarray(values)
+        # print(ids_to_search)
+        board.setIds(ids_to_search)
+
+        params = cv2.aruco.DetectorParameters_create()
+        corners, ids, rejected = cv2.aruco.detectMarkers(gray, dictionary, parameters=params)
+
+        cv2.aruco.drawDetectedMarkers(image, corners, ids)
+
+        cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+        cv2.imshow('image', image)
+        key = cv2.waitKey(10)
+        if key & 0xff == ord('q'):
+            rospy.signal_shutdown(1)
+
+        # print(type(corners))
+        # print(corners)
+        # corners = np.array(corners)
+        # print(corners.shape)
+        # ids = np.array(ids)
+        # cv2.aruco.drawDetectedCornersCharuco(image, corners, ids)
+        # exit(0)
+
+        # Filter out only the corners from 10 to 10 + 8*8
+
+        ret, ccorners, cids = cv2.aruco.interpolateCornersCharuco(corners, ids, gray, board)
+        cids = cids.ravel().tolist()
+
+        filtered_ids = []
+        filtered_corners = []
+        min_id = start_id
+        max_id = min_id + size['x'] * size['y']
+        for corner, id in zip(corners, ids):
+            print('id ' + str(id) + ' corner ' + str(corner))
+            if id > min_id and id < max_id:
+                filtered_ids.append(id)
+                filtered_corners.append(corners)
+
+        # print(filtered_ids)
+        # print(filtered_corners)
+
+        # np_corners = np.array(filtered_corners, dtype=np.float32)
+        # np_ids = np.array(filtered_ids, dtype=int)
+
+        np_corners = np.array(ccorners, dtype=np.float32)
+        np_ids = np.array(cids, dtype=int)
+
+        print('np_ids.shape ' + str(np_ids.shape))
+        print('np_corners.shape ' + str(np_corners.shape))
+        print('np_ids.dtype ' + str(np_ids.dtype))
+        print('np_corners.dtype ' + str(np_corners.dtype))
+
+        # np_ids .shape(49,)
+        # np_corners .shape(49, 1, 2)
+        # np_ids .dtypeint64
+        # np_corners .dtypefloat32
+
+        rvecs, tvecs = None, None
+        _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(
+            np_corners, np_ids, board,
+            camera_info_msg.K, camera_info_msg.D,
+            rvecs, tvecs)
+
+        # Draw frame on the image
+        cv2.drawFrameAxes(image, camera_info_msg.K, camera_info_msg.D, rvecs, tvecs, 0.5)
+
+#     dict_type = aruco.DICT_4X4_100
+#     squares = (8, 8)
+#     square_length_mm = 0.02
+#     marker_length_mm = 0.015
+#     aruco_dict = aruco.getPredefinedDictionary(dict_type)
+#
+#     # There are 17 white squares, provide 17 markers with ids [0..16]
+#     board0 = aruco.CharucoBoard(squares, square_length_mm, marker_length_mm, aruco_dict, np.arange(8*8))
+#     detector = aruco.CharucoDetector(board0)
+#     charuco_corners, charuco_ids, marker_corners, marker_ids = detector.detectBoard(image)
+#     aruco.drawDetectedCornersCharuco(image, charuco_corners, charuco_ids, (255, 0, 0))
+
+
+def main():
+
+    global camera_info_msg
+
+    rospy.init_node('detect_chessboard', anonymous=True)
+
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("-cfg", "--config_file",
+    #                     help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
+    #                     type=str, required=False, default=None)
+    # parser.add_argument("-sn", "--sensor_name", help="Sensor to test as named in the config file.", type=str,
+    #                     required=True)
+    # parser.add_argument("-pn", "--pattern_name", help="Pattern to test as named in the config file.", type=str,
+    #                     required=True)
+    # parser.add_argument("-e3d", "--estimate_3d", help="Sensor to test as named in the config file.",
+    #                     action="store_true")
+    # parser.add_argument("-uir", "--use_ir", help="Sensor to test as named in the config file.",
+    #                     action="store_true")
+    # args = vars(parser.parse_args())
+
+    print(cv2.__version__)
+
+    # Wait for camera info msg
+
+    camera_info_msg = rospy.wait_for_message("/rgb_hand/camera_info",  CameraInfo)
+    if camera_info_msg is None:
+        raise ValueError("Could not receive camera_info message ")
+    print(camera_info_msg)
+    # exit(0)
+
+    # K = np.ndarray((3, 3), dtype=float, buffer=np.array(
+    #     sensor['camera_info']['K']))
+    # D = np.ndarray((5, 1), dtype=float, buffer=np.array(
+    #     sensor['camera_info']['D']))
+
+    # sub = rospy.Subscriber("image", Image, onImageReceived, queue_size=1)
+    sub = rospy.Subscriber("/rgb_hand/image_raw", Image, onImageReceived, queue_size=1)
+
+    # Read config file
+    # config = atom_core.config_io.loadConfig(args['config_file'])
+
+    # first_pattern_key = list(config['calibration_patterns'][self.pattern_key].keys())[0]
+
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()

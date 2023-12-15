@@ -23,12 +23,7 @@ class SimplePatternDetector:
         self.pattern_key = args['pattern_name']
         print(config['calibration_patterns'][self.pattern_key]['dimension'])
         d = config['calibration_patterns'][self.pattern_key]['dimension']
-        print('777')
-        print(type(d))
-        d['x']
-        print('777.5')
         print(config['calibration_patterns'][self.pattern_key]['dimension']['x'])
-        print('888')
         size = {'x': config['calibration_patterns'][self.pattern_key]['dimension']['x'],
                 'y': config['calibration_patterns'][self.pattern_key]['dimension']['y']}
         length = config['calibration_patterns'][self.pattern_key]['size']
@@ -77,9 +72,9 @@ class SimplePatternDetector:
             image = self.bridge.imgmsg_to_cv2(image_msg, 'bgr8')
 
         # TODO only works for first pattern
-        first_pattern_key = list(self.config['calibration_patterns'].keys())[0]
-        nx = self.config['calibration_patterns'][first_pattern_key]['dimension']['x']
-        ny = self.config['calibration_patterns'][first_pattern_key]['dimension']['y']
+        pattern_key = self.args['pattern_name']
+        nx = self.config['calibration_patterns'][pattern_key]['dimension']['x']
+        ny = self.config['calibration_patterns'][pattern_key]['dimension']['y']
         K = np.ndarray((3, 3), dtype=float,
                        buffer=np.array(self.camera_info_msg.K))
         D = np.ndarray((5, 1), dtype=float,
@@ -98,7 +93,7 @@ class SimplePatternDetector:
         if result['detected']:
             objp = np.zeros((nx * ny, 3), np.float32)
             # TODO only works for first pattern
-            objp[:, :2] = self.config['calibration_patterns'][first_pattern_key]['size'] * \
+            objp[:, :2] = self.config['calibration_patterns'][pattern_key]['size'] * \
                 np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
             # Build a numpy array with the chessboard corners
@@ -114,11 +109,16 @@ class SimplePatternDetector:
             # # Find pose of the camera w.r.t the chessboard
             if self.args['estimate_3d']:
                 np_ids = np.array(ids, dtype=int)
+                np_corners = np.array(corners, dtype=np.float32)
                 rvecs, tvecs = None, None
 
+                print('np_ids .shape' + str(np_ids.shape))
+                print('np_corners .shape' + str(np_corners.shape))
+                print('np_ids .dtype' + str(np_ids.dtype))
+                print('np_corners .dtype' + str(np_corners.dtype))
                 # TODO only works for first pattern
-                if self.config['calibration_patterns'][first_pattern_key]['pattern_type'] == 'charuco':
-                    _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                if self.config['calibration_patterns'][pattern_key]['pattern_type'] == 'charuco':
+                    _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np_corners,
                                                                          np_ids, self.pattern.board,
                                                                          K, D, rvecs, tvecs)
                 else:
