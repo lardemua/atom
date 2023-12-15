@@ -79,3 +79,27 @@ rlbot:
             file: train.zip
             extract_to: train
             id: 1kM3D4aUORKMxdsz9krnpeDSXNrmXxltp
+
+jcpbbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1trvpsJ9W5R0UkSHaOohmr4BZvnXY6ly0
+        train_with_noise:
+            file: train_with_noise.bag
+            id: 19xjwTXsZkcx5NNL_K3OPWv_Dv6El9ym0
+        test:
+            file: test.bag
+            id: 1uncRI0clIPurlSA1cmrdTDkwbmFdVxWi
+        test_with_noise:
+            file: test_with_noise.bag
+            id: 1tKq1X0PpIRTVu8x6valOwxBfLD0RwEeo
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1WjbzB9MRPmGcowggLKX-zDOaKnj89yRF
+        test:
+            file: test.zip
+            extract_to: test
+            id: 17IabhzUfnShaUp-BOrbDOOt6LTqJ05bM
