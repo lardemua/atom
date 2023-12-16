@@ -213,9 +213,8 @@ class DataCollectorAndLabeler:
             sensor_labeler = {}
             sensor_idx = 0
             for sensor_key, value in self.config['sensors'].items():
-                sensor_labeler[sensor_key] = InteractiveDataLabeler(self.server, self.menu_handler, self.sensors[sensor_key],
-                                                                    args['marker_size'], pattern,
-                                                                    color=tuple(self.cm_sensors[sensor_idx, :]), label_data=label_data[sensor_key])
+                sensor_labeler[sensor_key] = InteractiveDataLabeler(self.server, self.menu_handler, self.sensors[sensor_key], args['marker_size'], pattern, color=tuple(
+                    self.cm_sensors[sensor_idx, :]), label_data=label_data[sensor_key])
                 sensor_idx += 1
             self.sensor_labelers[pattern_key] = sensor_labeler
         print('Labelers for pattern ' + pattern_key + ' are complete.')

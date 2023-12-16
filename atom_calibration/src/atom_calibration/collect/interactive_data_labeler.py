@@ -37,7 +37,7 @@ FIELDS_XYZ = [
     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
 ]
 FIELDS_XYZRGB = FIELDS_XYZ + \
-                [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
+    [PointField(name='rgb', offset=12, datatype=PointField.UINT32, count=1)]
 
 # Bit operations
 BIT_MOVE_16 = 2 ** 16
@@ -142,15 +142,7 @@ class InteractiveDataLabeler:
             print("Unknown pattern type '{}'".format(calib_pattern['pattern_type']))
             sys.exit(1)
 
-        # Get the type of message from the message topic of the sensor data, which is given as input. The message
-        # type is used to define which labeling technique is used.
-        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.topic)
-        print('msg_type_str is = ' + str(self.msg_type_str))
-
-        # TODO decide which labeler to use
-
-        # Handle the interactive labeling of data differently according to the sensor message types.
-        # if self.msg_type_str in ['LaserScan'] and self.label_data:
+        # Handle the interactive labeling of data differently according to the sensor modality.
         if self.modality == 'lidar2d' and self.label_data:
             # TODO parameters given from a command line input?
             self.threshold = 0.2  # pt to pt distance  to create new cluster (param  only for 2D LIDAR labeling)
@@ -163,14 +155,13 @@ class InteractiveDataLabeler:
                                                       queue_size=1)  # publish a point cloud with coloured clusters
             self.createInteractiveMarker()  # interactive marker to label the calibration pattern cluster (one time)
             print('Created interactive marker for laser scans.')
-        # elif self.msg_type_str in ['Image'] and self.label_data:
+
         elif self.modality == 'rgb' and self.label_data:
             self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
             self.publisher_labelled_image = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.Image,
                                                             queue_size=1)  # publishz
             # images with the detected chessboard overlaid onto the image.
 
-        # elif self.msg_type_str in ['PointCloud2'] and self.label_data:  # Velodyne data (Andre Aguiar)
         elif self.modality == 'lidar3d' and self.label_data:  # Velodyne data (Andre Aguiar)
             self.publisher_selected_points = rospy.Publisher(self.topic + '/labeled', sensor_msgs.msg.PointCloud2,
                                                              queue_size=1)  # publish a point cloud with the points
@@ -274,7 +265,6 @@ class InteractiveDataLabeler:
         self.labels['idxs'] = []
 
         # labeling process dependent of the sensor type
-        # if self.msg_type_str == 'LaserScan':  # 2D LIDARS -------------------------------------
         if self.modality == 'lidar2d':  # 2D LIDARS -------------------------------------
             # For 2D LIDARS the process is the following: First cluster all the range data into clusters. Then,
             # associate one of the clusters with the calibration pattern by selecting the cluster which is closest to
@@ -340,7 +330,7 @@ class InteractiveDataLabeler:
             number_of_idxs = len(clusters[idx_closest_cluster].idxs)
             idxs_to_remove = int(percentage_points_to_remove * float(number_of_idxs))
             clusters[idx_closest_cluster].idxs_filtered = clusters[idx_closest_cluster].idxs[
-                                                          idxs_to_remove:number_of_idxs - idxs_to_remove]
+                idxs_to_remove:number_of_idxs - idxs_to_remove]
 
             self.labels['idxs'] = clusters[idx_closest_cluster].idxs_filtered
 
@@ -352,8 +342,8 @@ class InteractiveDataLabeler:
                 for idx in cluster.idxs:
                     x, y = xs[idx], ys[idx]
                     r, g, b = int(cmap[cluster.cluster_count, 0] * 255.0), \
-                              int(cmap[cluster.cluster_count, 1] * 255.0), \
-                              int(cmap[cluster.cluster_count, 2] * 255.0)
+                        int(cmap[cluster.cluster_count, 1] * 255.0), \
+                        int(cmap[cluster.cluster_count, 2] * 255.0)
                     rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
                     pt = [x, y, z, rgb]
                     points.append(pt)
@@ -381,7 +371,6 @@ class InteractiveDataLabeler:
             pc_msg = point_cloud2.create_cloud(header, fields, points)
             self.publisher_selected_points.publish(pc_msg)
 
-        # elif self.msg_type_str == 'Image':  # Cameras -------------------------------------------
         elif self.modality == 'rgb':
             # rospy.loginfo(
             #     'labeling image for ' + self.name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
@@ -402,10 +391,6 @@ class InteractiveDataLabeler:
                     for corner in result['keypoints']:
                         c.append({'x': float(corner[0][0]), 'y': float(corner[0][1])})
 
-                x = int(round(c[0]['x']))
-                y = int(round(c[0]['y']))
-                cv2.line(image, (x, y), (x, y), (0, 255, 255), 20)
-
                 # Update the dictionary with the labels
                 self.labels['detected'] = True
                 self.labels['idxs'] = c
@@ -413,12 +398,15 @@ class InteractiveDataLabeler:
             # For visual debugging
             self.pattern.drawKeypoints(image, result)
 
+            cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+            cv2.imshow('image', image)
+            key = cv2.waitKey(0)
+
             msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_image.publish(msg_out)
 
-        # elif self.msg_type_str == 'PointCloud2':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
         elif self.modality == 'lidar3d':  # 3D scan point cloud (Andre Aguiar) ---------------------------------
 
             # rospy.loginfo(
@@ -426,7 +414,7 @@ class InteractiveDataLabeler:
 
             # Get the marker position (this comes from the sphere in rviz)
             x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
-                                           self.marker.pose.position.z  # interactive marker pose
+                self.marker.pose.position.z  # interactive marker pose
 
             # Extract 3D point from the ros msg
             self.labels, seed_point, inliers = labelPointCloud2Msg(self.msg, x_marker, y_marker, z_marker,
@@ -437,7 +425,7 @@ class InteractiveDataLabeler:
             point_cloud = numpyFromPointCloudMsg(self.msg)
 
             # Add idxs points
-            r,g,b = int(1 * 255.0), int(1 * 255.0),int(1 * 255.0)
+            r, g, b = int(1 * 255.0), int(1 * 255.0), int(1 * 255.0)
             a = 200
             rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
             points = []
@@ -446,7 +434,7 @@ class InteractiveDataLabeler:
                 points.append(pt)
 
             # Add idx_limit_points (darker)
-            r,g,b = int(1 * 25.0), int(1 * 25.0),int(1 * 25.0)
+            r, g, b = int(1 * 25.0), int(1 * 25.0), int(1 * 25.0)
             a = 150
             rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
             for idx in self.labels['idxs_limit_points']:
@@ -475,16 +463,17 @@ class InteractiveDataLabeler:
         elif self.modality == 'depth':  # depth camera - Daniela ---------------------------------
             width = self.pinhole_camera_model.fullResolution()[0]
             height = self.pinhole_camera_model.fullResolution()[1]
-            filter_border_edges=0.025
+            filter_border_edges = 0.025
 
             # actual labeling
-            self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown, scatter_seed=True, debug=False, subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
+            self.labels, result_image, new_seed_point = labelDepthMsg(self.msg, seed=self.seed, bridge=self.bridge, pyrdown=self.pyrdown,
+                                                                      scatter_seed=True, debug=False, subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
 
             # print('new_seed_point = ' + str(new_seed_point))
             time_since_manual_seed = (rospy.Time.now()-self.tic_manual_seed).to_sec()
 
-            #639 https://github.com/lardemua/atom/issues/639
-            if time_since_manual_seed > 1.0: # only track after 1 second of setting manual seed.
+            # 639 https://github.com/lardemua/atom/issues/639
+            if time_since_manual_seed > 1.0:  # only track after 1 second of setting manual seed.
                 if 0 < new_seed_point['x'] < width-filter_border_edges*width and 0 < new_seed_point['y'] < height-filter_border_edges*height:
                     self.seed['x'] = new_seed_point['x']
                     self.seed['y'] = new_seed_point['y']
@@ -496,7 +485,6 @@ class InteractiveDataLabeler:
             msg_out.header.stamp = self.msg.header.stamp
             msg_out.header.frame_id = self.msg.header.frame_id
             self.publisher_labelled_depth.publish(msg_out)
-
 
         else:
             raise ValueError('Unknown modality')
@@ -648,4 +636,3 @@ class InteractiveDataLabeler:
 
         self.server.insert(self.marker, self.markerFeedback)
         self.menu_handler.apply(self.server, self.marker.name)
-
