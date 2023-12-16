@@ -89,41 +89,41 @@
     </spherical_coordinates>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-3.30464 4.59434 5.43202 0 0.92 -1.11999</pose>
+        <pose>-1.73501 1.61947 1.80559 0 0.513798 -0.863987</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
     <state world_name='default'>
-      <sim_time>3449 461000000</sim_time>
-      <real_time>197 84771606</real_time>
-      <wall_time>1702668814 351594845</wall_time>
-      <iterations>195793</iterations>
+      <sim_time>3625 548000000</sim_time>
+      <real_time>177 21095404</real_time>
+      <wall_time>1702721070 734354461</wall_time>
+      <iterations>176087</iterations>
       <model name='charuco_170x100_3x6_25_18_DICT_6X6'>
-        <pose>-0.273188 0.096289 0.830052 0 -0.482956 -0.04674</pose>
+        <pose>-0.338953 0.099365 0.795529 3.12988 -0.482956 -0.04674</pose>
         <scale>1 1 1</scale>
         <link name='charuco'>
-          <pose>-0.273188 0.096289 0.830052 0 -0.482956 -0.04674</pose>
+          <pose>-0.338953 0.099365 0.795529 3.12988 -0.482956 -0.04674</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='charuco_200x120_3x6_30_22_DICT_7X7'>
-        <pose>-0.673789 0.249027 0.79565 0 -0 0.521432</pose>
+        <pose>-0.584268 0.292631 0.794752 3.13823 0 0.521432</pose>
         <scale>1 1 1</scale>
         <link name='charuco'>
-          <pose>-0.673789 0.249027 0.79565 0 -0 0.521432</pose>
+          <pose>-0.584268 0.292631 0.794752 3.13823 0 0.521432</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='charuco_200x200_8x8_20_15_DICT_4x4'>
-        <pose>-0.758432 -0.08224 0.810766 3.11053 0.025733 0.691611</pose>
+        <pose>-0.758432 -0.082364 0.807688 3.11053 0.025733 0.691611</pose>
         <scale>1 1 1</scale>
         <link name='charuco'>
-          <pose>-0.758432 -0.08224 0.810766 3.11053 0.025733 0.691611</pose>
+          <pose>-0.758432 -0.082364 0.807688 3.11053 0.025733 0.691611</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
