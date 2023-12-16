@@ -171,7 +171,6 @@ calibration_patterns:
     dictionary:
     mesh_file: "package://atom_worlds/pattern/models/chessboard_1200x900_10x7/chessboard_1200x900_10x7.dae"
     border_size: {'x': 0.04, 'y': 0.03}
-    # dimension: {'x': 11, 'y': 8}
     dimension: {'x': 10, 'y': 7}
     size: 0.1
     inner_size: 0.045

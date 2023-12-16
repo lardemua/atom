@@ -142,6 +142,11 @@ class InteractiveDataLabeler:
             print("Unknown pattern type '{}'".format(calib_pattern['pattern_type']))
             sys.exit(1)
 
+        # Get the type of message from the message topic of the sensor data, which is given as input. The message
+        # type is used to define which labeling technique is used.
+        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.topic)
+        print('msg_type_str is = ' + str(self.msg_type_str))
+
         # Handle the interactive labeling of data differently according to the sensor modality.
         if self.modality == 'lidar2d' and self.label_data:
             # TODO parameters given from a command line input?
@@ -397,10 +402,6 @@ class InteractiveDataLabeler:
 
             # For visual debugging
             self.pattern.drawKeypoints(image, result)
-
-            cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-            cv2.imshow('image', image)
-            key = cv2.waitKey(0)
 
             msg_out = self.bridge.cv2_to_imgmsg(image, encoding="passthrough")
             msg_out.header.stamp = self.msg.header.stamp
