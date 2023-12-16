@@ -88,55 +88,8 @@ class SimplePatternDetector:
         else:
             print('Failed to detect pattern')
 
-        self.pattern.drawKeypoints(image, result)
+        self.pattern.drawKeypoints(image, result, K, D)
 
-        if result['detected']:
-            objp = np.zeros((nx * ny, 3), np.float32)
-            # TODO only works for first pattern
-            objp[:, :2] = self.config['calibration_patterns'][pattern_key]['size'] * \
-                np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
-
-            # Build a numpy array with the chessboard corners
-            corners = np.zeros((len(result['keypoints']), 1, 2), dtype=float)
-            ids = list(range(0, len(result['keypoints'])))
-
-            points = result['keypoints'].astype(np.int32)
-            for idx, (point, id) in enumerate(zip(result['keypoints'], result['ids'])):
-                corners[idx, 0, 0] = point[0][0]
-                corners[idx, 0, 1] = point[0][1]
-                ids[idx] = id
-
-            # # Find pose of the camera w.r.t the chessboard
-            if self.args['estimate_3d']:
-                np_ids = np.array(ids, dtype=int)
-                np_corners = np.array(corners, dtype=np.float32)
-                rvecs, tvecs = None, None
-
-                print('np_ids .shape' + str(np_ids.shape))
-                print('np_corners .shape' + str(np_corners.shape))
-                print('np_ids .dtype' + str(np_ids.dtype))
-                print('np_corners .dtype' + str(np_corners.dtype))
-                # TODO only works for first pattern
-                if self.config['calibration_patterns'][pattern_key]['pattern_type'] == 'charuco':
-                    _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(np_corners,
-                                                                         np_ids, self.pattern.board,
-                                                                         K, D, rvecs, tvecs)
-                else:
-                    _, rvecs, tvecs = cv2.solvePnP(
-                        objp[ids], np.array(corners, dtype=np.float32), K, D)
-
-                sensor_T_chessboard = traslationRodriguesToTransform(
-                    tvecs, rvecs)
-                trans = list(sensor_T_chessboard[0: 3, 3])
-                quat = list(transformations.quaternion_from_matrix(
-                    sensor_T_chessboard))
-
-                self.broadcaster.sendTransform(
-                    trans, quat, rospy.Time.now(), 'pattern', image_msg.header.frame_id)
-
-                # Draw frame on the image
-                cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.5)
-                # https://docs.opencv.org/3.4/df/d4a/tutorial_charuco_detection.html
         if self.args['use_ir']:
             image_msg_out = self.bridge.cv2_to_imgmsg(image, 'mono8')
         else:
@@ -163,8 +116,6 @@ def main():
                         required=True)
     parser.add_argument("-pn", "--pattern_name", help="Pattern to test as named in the config file.", type=str,
                         required=True)
-    parser.add_argument("-e3d", "--estimate_3d", help="Sensor to test as named in the config file.",
-                        action="store_true")
     parser.add_argument("-uir", "--use_ir", help="Sensor to test as named in the config file.",
                         action="store_true")
     args = vars(parser.parse_args())
