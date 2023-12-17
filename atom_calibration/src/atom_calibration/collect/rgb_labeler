@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+
+
+# stdlib
+import argparse
+from copy import deepcopy
+import os
+import sys
+
+import cv2
+from atom_core.config_io import loadConfig
+
+import atom_core.ros_utils
+
+# 3rd-party
+import rospy
+import numpy as np
+import atom_core.utilities
+from cv_bridge import CvBridge
+from matplotlib import cm
+from sensor_msgs.msg import *
+from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import CameraInfo
+from colorama import Fore, Style
+
+# local packages
+from atom_calibration.collect import patterns
+from atom_core.utilities import atomError
+
+from atom_msgs.msg import ImageWithRGBLabels, RGBLabels, Detection2D
+
+
+class RGBLabeler:
+    """
+    Handles data labeling for a generic sensor:
+        RGB: Fully automated labeling. Periodically runs a chessboard detection on the newly received image.
+    """
+
+    def __init__(self, config, sensor_name, label_data=True, debug=False):
+
+        print('Starting RGB labeler for sensor ' + str(sensor_name))
+
+        # Store variables to class attributes
+        self.config = config
+        self.label_data = label_data
+        self.sensor_name = sensor_name
+        self.debug = debug
+
+        # Check if sensor exists in config
+        if self.sensor_name not in config['sensors'].keys():
+            atomError('Sensor ' + Fore.BLUE + sensor_name + Style.RESET_ALL + ' not in config. Cannot start labeler.\nAvailable sensors are: ' +
+                      Fore.BLUE + str(list(config['sensors'].keys())) + Style.RESET_ALL)
+
+        self.sensor_config = config['sensors'][sensor_name]
+
+        # Check if modality is rgb
+        if not self.sensor_config['modality'] == 'rgb':
+            atomError('Sensor ' + sensor_name + ' has modality ' +
+                      self.sensor_config['modality'] + ' . Cannot start rgb labeler.')
+
+        # Get the type of message from the message topic of the sensor data, which is given as input.
+        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.sensor_config['topic_name'])
+
+        # Create a self.detectors dictionary with all one detector class instantiated for each pattern
+        self.detectors = {}
+        for pattern_key, pattern in self.config['calibration_patterns'].items():
+            if pattern['pattern_type'] == 'chessboard':
+                self.detectors[pattern_key] = patterns.ChessboardPattern(pattern['dimension'],
+                                                                         pattern['size'])
+            elif pattern['pattern_type'] == 'charuco':
+                self.detectors[pattern_key] = patterns.CharucoPattern(pattern['dimension'],
+                                                                      pattern['size'],
+                                                                      pattern['inner_size'],
+                                                                      pattern['dictionary'])
+            else:
+                atomError('Unknown pattern type ' + str(pattern['pattern_type']))
+
+        self.cm_patterns = cm.tab10(np.linspace(0, 1, len(self.config['calibration_patterns'].keys())))
+
+        # Set up the labeled image publication
+        self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
+        self.labeled_image_topic = self.sensor_config['topic_name'] + '/labeled'
+        self.publisher_labeled_image = rospy.Publisher(self.labeled_image_topic,
+                                                       sensor_msgs.msg.Image,
+                                                       queue_size=1)  # publish
+
+        # Set up the publication of the produced labels
+        self.publisher_image_with_rgb_labels = rospy.Publisher(self.sensor_name + '/labels',
+                                                               ImageWithRGBLabels, queue_size=1)
+
+        # Receive one camera_info message corresponding to this sensor and store it.
+        # We need this to have the K and D matrices.
+        camera_info_topic = os.path.dirname(self.sensor_config['topic_name']) + '/camera_info'
+        print('Waiting for camera_info message on topic ' + camera_info_topic + ' ...')
+        self.camera_info_msg = rospy.wait_for_message(camera_info_topic, CameraInfo)
+        print('... received!')
+
+        self.K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
+        self.D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
+
+        # self.camera_info = message_converter.convert_ros_message_to_dictionary(self.camera_info_msg)
+
+        # Subscribe to the message topic containing sensor data
+        self.subscriber = rospy.Subscriber(self.sensor_config['topic_name'], self.msg_type,
+                                           self.labelData, queue_size=1)
+
+    def labelData(self, msg):
+
+        if not self.labelData:  # Nothing to do in this case
+            return
+
+        if self.debug:
+            print('Image received. Labeling data for sensor ' + self.sensor_name)
+
+        # Convert to opencv image and save image to disk
+        image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        image_gui = deepcopy(image)
+
+        # Create the labels by detecting all patterns in the image
+        image_with_rgb_labels_msg = ImageWithRGBLabels()
+        image_with_rgb_labels_msg.image = msg  # image is the one use for labeling
+        for detector_idx, (detector_key, detector) in enumerate(self.detectors.items()):
+
+            # Initialize labels for this pattern
+            pattern_labels = RGBLabels()
+            pattern_labels.detected = False
+            pattern_labels.idxs = []
+
+            # Detect this pattern in the image
+            result = detector.detect(image, equalize_histogram=False)
+
+            if result['detected']:
+                pattern_labels.detected = True
+                for idx, corner in enumerate(result['keypoints']):
+                    x = float(corner[0][0])
+                    y = float(corner[0][1])
+
+                    # The charuco pattern also returns an ID for each keypoint.
+                    # We can use this information for partial detections.
+                    if 'ids' in result:
+                        id = result['ids'][idx]
+                    else:
+                        id = idx
+
+                    pattern_labels.idxs.append(Detection2D(x=x, y=y, id=id))
+
+            # Add the labels if this pattern to the ImageWithLabels msg
+            image_with_rgb_labels_msg.patterns.append(pattern_labels)
+
+            # For visual debugging
+            color = self.cm_patterns[detector_idx, 0:3]
+            color = int(color[0]*255), int(color[1]*255), int(color[2]*255)
+
+            detector.drawKeypoints(image_gui, result, K=self.K, D=self.D, pattern_name=detector_key, color=color)
+
+        # Publish ImageWithLabels msg
+        self.publisher_image_with_rgb_labels.publish(image_with_rgb_labels_msg)
+        # labels_msg.labels =
+        # self.camera_info = message_converter.convert_ros_message_to_dictionary(self.camera_info_msg)
+
+        # Create labeled image and publish it
+        msg_out = self.bridge.cv2_to_imgmsg(image_gui, encoding="passthrough")
+        msg_out.header.stamp = msg.header.stamp
+        msg_out.header.frame_id = msg.header.frame_id
+        self.publisher_labeled_image.publish(msg_out)
+
+        if self.debug:
+            cv2.namedWindow(self.labeled_image_topic, cv2.WINDOW_NORMAL)
+            cv2.imshow(self.labeled_image_topic, image_gui)
+            key = cv2.waitKey(30)
+            if key & 0xff == ord('q'):
+                rospy.signal_shutdown(1)
+
+
+def main():
+
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
+    ap.add_argument("-sn", "--sensor_name", help='Name of the sensor as given in the config.yml', type=str, required=True)
+    ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
+
+    args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
+    print("\nArgument list=" + str(args) + '\n')
+
+    config = loadConfig(args['calibration_file'])
+
+    # Initialize ROS stuff
+    node_name = args['sensor_name'] + '_rgb_labeler'
+    rospy.init_node(node_name)
+
+    rgb_labeler = RGBLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'])
+
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()
