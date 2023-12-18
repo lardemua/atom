@@ -98,8 +98,6 @@ class RGBLabeler:
         self.K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
         self.D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
 
-        # self.camera_info = message_converter.convert_ros_message_to_dictionary(self.camera_info_msg)
-
         # Subscribe to the message topic containing sensor data
         self.subscriber = rospy.Subscriber(self.sensor_config['topic_name'], self.msg_type,
                                            self.labelData, queue_size=1)
@@ -118,6 +116,7 @@ class RGBLabeler:
 
         # Create the labels by detecting all patterns in the image
         image_with_rgb_labels_msg = ImageWithRGBLabels()
+        image_with_rgb_labels_msg.header = msg.header
         image_with_rgb_labels_msg.image = msg  # image is the one use for labeling
         for detector_idx, (detector_key, detector) in enumerate(self.detectors.items()):
 

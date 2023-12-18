@@ -54,6 +54,8 @@ add_message_files(
   ImageWithRGBLabels.msg
   RGBLabels.msg
   Detection2D.msg
+  PointCloudWithLidar3DLabels.msg
+  Lidar3DLabels.msg
 )
 
 ## Generate services in the 'srv' folder
