@@ -4,6 +4,7 @@
 # stdlib
 import argparse
 import math
+import sys
 from colorama import Fore, Style
 
 from atom_core.config_io import loadConfig
@@ -36,16 +37,6 @@ class Lidar3DLabeler:
 
     # def __init__(self, config, sensor_name, server, menu_handler, sensor_dict, marker_scale, calib_pattern, color, label_data=True):
     def __init__(self, config, sensor_name, label_data=True, debug=False, marker_scale=0.5, color=(255, 0, 0)):
-        """
-        Class constructor. Initializes several variables and ros stuff.
-        :param server: an interactive marker server
-        :param menu_handler: an interactive MenuHandler
-        :param sensor_dict: A dictionary that describes the sensor
-        :param marker_scale: scale of the markers to be drawn
-        :param chess_numx: chessboard size in x
-        :param chess_numy: chessboard size in y
-        :param color: tuple with the values of the three color channels (0-1)
-        """
 
         print('Creating a lidar labeler for sensor ' + sensor_name)
 
@@ -115,7 +106,9 @@ class Lidar3DLabeler:
                                            self.msg_type, self.labelData, queue_size=1)
 
     def labelData(self, msg):
-        print('labeling data for sensor ' + self.sensor_name)
+        if self.debug:
+            print('labeling data for sensor ' + self.sensor_name)
+
         # Reset detected and idxs values to make sure we are not using information from a previous labeling
         # self.labels['detected'] = False
         # self.labels['idxs'] = []
@@ -153,8 +146,8 @@ class Lidar3DLabeler:
         point_cloud = numpyFromPointCloudMsg(msg)
 
         # Add idxs points
-        r, g, b = int(1 * 255.0), int(1 * 255.0), int(1 * 255.0)
-        a = 200
+        r, g, b = self.color
+        a = 25
         rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
         points = []
         for idx in self.labels['idxs']:
@@ -162,8 +155,6 @@ class Lidar3DLabeler:
             points.append(pt)
 
         # Add idx_limit_points (darker)
-        r, g, b = int(1 * 25.0), int(1 * 25.0), int(1 * 25.0)
-        a = 150
         rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
         for idx in self.labels['idxs_limit_points']:
             pt = [point_cloud[idx, 0], point_cloud[idx, 1], point_cloud[idx, 2], rgb]
@@ -175,7 +166,8 @@ class Lidar3DLabeler:
         header.frame_id = msg.header.frame_id
         header.stamp = msg.header.stamp
         pc_msg = point_cloud2.create_cloud(header, fields, points)
-        print('Publishing labelled cloud with ' + str(len(points)) + ' points.')
+        if self.debug:
+            print('Publishing labelled cloud with ' + str(len(points)) + ' points.')
         self.publisher_selected_points.publish(pc_msg)
 
         # Update the interactive marker pose
@@ -201,8 +193,7 @@ class Lidar3DLabeler:
         self.marker.scale = self.marker_scale
 
         self.marker.name = self.sensor_name
-        self.marker.description = 'Place marker on top of ' + self.sensor_name + '\'s data \nthat views the calibration pattern'
-        print('Creating IM with name ' + self.marker.name)
+        self.marker.description = ''
 
         # insert a box
         control = InteractiveMarkerControl()
@@ -210,14 +201,12 @@ class Lidar3DLabeler:
 
         marker_box = Marker()
         marker_box.type = Marker.TEXT_VIEW_FACING
-        marker_box.scale.x = self.marker.scale * .3
-        marker_box.scale.y = self.marker.scale * .3
-        marker_box.scale.z = self.marker.scale * .3
-        marker_box.color.r = 0.7
-        marker_box.color.g = 0.7
+        marker_box.scale.z = self.marker.scale * .2
+        marker_box.color.r = 0.0
+        marker_box.color.g = 0.0
         marker_box.color.b = 0
         marker_box.color.a = 1
-        marker_box.text = self.sensor_name + '\nlabeler'
+        marker_box.text = self.sensor_name + ' labeler\nPlace on pattern points'
 
         control.markers.append(marker_box)
         self.marker.controls.append(control)
@@ -262,21 +251,20 @@ def main():
 
     # Parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
+    ap.add_argument("-cfg", "--config", help='Calibration config file.', type=str, required=True)
     ap.add_argument("-sn", "--sensor_name", help='Name of the sensor as given in the config.yml', type=str, required=True)
     ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
+    ap.add_argument("-c", "--color", nargs=3, help='Color associated with this labeler', default=[255, 0, 0], type=int)
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
-    print("\nArgument list=" + str(args) + '\n')
 
-    config = loadConfig(args['calibration_file'])
+    config = loadConfig(args['config'])
 
     # Initialize ROS stuff
     node_name = args['sensor_name'] + '_lidar3d_labeler'
     rospy.init_node(node_name)
 
-    lidar_labeler = Lidar3DLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'])
-
+    lidar_labeler = Lidar3DLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'], color=args['color'])
     rospy.spin()
 
 

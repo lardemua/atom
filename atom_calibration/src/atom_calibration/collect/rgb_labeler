@@ -175,12 +175,11 @@ def main():
 
     # Parse command line arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--calibration_file", help='full path to calibration file.', type=str, required=True)
+    ap.add_argument("-cfg", "--config", help='Calibration config file.', type=str, required=True)
     ap.add_argument("-sn", "--sensor_name", help='Name of the sensor as given in the config.yml', type=str, required=True)
     ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
-    print("\nArgument list=" + str(args) + '\n')
 
     config = loadConfig(args['calibration_file'])
 
