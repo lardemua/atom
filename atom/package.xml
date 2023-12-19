@@ -2,10 +2,10 @@
 <package format="2">
   <name>atom</name>
   <version>0.0.0</version>
-  <description>The atom package</description>
+  <description>A meta package for compiling all atom packages.</description>
 
-  <maintainer email="pr2admin@todo.todo">pr2admin</maintainer>
-  <license>TODO</license>
+  <maintainer email="mriem@ua.pt">Miguel Riem Oliveira</maintainer>
+  <license>See the licence at https://github.com/lardemua/atom</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
