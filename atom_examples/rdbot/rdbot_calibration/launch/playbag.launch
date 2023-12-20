@@ -22,7 +22,7 @@
     Sets up image decompressors if needed, reads the urdf robot description.
 
 @arg bag_file  Absolute path to the playing bag.
-    default: $(env ROS_BAGS)/rdbot/rdbot_example_bag.bag
+    default: $(env ROS_BAGS)/rdbot/train.bag
 @arg bag_start Playback starting time (in seconds). default: 0.0
 @arg bag_rate  Playback rate. default: 1.0
 @arg use_tfs  Use tfs in the bag file or generate new ones using the urdf, joint state messages and the robot state publisher. default: False
@@ -30,11 +30,11 @@
 
 <launch>
 
-    <arg name="bag_file" default="$(env ROS_BAGS)/rdbot/rdbot_example_bag.bag"/>
+    <arg name="bag_file" default="$(env ROS_BAGS)/rdbot/train.bag"/>
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
-    <arg name="rviz_file" default="$(find rdbot_calibration)/rviz/set_initial_estimate.rviz"/>
+    <arg name="rviz_file" default="$(find rdbot_calibration)/rviz/playbag.rviz"/>
     <arg name="description_file" default="$(find rdbot_calibration)/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
     <arg name="description_file" default="$(find rdbot_calibration)/urdf/optimized.urdf.xacro"
@@ -44,10 +44,10 @@
     <!-- Throttle topics -->
     <node pkg="topic_tools" type="throttle" name="throttler_rgb"
           args="messages /rgbd/rgb/image_raw/compressed_to_throttle 10 /rgbd/rgb/image_raw/compressed"/>
-
+    
     <node pkg="topic_tools" type="throttle" name="throttler_depth"
           args="messages /rgbd/depth/image_raw_to_throttle 10 /rgbd/depth/image_raw"/>
-
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Load robot description and tf generators -->
     <param name="robot_description" command="$(find xacro)/xacro $(arg description_file)"/>

@@ -90,10 +90,11 @@ class RGBLabeler:
 
         # Receive one camera_info message corresponding to this sensor and store it.
         # We need this to have the K and D matrices.
+        print(self.sensor_config['topic_name'])
         camera_info_topic = os.path.dirname(self.sensor_config['topic_name']) + '/camera_info'
-        print('Waiting for camera_info message on topic ' + camera_info_topic + ' ...')
+        print('Waiting for camera_info message on topic ' + camera_info_topic + ' ... ')
         self.camera_info_msg = rospy.wait_for_message(camera_info_topic, CameraInfo)
-        print('... received!')
+        print('received!')
 
         self.K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
         self.D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
@@ -181,7 +182,7 @@ def main():
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
 
-    config = loadConfig(args['calibration_file'])
+    config = loadConfig(args['config'])
 
     # Initialize ROS stuff
     node_name = args['sensor_name'] + '_rgb_labeler'

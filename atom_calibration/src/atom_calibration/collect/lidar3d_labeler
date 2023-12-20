@@ -46,6 +46,7 @@ class Lidar3DLabeler:
         self.sensor_name = sensor_name
         self.marker_scale = marker_scale
         self.color = color
+        self.debug = debug
 
         # Check if sensor exists in config
         if self.sensor_name not in config['sensors'].keys():
