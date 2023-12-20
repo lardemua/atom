@@ -1,22 +1,13 @@
 #!/usr/bin/env python3
 
-
-# stdlib
+# Imports
 import argparse
 import math
 import sys
 from colorama import Fore, Style
 
-from atom_core.config_io import loadConfig
-from atom_core.utilities import atomError
-
-import atom_core.ros_utils
-
-# 3rd-party
+# ROS imports
 import rospy
-import numpy as np
-import sensor_msgs.point_cloud2 as pc2
-import atom_core.utilities
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
@@ -24,7 +15,11 @@ from sensor_msgs.msg import *
 from sensor_msgs.msg import PointField
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 
-# local packages
+# ATOM imports
+from atom_core.config_io import loadConfig
+from atom_core.utilities import atomError
+import atom_core.ros_utils
+import atom_core.utilities
 from atom_calibration.collect.label_messages import labelPointCloud2Msg, numpyFromPointCloudMsg
 from atom_msgs.msg import Lidar3DLabels, PointCloudWithLidar3DLabels
 
