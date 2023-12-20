@@ -16,7 +16,7 @@ from geometry_msgs.msg import PointStamped
 # ATOM imports
 from atom_core.config_io import loadConfig
 from atom_core.utilities import atomError
-import atom_core.ros_utils
+from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
 from atom_calibration.collect.label_messages import labelDepthMsg
 from atom_msgs.msg import DepthImageWithDepthLabels, DepthLabels
 
@@ -29,7 +29,6 @@ class DepthLabeler:
     """
 
     def __init__(self, config, sensor_name, label_data=True, debug=False, marker_scale=0.5, color=(255, 0, 0)):
-        # def __init__(self, server, menu_handler, sensor_dict, marker_scale, calib_pattern, color, label_data=True):
 
         print('Creating a depth labeler for sensor ' + sensor_name)
 
@@ -54,7 +53,7 @@ class DepthLabeler:
                       self.sensor_config['modality'] + ' . Cannot start depth labeler.')
 
         # Get the type of message from the message topic of the sensor data, which is given as input. The message
-        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.sensor_config['topic_name'])
+        self.msg_type_str, self.msg_type = getMessageTypeFromTopic(self.sensor_config['topic_name'])
 
         # TODO for now this will only work with a single pattern. Must extend this to multi-pattern detection later
         if len(self.config['calibration_patterns'].keys()) > 1:
@@ -176,7 +175,7 @@ def main():
     ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
     ap.add_argument("-c", "--color", nargs=3, help='Color associated with this labeler', default=[255, 0, 0], type=int)
 
-    args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
 
     config = loadConfig(args['config'])
 

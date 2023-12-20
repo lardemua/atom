@@ -1,32 +1,25 @@
 #!/usr/bin/env python3
 
-
-# stdlib
+# Imports
 import argparse
 from copy import deepcopy
 import os
 import sys
-
-import cv2
-from atom_core.config_io import loadConfig
-
-import atom_core.ros_utils
-
-# 3rd-party
-import rospy
 import numpy as np
-import atom_core.utilities
-from cv_bridge import CvBridge
+import cv2
 from matplotlib import cm
-from sensor_msgs.msg import *
-from sensor_msgs.msg import CameraInfo
-from sensor_msgs.msg import CameraInfo
 from colorama import Fore, Style
 
-# local packages
-from atom_calibration.collect import patterns
-from atom_core.utilities import atomError
+# ROS Imports
+import rospy
+from cv_bridge import CvBridge
+from sensor_msgs.msg import CameraInfo, Image
 
+# ATOM imports
+from atom_core.config_io import loadConfig
+from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
+from atom_core.utilities import atomError
+from atom_calibration.collect import patterns
 from atom_msgs.msg import ImageWithRGBLabels, RGBLabels, Detection2D
 
 
@@ -60,7 +53,7 @@ class RGBLabeler:
                       self.sensor_config['modality'] + ' . Cannot start rgb labeler.')
 
         # Get the type of message from the message topic of the sensor data, which is given as input.
-        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.sensor_config['topic_name'])
+        self.msg_type_str, self.msg_type = getMessageTypeFromTopic(self.sensor_config['topic_name'])
 
         # Create a self.detectors dictionary with all one detector class instantiated for each pattern
         self.detectors = {}
@@ -82,7 +75,7 @@ class RGBLabeler:
         self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
         self.labeled_image_topic = self.sensor_config['topic_name'] + '/labeled'
         self.publisher_labeled_image = rospy.Publisher(self.labeled_image_topic,
-                                                       sensor_msgs.msg.Image,
+                                                       Image,
                                                        queue_size=1)  # publish
 
         # Set up the publication of the produced labels
@@ -184,7 +177,7 @@ def main():
     ap.add_argument("-c", "--color", nargs=3,
                     help='Color associated with this labeler (not used for now)', default=[255, 0, 0], type=int)
 
-    args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
 
     config = loadConfig(args['config'])
 

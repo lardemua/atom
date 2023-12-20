@@ -3,6 +3,7 @@
 # Imports
 import argparse
 import math
+import struct
 import sys
 from colorama import Fore, Style
 
@@ -11,15 +12,13 @@ import rospy
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
-from sensor_msgs.msg import *
-from sensor_msgs.msg import PointField
+from sensor_msgs.msg import PointField, PointCloud2
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 
 # ATOM imports
 from atom_core.config_io import loadConfig
 from atom_core.utilities import atomError
-import atom_core.ros_utils
-import atom_core.utilities
+from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
 from atom_calibration.collect.label_messages import labelPointCloud2Msg, numpyFromPointCloudMsg
 from atom_msgs.msg import Lidar3DLabels, PointCloudWithLidar3DLabels
 
@@ -56,7 +55,7 @@ class Lidar3DLabeler:
                       self.sensor_config['modality'] + ' . Cannot start rgb labeler.')
 
         # Get the type of message from the message topic of the sensor data, which is given as input. The message
-        self.msg_type_str, self.msg_type = atom_core.ros_utils.getMessageTypeFromTopic(self.sensor_config['topic_name'])
+        self.msg_type_str, self.msg_type = getMessageTypeFromTopic(self.sensor_config['topic_name'])
 
         # self.server = server
         self.server = InteractiveMarkerServer(self.sensor_name + "/data_labeler")
@@ -70,7 +69,7 @@ class Lidar3DLabeler:
 
         # Setup point cloud publisher showing labeled points
         self.publisher_selected_points = rospy.Publisher(self.sensor_config['topic_name'] + '/labeled',
-                                                         sensor_msgs.msg.PointCloud2,
+                                                         PointCloud2,
                                                          queue_size=1)  # publish a point cloud with the points
 
         # Set up the publication of the produced labels
@@ -252,7 +251,7 @@ def main():
     ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
     ap.add_argument("-c", "--color", nargs=3, help='Color associated with this labeler', default=[255, 0, 0], type=int)
 
-    args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
 
     config = loadConfig(args['config'])
 

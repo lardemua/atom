@@ -38,7 +38,7 @@ from atom_calibration.collect.configurable_tf_listener import ConfigurableTransf
 from sensor_msgs.msg import JointState
 
 
-class DataCollectorAndLabeler:
+class DataCollector:
 
     def __init__(self, args, server, menu_handler):
 
@@ -151,7 +151,7 @@ class DataCollectorAndLabeler:
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
         print('Number of sensors: ' + str(len(self.config['sensors'])))
 
-        # Go through the sensors in the calib config.
+        # Build a dictionary containing information for each sensor
         label_data = {}
         for sensor_key, value in self.config['sensors'].items():
 
@@ -184,7 +184,7 @@ class DataCollectorAndLabeler:
                 # sensor_dict['camera_info_msg'] = camera_info_msg
                 # print(camera_info_msg)
 
-            # Get the kinematic chain form world_link to this sensor's parent link
+            # Get the kinematic chain from world_link to this sensor's parent link
             now = rospy.Time()
             print('Waiting for transformation from ' + value['link'] + ' to ' + self.world_link)
             self.listener.waitForTransform(value['link'], self.world_link, now, rospy.Duration(5))
@@ -198,8 +198,6 @@ class DataCollectorAndLabeler:
 
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[sensor_key] = sensor_dict
-
-            print('config = ' + str(self.config))
 
             label_data[sensor_key] = True
             if not args['skip_sensor_labeling'] is None:
