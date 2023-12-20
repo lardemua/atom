@@ -37,7 +37,7 @@ class ChessboardPattern(object):
 
         return {"detected": True, 'keypoints': sub_pixel_corners, 'ids': range(0, len(sub_pixel_corners))}
 
-    def drawKeypoints(self, image, result, length=0.2, color=(1, 0, 0), K=None, D=None, pattern_name=None):
+    def drawKeypoints(self, image, result, length=0.2, color=(1, 0, 0), K=None, D=None, pattern_name=None, debug=False):
 
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
@@ -76,7 +76,7 @@ class ChessboardPattern(object):
 
         if pattern_name is not None:
             point = (int(corners[0][0][0]), int(corners[0][0][1]))
-            cv2.putText(image, pattern_name, point, cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
+            cv2.putText(image, pattern_name, point, cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 3)
 
 
 class CharucoPattern(object):
@@ -170,7 +170,7 @@ class CharucoPattern(object):
         # If all above works, return detected corners.
         return {'detected': True, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
 
-    def drawKeypoints(self, image, result, length=0.2, color=(255, 0, 0), K=None, D=None, pattern_name=None):
+    def drawKeypoints(self, image, result, length=0.2, color=(255, 0, 0), K=None, D=None, pattern_name=None, debug=False):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
 
@@ -193,7 +193,8 @@ class CharucoPattern(object):
         np_ccorners = np.array(ccorners, dtype=np.float32)
 
         # Draw charuco corner detection
-        image = cv2.aruco.drawDetectedCornersCharuco(image, np_ccorners, np_cids, color)
+        if debug:
+            image = cv2.aruco.drawDetectedCornersCharuco(image, np_ccorners, np_cids, color)
 
         if K is not None and D is not None:  # estimate pose and draw axis on image
             rvecs, tvecs = None, None
@@ -206,7 +207,7 @@ class CharucoPattern(object):
         if pattern_name is not None:
             point = tuple(ccorners[0][0])
             point = (int(point[0]), int(point[1]))
-            cv2.putText(image, pattern_name, point, cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
+            cv2.putText(image, pattern_name, point, cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 3)
 
 
 def initializePatternsDict(config, step=0.02):

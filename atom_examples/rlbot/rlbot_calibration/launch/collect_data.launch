@@ -61,9 +61,9 @@
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start data collector node -->
-    <!-- <group if="$(arg overwrite)">
+    <group if="$(arg overwrite)">
         <node name="collect_data" pkg="atom_calibration" type="collect_data"
-              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' -overwrite" required="true"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' --overwrite" required="true"
               output="screen"/>
     </group>
 
@@ -71,7 +71,24 @@
         <node name="collect_data" pkg="atom_calibration" type="collect_data"
               args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
               output="screen"/>
-    </group> -->
+    </group>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Labeler nodes -->
+    
+    <!-- Sensor rgb_left rgb_labeler -->
+    <node name="rgb_left_labeler" pkg="atom_calibration" type="rgb_labeler"
+        args="-cfg $(arg config_file) -sn rgb_left"
+        required="true"
+        output="screen"/>
+    
+    <!-- Sensor lidar_right lidar3d_labeler -->
+    <node name="lidar_right_labeler" pkg="atom_calibration" type="lidar3d_labeler"
+        args="-cfg $(arg config_file) -sn lidar_right"
+        required="true"
+        output="screen"/>
+    
+
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start automatic data collector node -->
     <node name="automatic_data_collector" pkg="atom_calibration" type="automatic_data_collector" output="screen"

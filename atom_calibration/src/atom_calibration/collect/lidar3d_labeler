@@ -31,7 +31,7 @@ class Lidar3DLabeler:
     """
 
     # def __init__(self, config, sensor_name, server, menu_handler, sensor_dict, marker_scale, calib_pattern, color, label_data=True):
-    def __init__(self, config, sensor_name, label_data=True, debug=False, marker_scale=0.5, color=(255, 0, 0)):
+    def __init__(self, config, sensor_name, label_data=True, debug=False, marker_scale=0.5, color=[255, 0, 0]):
 
         print('Creating a lidar labeler for sensor ' + sensor_name)
 

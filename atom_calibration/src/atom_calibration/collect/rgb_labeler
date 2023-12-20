@@ -36,7 +36,7 @@ class RGBLabeler:
         RGB: Fully automated labeling. Periodically runs a chessboard detection on the newly received image.
     """
 
-    def __init__(self, config, sensor_name, label_data=True, debug=False):
+    def __init__(self, config, sensor_name, label_data=True, debug=False, color=[255, 0, 0]):
 
         print('Starting RGB labeler for sensor ' + str(sensor_name))
 
@@ -45,6 +45,7 @@ class RGBLabeler:
         self.label_data = label_data
         self.sensor_name = sensor_name
         self.debug = debug
+        self.color = color
 
         # Check if sensor exists in config
         if self.sensor_name not in config['sensors'].keys():
@@ -151,7 +152,8 @@ class RGBLabeler:
             color = self.cm_patterns[detector_idx, 0:3]
             color = int(color[0]*255), int(color[1]*255), int(color[2]*255)
 
-            detector.drawKeypoints(image_gui, result, K=self.K, D=self.D, pattern_name=detector_key, color=color)
+            detector.drawKeypoints(image_gui, result, K=self.K, D=self.D, pattern_name=detector_key, color=color,
+                                   debug=self.debug)
 
         # Publish ImageWithLabels msg
         self.publisher_image_with_rgb_labels.publish(image_with_rgb_labels_msg)
@@ -179,6 +181,8 @@ def main():
     ap.add_argument("-cfg", "--config", help='Calibration config file.', type=str, required=True)
     ap.add_argument("-sn", "--sensor_name", help='Name of the sensor as given in the config.yml', type=str, required=True)
     ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
+    ap.add_argument("-c", "--color", nargs=3,
+                    help='Color associated with this labeler (not used for now)', default=[255, 0, 0], type=int)
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
 
@@ -188,7 +192,7 @@ def main():
     node_name = args['sensor_name'] + '_rgb_labeler'
     rospy.init_node(node_name)
 
-    rgb_labeler = RGBLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'])
+    rgb_labeler = RGBLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'], color=args['color'])
 
     rospy.spin()
 
