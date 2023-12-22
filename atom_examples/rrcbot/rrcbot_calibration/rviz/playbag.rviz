@@ -78,19 +78,19 @@ Visualization Manager:
   - Class: rviz/InteractiveMarkers
     Enable Transparency: true
     Enabled: true
-    Name: ManualDataLabeler-InteractiveMarkers
+    Name: MoveSensors-InteractiveMarker
     Show Axes: true
     Show Descriptions: true
     Show Visual Aids: false
-    Update Topic: data_labeler/update
+    Update Topic: set_initial_estimate/update
     Value: true
   - Class: rviz/Image
     Enabled: true
-    Image Topic: /rgbd/depth/image_raw/labeled
+    Image Topic: /rgb_left/image_raw
     Max Value: 1
     Median window: 5
     Min Value: 0
-    Name: depth-Labels-Image
+    Name: rgb_left-Image
     Normalize Range: true
     Queue Size: 2
     Transport Hint: raw
@@ -99,8 +99,8 @@ Visualization Manager:
   - Class: rviz/Camera
     Enabled: true
     Image Rendering: background and overlay
-    Image Topic: /rgbd/depth/image_raw
-    Name: depth-Camera
+    Image Topic: /rgb_left/image_raw
+    Name: rgb_left-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw
@@ -109,22 +109,13 @@ Visualization Manager:
     Visibility:
       Value: true
     Zoom Factor: 1
-  - Class: rviz/InteractiveMarkers
-    Enable Transparency: true
-    Enabled: true
-    Name: depth-ManualDataLabeler-InteractiveMarkers
-    Show Axes: true
-    Show Descriptions: true
-    Show Visual Aids: false
-    Update Topic: depth/data_labeler/update
-    Value: true
   - Class: rviz/Image
     Enabled: true
-    Image Topic: /rgbd/rgb/image_raw/labeled
+    Image Topic: /rgb_right/image_raw
     Max Value: 1
     Median window: 5
     Min Value: 0
-    Name: rgb-Labels-Image
+    Name: rgb_right-Image
     Normalize Range: true
     Queue Size: 2
     Transport Hint: raw
@@ -133,8 +124,8 @@ Visualization Manager:
   - Class: rviz/Camera
     Enabled: true
     Image Rendering: background and overlay
-    Image Topic: /rgbd/rgb/image_raw
-    Name: rgb-Camera
+    Image Topic: /rgb_right/image_raw
+    Name: rgb_right-Camera
     Overlay Alpha: 0.5
     Queue Size: 2
     Transport Hint: raw

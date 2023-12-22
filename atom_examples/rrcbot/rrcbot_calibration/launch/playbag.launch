@@ -34,7 +34,7 @@
     <arg name="bag_start" default="0"/>
     <arg name="bag_rate" default="1"/>
     <arg name="optimized" default="false"/>
-    <arg name="rviz_file" default="$(find rrcbot_calibration)/rviz/set_initial_estimate.rviz"/>
+    <arg name="rviz_file" default="$(find rrcbot_calibration)/rviz/playbag.rviz"/>
     <arg name="description_file" default="$(find rrcbot_calibration)/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
     <arg name="description_file" default="$(find rrcbot_calibration)/urdf/optimized.urdf.xacro"
@@ -44,10 +44,10 @@
     <!-- Throttle topics -->
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_left"
           args="messages /rgb_left/image_raw/compressed_to_throttle 10 /rgb_left/image_raw/compressed"/>
-
+    
     <node pkg="topic_tools" type="throttle" name="throttler_rgb_right"
           args="messages /rgb_right/image_raw/compressed_to_throttle 10 /rgb_right/image_raw/compressed"/>
-
+    
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Load robot description and tf generators -->
     <param name="robot_description" command="$(find xacro)/xacro $(arg description_file)"/>

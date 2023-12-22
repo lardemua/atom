@@ -56,26 +56,39 @@
         <arg name="bag_file" value="$(arg bag_file)"/>
         <arg name="bag_start" value="$(arg bag_start)"/>
         <arg name="bag_rate" value="$(arg bag_rate)"/>
+        <arg name="description_file" default="$(arg description_file)"/>
     </include>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Start data collector node -->
+    <group if="$(arg overwrite)">
+        <node name="collect_data" pkg="atom_calibration" type="collect_data"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)' --overwrite" required="true"
+              output="screen"/>
+    </group>
+
+    <group unless="$(arg overwrite)">
+        <node name="collect_data" pkg="atom_calibration" type="collect_data"
+              args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
+              output="screen"/>
+    </group>
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Labeler nodes -->
-
+    
     <!-- Sensor rgb rgb_labeler -->
     <node name="rgb_labeler" pkg="atom_calibration" type="rgb_labeler"
         args="-cfg $(arg config_file) -sn rgb"
         required="true"
         output="screen"/>
-
+    
     <!-- Sensor depth depth_labeler -->
     <node name="depth_labeler" pkg="atom_calibration" type="depth_labeler"
         args="-cfg $(arg config_file) -sn depth"
         required="true"
         output="screen"/>
-
+    
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start automatic data collector node -->

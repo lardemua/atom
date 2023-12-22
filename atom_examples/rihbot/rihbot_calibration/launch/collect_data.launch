@@ -56,6 +56,7 @@
         <arg name="bag_file" value="$(arg bag_file)"/>
         <arg name="bag_start" value="$(arg bag_start)"/>
         <arg name="bag_rate" value="$(arg bag_rate)"/>
+        <arg name="description_file" default="$(arg description_file)"/>
     </include>
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
 
@@ -72,6 +73,17 @@
               args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
               output="screen"/>
     </group>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Labeler nodes -->
+    
+    <!-- Sensor rgb_hand rgb_labeler -->
+    <node name="rgb_hand_labeler" pkg="atom_calibration" type="rgb_labeler"
+        args="-cfg $(arg config_file) -sn rgb_hand"
+        required="true"
+        output="screen"/>
+    
+
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start automatic data collector node -->
     <node name="automatic_data_collector" pkg="atom_calibration" type="automatic_data_collector" output="screen"

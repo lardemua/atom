@@ -1,6 +1,7 @@
 
 # Standard imports
 import os
+import pty
 
 
 import re
@@ -21,13 +22,25 @@ def execute(cmd, blocking=True, verbose=True):
     """
     if verbose:
         print("Executing command: " + cmd)
+
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if blocking:  # if blocking is True:
         for line in p.stdout.readlines():
             if verbose:
-                print
-                line,
+                print(line)
             p.wait()
+
+
+def execColored(cmd):
+    """Using popen it is not possible to maintain colors as those used in colorama.
+    This way of making system calls preserves colors.
+    https://stackoverflow.com/questions/56835373/python-subprocess-realtime-print-with-colors-and-save-stdout
+    Args:
+        cmd (str): The command to execute
+    """
+
+    cmd_parts = cmd.split(" ")
+    pty.spawn(cmd_parts, lambda fd: os.read(fd, 1024))
 
 
 def resolvePath(path, verbose=False):
