@@ -2,6 +2,7 @@ from copy import deepcopy
 import math
 import cv2
 import numpy as np
+from atom_core.drawing import drawTextOnImage
 from atom_core.utilities import atomError
 
 from tf import transformations
@@ -76,7 +77,13 @@ class ChessboardPattern(object):
 
         if pattern_name is not None:
             point = (int(corners[0][0][0]), int(corners[0][0][1]))
-            cv2.putText(image, pattern_name, point, cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 3)
+            drawTextOnImage(image, pattern_name,
+                            font=cv2.FONT_HERSHEY_PLAIN,
+                            font_scale=4.5,
+                            font_thickness=3,
+                            position=point,
+                            text_color=color,
+                            text_color_bg=(255, 255, 255))
 
 
 class CharucoPattern(object):
@@ -206,8 +213,14 @@ class CharucoPattern(object):
 
         if pattern_name is not None:
             point = tuple(ccorners[0][0])
-            point = (int(point[0]), int(point[1]))
-            cv2.putText(image, pattern_name, point, cv2.FONT_HERSHEY_SIMPLEX, 2.0, color, 3)
+
+            drawTextOnImage(image, pattern_name,
+                            font=cv2.FONT_HERSHEY_PLAIN,
+                            font_scale=4.5,
+                            font_thickness=3,
+                            position=point,
+                            text_color=color,
+                            text_color_bg=(255, 255, 255))
 
 
 def initializePatternsDict(config, step=0.02):

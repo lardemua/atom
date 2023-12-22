@@ -125,6 +125,7 @@ class RGBLabeler:
 
             if result['detected']:
                 pattern_labels.detected = True
+                pattern_labels.pattern_name = detector_key
                 for idx, corner in enumerate(result['keypoints']):
                     x = float(corner[0][0])
                     y = float(corner[0][1])
@@ -143,7 +144,7 @@ class RGBLabeler:
 
             # For visual debugging
             color = self.cm_patterns[detector_idx, 0:3]
-            color = int(color[0]*255), int(color[1]*255), int(color[2]*255)
+            color = int(color[2]*255), int(color[1]*255), int(color[1]*255)  # Opencv is bgr
 
             detector.drawKeypoints(image_gui, result, K=self.K, D=self.D, pattern_name=detector_key, color=color,
                                    debug=self.debug)

@@ -112,7 +112,8 @@ def createInteractiveMarker(world_link):
 
 
 def markerFeedback(feedback):
-    print('Received feedback')
+    pass
+    # print('Received feedback')
 
 
 if __name__ == "__main__":

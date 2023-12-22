@@ -1,5 +1,6 @@
 # stdlib
 import copy
+from functools import partial
 import json
 import os
 import time
@@ -36,6 +37,7 @@ from atom_core.xacro_io import readXacroFile
 from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
 from sensor_msgs.msg import JointState
+from atom_msgs.msg import ImageWithRGBLabels, RGBLabels, Detection2D, PointCloudWithLidar3DLabels, DepthImageWithDepthLabels
 
 
 class DataCollector:
@@ -80,7 +82,6 @@ class DataCollector:
                                                                    tf_static_topic='tf_static_ground_truth')
 
         self.sensors = {}
-        self.sensor_labelers = {}
         self.server = server
         self.menu_handler = menu_handler
         self.data_stamp = 0
@@ -207,48 +208,6 @@ class DataCollector:
             print('Config for sensor ' + sensor_key + ' is complete.')
             print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
 
-        for pattern_key, pattern in self.config['calibration_patterns'].items():
-            sensor_labeler = {}
-            sensor_idx = 0
-            for sensor_key, value in self.config['sensors'].items():
-                sensor_labeler[sensor_key] = InteractiveDataLabeler(
-                    self.server,
-                    self.menu_handler,
-                    self.sensors[sensor_key],
-                    args['marker_size'],
-                    pattern,
-                    color=tuple(self.cm_sensors[sensor_idx, :]),
-                    label_data=label_data[sensor_key])
-
-                sensor_idx += 1
-            self.sensor_labelers[pattern_key] = sensor_labeler
-        print('Labelers for pattern ' + pattern_key + ' are complete.')
-
-        # Additional data loop
-        if 'additional_data' in self.config:
-            for description, value in self.config['additional_data'].items():
-                data_dict = {'_name': description, 'modality': value['modality'], 'parent': value['link'],
-                             'calibration_parent': value['parent_link'], 'calibration_child': value['child_link']}
-
-                print("Waiting for message " + value['topic_name'] + ' ...')
-                msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
-                print('... received!')
-                connection_header = msg._connection_header['type'].split('/')
-                msg_type = connection_header[1]
-                print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
-                data_dict['topic'] = value['topic_name']
-                data_dict['msg_type'] = msg_type
-
-            for pattern_key, pattern in self.config['calibration_patterns'].items():
-                sensor_labeler = {}
-                for description, value in self.config['additional_data'].items():
-                    sensor_labeler[description] = InteractiveDataLabeler(self.server, self.menu_handler, data_dict,
-                                                                         args['marker_size'], pattern,
-                                                                         label_data=False)
-
-                self.sensor_labelers[pattern_key].update(sensor_labeler)
-                self.additional_data[pattern_key] = data_dict
-
         # Defining metadata
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
                          'version': self.dataset_version, 'robot_name': self.urdf_description.name,
@@ -271,6 +230,77 @@ class DataCollector:
                                                        atom_msgs.srv.DeleteCollection,
                                                        self.callbackDeleteCollection)
 
+        # Create the label_msgs dictionary and fill it with the first messages
+        self.label_msgs = {}
+        for sensor_key, sensor in self.config['sensors'].items():
+            if sensor['modality'] == 'rgb':
+                label_msg_type = ImageWithRGBLabels
+            elif sensor['modality'] == 'lidar3d':
+                label_msg_type = PointCloudWithLidar3DLabels
+            elif sensor['modality'] == 'depth':
+                label_msg_type = DepthImageWithDepthLabels
+
+            labels_topic = sensor_key + '/labels'
+
+            print("Waiting for first message on topic " + labels_topic + ' ... ', end='')
+            self.label_msgs[sensor_key] = rospy.wait_for_message(labels_topic, label_msg_type)
+            print('received!')
+
+        # Create an additional_data dictionary
+        # Also, create the additional_data_msgs dictionary and fill it with the first messages
+        if 'additional_data' in self.config:
+            for description, value in self.config['additional_data'].items():
+                data_dict = {'_name': description, 'modality': value['modality'], 'parent': value['link'],
+                             'calibration_parent': value['parent_link'], 'calibration_child': value['child_link']}
+
+                print("Waiting for message " + value['topic_name'] + ' ...')
+                msg = rospy.wait_for_message(value['topic_name'], rospy.AnyMsg)
+                print('... received!')
+
+                self.additional_data_msgs[description] = msg
+
+                connection_header = msg._connection_header['type'].split('/')
+                msg_type = connection_header[1]
+                print('Topic ' + value['topic_name'] + ' has type ' + msg_type)
+                data_dict['topic'] = value['topic_name']
+                data_dict['msg_type'] = msg_type
+
+                self.additional_data[description] = data_dict
+
+        # Create the labeler subscribers
+        self.labeler_subscribers = {}
+        for sensor_key, sensor in self.config['sensors'].items():
+            if sensor['modality'] == 'rgb':
+                label_msg_type = ImageWithRGBLabels
+            elif sensor['modality'] == 'lidar3d':
+                label_msg_type = PointCloudWithLidar3DLabels
+            elif sensor['modality'] == 'depth':
+                label_msg_type = DepthImageWithDepthLabels
+
+            labels_topic = sensor_key + '/labels'
+
+            print('Setting up subscriber for ' + Fore.BLUE + sensor_key + Style.RESET_ALL +
+                  ' label msgs on topic ' + Fore.GREEN + labels_topic + Style.RESET_ALL)
+
+            self.labeler_subscribers[sensor_key] = rospy.Subscriber(
+                labels_topic, label_msg_type,
+                partial(self.callbackReceivedLabelMsg, sensor_key=sensor_key), queue_size=1)
+
+        # Create the additional_data subscribers
+        self.additional_data_subscribers = {}
+        if 'additional_data' in self.config:
+            for description, value in self.config['additional_data'].items():
+                self.additional_data_subscribers[description] = rospy.Subscriber(
+                    value['topic_name'], rospy.AnyMsg,
+                    partial(self.callbackReceivedAdditionalDataMsg, additional_data_key=description), queue_size=1)
+
+    def callbackReceivedAdditionalDataMsg(self, msg, additional_data_key):
+        self.additional_data_msgs[additional_data_key] = msg
+
+    def callbackReceivedLabelMsg(self, msg, sensor_key):
+        # print('Received labels message for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL)
+        self.label_msgs[sensor_key] = msg
+
     def callbackReceivedJointStateMsg(self, msg):
         # Add the joint positions to the dictionary
         for name, position in zip(msg.name, msg.position):
@@ -291,8 +321,6 @@ class DataCollector:
             response.success = False
             response.message = 'Failure. Cannot convert collection ' + request.collection_name + ' to string.'
 
-        # Lock the semaphore for all labelers
-        self.lockAllLabelers()
         response = atom_msgs.srv.DeleteCollectionResponse()
         if collection_name_int in self.collections.keys():
             del self.collections[collection_name_int]
@@ -310,9 +338,6 @@ class DataCollector:
             print('Failure. Collection ' + request.collection_name + ' does not exist.')
             response.success = False
             response.message = 'Failure. Collection ' + request.collection_name + ' does not exist.'
-
-        print(self.collections.keys())
-        self.unlockAllLabelers()
 
         return response
 
@@ -364,23 +389,11 @@ class DataCollector:
 
         return transforms_dict
 
-    def lockAllLabelers(self):
-        for sensor_name, sensor in self.sensors.items():
-            for pattern_key in self.config['calibration_patterns'].keys():
-                self.sensor_labelers[pattern_key][sensor_name].lock.acquire()
-        print("Locked all labelers ")
-
-    def unlockAllLabelers(self):
-        for sensor_name, sensor in self.sensors.items():
-            for pattern_key in self.config['calibration_patterns'].keys():
-                self.sensor_labelers[pattern_key][sensor_name].lock.release()
-        print("Unlocked all labelers ")
-
     def getLabelersTimeStatistics(self):
         stamps = []  # a list of the several time stamps of the stored messages
-        for sensor_name, sensor in self.sensors.items():
-            for pattern_key in self.config['calibration_patterns'].keys():
-                stamps.append(copy.deepcopy(self.sensor_labelers[pattern_key][sensor_name].msg.header.stamp))
+
+        for sensor_key, sensor in self.sensors.items():
+            stamps.append(self.label_msgs[sensor_key].header.stamp)
 
         max_delta = getMaxTimeDelta(stamps)
         # TODO : this is because of Andre's bag file problem. We should go back to the getAverageTime
@@ -388,9 +401,8 @@ class DataCollector:
         # average_time = getMaxTime(stamps)  # For looking up transforms use average time of all sensor msgs
 
         print('Times:')
-        for stamp, sensor_name in zip(stamps, self.sensors):
-            for pattern_key in self.config['calibration_patterns'].keys():
-                printRosTime(stamp, prefix=(sensor_name + '_' + pattern_key + ': '))
+        for stamp, sensor_key in zip(stamps, self.sensors):
+            printRosTime(stamp, prefix=(sensor_key + ': '))
 
         return stamps, average_time, max_delta
 
@@ -400,17 +412,15 @@ class DataCollector:
         # collect sensor data and labels (images, laser scans, etc)
         # --------------------------------------
 
-        # Lock the semaphore for all labelers
-        self.lockAllLabelers()
-
+        # --------------------------------------
         # Analyze message time stamps and decide if collection can be stored
+        # --------------------------------------
         stamps, average_time, max_delta = self.getLabelersTimeStatistics()
 
         if max_delta is not None:  # if max_delta is None (only one sensor), continue
             if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):  # times are close enough?
                 rospy.logwarn('Max duration between msgs in collection is ' + str(max_delta.to_sec()) +
                               '. Not saving collection.')
-                self.unlockAllLabelers()
                 return None
             else:  # test passed
                 rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
@@ -419,17 +429,18 @@ class DataCollector:
         print('average_time=' + str(average_time))
         transforms = self.getTransforms(self.abstract_transforms,
                                         self.tf_buffer,
-                                        average_time)  # use average time of sensor msgs
+                                        average_time)  # use average time of label msgs
 
         if self.collect_ground_truth:  # collect ground truth transforms
-            pass
             transforms_ground_truth = self.getTransforms(self.abstract_transforms,
                                                          self.tf_buffer_ground_truth,
                                                          average_time)  # use average time of sensor msgs
 
         printRosTime(average_time, "Collected transforms for time ")
 
+        # --------------------------------------
         # Create joint dict
+        # --------------------------------------
         joints_dict = {}
         if self.config['joints'] is not None:
             for config_joint_key, config_joint in self.config['joints'].items():
@@ -483,40 +494,78 @@ class DataCollector:
 
                 joints_dict[config_joint_key] = config_joint_dict
 
-        # joint_state_dict = message_converter.convert_ros_message_to_dictionary(self.last_joint_state_msg)
-
-        all_sensor_data_dict = {}
+        # --------------------------------------
+        # Create all_sensor_labels_dict
+        # --------------------------------------
         all_sensor_labels_dict = {}
-        all_additional_data_dict = {}
-        # metadata={}
-
         for pattern_key in self.config['calibration_patterns'].keys():
             all_sensor_labels_dict[pattern_key] = {}
             for sensor_key, sensor in self.sensors.items():
                 print('Collecting data from ' + Fore.BLUE + pattern_key +
                       '_' + sensor_key + Style.RESET_ALL + ': sensor_key')
 
-                labels = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].labels)
+                # Search for correct pattern
+                label_msg = self.label_msgs[sensor_key]
+                pattern_label = None
+                for label in label_msg.patterns:
+                    if label.pattern_name == pattern_key:
+                        pattern_label = label
 
-                # Update sensor labels ---------------------------------------------
-                # if sensor['msg_type'] in ['Image', 'LaserScan', 'PointCloud2']:
-                #     all_sensor_labels_dict[sensor_key] = labels
-                if sensor['modality'] in ['rgb', 'lidar2d', 'depth', 'lidar3d']:
-                    all_sensor_labels_dict[pattern_key][sensor_key] = labels
+                if pattern_label is None:
+                    atomError('Could not find pattern ' + pattern_key + ' in label_msg of sensor ' + sensor_key)
+
+                # Convert pattern_label in ROS message format to atom dataset labels dict
+                if sensor['modality'] in ['rgb']:
+                    labels_dict = {'detected': pattern_label.detected, 'idxs': []}
+
+                    for detection_2d in pattern_label.idxs:
+                        labels_dict['idxs'].append({'id': detection_2d.id,
+                                                    'x': detection_2d.x,
+                                                    'y': detection_2d.y})
+
+                    all_sensor_labels_dict[pattern_key][sensor_key] = labels_dict
+
+                elif sensor['modality'] in ['lidar3d', 'depth']:
+
+                    labels_dict = {'detected': pattern_label.detected, 'idxs': [], 'idxs_limit_points': []}
+
+                    for idx in pattern_label.idxs:
+                        labels_dict['idxs'].append(idx)
+
+                    for idx_limit_point in pattern_label.idxs_limit_points:
+                        labels_dict['idxs_limit_points'].append(idx)
+
+                    all_sensor_labels_dict[pattern_key][sensor_key] = labels_dict
+
                 else:
                     raise ValueError('Unknown message type.')
 
+        # --------------------------------------
+        # Create all_sensor_data_dict
+        # --------------------------------------
+        all_sensor_data_dict = {}
         for sensor_key, sensor in self.sensors.items():
-            # Update the data dictionary for this data stamp
-            # Since the message should be the same for each pattern, save for the last pattern
-            msg = copy.deepcopy(self.sensor_labelers[pattern_key][sensor_key].msg)
+
+            if sensor['modality'] in ['rgb']:
+                msg = self.label_msgs[sensor_key].image
+            elif sensor['modality'] in ['lidar3d']:
+                msg = self.label_msgs[sensor_key].point_cloud
+            elif sensor['modality'] in ['depth']:
+                msg = self.label_msgs[sensor_key].image
+
             all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
 
-        for description, sensor in self.additional_data.items():
-            # Since the message should be the same for each pattern, save for the last pattern
-            msg = copy.deepcopy(self.sensor_labelers[pattern_key][description].msg)
-            all_additional_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
+        # --------------------------------------
+        # Create all_additional_data_dict
+        # --------------------------------------
+        all_additional_data_dict = {}
+        for additional_data_key, _ in self.additional_data.items():
+            msg = self.additional_data_msgs[additional_data_key]
+            all_additional_data_dict[additional_data_key] = message_converter.convert_ros_message_to_dictionary(msg)
 
+        # --------------------------------------
+        # Create collection_dict
+        # --------------------------------------
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
                            'transforms': transforms,
                            'additional_data': all_additional_data_dict, 'joints': joints_dict}
@@ -543,7 +592,6 @@ class DataCollector:
         # Save to json file.
         output_file = self.output_folder + '/dataset.json'
         atom_core.dataset_io.saveAtomDataset(output_file, dataset)
-        self.unlockAllLabelers()
 
     def getAllAbstractTransforms(self):
 

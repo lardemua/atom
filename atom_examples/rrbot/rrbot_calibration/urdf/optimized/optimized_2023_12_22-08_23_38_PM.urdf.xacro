@@ -11,7 +11,7 @@
     <selfCollide>false</selfCollide>
   </gazebo>
   <joint name="rgb_left_joint" type="fixed">
-    <origin xyz="0.0150000000000003 3.472994034570021e-17 0.012000000000000162" rpy="0.0 -0.0 0.0"/>
+    <origin xyz="0.015000000000000102 1.0529035217929657e-18 0.01199999999999993" rpy="0.0 -0.0 0.0"/>
     <parent link="tripod_left_support"/>
     <child link="rgb_left_link"/>
   </joint>
@@ -24,7 +24,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://rlbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://rrbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
       </geometry>
       <material name="red">
         <color rgba="0.9 0.0 0.0 1.0"/>
@@ -33,7 +33,7 @@
     <collision>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://rlbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://rrbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
       </geometry>
     </collision>
   </link>
@@ -78,107 +78,71 @@
       </plugin>
     </sensor>
   </gazebo>
-  <joint name="lidar_right_base_mount_joint" type="fixed">
-    <origin xyz="0.014151622878044732 0.00488483722921291 0.009903018729878196" rpy="0.004973232513417487 0.0002563926828057827 0.4998642711786157"/>
+  <joint name="rgb_right_joint" type="fixed">
+    <origin xyz="0.014934704018840839 1.4987356524735855e-05 0.012006008392206915" rpy="-2.935288573546465e-05 -4.82107800907422e-06 9.485646754006965e-06"/>
     <parent link="tripod_right_support"/>
-    <child link="lidar_right_base_link"/>
+    <child link="rgb_right_link"/>
   </joint>
-  <link name="lidar_right_base_link">
-    <inertial>
-      <origin xyz="0.0 0.0 0.03585" rpy="0 0 0"/>
-      <mass value="0.83"/>
-      <inertia ixx="0.000908059425" ixy="0.0" ixz="0.0" iyy="0.000908059425" iyz="0.0" izz="0.0011049624"/>
-    </inertial>
-    <visual>
-      <geometry>
-        <mesh filename="package://rlbot_description/meshes/vlp16/vlp16_base_1.stl"/>
-      </geometry>
-      <material name="blue">
-        <color rgba="0.0 0.0 1.0 1.0"/>
-      </material>
-    </visual>
-    <visual>
-      <geometry>
-        <mesh filename="package://rlbot_description/meshes/vlp16/vlp16_base_2.stl"/>
-      </geometry>
-      <material name="blue">
-        <color rgba="0.0 0.0 1.0 1.0"/>
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0.0 0.0 0.03585" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <cylinder radius="0.0516" length="0.0717"/>
-      </geometry>
-    </collision>
-  </link>
-  <gazebo reference="lidar_right_base_link">
-    <material>Gazebo/Blue</material>
-  </gazebo>
-  <joint name="lidar_right_base_scan_joint" type="fixed">
-    <origin xyz="0.0 0.0 0.0377" rpy="0.0 0.0 0.0"/>
-    <parent link="lidar_right_base_link"/>
-    <child link="lidar_right"/>
-  </joint>
-  <link name="lidar_right">
+  <link name="rgb_right_link">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-      <mass value="0.01"/>
-      <inertia ixx="1e-07" ixy="0.0" ixz="0.0" iyy="1e-07" iyz="0.0" izz="1e-07"/>
+      <mass value="0.00564"/>
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
     </inertial>
     <visual>
-      <origin xyz="0.0 0.0 -0.0377" rpy="0 0 0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://rlbot_description/meshes/vlp16/vlp16_scan.dae"/>
+        <mesh filename="package://rrbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
       </geometry>
-      <material name="blue">
-        <color rgba="0.0 0.0 1.0 1.0"/>
+      <material name="green">
+        <color rgba="0.0 0.9 0.0 1.0"/>
       </material>
     </visual>
     <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <sphere radius="0.0"/>
+        <mesh filename="package://rrbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
       </geometry>
     </collision>
   </link>
-  <gazebo reference="lidar_right">
-    <sensor name="lidar_right-vlp16" type="ray">
-      <pose>0 0 0 0 0 0</pose>
-      <visualize>false</visualize>
-      <update_rate>10</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>1875</samples>
-            <resolution>1</resolution>
-            <min_angle>-3.141592653589793</min_angle>
-            <max_angle>3.141592653589793</max_angle>
-          </horizontal>
-          <vertical>
-            <samples>16</samples>
-            <resolution>1</resolution>
-            <min_angle>-0.2617993877991494</min_angle>
-            <max_angle> 0.2617993877991494</max_angle>
-          </vertical>
-        </scan>
-        <range>
-          <min>0.3</min>
-          <max>131.0</max>
-          <resolution>0.001</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.0</stddev>
-        </noise>
-      </ray>
-      <plugin filename="libgazebo_ros_velodyne_laser.so" name="gazebo_ros_laser_controller">
-        <topicName>/lidar_right/points</topicName>
-        <frameName>lidar_right</frameName>
-        <organize_cloud>False</organize_cloud>
-        <min_range>0.9</min_range>
-        <max_range>130.0</max_range>
-        <gaussianNoise>0.008</gaussianNoise>
+  <gazebo reference="rgb_right_link">
+    <selfCollide>false</selfCollide>
+    <material>Gazebo/Green</material>
+  </gazebo>
+  <joint name="rgb_right_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
+    <parent link="rgb_right_link"/>
+    <child link="rgb_right_optical_frame"/>
+  </joint>
+  <link name="rgb_right_optical_frame"/>
+  <gazebo reference="rgb_right_link">
+    <sensor name="camera" type="camera">
+      <update_rate>10.0</update_rate>
+      <camera>
+        <horizontal_fov>1.0471975511965976</horizontal_fov>
+        <image>
+          <format>B8G8R8</format>
+          <width>1200</width>
+          <height>800</height>
+        </image>
+        <clip>
+          <near>0.10</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="rgb_right_rgb_camera_controller">
+        <cameraName>rgb_right</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0</updateRate>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>rgb_right_optical_frame</frameName>
+        <baseline>0.0</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
       </plugin>
     </sensor>
   </gazebo>
@@ -192,14 +156,14 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://rlbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://rrbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
       </geometry>
       <material name="tripod_color"/>
     </visual>
     <collision name="tripod_collision">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://rlbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://rrbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
       </geometry>
     </collision>
   </link>
