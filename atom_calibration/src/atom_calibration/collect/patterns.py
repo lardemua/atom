@@ -2,6 +2,7 @@ from copy import deepcopy
 import math
 import cv2
 import numpy as np
+from atom_core.drawing import drawTextOnImage
 from atom_core.utilities import atomError
 
 from tf import transformations
@@ -37,7 +38,8 @@ class ChessboardPattern(object):
 
         return {"detected": True, 'keypoints': sub_pixel_corners, 'ids': range(0, len(sub_pixel_corners))}
 
-    def drawKeypoints(self, image, result, K=None, D=None):
+    def drawKeypoints(self, image, result, length=0.2, color=(1, 0, 0), K=None, D=None, pattern_name=None, debug=False):
+
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
 
@@ -45,8 +47,8 @@ class ChessboardPattern(object):
             return
 
         for point in result['keypoints']:
-            cv2.drawMarker(image, (int(point[0][0]), int(point[0][1])), (0, 0, 255), cv2.MARKER_CROSS, 14)
-            cv2.circle(image, (int(point[0][0]), int(point[0][1])), 7, (0, 255, 0), lineType=cv2.LINE_AA)
+            cv2.drawMarker(image, (int(point[0][0]), int(point[0][1])), color, cv2.MARKER_CROSS, 14)
+            cv2.circle(image, (int(point[0][0]), int(point[0][1])), 7, color, lineType=cv2.LINE_AA)
 
         if K is not None and D is not None:  # estimate pose and draw axis on image
 
@@ -71,7 +73,17 @@ class ChessboardPattern(object):
             _, rvecs, tvecs = cv2.solvePnP(
                 objp[ids], np.array(corners, dtype=np.float32), K, D)
 
-            cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.3)
+            cv2.drawFrameAxes(image, K, D, rvecs, tvecs, length)
+
+        if pattern_name is not None:
+            point = (int(corners[0][0][0]), int(corners[0][0][1]))
+            drawTextOnImage(image, pattern_name,
+                            font=cv2.FONT_HERSHEY_PLAIN,
+                            font_scale=4.5,
+                            font_thickness=3,
+                            position=point,
+                            text_color=color,
+                            text_color_bg=(255, 255, 255))
 
 
 class CharucoPattern(object):
@@ -107,12 +119,12 @@ class CharucoPattern(object):
 
         if cv2.__version__ == '4.6.0':
             self.dictionary = cv2.aruco.Dictionary_get(charuco_dictionary)
-            self.board = cv2.aruco.CharucoBoard_create(size["y"] + 1, size["x"] + 1, length, marker_length,
+            self.board = cv2.aruco.CharucoBoard_create(size["x"] + 1, size["y"] + 1, length, marker_length,
                                                        self.dictionary)
-
+            # self.image_board = self.board.draw((787, 472))
         else:  # all versions from 4.7.0 onward
             self.dictionary = cv2.aruco.getPredefinedDictionary(charuco_dictionary)
-            self.board = cv2.aruco.CharucoBoard((size["y"] + 1, size["x"] + 1), length, marker_length,
+            self.board = cv2.aruco.CharucoBoard((size["x"] + 1, size["y"] + 1), length, marker_length,
                                                 self.dictionary)
 
     def detect(self, image, equalize_histogram=False):
@@ -129,13 +141,25 @@ class CharucoPattern(object):
         if cv2.__version__ == '4.6.0':
             params = cv2.aruco.DetectorParameters_create()
             corners, ids, rejected = cv2.aruco.detectMarkers(gray, self.dictionary, parameters=params)
+
+            # Debug
+            # image_gui = deepcopy(image)
+#             cv2.aruco.drawDetectedMarkers(image_gui, corners, ids)
+#             cv2.namedWindow('Debug image', cv2.WINDOW_NORMAL)
+#             cv2.imshow('Debug image', image_gui)
+#
+#             cv2.namedWindow('image board', cv2.WINDOW_NORMAL)
+#             cv2.imshow('image board', self.image_board)
+#
+#             cv2.waitKey(30)
+
             # cv2.aruco.refineDetectedMarkers(gray, self.board, corners, ids, rejected)
         else:
             params = cv2.aruco.DetectorParameters()
             detector = cv2.aruco.ArucoDetector(self.dictionary, params)
             corners, ids, rejected = detector.detectMarkers(gray)
 
-        if len(corners) <= 4:  # Must have more than 3 corner detections
+        if len(corners) <= 8:  # Must have more than 3 corner detections
             return {"detected": False, 'keypoints': np.array([]), 'ids': []}
 
         # Interpolation of charuco corners
@@ -153,7 +177,7 @@ class CharucoPattern(object):
         # If all above works, return detected corners.
         return {'detected': True, 'keypoints': ccorners, 'ids': cids.ravel().tolist()}
 
-    def drawKeypoints(self, image, result, K=None, D=None):
+    def drawKeypoints(self, image, result, length=0.2, color=(255, 0, 0), K=None, D=None, pattern_name=None, debug=False):
         if result['keypoints'] is None or len(result['keypoints']) == 0:
             return
 
@@ -164,6 +188,7 @@ class CharucoPattern(object):
         # Build a numpy array with the chessboard corners
         ccorners = np.zeros((len(result['keypoints']), 1, 2), dtype=float)
         cids = list(range(0, len(result['keypoints'])))
+        num_corners = len(cids)
 
         points = result['keypoints'].astype(np.int32)
         for idx, (point, id) in enumerate(zip(result['keypoints'], result['ids'])):
@@ -175,7 +200,8 @@ class CharucoPattern(object):
         np_ccorners = np.array(ccorners, dtype=np.float32)
 
         # Draw charuco corner detection
-        image = cv2.aruco.drawDetectedCornersCharuco(image, np_ccorners, np_cids, (0, 0, 255))
+        if debug:
+            image = cv2.aruco.drawDetectedCornersCharuco(image, np_ccorners, np_cids, color)
 
         if K is not None and D is not None:  # estimate pose and draw axis on image
             rvecs, tvecs = None, None
@@ -183,7 +209,18 @@ class CharucoPattern(object):
                                                                  np_cids, self.board,
                                                                  K, D, rvecs, tvecs)
             # Draw frame on the image
-            cv2.drawFrameAxes(image, K, D, rvecs, tvecs, 0.3)
+            cv2.drawFrameAxes(image, K, D, rvecs, tvecs, length)
+
+        if pattern_name is not None:
+            point = tuple(ccorners[0][0])
+
+            drawTextOnImage(image, pattern_name,
+                            font=cv2.FONT_HERSHEY_PLAIN,
+                            font_scale=4.5,
+                            font_thickness=3,
+                            position=point,
+                            text_color=color,
+                            text_color_bg=(255, 255, 255))
 
 
 def initializePatternsDict(config, step=0.02):

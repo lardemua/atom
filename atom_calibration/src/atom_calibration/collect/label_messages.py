@@ -34,9 +34,9 @@ def find_nearest_white(img, target):
 
 
 def denseToSparsePointCloud(dense_pc):
-    """Creates a sparse numpy array containing only the points. 
-    
-    Get a list of indices of valid points. Some lidars may be pointing up for example and a lot of points are not valid. These are generally represented as xyz = 0,0,0 
+    """Creates a sparse numpy array containing only the points.
+
+    Get a list of indices of valid points. Some lidars may be pointing up for example and a lot of points are not valid. These are generally represented as xyz = 0,0,0
 
     Args:
         dense_pc (_type_): Numpy array of shape (npoints, 3)
@@ -185,7 +185,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 
     # Extract the inliers
     distances = abs((A * pts[:, 0] + B * pts[:, 1] + C * pts[:, 2] + D)) / \
-                (math.sqrt(A * A + B * B + C * C))
+        (math.sqrt(A * A + B * B + C * C))
     inliers = pts[np.where(distances < ransac_threshold)]
     # Create dictionary [pcl point index, distance to plane] to select the pcl indexes of the inliers
     idx_map = dict(zip(idx, distances))
@@ -271,7 +271,7 @@ def labelPointCloud2Msg(msg, seed_x, seed_y, seed_z, threshold, ransac_iteration
 def imageShowUInt16OrFloat32OrBool(image, window_name, max_value=5000.0):
     """
     Shows uint16 or float32 or bool images by normalizing them before using imshow
-    :param image: np nd array with dtype npuint16 or float32
+    :param image: np nd array with dtype np uint16 or float32
     :param window_name: highgui window name
     :param max_value: value to use for white color
     """
@@ -309,19 +309,22 @@ def convertDepthImage32FC1to16UC1(image_in, scale=1000.0):
     """
     The assumption is that the image_in is a float 32 bit np array, which contains the range values in meters.
     The image_out will be a 16 bit unsigned int  [0, 65536] which will store the range in millimeters.
-    As a convetion, nans will be set to the maximum number available for uint16
+    As a convention, nans will be set to the maximum number available for uint16
     :param image_in: np array with dtype float32
-    :param scale: convertion from meters to milimieter if 1000
+    :param scale: conversion from meters to millimeters if 1000
     :return: np array with dtype uint16
     """
 
     if image_in.dtype == np.uint16:
         raise ValueError("Cannot convert float32 to uint16 because image is already uint16.")
-        # return image_in
 
-    # mask_nans = np.isnan(image_in)
+    mask_nans = np.isnan(image_in)
     image_mm_float = image_in * scale  # convert meters to millimeters
     image_mm_float = np.round(image_mm_float)  # round the millimeters
+
+    # to explicitly convert nans into 0s, and avoid this np warning in
+    # the following line: "328: RuntimeWarning": invalid value encountered in cast
+    image_mm_float[mask_nans] = 0.0
     image_out = image_mm_float.astype(np.uint16)  # side effect: nans become 0s
     return image_out
 
@@ -332,10 +335,9 @@ def convertDepthImage16UC1to32FC1(image_in, scale=1000.0):
     The image_out will be a float32 which will store the range in meters.
     As a convention, nans will be set from all pixels with the maximum number available for uint16
     :param image_in: np array with dtype  uint16
-    :param scale: convertion from millimieters to meters if 1000
+    :param scale: conversion from millimeters to meters if 1000
     :return: np array with dtype float32
     """
-    # iinfo = np.iinfo(np.uint16)
     mask_nans = image_in == 0
     image_out = image_in.astype(np.float32) / scale  # convert millimeters to meters
     image_out[mask_nans] = np.nan
@@ -732,13 +734,13 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
                 # Estimate a tolerance from the maximum
                 if x < (max_x - border_tolerance) and x > (min_x + border_tolerance):
                     if y < (max_y - border_tolerance) and y > (min_y + border_tolerance):
-                        if np.isnan(image[y,x]) == False:
+                        if np.isnan(image[y, x]) == False:
                             idxs_rows.append(y)
                             idxs_cols.append(x)
             else:
                 if x < (width - border_tolerance) and x > (0 + border_tolerance):
                     if y < (height - border_tolerance) and y > (0 + border_tolerance):
-                        if np.isnan(image[y,x]) == False:
+                        if np.isnan(image[y, x]) == False:
                             idxs_rows.append(y)
                             idxs_cols.append(x)
                         # idxs_rows.append(y)
@@ -747,7 +749,6 @@ def labelDepthMsg(msg, seed=None, propagation_threshold=0.2, bridge=None, pyrdow
                         #     print("IS NAN")
 
                             # print(image[y,x])
-
 
             # Add point only if it is far away from the image borders
             # if x < (width - 1 - (width - 1) * filter_border_edges) and x > (width - 1) * filter_border_edges:

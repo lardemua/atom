@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Read the bag file
     # --------------------------------------------------------------------------
-    bag_file, _, bag_file_rel = atom_core.config_io.uriReader(config['bag_file'])
+    bag_file, _, bag_file_relative = atom_core.config_io.uriReader(config['bag_file'])
     if is_rosbag2(bag_file):
         print('Bagfile ' + Fore.BLUE + bag_file + Style.RESET_ALL +
               ' is in rosbag2 format. Converting to rosbag1 format ... ', end='')
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         if rosbag2_file:
             print("Converted successfully, destination file: " + Fore.BLUE + rosbag2_file + Style.RESET_ALL)
             bag_file = rosbag2_file
-            bag_file_rel = bag_file
+            bag_file_relative = bag_file
         else:
             atomError('Converting rosbag2 to rosbag1 failed.')
 
@@ -527,7 +527,7 @@ if __name__ == "__main__":
     with open(launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
-                                    'bag_file': bag_file_rel,
+                                    'bag_file': bag_file_relative,
                                     'use_tfs': args['use_tfs'],
                                     'collect_ground_truth': args['collect_ground_truth'],
                                     'package_name': package_name,
@@ -550,7 +550,7 @@ if __name__ == "__main__":
                                     'date': dt_string,
                                     'package_name': package_name,
                                     'rviz_set_initial_estimate': rviz_set_initial_estimate,
-                                    'bag_file': bag_file_rel,
+                                    'bag_file': bag_file_relative,
                                     'marker_size': 0.5,
                                     'config_file': os.path.basename(args['config_file'])
                                     })
@@ -562,14 +562,27 @@ if __name__ == "__main__":
     launch_file = data_collection_launch_file
     print('Setting up ' + Fore.BLUE + launch_file + Style.RESET_ALL + ' ...')
 
+    # Create a dictionary of the labelers
+    labelers = {}
+    for sensor_key, sensor in config['sensors'].items():
+        if sensor['modality'] == 'rgb':
+            labelers[sensor_key] = {'command': 'rgb_labeler'}
+        elif sensor['modality'] == 'lidar3d':
+            labelers[sensor_key] = {'command': 'lidar3d_labeler'}
+        elif sensor['modality'] == 'depth':
+            labelers[sensor_key] = {'command': 'depth_labeler'}
+        else:
+            atomError('Sensor ' + sensor_key + ' has unknown modality ' + sensor['modality'])
+
     template = env.get_template(os.path.basename(launch_file))
     with open(launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'package_name': package_name,
                                     'rviz_collect_data': rviz_collect_data,
-                                    'bag_file': bag_file_rel,
-                                    'config_file': os.path.basename(args['config_file'])
+                                    'bag_file': bag_file_relative,
+                                    'config_file': os.path.basename(args['config_file']),
+                                    'labelers': labelers
                                     })
         f.write(output.encode('utf-8'))
 
@@ -598,7 +611,7 @@ if __name__ == "__main__":
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'package_name': package_name,
-                                    'bag_file': bag_file_rel,
+                                    'bag_file': bag_file_relative,
                                     'rviz_dataset_playback': rviz_dataset_playback
                                     })
         f.write(output.encode('utf-8'))

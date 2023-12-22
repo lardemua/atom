@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+
+# Imports
+import argparse
+import os
+import sys
+from colorama import Fore, Style
+import numpy as np
+
+# ROS imports
+import rospy
+from cv_bridge import CvBridge
+from sensor_msgs.msg import CameraInfo, Image
+from geometry_msgs.msg import PointStamped
+
+# ATOM imports
+from atom_core.config_io import loadConfig
+from atom_core.utilities import atomError
+from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
+from atom_calibration.collect.label_messages import labelDepthMsg
+from atom_msgs.msg import DepthImageWithDepthLabels, DepthLabels
+
+
+class DepthLabeler:
+    """ Semi-automated labeling. An rviz interactive marker is placed inside the camera frustum overlapping the
+        calibration pattern and the pattern is tracked from that seed point using a propagation mask. The
+        pattern is tracked automatically from there onward by assuming that the centroid of the calibration
+        pattern's shape is the seed point in  the next frame.
+    """
+
+    def __init__(self, config, sensor_name, label_data=True, debug=False, marker_scale=0.5, color=(255, 0, 0)):
+
+        print('Creating a depth labeler for sensor ' + sensor_name)
+
+        # Store variables to class attributes
+        self.label_data = label_data
+        self.config = config
+        self.sensor_name = sensor_name
+        self.marker_scale = marker_scale
+        self.color = color
+        self.debug = debug
+
+        # Check if sensor exists in config
+        if self.sensor_name not in config['sensors'].keys():
+            atomError('Sensor ' + Fore.BLUE + sensor_name + Style.RESET_ALL + ' not in config. Cannot start labeler.\nAvailable sensors are: ' +
+                      Fore.BLUE + str(list(config['sensors'].keys())) + Style.RESET_ALL)
+
+        self.sensor_config = config['sensors'][sensor_name]
+
+        # Check if modality is lidar3d
+        if not self.sensor_config['modality'] == 'depth':
+            atomError('Sensor ' + sensor_name + ' has modality ' +
+                      self.sensor_config['modality'] + ' . Cannot start depth labeler.')
+
+        # Get the type of message from the message topic of the sensor data, which is given as input. The message
+        self.msg_type_str, self.msg_type = getMessageTypeFromTopic(self.sensor_config['topic_name'])
+
+        # TODO for now this will only work with a single pattern. Must extend this to multi-pattern detection later
+        if len(self.config['calibration_patterns'].keys()) > 1:
+            atomError('Depth labeler is not prepared to detect multiple patterns.')
+
+        self.pattern_key = list(self.config['calibration_patterns'].keys())[0]
+        self.pattern = self.config['calibration_patterns'][self.pattern_key]
+
+        # Set up the publication of the labeled image
+        self.bridge = CvBridge()  # a CvBridge structure is needed to convert opencv images to ros messages.
+        self.publisher_labelled_depth = rospy.Publisher(self.sensor_config['topic_name'] + '/labeled',
+                                                        Image,
+                                                        queue_size=1)
+
+        # Set up the publication of the produced labels
+        self.publisher_depth_image_with_depth_labels = rospy.Publisher(self.sensor_name + '/labels',
+                                                                       DepthImageWithDepthLabels,
+                                                                       queue_size=1)
+
+        # Receive one camera_info message corresponding to this sensor and store it.
+        # We need this to have the K and D matrices.
+
+        print('topic name is ' + self.sensor_config['topic_name'])
+
+        print('os.path is ' + self.sensor_config['topic_name'])
+
+        camera_info_topic = os.path.dirname(self.sensor_config['topic_name']) + '/camera_info'
+        print('Waiting for camera_info message on topic ' + camera_info_topic + ' ...')
+        self.camera_info_msg = rospy.wait_for_message(camera_info_topic, CameraInfo)
+        print(' received!')
+
+        # Use image resolution to define initial seed in the middle of the image
+        self.width = self.camera_info_msg.width
+        self.height = self.camera_info_msg.height
+        self.seed = {'x': round(self.width / 2), 'y': round(self.height / 2)}
+        self.pyrdown = 1
+
+        self.subscriber_mouse_click = rospy.Subscriber(self.sensor_config['topic_name'] + '/labeled/mouse_click',
+                                                       PointStamped,
+                                                       self.mouseClickReceivedCallback)
+
+        # Subscribe to the message topic containing sensor data
+        self.subscriber = rospy.Subscriber(self.sensor_config['topic_name'],
+                                           self.msg_type,
+                                           self.labelData,
+                                           queue_size=1)
+
+        self.tic_manual_seed = rospy.Time.now()
+
+    def mouseClickReceivedCallback(self, msg):
+        self.seed['x'] = msg.point.x * pow(2, self.pyrdown)
+        self.seed['y'] = msg.point.y * pow(2, self.pyrdown)
+        self.tic_manual_seed = rospy.Time.now()
+        if self.debug:
+            print('Setting new seed point for sensor ' + self.sensor_name + ' to ' + str(self.seed))
+
+    def labelData(self, msg):
+
+        if self.debug:
+            print('labeling data for sensor ' + self.sensor_name)
+
+        # Reset detected and idxs values to make sure we are not using information from a previous labeling
+
+        filter_border_edges = 0.025
+
+        # The actual labeling procedure
+        labels, result_image, new_seed_point = labelDepthMsg(msg, seed=self.seed,
+                                                             bridge=self.bridge, pyrdown=self.pyrdown,
+                                                             scatter_seed=True, debug=False,
+                                                             subsample_solid_points=3, limit_sample_step=1, filter_border_edges=filter_border_edges)
+
+        # publish the PointCloudWithLidar3DLabels msg
+        depth_image_with_depth_labels_msg = DepthImageWithDepthLabels()
+        depth_image_with_depth_labels_msg.header = msg.header
+        depth_image_with_depth_labels_msg.image = msg
+
+        depth_labels = DepthLabels()
+        depth_labels.pattern_name = self.pattern_key
+        depth_labels.detected = labels['detected']
+
+        # labels['idxs'] are of type np.int64, so we must convert to np.uint3o
+        idxs = np.array(labels['idxs']).astype(np.uint32)
+        for idx in idxs:
+            depth_labels.idxs.append(idx)
+
+        # For some strange reason, labels['idxs'] are of type int, and we must have uint16
+        idxs_limit_points = np.array(labels['idxs_limit_points']).astype(np.uint32)
+        for idx_limit_point in idxs_limit_points:
+            depth_labels.idxs_limit_points.append(idx_limit_point)
+
+        depth_image_with_depth_labels_msg.patterns.append(depth_labels)
+
+        self.publisher_depth_image_with_depth_labels.publish(depth_image_with_depth_labels_msg)
+
+        # print('new_seed_point = ' + str(new_seed_point))
+        time_since_manual_seed = (rospy.Time.now()-self.tic_manual_seed).to_sec()
+
+        # https://github.com/lardemua/atom/issues/639
+        if time_since_manual_seed > 1.0:  # only track after 1 second of setting manual seed.
+            if 0 < new_seed_point['x'] < self.width-filter_border_edges*self.width and \
+               0 < new_seed_point['y'] < self.height-filter_border_edges*self.height:
+                self.seed['x'] = new_seed_point['x']
+                self.seed['y'] = new_seed_point['y']
+            else:
+                self.seed = {'x': round(self.width / 2), 'y': round(self.height / 2)}
+
+        msg_out = self.bridge.cv2_to_imgmsg(result_image, encoding="passthrough")
+        msg_out.header.stamp = msg.header.stamp
+        msg_out.header.frame_id = msg.header.frame_id
+        self.publisher_labelled_depth.publish(msg_out)
+
+
+def main():
+
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-cfg", "--config", help='Calibration config file.', type=str, required=True)
+    ap.add_argument("-sn", "--sensor_name", help='Name of the sensor as given in the config.yml', type=str, required=True)
+    ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
+    ap.add_argument("-c", "--color", nargs=3, help='Color associated with this labeler', default=[255, 0, 0], type=int)
+
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
+
+    config = loadConfig(args['config'])
+
+    # Initialize ROS stuff
+    node_name = args['sensor_name'] + '_lidar3d_labeler'
+    rospy.init_node(node_name)
+
+    lidar_labeler = DepthLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'], color=args['color'])
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()

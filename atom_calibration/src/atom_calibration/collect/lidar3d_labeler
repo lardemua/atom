@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+
+# Imports
+import argparse
+import math
+import struct
+import sys
+from colorama import Fore, Style
+
+# ROS imports
+import rospy
+from sensor_msgs import point_cloud2
+from std_msgs.msg import Header
+from visualization_msgs.msg import Marker, InteractiveMarker, InteractiveMarkerControl
+from sensor_msgs.msg import PointField, PointCloud2
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
+
+# ATOM imports
+from atom_core.config_io import loadConfig
+from atom_core.utilities import atomError
+from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
+from atom_calibration.collect.label_messages import labelPointCloud2Msg, numpyFromPointCloudMsg
+from atom_msgs.msg import Lidar3DLabels, PointCloudWithLidar3DLabels
+
+
+class Lidar3DLabeler:
+    """
+        PointCloud2: Semi-automated labeling. An rviz interactive marker is placed on the point cloud where the
+                    calibration pattern shape is, and the pattern is tracked automatically from there onward.
+    """
+
+    # def __init__(self, config, sensor_name, server, menu_handler, sensor_dict, marker_scale, calib_pattern, color, label_data=True):
+    def __init__(self, config, sensor_name, label_data=True, debug=False, marker_scale=0.5, color=[255, 0, 0]):
+
+        print('Creating a lidar labeler for sensor ' + sensor_name)
+
+        # Store variables to class attributes
+        self.label_data = label_data
+        self.config = config
+        self.sensor_name = sensor_name
+        self.marker_scale = marker_scale
+        self.color = color
+        self.debug = debug
+
+        # Check if sensor exists in config
+        if self.sensor_name not in config['sensors'].keys():
+            atomError('Sensor ' + Fore.BLUE + sensor_name + Style.RESET_ALL + ' not in config. Cannot start labeler.\nAvailable sensors are: ' +
+                      Fore.BLUE + str(list(config['sensors'].keys())) + Style.RESET_ALL)
+
+        self.sensor_config = config['sensors'][sensor_name]
+
+        # Check if modality is lidar3d
+        if not self.sensor_config['modality'] == 'lidar3d':
+            atomError('Sensor ' + sensor_name + ' has modality ' +
+                      self.sensor_config['modality'] + ' . Cannot start rgb labeler.')
+
+        # Get the type of message from the message topic of the sensor data, which is given as input. The message
+        self.msg_type_str, self.msg_type = getMessageTypeFromTopic(self.sensor_config['topic_name'])
+
+        # self.server = server
+        self.server = InteractiveMarkerServer(self.sensor_name + "/data_labeler")
+
+        # TODO for now this will only work with a single pattern. Must extend this to multi-pattern detection later
+        if len(self.config['calibration_patterns'].keys()) > 1:
+            atomError('Lidar3D labeler is not prepared to detect multiple patterns.')
+
+        self.pattern_key = list(self.config['calibration_patterns'].keys())[0]
+        self.pattern = self.config['calibration_patterns'][self.pattern_key]
+
+        # Setup point cloud publisher showing labeled points
+        self.publisher_selected_points = rospy.Publisher(self.sensor_config['topic_name'] + '/labeled',
+                                                         PointCloud2,
+                                                         queue_size=1)  # publish a point cloud with the points
+
+        # Set up the publication of the produced labels
+        self.publisher_point_cloud_with_lidar3d_labels = rospy.Publisher(self.sensor_name + '/labels',
+                                                                         PointCloudWithLidar3DLabels, queue_size=1)
+
+        # interactive marker to label the calibration pattern
+        # TODO there must be a better way to initialize the pose
+        self.createInteractiveMarker(x=0.804, y=0.298, z=0.409)
+
+        # Labeler definitions
+        # Hessian plane coefficients
+        self.A = 0
+        self.B = 0
+        self.C = 0
+        self.D = 0
+        self.number_iterations = 15  # RANSAC number of iterations
+        self.ransac_threshold = 0.01  # RANSAC point-to-plane distance threshold to consider inliers
+
+        # Chessboard point tracker distance threshold
+        self.tracker_threshold = math.sqrt(((self.pattern['dimension']['x'] - 1) * self.pattern['size']) ** 2 +
+                                           ((self.pattern['dimension']['y'] - 1) * self.pattern[
+                                               'size']) ** 2) * 0.8
+
+        print('Created interactive marker for point clouds.')
+
+        # Subscribe to the message topic containing sensor data
+        self.subscriber = rospy.Subscriber(self.sensor_config['topic_name'],
+                                           self.msg_type, self.labelData, queue_size=1)
+
+    def labelData(self, msg):
+        if self.debug:
+            print('labeling data for sensor ' + self.sensor_name)
+
+        # Reset detected and idxs values to make sure we are not using information from a previous labeling
+        # self.labels['detected'] = False
+        # self.labels['idxs'] = []
+
+        # rospy.loginfo(
+        #     'labeling PointCloud for ' + self.sensor_name + ' which is ' + str((rospy.Time.now() - self.msg.header.stamp).to_sec()) + ' secs old.')
+
+        # Get the marker position (this comes from the sphere in rviz)
+        x_marker, y_marker, z_marker = self.marker.pose.position.x, self.marker.pose.position.y, \
+            self.marker.pose.position.z  # interactive marker pose
+
+        # Extract 3D point from the ros msg
+        self.labels, seed_point, inliers = labelPointCloud2Msg(msg, x_marker, y_marker, z_marker,
+                                                               self.tracker_threshold, self.number_iterations,
+                                                               self.ransac_threshold)
+
+        # publish the PointCloudWithLidar3DLabels msg
+        point_cloud_with_lidar_3d_msg = PointCloudWithLidar3DLabels()
+        point_cloud_with_lidar_3d_msg.header = msg.header
+        point_cloud_with_lidar_3d_msg.point_cloud = msg
+
+        lidar_3d_labels = Lidar3DLabels()
+        lidar_3d_labels.pattern_name = self.pattern_key
+        lidar_3d_labels.detected = True
+        for idx in self.labels['idxs']:
+            lidar_3d_labels.idxs.append(idx)
+        for idx_limit_point in self.labels['idxs_limit_points']:
+            lidar_3d_labels.idxs_limit_points.append(idx_limit_point)
+
+        point_cloud_with_lidar_3d_msg.patterns.append(lidar_3d_labels)
+
+        self.publisher_point_cloud_with_lidar3d_labels.publish(point_cloud_with_lidar_3d_msg)
+
+        # publish the points that belong to the cluster (use idxs to show annotations)
+        point_cloud = numpyFromPointCloudMsg(msg)
+
+        # Add idxs points
+        r, g, b = self.color
+        a = 25
+        rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
+        points = []
+        for idx in self.labels['idxs']:
+            pt = [point_cloud[idx, 0], point_cloud[idx, 1], point_cloud[idx, 2], rgb]
+            points.append(pt)
+
+        # Add idx_limit_points (darker)
+        rgb = struct.unpack('I', struct.pack('BBBB', b, g, r, a))[0]
+        for idx in self.labels['idxs_limit_points']:
+            pt = [point_cloud[idx, 0], point_cloud[idx, 1], point_cloud[idx, 2], rgb]
+            points.append(pt)
+
+        fields = [PointField('x', 0, PointField.FLOAT32, 1), PointField('y', 4, PointField.FLOAT32, 1),
+                  PointField('z', 8, PointField.FLOAT32, 1), PointField('rgba', 12, PointField.UINT32, 1)]
+        header = Header()
+        header.frame_id = msg.header.frame_id
+        header.stamp = msg.header.stamp
+        pc_msg = point_cloud2.create_cloud(header, fields, points)
+        if self.debug:
+            print('Publishing labelled cloud with ' + str(len(points)) + ' points.')
+        self.publisher_selected_points.publish(pc_msg)
+
+        # Update the interactive marker pose
+        self.marker.pose.position.x = seed_point[0]
+        self.marker.pose.position.y = seed_point[1]
+        self.marker.pose.position.z = seed_point[2]
+        self.server.applyChanges()
+
+    def markerFeedback(self, feedback):
+        # print(' sensor ' + self.sensor_name + ' received feedback')
+        self.server.applyChanges()
+
+    def createInteractiveMarker(self, x=0, y=0, z=0):
+        self.marker = InteractiveMarker()
+        self.marker.header.frame_id = self.sensor_config['parent_link']
+        self.marker.pose.position.x = x
+        self.marker.pose.position.y = y
+        self.marker.pose.position.z = z
+        self.marker.pose.orientation.x = 0
+        self.marker.pose.orientation.y = 0
+        self.marker.pose.orientation.z = 0
+        self.marker.pose.orientation.w = 1
+        self.marker.scale = self.marker_scale
+
+        self.marker.name = self.sensor_name
+        self.marker.description = ''
+
+        # insert a box
+        control = InteractiveMarkerControl()
+        control.always_visible = True
+
+        marker_box = Marker()
+        marker_box.type = Marker.TEXT_VIEW_FACING
+        marker_box.scale.z = self.marker.scale * .2
+        marker_box.color.r = 0.0
+        marker_box.color.g = 0.0
+        marker_box.color.b = 0
+        marker_box.color.a = 1
+        marker_box.text = self.sensor_name + ' labeler\nPlace on pattern points'
+
+        control.markers.append(marker_box)
+        self.marker.controls.append(control)
+
+        self.marker.controls[0].interaction_mode = InteractiveMarkerControl.MOVE_3D
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 1
+        control.orientation.y = 0
+        control.orientation.z = 0
+        control.name = "move_x"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        self.marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 1
+        control.orientation.z = 0
+        control.name = "move_y"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        self.marker.controls.append(control)
+
+        control = InteractiveMarkerControl()
+        control.orientation.w = 1
+        control.orientation.x = 0
+        control.orientation.y = 0
+        control.orientation.z = 1
+        control.name = "move_z"
+        control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+        control.orientation_mode = InteractiveMarkerControl.FIXED
+        self.marker.controls.append(control)
+
+        self.server.insert(self.marker, self.markerFeedback)
+        # self.menu_handler.apply(self.server, self.marker.name)
+
+
+def main():
+
+    # Parse command line arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-cfg", "--config", help='Calibration config file.', type=str, required=True)
+    ap.add_argument("-sn", "--sensor_name", help='Name of the sensor as given in the config.yml', type=str, required=True)
+    ap.add_argument("-d", "--debug", help='Run in debug mode', action='store_true', default=False)
+    ap.add_argument("-c", "--color", nargs=3, help='Color associated with this labeler', default=[255, 0, 0], type=int)
+
+    args = vars(ap.parse_args(args=filterLaunchArguments(sys.argv)))
+
+    config = loadConfig(args['config'])
+
+    # Initialize ROS stuff
+    node_name = args['sensor_name'] + '_lidar3d_labeler'
+    rospy.init_node(node_name)
+
+    lidar_labeler = Lidar3DLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'], color=args['color'])
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()

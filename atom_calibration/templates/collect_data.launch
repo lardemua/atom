@@ -73,6 +73,17 @@
               args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
               output="screen"/>
     </group>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Labeler nodes -->
+    {% for sensor_key, labeler in c.labelers.items() %}
+    <!-- Sensor {{ sensor_key}} {{ labeler.command }} -->
+    <node name="{{ sensor_key }}_labeler" pkg="atom_calibration" type="{{ labeler.command }}"
+        args="-cfg $(arg config_file) -sn {{ sensor_key }}"
+        required="true"
+        output="screen"/>
+    {% endfor %}
+
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start automatic data collector node -->
     <node name="automatic_data_collector" pkg="atom_calibration" type="automatic_data_collector" output="screen"

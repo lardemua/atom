@@ -72,6 +72,23 @@
               args="-s $(arg marker_size) -o $(arg output_folder) -c $(arg config_file) -ssl '$(arg ssl)'" required="true"
               output="screen"/>
     </group>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Labeler nodes -->
+    
+    <!-- Sensor rgb_left rgb_labeler -->
+    <node name="rgb_left_labeler" pkg="atom_calibration" type="rgb_labeler"
+        args="-cfg $(arg config_file) -sn rgb_left"
+        required="true"
+        output="screen"/>
+    
+    <!-- Sensor rgb_right rgb_labeler -->
+    <node name="rgb_right_labeler" pkg="atom_calibration" type="rgb_labeler"
+        args="-cfg $(arg config_file) -sn rgb_right"
+        required="true"
+        output="screen"/>
+    
+
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Start automatic data collector node -->
     <node name="automatic_data_collector" pkg="atom_calibration" type="automatic_data_collector" output="screen"

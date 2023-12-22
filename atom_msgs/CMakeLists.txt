@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
-  message_runtime
   message_generation
 )
 
@@ -50,11 +49,16 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  ImageWithRGBLabels.msg
+  RGBLabels.msg
+  Detection2D.msg
+  PointCloudWithLidar3DLabels.msg
+  Lidar3DLabels.msg
+  DepthImageWithDepthLabels.msg
+  DepthLabels.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -79,8 +83,8 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  sensor_msgs
   std_msgs
+  sensor_msgs
 )
 
 ################################################
@@ -115,7 +119,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES atom_msgs
- CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs message_runtime
+ CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs message_runtime
 #  DEPENDS system_lib
 )
 
