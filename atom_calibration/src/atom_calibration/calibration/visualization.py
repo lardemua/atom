@@ -59,6 +59,7 @@ def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
 
 
 def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset, graphics):
+    print('Creating pattern markers for pattern ' + pattern_key)
     markers = MarkerArray()
 
     # Draw pattern frame lines_sampled (top, left, right, bottom)
@@ -119,7 +120,7 @@ def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset
 
     # Draw the mesh
     m = Marker(header=Header(frame_id=frame_id, stamp=now),
-               ns=str(collection_key) + '-mesh', id=0, frame_locked=True,
+               ns=ns + '-mesh', id=0, frame_locked=True,
                type=Marker.MESH_RESOURCE, action=Marker.ADD, lifetime=rospy.Duration(0),
                pose=Pose(position=Point(x=0, y=0, z=0),
                          orientation=Quaternion(x=0, y=0, z=0, w=1)),
@@ -395,7 +396,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     # -------- Robot meshes
     # -----------------------------------------------------------------------------------------------------
 
-    # Evaluate for each link if it may move or not (movable or immovalbe), to see if it needs to be drawn for each
+    # Evaluate for each link if it may move or not (movable or immovable), to see if it needs to be drawn for each
     # collection. This is done by comparing the several transformations from the world_link to the <link> obtained
     # from the collections.
     immovable_links = []
@@ -499,7 +500,9 @@ def setupVisualization(dataset, args, selected_collection_key):
             # Draw single pattern for selected collection key
             frame_id = generateName(pattern['link'], prefix='c' + selected_collection_key)
             ns = selected_collection_key + '_' + pattern_key
-            markers = createPatternMarkers(frame_id, ns, selected_collection_key, pattern_key, now, dataset, graphics)
+            pattern_markers = createPatternMarkers(frame_id, ns, selected_collection_key, pattern_key,
+                                                   now, dataset, graphics)
+            markers.markers.extend(pattern_markers.markers)
         else:  # Draw a pattern per collection
             for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
                 frame_id = generateName(pattern['link'],
@@ -679,15 +682,15 @@ def visualizationFunction(models):
         for collection_key, collection in collections.items():
             for sensor_key, sensor in sensors.items():
 
-                # check if sensor detects and of the patterns
-                flag_detects_at_leas_one_pattern = False
-                for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
-                    if collection['labels'][pattern_key][sensor_key]['detected']:
-                        flag_detects_at_leas_one_pattern = True
+                # check if sensor detects any of the patterns
+                # flag_detects_at_leas_one_pattern = False
+                # for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                #     if collection['labels'][pattern_key][sensor_key]['detected']:
+                #         flag_detects_at_leas_one_pattern = True
 
                 # If in this collection, sensor did not detect any of the patterns, continue
-                if flag_detects_at_leas_one_pattern == False:
-                    continue
+                # if flag_detects_at_leas_one_pattern == False:
+                # continue
 
                 if sensor['modality'] == 'rgb':
                     image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
@@ -696,6 +699,10 @@ def visualizationFunction(models):
                     diagonal = math.sqrt(width ** 2 + height ** 2)
 
                     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+
+                        # check if sensor detects pattern
+                        if not collection['labels'][pattern_key][sensor_key]['detected']:
+                            continue
 
                         cm = graphics['patterns'][pattern_key]['colormap']
                         # Draw projected points (as dots)
@@ -743,6 +750,10 @@ def visualizationFunction(models):
                     # print(width, height)
 
                     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+
+                        # check if sensor detects pattern
+                        if not collection['labels'][pattern_key][sensor_key]['detected']:
+                            continue
 
                         idxs = collection['labels'][pattern_key][sensor_key]['idxs']
                         idxs_limit_points = collection['labels'][pattern_key][sensor_key]['idxs_limit_points']
