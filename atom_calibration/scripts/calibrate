@@ -507,7 +507,6 @@ def main():
 
     # opt.printParameters()
     # opt.printResiduals()
-    # exit(0)
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX

@@ -133,7 +133,6 @@ if __name__ == "__main__":
                          ' lidar1 and camera2.')
 
     args = vars(ap.parse_args(args=atom_core.ros_utils.filterLaunchArguments(sys.argv)))
-    print("\nArgument list=" + str(args) + '\n')
 
     output_folder = resolvePath(args['output_folder'])
 

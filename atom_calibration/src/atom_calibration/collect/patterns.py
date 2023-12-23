@@ -375,7 +375,6 @@ def estimatePatternPosesForCollection(dataset, collection_key):
     collection = dataset['collections'][collection_key]
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
-        print('Analyzing pattern ' + pattern_key)
         nx = pattern['dimension']['x']
         ny = pattern['dimension']['y']
         square = pattern['size']
@@ -396,11 +395,8 @@ def estimatePatternPosesForCollection(dataset, collection_key):
         dataset['patterns'][pattern_key]['transforms_initial'][collection_key] = {
             'detected': False}  # by default no detection
 
-        print(dataset['sensors'])
         for sensor_key, sensor in dataset['sensors'].items():
 
-            print('Analyzing sensor ' + sensor_key)
-            print('detected:' + str(collection['labels'][pattern_key][sensor_key]['detected']))
             # if pattern not detected by sensor in collection
             if not collection['labels'][pattern_key][sensor_key]['detected']:
                 continue
@@ -459,8 +455,8 @@ def estimatePatternPosesForCollection(dataset, collection_key):
                 break  # don't search for this collection's chessboard on anymore sensors
 
         if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
-            atomWarn('Could not find create initial estimate for the pose of pattern in collection ' +
-                     Fore.BLUE + collection_key + Style.RESET_ALL)
+            atomWarn('Pattern ' + Fore.GREEN + pattern_key + Style.RESET_ALL + ' not detected in collection ' +
+                     Fore.BLUE + collection_key + Style.RESET_ALL + '. Cannot produce initial estimate of pose.')
 
 
 def sampleLineSegment(p0, p1, step):

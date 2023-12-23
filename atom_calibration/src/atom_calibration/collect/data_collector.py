@@ -57,11 +57,11 @@ class DataCollector:
             basename = os.path.basename(self.output_folder)
             backup_folder = '/tmp/' + basename + '_' + dt_string
 
-            time.sleep(2)
+            time.sleep(0.5)
             print('\n\nWarning: Dataset ' + Fore.YELLOW + self.output_folder + Style.RESET_ALL +
                   ' exists.\nMoving it to temporary folder: ' + Fore.YELLOW + backup_folder +
                   '\nThis will be deleted after a system reboot! If you want to keep it, copy the folder to some other location.' + Style.RESET_ALL + '\n\n')
-            time.sleep(2)
+            time.sleep(0.1)
 
             execute('mv ' + self.output_folder + ' ' + backup_folder, verbose=True)
             os.makedirs(self.output_folder, exist_ok=False)  # Create the folder empty
@@ -187,7 +187,8 @@ class DataCollector:
 
             # Get the kinematic chain from world_link to this sensor's parent link
             now = rospy.Time()
-            print('Waiting for transformation from ' + value['link'] + ' to ' + self.world_link)
+            print('Waiting for transformation from ' + Fore.BLUE +
+                  value['link'] + Style.RESET_ALL + ' to ' + Fore.BLUE + self.world_link + Style.RESET_ALL)
             self.listener.waitForTransform(value['link'], self.world_link, now, rospy.Duration(5))
             print('... received!')
             chain = self.listener.chain(value['link'], now, self.world_link, now, self.world_link)
@@ -205,8 +206,7 @@ class DataCollector:
                 if args['skip_sensor_labeling'](sensor_key):  # use the lambda expression csf
                     label_data[sensor_key] = False
 
-            print('Config for sensor ' + sensor_key + ' is complete.')
-            print(Fore.BLUE + sensor_key + Style.RESET_ALL + ':\n' + str(sensor_dict))
+            print('Configuration for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' is complete.')
 
         # Defining metadata
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
@@ -501,8 +501,9 @@ class DataCollector:
         for pattern_key in self.config['calibration_patterns'].keys():
             all_sensor_labels_dict[pattern_key] = {}
             for sensor_key, sensor in self.sensors.items():
-                print('Collecting data from ' + Fore.BLUE + pattern_key +
-                      '_' + sensor_key + Style.RESET_ALL + ': sensor_key')
+
+                print('Collecting data from sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL +
+                      ' for pattern ' + Fore.GREEN + pattern_key + Style.RESET_ALL)
 
                 # Search for correct pattern
                 label_msg = self.label_msgs[sensor_key]
@@ -586,9 +587,8 @@ class DataCollector:
                    'sensors': self.sensors,
                    'patterns': self.patterns_dict}
 
-        print('Estimating pattern poses for collection ...', end='')
+        print('Estimating pattern poses for collection ...')
         estimatePatternPosesForCollection(dataset, collection_key)
-        atomPrintOK()
 
         self.data_stamp += 1
 
@@ -601,7 +601,7 @@ class DataCollector:
         # Get a list of all transforms to collect
         transforms_list = []
 
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
         now = rospy.Time.now()
 
         # Error came up in
@@ -615,7 +615,8 @@ class DataCollector:
         all_frames = list(frames_dict.keys())
 
         for frame in all_frames:
-            print('Waiting for transformation from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
+            print('Waiting for transformation from ' + Fore.BLUE + frame + Style.RESET_ALL +
+                  ' to ' + Fore.BLUE + self.world_link + Style.RESET_ALL + ' (max 3 secs)')
             try:
                 self.listener.waitForTransform(frame, self.world_link, now, rospy.Duration(3))
                 chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)

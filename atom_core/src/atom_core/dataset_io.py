@@ -404,6 +404,7 @@ def createJSONFile(output_file, data):
     f.close()
     print("Saved json output file to " + str(output_file) + ".")
 
+
 def loadJSONFile(json_file):
     """
     Loads the json file containing the dataset, without the data.
@@ -587,12 +588,15 @@ def filterCollectionsFromDataset(dataset, args):
                         deleted.append(collection_key)
                         break
 
+        # Using multiple patterns we can now discard a collection more than once. Therefore we compute the unique set of collections to be deleted
+        deleted = list(set(deleted))
+
         for collection_key in deleted:
             del dataset['collections'][collection_key]
 
         if deleted:  # list is not empty
             print('Deleted collections: ' + str(deleted) +
-                  ' because these are incomplete. If you want to use them set the use_incomplete_collections flag.')
+                  ' because these are incomplete. If you want to use them set the ' + Fore.BLUE + 'use_incomplete_collections' + Style.RESET_ALL + ' flag.')
 
     if args['remove_partial_detections']:
         for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
