@@ -103,3 +103,14 @@ jcpbbot:
             file: test.zip
             extract_to: test
             id: 17IabhzUfnShaUp-BOrbDOOt6LTqJ05bM
+
+rihmpbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1ryaW0MBhaUYH-kx_hle2ztkzLRCiuuLt
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1PJ-nb-BEBhcB2Nsn4M84ttXWGGQkLySQ

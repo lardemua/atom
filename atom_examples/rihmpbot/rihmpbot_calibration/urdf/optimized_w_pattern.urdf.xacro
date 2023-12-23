@@ -495,7 +495,7 @@
     <child link="base_link"/>
   </joint>
   <joint name="rgb_hand_joint" type="fixed">
-    <origin xyz="-0.06604520338605281 -0.08283978769896988 0.03310315346109225" rpy="-0.10000000000000024 -0.10000000000000028 -0.10000000000000024"/>
+    <origin xyz="-0.018736998955348298 0.0012406037395645095 0.08158718927893409" rpy="-0.0008135654591183821 0.001401215090556714 -0.0017529402217248457"/>
     <parent link="flange"/>
     <child link="rgb_hand_link"/>
   </joint>
@@ -562,18 +562,46 @@
       </plugin>
     </sensor>
   </gazebo>
-  <link name="pattern_link">
+  <link name="charuco_170x100_3x6">
     <origin xyz="0 0 0" rpy="0 0 0"/>
-    <visual name="pattern_1_visual">
+    <visual name="charuco_170x100_3x6_visual">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://atom_worlds/pattern/models/charuco_800x600_5x5_100/charuco_800x600_5x5_100.dae"/>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae"/>
       </geometry>
     </visual>
   </link>
-  <joint name="world-pattern_link" type="fixed">
-    <origin xyz="-0.8476649944633392 0.29220199026155397 0.809408294218496" rpy="3.1217824173487165 0.005753588009300164 0.02276604675550566"/>
+  <joint name="world-charuco_170x100_3x6" type="fixed">
+    <origin xyz="-0.3240061423652189 0.10156297172965498 0.7993931899681657" rpy="3.134919335800029 -0.4953262837596417 -0.045606346237233135"/>
     <parent link="world"/>
-    <child link="pattern_link"/>
+    <child link="charuco_170x100_3x6"/>
+  </joint>
+  <link name="charuco_200x120_3x6">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual name="charuco_200x120_3x6_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="world-charuco_200x120_3x6" type="fixed">
+    <origin xyz="-0.5687723586210205 0.2941511809339084 0.7988368975290818" rpy="3.1355191662406834 0.007925018908327147 0.5219274159188869"/>
+    <parent link="world"/>
+    <child link="charuco_200x120_3x6"/>
+  </joint>
+  <link name="charuco_200x200_8x8">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual name="charuco_200x200_8x8_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="world-charuco_200x200_8x8" type="fixed">
+    <origin xyz="-0.7424641180916723 -0.08029839211546198 0.8095909132898141" rpy="3.1000856668102954 0.0260881941941297 0.6930540867948204"/>
+    <parent link="world"/>
+    <child link="charuco_200x200_8x8"/>
   </joint>
 </robot>
