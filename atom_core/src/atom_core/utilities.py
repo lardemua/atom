@@ -145,6 +145,11 @@ def atomError(message):
     exit(0)
 
 
+def atomWarn(message):
+    print(Fore.YELLOW + '\nATOM Warn: ' + Style.RESET_ALL + message)
+    exit(0)
+
+
 def atomPrintOK(message=''):
     print(message + Fore.GREEN + '[OK]' + Style.RESET_ALL)
 

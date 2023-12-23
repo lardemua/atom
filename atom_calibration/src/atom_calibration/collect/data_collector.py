@@ -511,11 +511,14 @@ class DataCollector:
                     if label.pattern_name == pattern_key:
                         pattern_label = label
 
-                if pattern_label is None:
-                    atomError('Could not find pattern ' + pattern_key + ' in label_msg of sensor ' + sensor_key)
-
                 # Convert pattern_label in ROS message format to atom dataset labels dict
-                if sensor['modality'] in ['rgb']:
+                if pattern_label is None:
+                    print(Fore.YELLOW + 'Could not find pattern ' + pattern_key +
+                          ' in label_msg of sensor ' + sensor_key + Style.RESET_ALL)
+                    labels_dict = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
+                    all_sensor_labels_dict[pattern_key][sensor_key] = labels_dict
+
+                elif sensor['modality'] in ['rgb']:
                     labels_dict = {'detected': pattern_label.detected, 'idxs': []}
 
                     for detection_2d in pattern_label.idxs:

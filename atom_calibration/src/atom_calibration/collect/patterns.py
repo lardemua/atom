@@ -1,9 +1,10 @@
 from copy import deepcopy
 import math
+from colorama import Fore, Style
 import cv2
 import numpy as np
 from atom_core.drawing import drawTextOnImage
-from atom_core.utilities import atomError
+from atom_core.utilities import atomError, atomWarn
 
 from tf import transformations
 from atom_core.geometry import traslationRodriguesToTransform
@@ -374,6 +375,7 @@ def estimatePatternPosesForCollection(dataset, collection_key):
     collection = dataset['collections'][collection_key]
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
+        print('Analyzing pattern ' + pattern_key)
         nx = pattern['dimension']['x']
         ny = pattern['dimension']['y']
         square = pattern['size']
@@ -394,8 +396,11 @@ def estimatePatternPosesForCollection(dataset, collection_key):
         dataset['patterns'][pattern_key]['transforms_initial'][collection_key] = {
             'detected': False}  # by default no detection
 
+        print(dataset['sensors'])
         for sensor_key, sensor in dataset['sensors'].items():
 
+            print('Analyzing sensor ' + sensor_key)
+            print('detected:' + str(collection['labels'][pattern_key][sensor_key]['detected']))
             # if pattern not detected by sensor in collection
             if not collection['labels'][pattern_key][sensor_key]['detected']:
                 continue
@@ -454,10 +459,8 @@ def estimatePatternPosesForCollection(dataset, collection_key):
                 break  # don't search for this collection's chessboard on anymore sensors
 
         if not flg_detected_pattern:  # Abort when the chessboard is not detected by any camera on this collection
-            atomError('Could not find pattern for collection ' + collection_key +
-                      ' in any of the existing rgb sensors. This dependency will be removed in the future, but for now we do need at least one rgb detection.')
-            # TODO come up with a better plan here. Randomize de patterns pose?
-            # See https://github.com/lardemua/atom/issues/765
+            atomWarn('Could not find create initial estimate for the pose of pattern in collection ' +
+                     Fore.BLUE + collection_key + Style.RESET_ALL)
 
 
 def sampleLineSegment(p0, p1, step):
