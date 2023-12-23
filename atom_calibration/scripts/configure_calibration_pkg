@@ -507,6 +507,20 @@ if __name__ == "__main__":
                     if additional_tf['parent_link'] == parent and additional_tf['child_link'] == child:
                         atomError('Additional tf ' + additional_tf_key + ' collides with joint ' + joint_key)
 
+    # Verify if there are two calibration patterns with the same aruco dictionary
+    # https://github.com/lardemua/atom/issues/784
+    print('Checking if there are two patterns with the same aruco dictionary ... ', end='')
+    aruco_dictionaries = []
+    for calibration_pattern_key, calibration_pattern in config['calibration_patterns'].items():
+        aruco_dictionaries.append(calibration_pattern['dictionary'])
+
+    duplicates = [x for x in aruco_dictionaries if aruco_dictionaries.count(x) >= 2]
+
+    if duplicates:
+        atomError('There are two or more calibration patterns with the same aruco dictionary. This is not a valid configuration. Repeated aruco dictionaries are: ' + str(list(set(duplicates))))
+
+    atomPrintOK()
+
     # --------------------------------------------------------------------------
     # Create dot calibration graph (used for printing out a summary)
     # --------------------------------------------------------------------------
