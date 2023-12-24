@@ -4,8 +4,8 @@ The **rlbot** is a robotic system meant to be use in simple tests and to serve a
 
 ![gazebo](docs/system.png)
 
-The system is composed of two rgb cameras mounted on a tripod.
-Cameras are called **rgb_left** (red) and **rgb_right** (green).
+The system is composed of one rgb camera and a 3d lidar mounted on a tripod.
+Sensors are called **rgb_left** (red) and **lidar_right** (blue).
 The system contains the following topics:
 
   - /rgb_left/camera_info
