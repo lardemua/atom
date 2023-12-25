@@ -95,10 +95,10 @@ Download and decompress the dataset to **$ATOM_DATASETS/riwbot/train**.
 
 Collection |           rgb_hand
 :----------------:|:-------------------------:
-0 | ![](docs/rgb_hand_000.jpg)
-1 | ![](docs/rgb_hand_001.jpg)
-2 | ![](docs/rgb_hand_009.jpg)
-3 | ![](docs/rgb_hand_010.jpg)
+0 | ![](docs/rgb_world_000.jpg)
+1 | ![](docs/rgb_world_001.jpg)
+2 | ![](docs/rgb_world_009.jpg)
+3 | ![](docs/rgb_world_010.jpg)
 
 
 ## Running the Calibration

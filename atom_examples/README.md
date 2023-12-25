@@ -17,7 +17,6 @@ System |           Name   |   Description
 ------- | rgb_in_hand_joint_optimization_robot | rihjobot
 ------- | rgb_in_world_joint_optimization_robot | riwjobot
 ------- | lidar_robot | lbot
-------- | rgb_lidar_robot | rlbot
 ------- | rgb_rgb_multiple_patterns_robot | rmpbot -->
 
 # Download bagfiles and datasets

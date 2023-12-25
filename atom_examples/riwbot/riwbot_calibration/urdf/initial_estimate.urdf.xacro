@@ -172,7 +172,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_4x4/charuco_200x200_4x4.dae"
+                <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"
                     scale="1 1 1" />
             </geometry>
             <!-- <material name="tripod_color" /> -->
@@ -180,7 +180,7 @@
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_4x4/charuco_200x200_4x4.dae"
+                <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"
                     scale="1 1 1" />
             </geometry>
         </collision>

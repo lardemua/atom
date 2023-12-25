@@ -129,5 +129,6 @@ which are quite high, because of the incorrect pose of the sensors,  and ends up
 
 ![](docs/calibration_output_final.png)
 
+
 Which shows subpixel accuracy. This means the procedure achieved a successful calibration.
 

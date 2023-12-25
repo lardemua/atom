@@ -1,11 +1,9 @@
 # stdlib
-import copy
 from functools import partial
-import json
 import os
 import time
 import getpass
-from datetime import datetime, date
+from datetime import datetime
 
 import numpy as np
 from atom_calibration.collect.patterns import estimatePatternPosesForCollection, initializePatternsDict
@@ -30,14 +28,12 @@ from urdf_parser_py.urdf import URDF
 
 # local packages
 from atom_core.naming import generateKey
-from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getMaxTime, getAverageTime
+from atom_core.ros_utils import printRosTime, getMaxTimeDelta, getAverageTime
 from atom_core.config_io import loadConfig
 from atom_core.system import execute, resolvePath
-from atom_core.xacro_io import readXacroFile
-from atom_calibration.collect.interactive_data_labeler import InteractiveDataLabeler
 from atom_calibration.collect.configurable_tf_listener import ConfigurableTransformListener
 from sensor_msgs.msg import JointState
-from atom_msgs.msg import ImageWithRGBLabels, RGBLabels, Detection2D, PointCloudWithLidar3DLabels, DepthImageWithDepthLabels
+from atom_msgs.msg import ImageWithRGBLabels, PointCloudWithLidar3DLabels, DepthImageWithDepthLabels
 
 
 class DataCollector:

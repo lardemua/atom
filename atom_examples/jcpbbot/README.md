@@ -117,7 +117,7 @@ Because we used the nig flag, zooming into a single collection shows the camera 
 
 ![gazebo](docs/before.png)
 
-After calibration, the script will produce a table of residuals per iteration which starts the calibration with these errors:
+During calibration, the script will produce a table of residuals per iteration which starts the calibration with these errors:
 
 ![](docs/calibration_output_initial.png)
 
@@ -146,6 +146,3 @@ shoulder_pan_joint |-0.01 |0.009886 |0.000114 |0.007
 This shows that the optimization was able to compensate for the errors introduced in the joints, by estimating compensation bias which are very close to corresponding induced errors.
 The largest difference between the induced error and the estimated bias occurs in case of the wrist_3_joint, and has a magnitude of just 0.6 degrees.
 
-## Evaluation
-
-...
