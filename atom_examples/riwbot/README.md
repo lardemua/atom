@@ -126,29 +126,3 @@ which are quite high, because of the incorrect pose of the sensors,  and ends up
 ![](docs/calibration_output_final.png)
 
 Which shows subpixel accuracy. This means the procedure achieved a successful calibration.
-
-During calibration We can see all collections in the system and, as the calibration progresses, the estimated transformations will be applied to the visualization. The table below shows the positioning of the **rgb_hand** sensor before the calibration starts (using nig 0.1 0.1), and after the calibration is carried out.
-
-
-View |           Before calibration             |           After calibration
-:----------------:|:-------------------------:|:-------------------------:
-All collections | ![](docs/3.png) |  ![](docs/4.png)
-Collection 0 | ![](docs/1.png) |  ![](docs/2.png)
-Collection 0 (top view)| ![](docs/5.png) |  ![](docs/6.png)
-
-## Evaluation
-
-test bag file
-https://drive.google.com/file/d/1iKMODjk2m37TBB3tWavJfZlKlwx-WHWz/view?usp=sharing
-
-The evaluation be conducted with a second dataset which has not been seen during calibration. We call these the test datasets.
-
-Download the [test](https://drive.google.com/file/d/16Vi6xo6kt2wEeFBWbTGrZdOL8DmT5ztt/view?usp=sharing) and decompress to **$ATOM_DATASETS/riwbot/test**.
-
-    roslaunch riwbot_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/riwbot/test/dataset.json train_json:=$ATOM_DATASETS/riwbot/train/atom_calibration.json
-
-Since we have a single sensor, we do not have reprojection errors. The error w.r.t. the ground truth is:
-
-![](docs/ground_truth_results.png)
-
-which shows sub-millimeter accuracy.
