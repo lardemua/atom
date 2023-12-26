@@ -21,8 +21,7 @@ from atom_calibration.calibration.getters_and_setters import (getterCameraIntrin
                                                               setterCameraIntrinsics, setterTransform)
 from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
-from atom_core.dataset_io import (addNoiseToInitialGuess, checkIfAtLeastOneLabeledCollectionPerSensor,
-                                  filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
+from atom_core.dataset_io import (addNoiseToInitialGuess, addNoiseToJointParameters, checkIfAtLeastOneLabeledCollectionPerSensor, filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
                                   saveAtomDataset, filterJointsFromDataset, filterAdditionalTfsFromDataset)
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
@@ -80,8 +79,10 @@ def main():
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
-                    help="Percentage of noise to add to the initial guess atomic transformations set before starting optimization.",
-                    type=float, default=[0.0, 0.0],),
+                    help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
+    ap.add_argument("-jnig", "--joint_noisy_initial_guess", nargs=3, type=float, default=[0.0, 0.0, 0.0],
+                    metavar=("position_bias", "origin_xyz", "origin_rpy"),
+                    help="Magnitude of noise to add to the corresponding joint parameters being optimized, to be set before starting optimization. [radians, meters, radians]", ),
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help="A string to be evaluated into a lambda function that receives a sensor name as input and "
                     "returns True or False to indicate if the sensor should be loaded (and used in the "
@@ -169,9 +170,10 @@ def main():
     print("Selected collection key is " + str(selected_collection_key))
 
     # ---------------------------------------
-    # --- Add noise to the initial guess atomic transformations to be calibrated.
+    # --- Add noise to the transformations and joint parameters to be calibrated.
     # ---------------------------------------
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
+    addNoiseToJointParameters(dataset, args, selected_collection_key)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models

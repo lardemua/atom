@@ -59,7 +59,7 @@ def getCvImageFromCollectionSensor(collection_key, sensor_key, dataset):
 
 
 def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset, graphics):
-    print('Creating pattern markers for pattern ' + pattern_key)
+    # print('Creating pattern markers for pattern ' + pattern_key)
     markers = MarkerArray()
 
     # Draw pattern frame lines_sampled (top, left, right, bottom)
