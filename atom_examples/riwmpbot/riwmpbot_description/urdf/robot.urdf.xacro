@@ -1,0 +1,262 @@
+<?xml version="1.0" ?>
+<robot name="riwmpbot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- ####################################### -->
+    <!-- Arguments and propperties-->
+    <!-- ####################################### -->
+    <!--Args are local, properties are global, so we copy the values of the arguments to the properties-->
+    <!--Properties are global so they can be viewed from inside the included xacros-->
+    <!--  args are used with $(arg arg_name), properties are used as ${property_name}-->
+
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+
+    <material name="tripod_color">
+        <color rgba="0.21 0.21 .21 1" />
+    </material>
+
+    <!-- Tables properties-->
+    <xacro:property name="table_height" value="0.795"/>
+    <xacro:property name="table_width" value=".9"/>
+    <xacro:property name="table_lenght" value="0.9"/>
+    <xacro:property name="table_tabletop_thickness" value="0.015"/>
+    <xacro:property name="table_leg_radius" value="0.02"/>
+
+    <!-- Manipulator's args and propperties -->
+    <xacro:arg name="joint_limit_params" default="$(find ur_description)/config/ur10e/joint_limits.yaml"/>
+    <xacro:arg name="physical_params" default="$(find ur_description)/config/ur10e/physical_parameters.yaml"/>
+    <xacro:arg name="kinematics_params" default="$(find ur_description)/config/ur10e/default_kinematics.yaml"/>
+    <xacro:arg name="visual_params" default="$(find ur_description)/config/ur10e/visual_parameters.yaml"/>
+<!--    <xacro:arg name="joint_limit_params" default=""/>-->
+<!--    <xacro:arg name="kinematics_params" default=""/>-->
+<!--    <xacro:arg name="physical_params" default=""/>-->
+<!--    <xacro:arg name="visual_params" default=""/>-->
+    <!-- legal values:
+          - hardware_interface/PositionJointInterface
+          - hardware_interface/VelocityJointInterface
+          - hardware_interface/EffortJointInterface
+    -->
+    <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+    <xacro:arg name="safety_limits" default="false"/>
+    <xacro:arg name="safety_pos_margin" default="0.15"/>
+    <xacro:arg name="safety_k_position" default="20"/>
+
+
+
+    <!-- ####################################### -->
+    <!-- Include files-->
+    <!-- ####################################### -->
+
+    <!-- Scene objets-->
+    <xacro:include filename="$(find riwmpbot_description)/urdf/properties.xacro"/>
+    <xacro:include filename="$(find riwmpbot_description)/urdf/table.macro.xacro"/>
+
+    <!-- Sensors-->
+    <xacro:include filename="$(find riwmpbot_description)/urdf/rgb_camera.urdf.xacro" />
+
+    <!-- Manipulator-->
+    <xacro:include filename="$(find ur_gazebo)/urdf/ur_macro.xacro"/>
+
+    <!-- ####################################### -->
+    <!-- Declare links and joints -->
+    <!-- ####################################### -->
+    <link name="world"/>
+
+    <!-- Place table 1 in the scene-->
+    <xacro:table_macro name="table" parent="world" width="${table_width}"
+                       lenght="${table_lenght}" height="${table_height}"
+                       tabletop_thickness="${table_tabletop_thickness}" leg_radius="${table_leg_radius}">
+        <origin xyz="-1 0 0" rpy="0 0 ${M_PI/2}" />
+    </xacro:table_macro>
+
+    <!--  Place manipulator1 in the scene-->
+    <xacro:ur_robot_gazebo
+            prefix=""
+            joint_limits_parameters_file="$(arg joint_limit_params)"
+            kinematics_parameters_file="$(arg kinematics_params)"
+            physical_parameters_file="$(arg physical_params)"
+            visual_parameters_file="$(arg visual_params)"
+            transmission_hw_interface="$(arg transmission_hw_interface)"
+            safety_limits="$(arg safety_limits)"
+            safety_pos_margin="$(arg safety_pos_margin)"
+            safety_k_position="$(arg safety_k_position)"/>
+
+    <!--  Place robot on top of the table1-->
+    <joint name="tabletop_table_to_ur10e" type="fixed">
+        <parent link="tabletop_table" />
+        <child link = "base_link"/>
+        <origin xyz="0.0 0.05 0.001" rpy="0.0 0.0 0.0" />
+    </joint>
+
+
+    <!-- Tripod link-->
+    <link name="tripod">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
+            </geometry>
+            <material name="tripod_color" />
+        </visual>
+        <collision name="tripod_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl"
+                    scale="1 1 1" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- world to tripod -->
+    <joint name="world_to_tripod" type="fixed">
+        <parent link="world" />
+        <child link="tripod" />
+        <origin xyz="-0.25 0.4 0" rpy="0 0 3.14" />
+    </joint>
+
+    <link name="tripod_plate">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.4 0.015" />
+            </geometry>
+            <material name="tripod_color" />
+        </visual>
+        <collision name="tripod_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.15 0.015" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- tripod to tripod plate-->
+    <joint name="tripod_to_tripod_plate" type="fixed">
+        <parent link="tripod" />
+        <child link="tripod_plate" />
+        <origin xyz=".01 .03 1.65" rpy="0 0.314 0" />
+    </joint>
+
+    <!-- Tripod center support-->
+    <link name="tripod_center_support" />
+
+    <!-- tripod plate to tripod center support -->
+    <joint name="tripod_plate_to_tripod_center_support" type="fixed">
+        <parent link="tripod_plate" />
+        <child link="tripod_center_support" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+
+    <!-- Hand Camera (place hand rgb in the end effector) -->
+    <xacro:rgb_camera parent="tripod_center_support" prefix="rgb_world" color_gazebo="Green">
+        <origin xyz="0 0 0.03" rpy="0 0.0 0" />
+        <color_rgb_rviz>
+            <material name="green">
+                <color rgba="0 0.9 0 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+    <!-- charuco 200x200_4x4 link-->
+    <link name="charuco_200x200_4x4">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"
+                    scale="1 1 1" />
+            </geometry>
+        </visual>
+        <collision name="charuco_200x200_4x4_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"
+                    scale="1 1 1" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- tripod plate to tripod center support -->
+    <joint name="flange_to_charuco_200x200_4x4" type="fixed">
+        <parent link="flange" />
+        <child link="charuco_200x200_4x4"/>
+        <origin xyz="0.06 -0.06 0" rpy="0 0 0" />
+    </joint>
+
+
+    <!-- charuco_170x100_3x6 link-->
+    <link name="charuco_170x100_3x6">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae"
+                    scale="1 1 1" />
+            </geometry>
+        </visual>
+        <collision name="charuco_170x100_3x6_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae"
+                    scale="1 1 1" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- forearm to charuco_170x100_3x6 -->
+    <joint name="forearm_to_charuco_170x100_3x6" type="fixed">
+        <parent link="forearm_link" />
+        <child link="charuco_170x100_3x6"/>
+        <origin xyz="-0.20 0.02 -0.03" rpy="0 0 3.14" />
+    </joint>
+
+    <!-- charuco_200x120_3x6 link-->
+    <link name="charuco_200x120_3x6">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae"
+                    scale="1 1 1" />
+            </geometry>
+        </visual>
+        <collision name="charuco_200x120_3x6_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae"
+                    scale="1 1 1" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- upper_arm to charuco_200x120_3x6 -->
+    <joint name="upper_arm_to_charuco_200x120_3x6" type="fixed">
+        <parent link="upper_arm_link" />
+        <child link="charuco_200x120_3x6"/>
+        <origin xyz="-0.24 0.03 0.09" rpy="0 0 3.14" />
+    </joint>
+
+
+</robot>
