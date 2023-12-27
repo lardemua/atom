@@ -650,6 +650,31 @@ def filterCollectionsFromDataset(dataset, args):
     return dataset
 
 
+def filterPatternsFromDataset(dataset, args):
+    """
+    Filters some patterns from the dataset, using the pattern_selection_function
+    :param dataset:
+    :param args: Makes use of 'pattern_selection_function'
+    """
+
+    if 'pattern_selection_function' in args:
+        if not args['pattern_selection_function'] is None:
+
+            deleted = []
+            for pattern_key in dataset['calibration_config']['calibration_patterns']:
+                if not args['pattern_selection_function'](pattern_key):  # use the lambda expression psf
+                    deleted.append(pattern_key)
+
+            for pattern_key in deleted:
+                del dataset['calibration_config']['calibration_patterns'][pattern_key]
+                for collection_key in dataset['collections']:
+                    del dataset['collections'][collection_key]['labels'][pattern_key]
+
+            print("Deleted patterns for calibration: " + str(deleted))
+
+    return dataset
+
+
 def filterJointsFromDataset(dataset, args):
     """
     Filters some joints to be calibrated from the dataset, using the joint_selection_function

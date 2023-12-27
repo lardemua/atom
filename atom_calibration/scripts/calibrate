@@ -21,8 +21,16 @@ from atom_calibration.calibration.getters_and_setters import (getterCameraIntrin
                                                               setterCameraIntrinsics, setterTransform)
 from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
-from atom_core.dataset_io import (addNoiseToInitialGuess, addNoiseToJointParameters, checkIfAtLeastOneLabeledCollectionPerSensor, filterCollectionsFromDataset, filterSensorsFromDataset, loadResultsJSON,
-                                  saveAtomDataset, filterJointsFromDataset, filterAdditionalTfsFromDataset)
+from atom_core.dataset_io import (addNoiseToInitialGuess,
+                                  addNoiseToJointParameters,
+                                  checkIfAtLeastOneLabeledCollectionPerSensor,
+                                  filterCollectionsFromDataset,
+                                  filterSensorsFromDataset,
+                                  loadResultsJSON,
+                                  saveAtomDataset,
+                                  filterJointsFromDataset,
+                                  filterAdditionalTfsFromDataset,
+                                  filterPatternsFromDataset)
 from atom_core.naming import generateName, generateKey
 from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor
 from atom_core.xacro_io import saveResultsXacro
@@ -100,9 +108,11 @@ def main():
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["left_arm_roll", "right_shoulder_lift"] , to load only '
                     "joints left_arm_roll and right_shoulder_lift")
+    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
     ap.add_argument("-atsf", "--additional_tf_selection_function", default=None, type=lambda s: eval(s, globals()),
-                    help="A string to be evaluated into a lambda function that receives an additional_tf name as input and "
-                    "returns True or False to indicate if the additional_tf should be calibrated (and used in the "
+                    help="A string to be evaluated into a lambda function that receives an additional_tf name as input and returns True or False to indicate if the additional_tf should be calibrated (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["base_link_to_base_link_mb", "left_wheel_to_base_link"] , to load only '
                     "additional_tfs base_link_to_base_link_mb and left_wheel_to_base_link")
@@ -141,6 +151,7 @@ def main():
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
     dataset = filterJointsFromDataset(dataset, args)
+    dataset = filterPatternsFromDataset(dataset, args)
     dataset = filterAdditionalTfsFromDataset(dataset, args)
     print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
           " sensors and " + str(len(dataset["collections"].keys())) + " collections.")
