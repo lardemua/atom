@@ -154,12 +154,13 @@ if __name__ == "__main__":
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
-    ap.add_argument("-pn", "--pattern_name", help="Name of the pattern for which the evaluation will be performed", type=str, default='')
+    ap.add_argument("-pn", "--pattern_name",
+                    help="Name of the pattern for which the evaluation will be performed", type=str, default='')
 
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                   "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+                    "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
 
     # parse args
     args = vars(ap.parse_known_args()[0])
@@ -181,7 +182,7 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- Get mixed json (calibrated transforms from train and the rest from test)
     # ---------------------------------------
-    original_mixed_dataset = getMixedDataset(train_dataset, test_dataset) 
+    original_mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
     # ---------------------------------------
     # --- Get intrinsic data for both sensors
@@ -206,13 +207,12 @@ if __name__ == "__main__":
     ss_frame = original_mixed_dataset['calibration_config']['sensors'][args['sensor_source']]['link']
     st_frame = original_mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
-
     # Patterns to evaluate
     if args['pattern_name'] == '':
         patterns_to_evaluate = original_mixed_dataset['calibration_config']['calibration_patterns'].keys()
     else:
         patterns_to_evaluate = [args['pattern_name']]
-    
+
     for pattern_key in patterns_to_evaluate:
         mixed_dataset = deepcopy(original_mixed_dataset)
         # Deleting collections where the pattern is not found by all sensors:
@@ -224,7 +224,7 @@ if __name__ == "__main__":
                     print(
                         Fore.RED + "Removing collection " + collection_key + ' -> pattern was not found in sensor ' +
                         sensor_key + ' (must be found in all sensors).' + Style.RESET_ALL)
-    
+
                     collections_to_delete.append(collection_key)
                     break
 
@@ -284,7 +284,7 @@ if __name__ == "__main__":
             # STEP 2. Compute sa_T_p
             # -------------------------------------------------------------
             _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
-                                        K_s, D_s)
+                                           K_s, D_s)
             ss_T_p = traslationRodriguesToTransform(tvecs, rvecs)
             # print('ss_T_p =\n' + str(ss_T_p))
 
@@ -326,7 +326,7 @@ if __name__ == "__main__":
             # print(corners_s_proj_to_t)
 
             # -------------------------------------------------------------
-            # STEP 8: Compute the error whenever a detection of a given corner is successfull in the source and also the target sensors.
+            # STEP 8: Compute the error whenever a detection of a given corner is successful in the source and also the target sensors.
             # -------------------------------------------------------------
             x_errors = []
             y_errors = []
@@ -341,7 +341,8 @@ if __name__ == "__main__":
 
                 if has_corresponding_id:
                     x_t, y_t = corners_t[0, label_t_idx], corners_t[1, label_t_idx]
-                    x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0, label_s_idx], corners_s_proj_to_t[1, label_s_idx]
+                    x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0,
+                                                                       label_s_idx], corners_s_proj_to_t[1, label_s_idx]
 
                     x_errors.append(abs(x_t - x_s_proj_to_t))
                     y_errors.append(abs(y_t - y_s_proj_to_t))
@@ -363,21 +364,21 @@ if __name__ == "__main__":
             target_frame = mixed_dataset['calibration_config']['sensors'][args['sensor_target']]['link']
 
             _, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_t],
-                                        np.array(corners_t[0: 2, :].T, dtype=np.float32),
-                                        K_t, D_t)
+                                           np.array(corners_t[0: 2, :].T, dtype=np.float32),
+                                           K_t, D_t)
             pattern_pose_target = traslationRodriguesToTransform(tvecs, rvecs)
 
             bTp = getTransform(common_frame, target_frame,
-                            mixed_dataset['collections'][collection_key]['transforms'])
+                               mixed_dataset['collections'][collection_key]['transforms'])
 
             pattern_pose_target = np.dot(bTp, pattern_pose_target)
 
             ret, rvecs, tvecs = cv2.solvePnP(objp.T[: 3, :].T[idxs_s], np.array(corners_s[0: 2, :].T, dtype=np.float32),
-                                            K_s, D_s)
+                                             K_s, D_s)
             pattern_pose_source = traslationRodriguesToTransform(tvecs, rvecs)
 
             bTp = getTransform(common_frame, source_frame,
-                            mixed_dataset['collections'][collection_key]['transforms'])
+                               mixed_dataset['collections'][collection_key]['transforms'])
 
             pattern_pose_source = np.dot(bTp, pattern_pose_source)
 
@@ -416,10 +417,12 @@ if __name__ == "__main__":
 
                     x_t, y_t = corners_t[0, label_t_idx], corners_t[1, label_t_idx]
                     x_s, y_s = corners_s[0, label_s_idx], corners_s[1, label_s_idx]
-                    x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0, label_s_idx], corners_s_proj_to_t[1, label_s_idx]
+                    x_s_proj_to_t, y_s_proj_to_t = corners_s_proj_to_t[0,
+                                                                       label_s_idx], corners_s_proj_to_t[1, label_s_idx]
 
                     if has_corresponding_id:
-                        color = (cmap[label_s['id'], 2] * 255, cmap[label_s['id'], 1] * 255, cmap[label_s['id'], 0] * 255)
+                        color = (cmap[label_s['id'], 2] * 255, cmap[label_s['id'], 1]
+                                 * 255, cmap[label_s['id'], 0] * 255)
 
                         # Draw labels on source image (crosses)
                         drawCross2D(image_gui_s, x_s, y_s, 5, color=color, thickness=1)
@@ -455,16 +458,17 @@ if __name__ == "__main__":
         # -------------------------------------------------------------
         table_header = ['Collection #', 'RMS (pix)', 'X err (pix)', 'Y err (pix)', 'Trans (mm)', 'Rot (deg)']
         table = PrettyTable(table_header)
-        table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+        # table to save. This table was created, because the original has colors and the output csv save them as random characters
+        table_to_save = PrettyTable(table_header)
 
         od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
         for collection_key, collection in od.items():
             row = [collection_key,
-                '%.4f' % e[collection_key]['rms'],
-                '%.4f' % e[collection_key]['x'],
-                '%.4f' % e[collection_key]['y'],
-                '%.4f' % e[collection_key]['trans'],
-                '%.4f' % e[collection_key]['rot']]
+                   '%.4f' % e[collection_key]['rms'],
+                   '%.4f' % e[collection_key]['x'],
+                   '%.4f' % e[collection_key]['y'],
+                   '%.4f' % e[collection_key]['trans'],
+                   '%.4f' % e[collection_key]['rot']]
 
             table.add_row(row)
             table_to_save.add_row(row)
@@ -521,12 +525,12 @@ if __name__ == "__main__":
         print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
         print(table)
 
-        # save results in csv file 
-        if args['save_file_results']: 
+        # save results in csv file
+        if args['save_file_results']:
             if args['save_file_results_name'] is None:
                 results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
                 saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
-            else: 
+            else:
                 with open(args['save_file_results_name'], 'w', newline='') as f_output:
                     f_output.write(table_to_save.get_csv_string())
 

@@ -399,7 +399,7 @@
     <child link="base_link_inertia"/>
   </joint>
   <joint name="shoulder_pan_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.008890193659224334"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="shoulder_link"/>
@@ -407,7 +407,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="shoulder_lift_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.008890171935160953"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
@@ -415,7 +415,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="elbow_joint" type="revolute">
-    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.025686301279139782"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -423,7 +423,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_1_joint" type="revolute">
-    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.03120098064039958"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_1_link"/>
@@ -431,7 +431,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_2_joint" type="revolute">
-    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.0"/>
+    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 -0.021298137887970636"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_1_link"/>
     <child link="wrist_2_link"/>
@@ -439,7 +439,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_3_joint" type="revolute">
-    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.141592653589793"/>
+    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.13075084398692"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_2_link"/>
     <child link="wrist_3_link"/>
@@ -495,7 +495,7 @@
     <child link="base_link"/>
   </joint>
   <joint name="rgb_hand_joint" type="fixed">
-    <origin xyz="-0.01990185590294675 -0.0015539059894699035 0.06484572412936336" rpy="0.010604682853474478 0.0011472278262240274 -0.0002151756429437089"/>
+    <origin xyz="-0.021655607917021997 -0.00390675426651832 0.06475692382180025" rpy="0.03044414300186205 0.0013822999375349206 0.0008670472196217079"/>
     <parent link="flange"/>
     <child link="rgb_hand_link"/>
   </joint>
@@ -572,7 +572,7 @@
     </visual>
   </link>
   <joint name="world-pattern_link" type="fixed">
-    <origin xyz="-1.0739689399784635 0.29097701455538144 0.8086462226274849" rpy="3.1222672111343126 0.008621355988864494 0.02243043709005299"/>
+    <origin xyz="-1.0770226772570606 0.2931901408646521 0.8003184404186438" rpy="3.1217472174026617 0.03275960050931226 0.029816861385440114"/>
     <parent link="world"/>
     <child link="pattern_link"/>
   </joint>

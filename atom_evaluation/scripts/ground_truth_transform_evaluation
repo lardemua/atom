@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+
+"""
+Reads the calibration results from two json files and computes the evaluation metrics.
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+# Standard imports
+import argparse
+import copy
+import json
+from collections import OrderedDict
+import sys
+
+# ROS imports
+import numpy as np
+from colorama import Style, Fore
+from prettytable import PrettyTable
+
+# Atom imports
+from atom_core.atom import getTransform
+from atom_core.utilities import saveFileResults
+from atom_core.naming import generateKey
+from atom_core.dataset_io import getMixedDataset, loadResultsJSON
+from atom_core.geometry import matrixToRodrigues
+from atom_core.transformations import compareTransforms
+
+# -------------------------------------------------------------------------------
+# --- CLASSES
+# -------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-train_json", "--train_json_file",
+                    help="Json file containing train input dataset.", type=str, required=True)
+    ap.add_argument("-test_json", "--test_json_file",
+                    help="Json file containing test input dataset.", type=str, required=True)
+    ap.add_argument("-p", "--parent", help="Target transformation frame. If no frame is provided, the first link in the calibration chain after the reference frame will be assigned.", type=str, required=True)
+    ap.add_argument("-c", "--child", help="Source transformation frame. If no frame is provided, the errors will be computed for all estimated frames.", type=str, required=True)
+    # save results in a csv file
+    ap.add_argument("-sac", "--show_all_collections", help="In the outputted table, it displays the result for every collections, as opposed to the averages.",
+                    required=False, action="store_true", default=False)
+    ap.add_argument("-sfr", "--save_file_results",
+                    help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
+                    "Default: {name_of_dataset}_ground_truth_frame_results.csv", type=str, required=False)
+
+    args = vars(ap.parse_known_args()[0])
+    # ---------------------------------------
+    # --- INITIALIZATION Read calibration data from file
+    # ---------------------------------------
+    train_dataset, _ = loadResultsJSON(args["train_json_file"])
+    test_dataset, _ = loadResultsJSON(args["test_json_file"])
+
+    # --- Get mixed json (calibrated transforms from train and the rest from test)
+    mixed_dataset = getMixedDataset(train_dataset, test_dataset)
+
+    # ---------------------------------------
+    # --- STEP 1: Calculate error values and append into a dict
+    # ---------------------------------------
+
+    errors_dict = {}
+    # TODO should we use the ground truth data in the dataset?
+    for collection_key, collection in test_dataset['collections'].items():
+
+        # get ground truth transform (from the test dataset)
+        T_test = getTransform(args['parent'], args['child'], collection['transforms'])
+
+        # get calibrated transform (from the mixed dataset)
+        T_calibrated = getTransform(args['parent'], args['child'],
+                                    mixed_dataset['collections'][collection_key]['transforms'])
+
+        # Compare both transforms
+        translation_error, rotation_error, x, y, z, roll, pitch, yaw = compareTransforms(T_test, T_calibrated)
+
+        errors_dict[collection_key] = {'translation_error': translation_error,
+                                       'rotation_error': rotation_error,
+                                       'x': x, 'y': y, 'z': z,
+                                       'roll': roll, 'pitch': pitch, 'yaw': yaw}
+
+    # print(errors_dict)
+
+    # Produce the table
+    header = ['Collection #', 'Trans (m)', 'Rot (rad)', 'X (m)', 'Y (m)', 'Z (m)',
+              'Roll (rad)', 'Pitch (rad)', 'Yaw (rad)']
+
+    table = PrettyTable(header)
+
+    for collection_key, collection in errors_dict.items():
+        row = [collection_key,
+               '%.4f' % collection['translation_error'],
+               '%.4f' % collection['rotation_error'],
+               '%.4f' % collection['x'],
+               '%.4f' % collection['y'],
+               '%.4f' % collection['z'],
+               '%.4f' % collection['roll'],
+               '%.4f' % collection['pitch'],
+               '%.4f' % collection['yaw'],
+               ]
+
+        table.add_row(row)
+
+#     bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.NORMAL)
+#     bottom_row_save.append('Averages')
+#
+    print(float(np.average([x['translation_error'] for _, x in errors_dict.items()])))
+
+    row = [Fore.BLUE + 'Averages' + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['translation_error']
+                           for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['rotation_error']
+                           for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['x'] for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['y'] for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['z'] for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['roll'] for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['pitch'] for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           Fore.BLUE + str(round(float(np.average([x['yaw'] for _, x in errors_dict.items()])), 4)) + Style.RESET_ALL,
+           ]
+
+    table.add_row(row)
+    table.align = 'c'
+    print(Style.BRIGHT + 'Errors per frame' + Style.RESET_ALL)
+    print(table)

@@ -29,6 +29,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   loadResultsJSON,
                                   saveAtomDataset,
                                   filterJointsFromDataset,
+                                  filterJointParametersFromDataset,
                                   filterAdditionalTfsFromDataset,
                                   filterPatternsFromDataset)
 from atom_core.naming import generateName, generateKey
@@ -108,6 +109,10 @@ def main():
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["left_arm_roll", "right_shoulder_lift"] , to load only '
                     "joints left_arm_roll and right_shoulder_lift")
+    ap.add_argument("-jpsf", "--joint_parameter_selection_function", default=None, type=lambda s: eval(s, globals()),
+                    help="A string to be evaluated into a lambda function that receives a joint parameter name as input and returns True or False to indicate if the joint parameter should be calibrated (and used in the "
+                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    'language. Example: lambda name: name in ["joint_position_bias", "origin_roll"] , to use only these parameters')
     ap.add_argument("-psf", "--pattern_selection_function", default=None, type=lambda s: eval(s, globals()),
                     help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
@@ -151,6 +156,7 @@ def main():
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
     dataset = filterJointsFromDataset(dataset, args)
+    dataset = filterJointParametersFromDataset(dataset, args)
     dataset = filterPatternsFromDataset(dataset, args)
     dataset = filterAdditionalTfsFromDataset(dataset, args)
     print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
@@ -409,7 +415,7 @@ def main():
         seed = args["sample_seed"]
 
     rng = random.Random(seed)
-    print("RNG Seed: " + str(seed))
+    # print("RNG Seed: " + str(seed))
 
     for collection_key, collection in dataset["collections"].items():
         for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
@@ -557,8 +563,7 @@ def main():
     print("Initializing optimization ...")
     options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
     # options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
-    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,
-    #    'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,

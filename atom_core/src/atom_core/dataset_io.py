@@ -9,6 +9,8 @@ import numpy as np
 
 # Opencv imports
 import cv2
+from atom_core.joint_models import getTransformationFromRevoluteJoint
+from atom_core.utilities import atomError
 
 # Ros imports
 import rospy
@@ -672,6 +674,35 @@ def filterPatternsFromDataset(dataset, args):
 
             print("Deleted patterns for calibration: " + str(deleted))
 
+        if not dataset['calibration_config']['calibration_patterns']:
+            atomError('There are no patterns in the dataset. Cannot continue.')
+
+    return dataset
+
+
+def filterJointParametersFromDataset(dataset, args):
+    """
+    Filters some joint parameters to be calibrated from the dataset, using the joint_parameter_selection_function
+    :param dataset:
+    :param args: Makes use of 'joint_parameter_selection_function'
+    """
+
+    if 'joint_parameter_selection_function' in args:
+        if not args['joint_parameter_selection_function'] is None:
+            for joint_key, joint in dataset['calibration_config']['joints'].items():
+
+                deleted = []
+                for param in joint['params_to_calibrate']:
+
+                    if not args['joint_parameter_selection_function'](param):  # use the lambda expression jsf
+                        deleted.append(param)
+
+                for param in deleted:
+                    print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
+                    dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(param)
+
+                print("Deleted parameters " + str(deleted) + ' from joint ' + joint_key)
+
     return dataset
 
 
@@ -865,7 +896,7 @@ def copyTFToDataset(calibration_parent, calibration_child, source_dataset, targe
 def getMixedDataset(train_dataset, test_dataset):
     """Creates a mixed dataset from the train and test datasets.
 
-    This is used for evaluating, when we want the transformations between sensors (and also the intrinsics) estimated during calibration and stored in the train dataset, combined with previsously unseen collections, which come from the test dataset.
+    This is used for evaluating, when we want the transformations between sensors (and also the intrinsics) estimated during calibration and stored in the train dataset, combined with previously unseen collections, which come from the test dataset.
 
     Args:
         train_dataset (dict): An ATOM dataset produced through calibration.
@@ -878,6 +909,7 @@ def getMixedDataset(train_dataset, test_dataset):
     # Replace optimized transformations in the test dataset copying from the train dataset
     for _, sensor in train_dataset['sensors'].items():
         copyTFToDataset(sensor['calibration_parent'], sensor['calibration_child'], train_dataset, mixed_dataset)
+
     if train_dataset['calibration_config']['additional_tfs']:
         for _, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
             copyTFToDataset(additional_tf['parent_link'], additional_tf['child_link'], train_dataset, mixed_dataset)
@@ -889,6 +921,35 @@ def getMixedDataset(train_dataset, test_dataset):
             mixed_dataset['sensors'][train_sensor_key]['camera_info']['K'] = train_sensor['camera_info']['K']
             mixed_dataset['sensors'][train_sensor_key]['camera_info']['P'] = train_sensor['camera_info']['P']
             mixed_dataset['sensors'][train_sensor_key]['camera_info']['R'] = train_sensor['camera_info']['R']
+
+    # Because we know all joint parameters are static, we can use a single collection from the train dataset
+    train_selected_collection_key = list(train_dataset['collections'].keys())[0]
+
+    # Copy the joint parameters from the train to the mixed dataset
+    if train_dataset['calibration_config']['joints'] is not None:
+
+        for config_joint_key, config_joint in train_dataset['calibration_config']['joints'].items():
+
+            for param_to_calibrate in config_joint['params_to_calibrate']:
+
+                # Because we know all joint parameters are static throughout all collections, it means we can pick up the value for a single train_selected_collection_key and copy it to all collections in the mixed dataset.
+                calibrated_value = train_dataset['collections'][train_selected_collection_key]['joints'][config_joint_key][param_to_calibrate]
+
+                # Now copy that value to all collections in the mixed dataset
+                for collection_key, collection in mixed_dataset['collections'].items():
+                    collection['joints'][config_joint_key][param_to_calibrate] = calibrated_value
+
+        # Read all joints being optimized, and correct the corresponding transforms
+        # print('Updating transforms from calibrated joints ...')
+        for collection_key, collection in mixed_dataset['collections'].items():
+            # print('Collection ' + collection_key)
+            for joint_key, joint in collection['joints'].items():
+
+                # Get the transformation from the joint configuration defined in the xacro, and the current joint value
+                quat, trans = getTransformationFromRevoluteJoint(joint)
+
+                collection['transforms'][joint['transform_key']]['quat'] = quat
+                collection['transforms'][joint['transform_key']]['trans'] = trans
 
     return mixed_dataset
 
