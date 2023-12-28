@@ -1,5 +1,8 @@
 <?xml version="1.0" ?>
-<robot name="jcpbbot" version="1.0">
+<robot name="riwmpbot" version="1.0">
+  <material name="tripod_color">
+    <color rgba="0.21 0.21 0.21 1.0"/>
+  </material>
   <material name="Yellow">
     <color rgba="1.0 1.0 0.0 1.0"/>
   </material>
@@ -28,14 +31,14 @@
     <visual>
       <origin xyz="0.0 0.0 -0.015" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.9 1.9 0.015"/>
+        <box size="0.9 0.9 0.015"/>
       </geometry>
       <material name="grey"/>
     </visual>
     <collision name="base_link_collision">
       <origin xyz="0.0 0.0 -0.015" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="0.9 1.9 0.015"/>
+        <box size="0.9 0.9 0.015"/>
       </geometry>
     </collision>
   </link>
@@ -81,7 +84,7 @@
     <selfCollide>true</selfCollide>
   </gazebo>
   <joint name="table_to_leg1" type="fixed">
-    <origin xyz="-0.43 0.9299999999999999 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.43 0.43 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="table"/>
     <child link="leg1_table"/>
   </joint>
@@ -114,7 +117,7 @@
     <selfCollide>true</selfCollide>
   </gazebo>
   <joint name="table_to_leg2" type="fixed">
-    <origin xyz="0.43 0.9299999999999999 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.43 0.43 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="table"/>
     <child link="leg2_table"/>
   </joint>
@@ -147,7 +150,7 @@
     <selfCollide>true</selfCollide>
   </gazebo>
   <joint name="table_to_leg3" type="fixed">
-    <origin xyz="0.43 -0.9299999999999999 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.43 -0.43 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="table"/>
     <child link="leg3_table"/>
   </joint>
@@ -180,7 +183,7 @@
     <selfCollide>true</selfCollide>
   </gazebo>
   <joint name="table_to_leg4" type="fixed">
-    <origin xyz="-0.43 -0.9299999999999999 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.43 -0.43 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="table"/>
     <child link="leg4_table"/>
   </joint>
@@ -399,7 +402,7 @@
     <child link="base_link_inertia"/>
   </joint>
   <joint name="shoulder_pan_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.002258933272881404 -0.005452007879327612 0.19318967649940175" rpy="-0.015076351732913353 0.0037567565236984834 0.003862401350425072"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="shoulder_link"/>
@@ -407,7 +410,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="shoulder_lift_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.0"/>
+    <origin xyz="-0.0002721307181949406 0.0025471017252344077 -0.018156375079865218" rpy="1.5673243223322884 0.003850317754632484 0.04277095580032025"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
@@ -415,7 +418,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="elbow_joint" type="revolute">
-    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.6229732823063552 0.011468301552393211 0.0036496054817145053" rpy="0.028450822769222242 -0.015489667469106877 -0.028710725868394724"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -423,7 +426,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_1_joint" type="revolute">
-    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.578433010298134 0.015615992503028777 0.16693822012959603" rpy="-0.021361464338510654 -0.005027183082571024 0.00767077527438266"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_1_link"/>
@@ -431,7 +434,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_2_joint" type="revolute">
-    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.0"/>
+    <origin xyz="0.004578767240427557 -0.11021223367714443 0.008909897334099363" rpy="1.5446759508506889 0.006531824935019179 -0.003492875866452135"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_1_link"/>
     <child link="wrist_2_link"/>
@@ -439,7 +442,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_3_joint" type="revolute">
-    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.141592653589793"/>
+    <origin xyz="-0.002822127564264542 0.10221911062284902 0.004813985937192047" rpy="1.5900694180491868 3.1650233656910447 3.1388761143970254"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_2_link"/>
     <child link="wrist_3_link"/>
@@ -490,52 +493,108 @@
     </plugin>
   </gazebo>
   <joint name="tabletop_table_to_ur10e" type="fixed">
-    <origin xyz="0.0 0.25 0.001" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.05 0.001" rpy="0.0 0.0 0.0"/>
     <parent link="tabletop_table"/>
     <child link="base_link"/>
   </joint>
-  <joint name="rgb_hand_joint" type="fixed">
-    <origin xyz="-0.019790621373415748 0.0023615793153225237 0.06495742689890131" rpy="-0.04888399068936439 0.0013872318523891689 -0.00040570409818855717"/>
-    <parent link="flange"/>
-    <child link="rgb_hand_link"/>
+  <link name="tripod">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="tripod_color"/>
+    </visual>
+    <collision name="tripod_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="world_to_tripod" type="fixed">
+    <origin xyz="-0.25 0.4 0.0" rpy="0.0 0.0 3.14"/>
+    <parent link="world"/>
+    <child link="tripod"/>
   </joint>
-  <link name="rgb_hand_link">
+  <link name="tripod_plate">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.04 0.4 0.015"/>
+      </geometry>
+      <material name="tripod_color"/>
+    </visual>
+    <collision name="tripod_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.04 0.15 0.015"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="tripod_to_tripod_plate" type="fixed">
+    <origin xyz="0.01 0.03 1.65" rpy="0.0 0.314 0.0"/>
+    <parent link="tripod"/>
+    <child link="tripod_plate"/>
+  </joint>
+  <link name="tripod_center_support"/>
+  <joint name="tripod_plate_to_tripod_center_support" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="tripod_plate"/>
+    <child link="tripod_center_support"/>
+  </joint>
+  <joint name="rgb_world_joint" type="fixed">
+    <origin xyz="0.008289981258439199 -0.015813501997259425 0.01595613024005547" rpy="-0.01120040992865985 -0.014582564928126984 0.018579125786226145"/>
+    <parent link="tripod_center_support"/>
+    <child link="rgb_world_link"/>
+  </joint>
+  <link name="rgb_world_link">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
       <mass value="0.00564"/>
       <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
     </inertial>
     <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="-0.01 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://jcpbbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://riwmpbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
       </geometry>
       <material name="green">
         <color rgba="0.0 0.9 0.0 1.0"/>
       </material>
     </visual>
     <collision>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="-0.01 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://jcpbbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://riwmpbot_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
       </geometry>
     </collision>
   </link>
-  <gazebo reference="rgb_hand_link">
+  <gazebo reference="rgb_world_link">
     <selfCollide>false</selfCollide>
     <material>Gazebo/Green</material>
   </gazebo>
-  <joint name="rgb_hand_optical_joint" type="fixed">
+  <joint name="rgb_world_optical_joint" type="fixed">
     <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
-    <parent link="rgb_hand_link"/>
-    <child link="rgb_hand_optical_frame"/>
+    <parent link="rgb_world_link"/>
+    <child link="rgb_world_optical_frame"/>
   </joint>
-  <link name="rgb_hand_optical_frame"/>
-  <gazebo reference="rgb_hand_link">
+  <link name="rgb_world_optical_frame"/>
+  <gazebo reference="rgb_world_link">
     <sensor name="camera" type="camera">
       <update_rate>10.0</update_rate>
       <camera>
-        <horizontal_fov>1.3962634015954636</horizontal_fov>
+        <horizontal_fov>1.0471975511965976</horizontal_fov>
         <image>
           <format>B8G8R8</format>
           <width>1200</width>
@@ -546,13 +605,13 @@
           <far>8.0</far>
         </clip>
       </camera>
-      <plugin filename="libgazebo_ros_camera.so" name="rgb_hand_rgb_camera_controller">
-        <cameraName>rgb_hand</cameraName>
+      <plugin filename="libgazebo_ros_camera.so" name="rgb_world_rgb_camera_controller">
+        <cameraName>rgb_world</cameraName>
         <alwaysOn>true</alwaysOn>
         <updateRate>0</updateRate>
         <imageTopicName>image_raw</imageTopicName>
         <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>rgb_hand_optical_frame</frameName>
+        <frameName>rgb_world_optical_frame</frameName>
         <baseline>0.0</baseline>
         <distortion_k1>0.0</distortion_k1>
         <distortion_k2>0.0</distortion_k2>
@@ -562,4 +621,76 @@
       </plugin>
     </sensor>
   </gazebo>
+  <link name="charuco_200x200_4x4">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision name="charuco_200x200_4x4_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="flange_to_charuco_200x200_4x4" type="fixed">
+    <origin xyz="0.06 -0.06 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="flange"/>
+    <child link="charuco_200x200_4x4"/>
+  </joint>
+  <link name="charuco_170x100_3x6">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision name="charuco_170x100_3x6_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="forearm_to_charuco_170x100_3x6" type="fixed">
+    <origin xyz="-0.2 0.02 -0.03" rpy="0.0 0.0 3.14"/>
+    <parent link="forearm_link"/>
+    <child link="charuco_170x100_3x6"/>
+  </joint>
+  <link name="charuco_200x120_3x6">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision name="charuco_200x120_3x6_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="upper_arm_to_charuco_200x120_3x6" type="fixed">
+    <origin xyz="-0.24 0.03 0.09" rpy="0.0 0.0 3.14"/>
+    <parent link="upper_arm_link"/>
+    <child link="charuco_200x120_3x6"/>
+  </joint>
 </robot>
