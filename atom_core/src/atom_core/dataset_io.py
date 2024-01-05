@@ -761,10 +761,13 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
     """
     if args['sample_seed'] is not None:
         np.random.seed(args['sample_seed'])
-
+    
     max_joint_position_error = args['joint_noisy_initial_guess'][0]
     max_translation_error = args['joint_noisy_initial_guess'][1]
     max_rotation_error = args['joint_noisy_initial_guess'][2]
+
+    if max_joint_position_error == 0 and max_translation_error == 0 and max_rotation_error == 0:
+        return
 
     if dataset['calibration_config']['joints'] is None:  # nothing to do if no joints are being optimized
         return
