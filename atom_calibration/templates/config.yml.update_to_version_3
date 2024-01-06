@@ -117,11 +117,11 @@ joints:
   #
   #       params_to_calibrate:
   #           This is the list of parameters that will be optimized, from the urdf definition (http://wiki.ros.org/urdf/XML/joint):
-  #           ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
+  #           ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
   #
   # EXAMPLE:
   #head_pan_joint:
-  #  params_to_calibrate: ['position_bias']
+  #  params_to_calibrate: ['origin_yaw']
   {%- if c.joints.items is defined -%}
   {% for joint_key, joint_value in c.joints.items() %}
   {{ joint_key }}:

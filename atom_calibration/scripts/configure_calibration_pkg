@@ -458,8 +458,7 @@ if __name__ == "__main__":
 
     # Verify if joints calibrate parameters are valid
     if config['joints'] is not None:
-        allowed_params = ['origin_x', 'origin_y', 'origin_z',
-                          'origin_roll', 'origin_pitch', 'origin_yaw', 'position_bias']
+        allowed_params = ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
         for joint_key, joint in config['joints'].items():
             for param in joint['params_to_calibrate']:
                 if not param in allowed_params:

@@ -65,7 +65,6 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
 
         if not found:
             raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
-    
 
         calibration_config = dataset['calibration_config']
         if calibration_config['joints'] is not None:
@@ -76,17 +75,6 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
 
                     joint.origin.xyz = [joint_dict['origin_x'], joint_dict['origin_y'], joint_dict['origin_z']]
                     joint.origin.rpy = [joint_dict['origin_roll'], joint_dict['origin_pitch'], joint_dict['origin_yaw']]
-
-                    if hasattr(joint, "calibration"):
-                        if hasattr(joint.calibration, 'rising') and joint.calibration.rising != 0:
-                            joint.calibration.rising = deepcopy(joint.calibration.rising) + joint_dict['position_bias']
-                        elif hasattr(joint.calibration, 'falling') and joint.calibration.falling != 0:
-                            joint.calibration.falling = deepcopy(joint.calibration.falling) + joint_dict['position_bias']
-                    elif joint_dict['position_bias'] != 0:
-                        calibration = JointCalibration(rising=joint_dict['position_bias'])
-                        joint.calibration = calibration
-
-
 
     time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     file_name = "optimized_" + time + ".urdf.xacro"
@@ -118,31 +106,31 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         pattern_mesh = Mesh(filename=pattern['mesh_file'])
         pattern_visual = Visual(name=pattern_key + '_visual',
                                 geometry=pattern_mesh,
-                                origin=URDFPose(xyz=[0,0,0], rpy=[0,0,0]))
+                                origin=URDFPose(xyz=[0, 0, 0], rpy=[0, 0, 0]))
         pattern_link = Link(name=pattern['link'],
                             visual=pattern_visual,
-                            origin=URDFPose(xyz=[0,0,0], rpy=[0,0,0]))
+                            origin=URDFPose(xyz=[0, 0, 0], rpy=[0, 0, 0]))
         xml_robot.add_link(pattern_link)
-        
+
         transform_key = generateKey(pattern['parent_link'], pattern['link'], suffix='')
         trans = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["trans"])
         quat = list(dataset["collections"][selected_collection_key]["transforms"][transform_key]["quat"])
         rpy = list(tf.transformations.euler_from_quaternion(quat, axes="sxyz"))
 
-        pattern_joint = Joint(name= pattern['parent_link'] + '-' + pattern['link'],
+        pattern_joint = Joint(name=pattern['parent_link'] + '-' + pattern['link'],
                               parent=pattern['parent_link'],
                               child=pattern['link'],
                               joint_type='fixed',
                               origin=URDFPose(xyz=trans, rpy=rpy))
-        
+
         xml_robot.add_joint(pattern_joint)
 
         optimized_w_pattern_urdf_file = path_to_urdf_directory + 'optimized_w_pattern.urdf.xacro'
         with open(optimized_w_pattern_urdf_file, "w", ) as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-    print("Optimized xacro with pattern saved to " + str(optimized_w_pattern_urdf_file) + " . You can use it as a ROS robot_description.")
-
+    print("Optimized xacro with pattern saved to " + str(optimized_w_pattern_urdf_file) +
+          " . You can use it as a ROS robot_description.")
 
     print("You can use it as a ROS robot_description by launching:\n" +
           Fore.BLUE + 'roslaunch ' + package_name + ' playbag.launch optimized:=true' + Style.RESET_ALL)

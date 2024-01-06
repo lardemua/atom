@@ -71,7 +71,7 @@ The configuration produces a [visual schematic summarizing](https://github.com/l
 
 As we can see the calibration configuration will estimate the parameters of a complete static transformation, from **flange** to **rgb_hand_link**. These are the parameters that will position the rgb_hand sensor w.r.t. the end effector of the robotic manipulator. This component is a classical eye-in-hand calibration, as discussed in the [rihbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rihbot) example.
 
-The additional complexity comes from the calibration of the **position_bias** parameters of all of the manipulator's revolute joints, which is also visible in the image.
+The additional complexity comes from the calibration of the **origin_yaw** parameters of all of the manipulator's revolute joints, which is also visible in the image.
 
 Finally, the system will use a single calibration pattern, a charuco which is static in the scene.
 

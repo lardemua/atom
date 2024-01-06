@@ -442,7 +442,7 @@ class DataCollector:
             for config_joint_key, config_joint in self.config['joints'].items():
 
                 # TODO should we set the position bias
-                config_joint_dict = {'transform_key': None, 'position_bias': 0.0, 'position': None}
+                config_joint_dict = {'transform_key': None, 'position': None}
 
                 # find joint in xacro
                 found_in_urdf = False

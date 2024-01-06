@@ -29,55 +29,6 @@ def jointStateMsgReceived(msg, description, br):
     for name, position in zip(msg.name, msg.position):
         joint_dict = {}
         joint_dict['position'] = position
-        # joint_dict['position_bias'] = 45*3.14/180
-        joint_dict['position_bias'] = 0
-
-        # ---------------------------------------------------------
-        # Find joint in xacro
-        # ---------------------------------------------------------
-        found_joint_in_xacro = False
-        for urdf_joint in description.joints:
-            if urdf_joint.name == name:
-                joint_name = urdf_joint.name
-
-                x, y, z = urdf_joint.origin.xyz
-                roll, pitch, yaw = urdf_joint.origin.rpy
-                joint_dict['origin_x'] = x
-                joint_dict['origin_y'] = y
-                joint_dict['origin_z'] = z
-                joint_dict['origin_roll'] = roll
-                joint_dict['origin_pitch'] = pitch
-                joint_dict['origin_yaw'] = yaw
-
-                ax, ay, az = urdf_joint.axis
-                joint_dict['axis_x'] = ax
-                joint_dict['axis_y'] = ay
-                joint_dict['axis_z'] = az
-
-                joint_dict['joint_type'] = urdf_joint.type
-                joint_dict['parent_link'] = urdf_joint.parent
-                joint_dict['child_link'] = urdf_joint.child
-
-                break
-
-        if found_joint_in_xacro:
-            raise ValueError('Description file does not have a joint ' + name)
-
-        # ---------------------------------------------------------
-        # Get transformation from joint
-        # ---------------------------------------------------------
-        quat, trans = getTransformationFromJoint(joint_dict)
-        print('transform for joint ' + name + ' with parent ' +
-              joint_dict['parent_link'] + ' and child ' + joint_dict['child_link'] + ' is\nquat=' + str(quat) + ' , trans=' + str(trans))
-
-        child_alternative = joint_dict['child_link'] + '_alternative'
-        br.sendTransform(trans, quat, rospy.Time.now(), child_alternative, joint_dict['parent_link'])
-
-    for name, position in zip(msg.name, msg.position):
-        joint_dict = {}
-        joint_dict['position'] = position
-        # joint_dict['position_bias'] = 45*3.14/180
-        joint_dict['position_bias'] = 0
 
         # ---------------------------------------------------------
         # Find joint in xacro

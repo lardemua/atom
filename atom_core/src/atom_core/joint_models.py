@@ -13,7 +13,7 @@ def getTransformationFromJoint(joint):
 
         # STEP 1: compute the rotation matrix due to the joint revolution position
         joint_axis = [joint['axis_x'], joint['axis_y'], joint['axis_z']]
-        joint_position_matrix = rotation_matrix(joint['position']+joint['position_bias'], joint_axis, point=None)
+        joint_position_matrix = rotation_matrix(joint['position'], joint_axis, point=None)
 
     elif joint['joint_type'] == 'prismatic':
 
