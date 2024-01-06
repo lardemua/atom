@@ -762,7 +762,7 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
     if dataset['calibration_config']['joints'] is None:  # nothing to do if no joints are being optimized
         return
 
-    if args['joint_bias_names'] is None:
+    if args['joint_bias_names'] is None or args['joint_bias_values'] is None:
         return
 
     if not len(args['joint_bias_names']) == len(args['joint_bias_values']):

@@ -66,7 +66,7 @@ Next we describe each of the steps in the calibration pipeline.
 
 The instructions in [How to Run](#how-to-run) will produce a bagfile that will contain joint values in the **/joint_states** message topic. Since these are produced by a simulation, the values will be perfect. To test the calibration of joint bias, we need to insert some bias to disrupt those perfect measurements, using the following command:
 
-    rosrun atom_calibration add_noise_to_joint_state_in_bag -bfi $ROS_BAGS/jcpbbot/train.bag -bfo $ROS_BAGS/jcpbbot/train_with_noise.bag -jn shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint shoulder_pan_joint -jb 0.034 -0.03 0.05 0.01 -0.03 -0.01
+    rosrun atom_calibration add_noise_to_joint_state_in_bag -bfi $ROS_BAGS/mrjbot/train.bag -bfo $ROS_BAGS/mrjbot/train_with_noise.bag -jn shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint shoulder_pan_joint -jb 0.034 -0.03 0.05 0.01 -0.03 -0.01
 
 which means we are introducing a bias in the joints values of non-neglectable magnitude, which should present a challenge for the calibration.
 

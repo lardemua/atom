@@ -80,7 +80,7 @@ rlbot:
             extract_to: train
             id: 1kM3D4aUORKMxdsz9krnpeDSXNrmXxltp
 
-jcpbbot:
+mrjbot:
     bagfiles:
         train:
             file: train.bag
