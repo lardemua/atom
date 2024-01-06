@@ -416,7 +416,7 @@
     </collision>
   </link>
   <joint name="j1_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.182" rpy="0.0 0.0 0.00020510188108347543"/>
+    <origin xyz="0.0 0.0 0.182" rpy="0.0 0.0 -0.010299416941399108"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="upper_arm_link"/>
@@ -443,7 +443,7 @@
     </collision>
   </link>
   <joint name="j2_joint" type="revolute">
-    <origin xyz="0.35 0.0 0.022" rpy="0.0 0.0 -0.00017655759239303733"/>
+    <origin xyz="0.35 0.0 0.022" rpy="0.0 0.0 -0.00919048876378264"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -457,7 +457,7 @@
     </inertial>
   </link>
   <joint name="j3_joint" type="prismatic">
-    <origin xyz="0.3 0.0 0.07551134612026922" rpy="0.0 3.14 0.0"/>
+    <origin xyz="0.3 0.0 0.08026213928768594" rpy="0.0 3.14 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_link"/>
@@ -484,14 +484,14 @@
     </collision>
   </link>
   <joint name="j4_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 -0.0006713286800490803"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0001100108021200975"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_link"/>
     <child link="end_effector_link"/>
     <limit effort="100.0" lower="-3.14" upper="3.14" velocity="4.5"/>
   </joint>
   <joint name="rgb_hand_joint" type="fixed">
-    <origin xyz="-0.024999999999999616 -4.038993324015461e-16 0.01999999999999969" rpy="1.8091025252140397e-15 -1.3659098493868664 -1.6911380704404771e-15"/>
+    <origin xyz="-0.02499999999999958 -4.4407398237684393e-16 0.019999999999999848" rpy="2.477546070824732e-16 -1.3659098493868664 3.2745163385026164e-16"/>
     <parent link="end_effector_link"/>
     <child link="rgb_hand_link"/>
   </joint>
@@ -660,7 +660,7 @@
     </visual>
   </link>
   <joint name="world-pattern_link" type="fixed">
-    <origin xyz="-0.634228386003374 -0.30394701033511873 0.7374061855000139" rpy="-3.1333878077291257 0.0011980896992068225 -3.1413439365772664"/>
+    <origin xyz="-0.6340417279294714 -0.30390913411521053 0.8129177171990087" rpy="-3.1311982123954425 0.00151832447865612 -3.141352842894535"/>
     <parent link="world"/>
     <child link="pattern_link"/>
   </joint>

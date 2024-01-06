@@ -416,7 +416,7 @@
     </collision>
   </link>
   <joint name="j1_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.182" rpy="0.0 0.0 -0.010299416941399108"/>
+    <origin xyz="0.0 0.0 0.182" rpy="0.0 0.0 -0.007507715864576165"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="upper_arm_link"/>
@@ -443,7 +443,7 @@
     </collision>
   </link>
   <joint name="j2_joint" type="revolute">
-    <origin xyz="0.35 0.0 0.022" rpy="0.0 0.0 -0.00919048876378264"/>
+    <origin xyz="0.35 0.0 0.022" rpy="0.0 0.0 -0.009824502843507468"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -457,7 +457,7 @@
     </inertial>
   </link>
   <joint name="j3_joint" type="prismatic">
-    <origin xyz="0.3 0.0 0.08026213928768594" rpy="0.0 3.14 0.0"/>
+    <origin xyz="0.3 0.0 0.026726331338855394" rpy="0.0 3.14 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_link"/>
@@ -484,14 +484,14 @@
     </collision>
   </link>
   <joint name="j4_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0001100108021200975"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0024551641099763858"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_link"/>
     <child link="end_effector_link"/>
     <limit effort="100.0" lower="-3.14" upper="3.14" velocity="4.5"/>
   </joint>
   <joint name="rgb_hand_joint" type="fixed">
-    <origin xyz="-0.02499999999999958 -4.4407398237684393e-16 0.019999999999999848" rpy="2.477546070824732e-16 -1.3659098493868664 3.2745163385026164e-16"/>
+    <origin xyz="-0.024350926838752764 2.381718102361258e-05 -0.0070262834403660036" rpy="0.0035710314630928355 -1.3669778431924808 -0.0055817492386307215"/>
     <parent link="end_effector_link"/>
     <child link="rgb_hand_link"/>
   </joint>

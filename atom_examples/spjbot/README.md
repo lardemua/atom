@@ -95,47 +95,54 @@ This is useful to visualize the collections stored in the dataset. Here you can 
 
 ![gazebo](docs/config_rviz.png)
 
-To carry out the actual calibration weshould have some noise in the starting point of the optimization. To do this we will add some bias to the joints using the arguments **--joint_bias_names (-jbn)** and **--joint_bias_values (-jbv)**:
+To carry out the actual calibration we should add some noise to the starting point of the optimization. To do this we will add some bias to the joints using the arguments **--joint_bias_names (-jbn)** and **--joint_bias_values (-jbv)**:
 Let's add 0.01 radians (0.57 degrees) to joints j1 and j2, and 0.08 meters to prismatic joint j3.
 
-    rosrun atom_calibration calibrate \
-    -json $ATOM_DATASETS/spjbot/train/dataset.json \
-    -v -rv  -pp \
-    -jbn j1_joint j2_joint j3_joint \
-    -jbv 0.01 0.01 0.08 \
-    -ipg -phased
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/spjbot/train/dataset.json \
+    -v -rv  -pp -ipg -phased \
+    -jbn j1_joint j2_joint j3_joint -jbv 0.01 0.01 0.08
 
-The **--phased** flag will make the optimization halt before starting to change the parameters. With it it is possible to see the visual representation of the initial values of the parameters.
-Because we used the nig flag, zooming into a single collection shows the camera is misplaced.
+The calibration will carry out and produce very low reprojection errors. The final table should be like this:
 
-![gazebo](docs/before.png)
+![](docs/calibration_output1.png)
 
-During calibration, the script will produce a table of residuals per iteration which starts the calibration with these errors:
+However, from rviz we can clearly observe that the estimated poses are not coincident with the ground truth (represented in blue).
 
-![](docs/calibration_output_initial.png)
+![](docs/calibration1.png)
 
-which are quite high, because of the incorrect pose of the sensors,  and ends up converging into these figures:
+Also, since we are using the **--print_parameters (-pp)** option, at the end of the optimization we can see that the estimated parameter values are:
 
-![](docs/calibration_output_final.png)
+Joint name | Inserted bias (rad) | Estimated bias (rad) |
+:---:|:---:|:---:|
+j1_joint | 0.01 | -0.0075
+j2_joint | 0.01 | -0.0098
+j3_joint | 0.08 (m) | 0.0267 (m)
+j4_joint | 0.0 | 0.0024
 
-Which shows subpixel accuracy. This means the procedure achieved a successful calibration.
+which again confirms that the calibration did not go well.
 
-After calibration, the same collection shows the camera in place:
+The reason for this is that there is a large redundancy along the vertical direction between the **origin_z** parameter, but also vertical component of the transformation that describes the pose of the camera, and in addition to this the vertical component of the transformation that describes the pose of the pattern. All these are being simultaneously estimated, and there is no way for ATOM to distinguish between them. The error will go down either by moving the camera upwards, or instead moving the origin_z of the end-effector upwards (which also brings the camera upwards), or as a third option by moving the pattern down.
 
-![gazebo](docs/after.png)
+The trivial solution for this problem is to lock the poses of both the camera and the pattern. This can be achieved using the commands **--anchor_patterns (-ap)** and **--anchor_sensors (-as)**, as follows:
 
-Moreover, because we used the **--print_parameters** (-pp) flag, the script will print, at the end of the optimization, the estimated values of the calibrated parameters.
-The following table shows the estimated parameters vs the imposed biases.
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/spjbot/train/dataset.json \
+    -v -rv  -pp -ipg -phased \
+    -jbn j1_joint j2_joint j3_joint -jbv 0.01 0.01 0.08 \
+    -ap -as rgb_hand
 
-Joint name | Inserted bias (rad) | Estimated bias (rad) | error (rad) | error (deg)
-:---:|:---:|:---:|:---:|:---:
-shoulder_lift_joint | 0.034 | -0.031488 | 0.002512 | 0.144
-elbow_joint | -0.03 |0.029642 | 0.001358 | 0.078
-wrist_1_joint | 0.05 |-0.050033 |0.000033 |0.001
-wrist_2_joint | 0.01 |-0.010048 |0.000048 | 0.003
-wrist_3_joint | -0.03 |0.019378 | 0.010622 |0.609
-shoulder_pan_joint |-0.01 |0.009886 |0.000114 |0.007
+which results in a perfect alignment between estimate and ground truth:
 
-This shows that the optimization was able to compensate for the errors introduced in the joints, by estimating compensation bias which are very close to corresponding induced errors.
-The largest difference between the induced error and the estimated bias occurs in case of the wrist_3_joint, and has a magnitude of just 0.6 degrees.
+![](docs/calibration2.png)
 
+In terms of the calibrated values, we get:
+
+Joint name | Inserted bias (rad) | Estimated bias (rad) |
+:---:|:---:|:---:|
+j1_joint | 0.01 | -0.01029
+j2_joint | 0.01 | -0.0091
+j3_joint | 0.08 (m) | 0.0802 (m)
+j4_joint | 0.0 | 0.0001
+
+which shows that ATOM was able provide very accurate estimates to compensate the introduced biases.
+
+This solution is a trivial one, which may not be practical for real applications. For example, it may not be plausible to say that the pose of the camera is known and does not have to be optimized. ATOM supports solutions to address these challenges, to be described in other examples.
