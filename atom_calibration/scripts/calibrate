@@ -154,18 +154,6 @@ def main():
     dataset_original = copy.deepcopy(dataset)
 
     # ---------------------------------------
-    # --- Add joint position bias
-    # ---------------------------------------
-    if args['joint_bias_names'] is not None:
-
-        if not len(args['joint_bias_names']) == len(args['joint_bias_values']):
-            atomError('Args joint_bias_names and joint_bias_values must have the same size. Aborting.')
-
-        for joint_name, joint_bias in zip(args['joint_bias_names'], args['joint_bias_values']):
-            for collection_key, collection in dataset['collections'].items():
-                collection['joints'][joint_name]['position'] = collection['joints'][joint_name]['position'] + joint_bias
-
-    # ---------------------------------------
     # --- Filter some collections, sensors, joints and additional tfs from the dataset
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
