@@ -35,7 +35,7 @@
 description_file: "package://jcpbbot_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/jcpbbot/train_with_noise.bag"
+bag_file: "$ROS_BAGS/jcpbbot/train.bag"
 # bag_file: "$ROS_BAGS/jcpbbot/test_with_noise.bag"
 
 # You must define a frame of reference for the optimization process.
@@ -112,23 +112,41 @@ joints:
   #head_pan_joint:
   #  params_to_calibrate: ['position_bias']
 
+#   shoulder_pan_joint:
+#     params_to_calibrate: ['position_bias']
+#
+#   shoulder_lift_joint:
+#     params_to_calibrate: ['position_bias']
+#
+#   elbow_joint:
+#     params_to_calibrate: ['position_bias']
+#
+#   wrist_1_joint:
+#     params_to_calibrate: ['position_bias']
+#
+#   wrist_2_joint:
+#     params_to_calibrate: ['position_bias']
+#
+#   wrist_3_joint:
+#     params_to_calibrate: ['position_bias']
+
   shoulder_pan_joint:
-    params_to_calibrate: ['position_bias']
+    params_to_calibrate: ['origin_yaw']
 
   shoulder_lift_joint:
-    params_to_calibrate: ['position_bias']
+    params_to_calibrate: ['origin_yaw']
 
   elbow_joint:
-    params_to_calibrate: ['position_bias']
+    params_to_calibrate: ['origin_yaw']
 
   wrist_1_joint:
-    params_to_calibrate: ['position_bias']
+    params_to_calibrate: ['origin_yaw']
 
   wrist_2_joint:
-    params_to_calibrate: ['position_bias']
+    params_to_calibrate: ['origin_yaw']
 
   wrist_3_joint:
-    params_to_calibrate: ['position_bias']
+    params_to_calibrate: ['origin_yaw']
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in the calibration.

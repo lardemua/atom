@@ -19,10 +19,9 @@ from colorama import Fore, Style
 from urdf_parser_py.urdf import URDF
 import tf
 
-import atom_core.config_io
-
 from atom_core.utilities import atomError
-from atom_core.joint_models import getTransformationFromRevoluteJoint
+from atom_core.joint_models import getTransformationFromJoint
+from atom_core.system import execute
 
 
 def jointStateMsgReceived(msg, description, br):
@@ -30,7 +29,8 @@ def jointStateMsgReceived(msg, description, br):
     for name, position in zip(msg.name, msg.position):
         joint_dict = {}
         joint_dict['position'] = position
-        joint_dict['bias'] = 0.0
+        # joint_dict['position_bias'] = 45*3.14/180
+        joint_dict['position_bias'] = 0
 
         # ---------------------------------------------------------
         # Find joint in xacro
@@ -42,14 +42,22 @@ def jointStateMsgReceived(msg, description, br):
 
                 x, y, z = urdf_joint.origin.xyz
                 roll, pitch, yaw = urdf_joint.origin.rpy
-                joint_dict['origin'] = {'x': x, 'y': y, 'z': z,
-                                                'pitch': pitch, 'roll': roll, 'yaw': yaw}
+                joint_dict['origin_x'] = x
+                joint_dict['origin_y'] = y
+                joint_dict['origin_z'] = z
+                joint_dict['origin_roll'] = roll
+                joint_dict['origin_pitch'] = pitch
+                joint_dict['origin_yaw'] = yaw
+
                 ax, ay, az = urdf_joint.axis
-                joint_dict['axis'] = {'x': ax, 'y': ay, 'z': az}
-                joint_dict['xacro_joint_name'] = urdf_joint.name
-                joint_dict['xacro_joint_type'] = urdf_joint.type
-                parent = urdf_joint.parent
-                child = urdf_joint.child
+                joint_dict['axis_x'] = ax
+                joint_dict['axis_y'] = ay
+                joint_dict['axis_z'] = az
+
+                joint_dict['joint_type'] = urdf_joint.type
+                joint_dict['parent_link'] = urdf_joint.parent
+                joint_dict['child_link'] = urdf_joint.child
+
                 break
 
         if found_joint_in_xacro:
@@ -58,12 +66,60 @@ def jointStateMsgReceived(msg, description, br):
         # ---------------------------------------------------------
         # Get transformation from joint
         # ---------------------------------------------------------
-        quat, trans = getTransformationFromRevoluteJoint(joint_dict)
-        print('transform for joint ' + joint_dict['xacro_joint_name'] + ' with parent ' +
-              parent + ' and child ' + child + ' is\nquat=' + str(quat) + ' , trans=' + str(trans))
+        quat, trans = getTransformationFromJoint(joint_dict)
+        print('transform for joint ' + name + ' with parent ' +
+              joint_dict['parent_link'] + ' and child ' + joint_dict['child_link'] + ' is\nquat=' + str(quat) + ' , trans=' + str(trans))
 
-        child_alternative = child + '_alternative'
-        br.sendTransform(trans, quat, rospy.Time.now(), child_alternative, parent)
+        child_alternative = joint_dict['child_link'] + '_alternative'
+        br.sendTransform(trans, quat, rospy.Time.now(), child_alternative, joint_dict['parent_link'])
+
+    for name, position in zip(msg.name, msg.position):
+        joint_dict = {}
+        joint_dict['position'] = position
+        # joint_dict['position_bias'] = 45*3.14/180
+        joint_dict['position_bias'] = 0
+
+        # ---------------------------------------------------------
+        # Find joint in xacro
+        # ---------------------------------------------------------
+        found_joint_in_xacro = False
+        for urdf_joint in description.joints:
+            if urdf_joint.name == name:
+                joint_name = urdf_joint.name
+
+                x, y, z = urdf_joint.origin.xyz
+                roll, pitch, yaw = urdf_joint.origin.rpy
+                joint_dict['origin_x'] = x
+                joint_dict['origin_y'] = y
+                joint_dict['origin_z'] = z
+                joint_dict['origin_roll'] = roll
+                joint_dict['origin_pitch'] = pitch
+                joint_dict['origin_yaw'] = yaw  # + 45*3.14/180
+
+                ax, ay, az = urdf_joint.axis
+                joint_dict['axis_x'] = ax
+                joint_dict['axis_y'] = ay
+                joint_dict['axis_z'] = az
+
+                joint_dict['joint_type'] = urdf_joint.type
+                joint_dict['parent_link'] = urdf_joint.parent
+                joint_dict['child_link'] = urdf_joint.child
+
+                break
+
+        if found_joint_in_xacro:
+            raise ValueError('Description file does not have a joint ' + name)
+
+        # ---------------------------------------------------------
+        # Get transformation from joint
+        # ---------------------------------------------------------
+        print(joint_dict)
+        quat, trans = getTransformationFromJoint(joint_dict)
+        # print('transform for joint ' + name + ' with parent ' +
+        #   joint_dict['parent_link'] + ' and child ' + joint_dict['child_link'] + ' is\nquat=' + str(quat) + ' , trans=' + str(trans))
+
+        child_alternative = joint_dict['child_link'] + '_alternative2'
+        br.sendTransform(trans, quat, rospy.Time.now(), child_alternative, joint_dict['parent_link'])
 
 
 def main():
@@ -71,7 +127,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-df", "--description_file",
-                        help='path to the xacro or urdf file', type=str, required=False, default=None)
+                        help='path to the xacro or urdf file', type=str, required=True, default=None)
     args = vars(parser.parse_args())
 
     br = tf.TransformBroadcaster()
@@ -84,7 +140,7 @@ def main():
 
     print('Parsing description file ' + Fore.BLUE + args['description_file'] + Style.RESET_ALL)
     xacro_cmd = 'xacro ' + args['description_file'] + ' -o ' + urdf_file
-    atom_core.config_io.execute(xacro_cmd, verbose=True)  # create tmp urdf file
+    execute(xacro_cmd, verbose=True)  # create tmp urdf file
 
     if not os.path.exists(urdf_file):
         atomError('Could not parse description file ' + Fore.BLUE + args['description_file'] + Style.RESET_ALL + '\nYou must manually run command:\n' +

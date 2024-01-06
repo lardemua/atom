@@ -121,8 +121,8 @@ joints:
   #head_pan_joint:
   #  params_to_calibrate: ['position_bias']
 
-# The calibration requires a detectable pattern.
-# This section describes the properties of the calibration pattern used in the calibration.
+# The calibration requires at least one detectable pattern.
+# This section describes the properties of the calibration pattern(s) used in the calibration.
 calibration_patterns:
 
   pattern_1:

@@ -13,7 +13,7 @@ from datetime import datetime
 
 import re
 import numpy as np
-from atom_core.joint_models import getTransformationFromRevoluteJoint
+from atom_core.joint_models import getTransformationFromJoint
 import atom_core.ros_numpy
 from colorama import Fore, Style
 from scipy.spatial import distance
@@ -395,7 +395,7 @@ def objectiveFunction(data):
             for joint_key, joint in collection['joints'].items():
 
                 # Get the transformation from the joint configuration defined in the xacro, and the current joint value
-                quat, trans = getTransformationFromRevoluteJoint(joint)
+                quat, trans = getTransformationFromJoint(joint)
 
                 # print('Transform before:\n' + str(collection['transforms'][joint['transform_key']]))
 

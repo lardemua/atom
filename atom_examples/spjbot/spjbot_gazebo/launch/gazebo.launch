@@ -1,0 +1,20 @@
+<launch>
+
+  <!-- Gazebo options -->
+  <arg name="gazebo_gui" default="true" doc="Start Gazebo GUI"/>
+  <arg name="paused" default="false" doc="Start Gazebo paused"/>
+  <arg name="world_name" default="$(find spjbot_gazebo)/worlds/world.world" doc="Gazebo world file"/>
+  <arg name="world_pose" default="-x 0 -y 0 -z 0 -R 0 -P 0 -Y 0" doc="Pose to spawn the robot at"/>
+  <arg name="initial_joint_positions" default=" -J j1_joint 0 -J j2_joint 0 -J j3_joint 0.1575 -J j4_joint 0" doc="Initial joint configuration of the robot"/>
+
+  <!-- Start Gazebo paused to allow the controllers to pickup the initial pose -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch" pass_all_args="true">
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="world_name" value="$(arg world_name)"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="extra_gazebo_args" value="--verbose"/>
+    <arg name="headless" value="false" />
+  </include>
+
+
+</launch>

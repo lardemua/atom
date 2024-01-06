@@ -9,7 +9,7 @@ import numpy as np
 
 # Opencv imports
 import cv2
-from atom_core.joint_models import getTransformationFromRevoluteJoint
+from atom_core.joint_models import getTransformationFromJoint
 from atom_core.utilities import atomError
 
 # Ros imports
@@ -759,14 +759,17 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
     :param args: Makes use of -jnig, i.e., the amount of noise to add to the initial joint parameters to be
                  calibrated
     """
+
+    if dataset['calibration_config']['joints'] is None:  # nothing to do if no joints are being optimized
+        return
+
     if args['sample_seed'] is not None:
         np.random.seed(args['sample_seed'])
 
     max_joint_position_error = args['joint_noisy_initial_guess'][0]
     max_translation_error = args['joint_noisy_initial_guess'][1]
     max_rotation_error = args['joint_noisy_initial_guess'][2]
-
-    if dataset['calibration_config']['joints'] is None:  # nothing to do if no joints are being optimized
+    if max_joint_position_error is None and max_translation_error is None and max_rotation_error is None:
         return
 
     # add noise to joints being optimized
@@ -777,7 +780,7 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
                           'origin_roll', 'origin_pitch', 'origin_yaw']:
             # print('Adding parameter ' + param_key)
 
-            if param_key == 'position_bias':
+            if param_key == 'position_bias' and max_joint_position_error is not None:
                 # randomize joint_position_bias magnitude and signal
                 bias = np.random.uniform(-max_joint_position_error, max_joint_position_error, 1)[0]
 
@@ -785,7 +788,7 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
                 for collection_key, collection in dataset['collections'].items():
                     collection['joints'][joint_key][param_key] = bias
 
-            elif param_key in ['origin_x', 'origin_y', 'origin_z']:
+            elif param_key in ['origin_x', 'origin_y', 'origin_z'] and max_translation_error is not None:
                 # randomize translation error
                 new_value = dataset['collections'][selected_collection_key]['joints'][joint_key][param_key] + \
                     np.random.uniform(-max_translation_error, max_translation_error, 1)[0]
@@ -794,7 +797,7 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
                 for collection_key, collection in dataset['collections'].items():
                     collection['joints'][joint_key][param_key] = new_value
 
-            elif param_key in ['origin_roll', 'origin_pitch', 'origin_yaw']:
+            elif param_key in ['origin_roll', 'origin_pitch', 'origin_yaw'] and max_rotation_error is not None:
                 # randomize rotation error
                 new_value = dataset['collections'][selected_collection_key]['joints'][joint_key][param_key] + \
                     np.random.uniform(-max_rotation_error, max_rotation_error, 1)[0]
@@ -946,7 +949,7 @@ def getMixedDataset(train_dataset, test_dataset):
             for joint_key, joint in collection['joints'].items():
 
                 # Get the transformation from the joint configuration defined in the xacro, and the current joint value
-                quat, trans = getTransformationFromRevoluteJoint(joint)
+                quat, trans = getTransformationFromJoint(joint)
 
                 collection['transforms'][joint['transform_key']]['quat'] = quat
                 collection['transforms'][joint['transform_key']]['trans'] = trans

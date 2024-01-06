@@ -79,6 +79,8 @@ def main():
                     "Overrides automatic detection of static robot.")
     ap.add_argument("-oas", "--only_anchored_sensor", action="store_true", default=False,
                     help="Runs optimization only using the anchored sensor and discarding all others.")
+    ap.add_argument("-as", "--anchor_sensors", nargs='+',
+                    help='Anchor sensors. You can name as many sensors as needed. Sensors names should be the ones defined in the config.yml. Example: -as rgb_hand lidar_center', type=str, required=False)
     ap.add_argument("-ap", "--anchor_patterns", action="store_true", default=False,
                     help="Runs optimization without changing the poses of the patterns.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
@@ -89,7 +91,11 @@ def main():
                             "Used or the Charuco.", action="store_true", default=False)
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
                     help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
-    ap.add_argument("-jnig", "--joint_noisy_initial_guess", nargs=3, type=float, default=[0.0, 0.0, 0.0],
+    ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
+                    help='Joints to add bias to', type=str, required=False)
+    ap.add_argument("-jbv", "--joint_bias_values", nargs='+',
+                    help='Operates in tandem with "joint_bias_names"', type=float, required=False)
+    ap.add_argument("-jnig", "--joint_noisy_initial_guess", nargs=3, type=float, default=[None, None, None],
                     metavar=("position_bias", "origin_xyz", "origin_rpy"),
                     help="Magnitude of noise to add to the corresponding joint parameters being optimized, to be set before starting optimization. [radians, meters, radians]", ),
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
@@ -149,6 +155,18 @@ def main():
 
     # make a copy before filtering out collections and sensors
     dataset_original = copy.deepcopy(dataset)
+
+    # ---------------------------------------
+    # --- Add joint position bias
+    # ---------------------------------------
+    if args['joint_bias_names'] is not None:
+
+        if not len(args['joint_bias_names']) == len(args['joint_bias_values']):
+            atomError('Args joint_bias_names and joint_bias_values must have the same size. Aborting.')
+
+        for joint_name, joint_bias in zip(args['joint_bias_names'], args['joint_bias_values']):
+            for collection_key, collection in dataset['collections'].items():
+                collection['joints'][joint_name]['position'] = collection['joints'][joint_name]['position'] + joint_bias
 
     # ---------------------------------------
     # --- Filter some collections, sensors, joints and additional tfs from the dataset
@@ -223,7 +241,9 @@ def main():
     # Add parameters related to the sensors
     # remove anchored sensor if flagged as such.
 
-    anchored_transform_key = ""  # not transform is anchored
+    # Create a list of anchored transform keys, which is built from the anchored sensor and the argument --anchor_sensors.
+    anchored_transform_keys = []
+
     if args['ignore_anchored_sensor']:
         dataset["calibration_config"]["anchored_sensor"] = None
 
@@ -238,9 +258,25 @@ def main():
         if dataset["calibration_config"]["anchored_sensor"] in dataset["sensors"]:
             anchored_parent = dataset["sensors"][dataset["calibration_config"]["anchored_sensor"]]["calibration_parent"]
             anchored_child = dataset["sensors"][dataset["calibration_config"]["anchored_sensor"]]["calibration_child"]
-            anchored_transform_key = generateKey(anchored_parent, anchored_child)
+            anchored_transform_keys.append(generateKey(anchored_parent, anchored_child))
+        else:
+            atomError('Anchored sensor ' + dataset["calibration_config"]
+                      ["anchored_sensor"] + ' does not exist in dataset.')
+
     # TODO If we want an anchored sensor we should search (and fix) all the transforms in its chain that do are
     #  being optimized
+
+    if args['anchor_sensors'] is not None:
+        for sensor in args['anchor_sensors']:
+            if sensor in dataset["sensors"]:
+                parent = dataset["sensors"][sensor]["calibration_parent"]
+                child = dataset["sensors"][sensor]["calibration_child"]
+                anchored_transform_keys.append(generateKey(parent, child))
+            else:
+                atomError('Sensor ' + sensor + ' given in --anchor_sensors does not exist in dataset.')
+
+    if anchored_transform_keys:
+        print("These transform_keys are anchored: " + str(anchored_transform_keys))
 
     print("Creating parameters ...")
     # Steaming from the config json, we define a transform to be optimized for each sensor. It could happen that two
@@ -262,7 +298,7 @@ def main():
         initial_transform = getterTransform(dataset, transform_key=transform_key,
                                             collection_name=selected_collection_key)
 
-        if transform_key == anchored_transform_key:
+        if transform_key in anchored_transform_keys:
             bound_max = [
                 x + 2 * sys.float_info.epsilon for x in initial_transform]
             bound_min = [
@@ -561,9 +597,9 @@ def main():
         waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
     print("Initializing optimization ...")
-    options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
+    # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
     # options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
-    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
+    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,

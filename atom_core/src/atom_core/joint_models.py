@@ -2,24 +2,39 @@
 import numpy as np
 
 
-from transformations import euler_matrix, rotation_matrix, quaternion_from_matrix, translation_from_matrix
+from transformations import euler_matrix, rotation_matrix, quaternion_from_matrix, translation_from_matrix, translation_matrix
 import numpy as np
 from atom_core.utilities import atomError
 
 
-def getTransformationFromRevoluteJoint(joint):
+def getTransformationFromJoint(joint):
 
-    if joint['joint_type'] is None:
-        atomError('Cannot model non revolute joint.')
+    if joint['joint_type'] == 'revolute':
 
-    # STEP 1: compute the rotation matrix due to the joint revolution position
-    joint_axis = [joint['axis_x'], joint['axis_y'], joint['axis_z']]
-    joint_position_matrix = rotation_matrix(joint['position']+joint['position_bias'], joint_axis, point=None)
+        # STEP 1: compute the rotation matrix due to the joint revolution position
+        joint_axis = [joint['axis_x'], joint['axis_y'], joint['axis_z']]
+        joint_position_matrix = rotation_matrix(joint['position']+joint['position_bias'], joint_axis, point=None)
+
+    elif joint['joint_type'] == 'prismatic':
+
+        # STEP 1: compute the translation matrix due to the joint prismatic position
+        if joint['axis_x'] == 1 and joint['axis_y'] == 0 and joint['axis_z'] == 0:
+            joint_position_matrix = translation_matrix([joint['position'], 0, 0])
+        elif joint['axis_x'] == 0 and joint['axis_y'] == 1 and joint['axis_z'] == 0:
+            joint_position_matrix = translation_matrix([0, joint['position'], 0])
+        elif joint['axis_x'] == 0 and joint['axis_y'] == 0 and joint['axis_z'] == 1:
+            joint_position_matrix = translation_matrix([0, 0, joint['position']])
+        else:
+            atomError('Unknown joint_type' + joint['joint_type'])
+
+    else:
+        atomError('Cannot model unknown joint type ' + joint['joint_type'])
 
     # STEP 2: compute the rotation due to the origin rpy
+    # Check https://github.com/lardemua/atom/issues/803
     origin_matrix = euler_matrix(joint['origin_roll'],
                                  joint['origin_pitch'],
-                                 joint['origin_yaw'], axes='sxyz')
+                                 joint['origin_yaw'], axes='rxyz')
 
     # STEP 3: Add to the origin matrix the translation
     origin_matrix[0, 3] = joint['origin_x']

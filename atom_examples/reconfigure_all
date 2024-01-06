@@ -10,7 +10,8 @@ from atom_core.system import execColored
 
 def main():
 
-    atom_examples = ['rrbot', 'rrcbot', 'rdbot', 'rlbot', 'rihbot', 'rihmpbot', 'riwbot', 'jcpbbot', 'riwbot']
+    atom_examples = ['rrbot', 'rrcbot', 'rdbot', 'rlbot', 'rihbot',
+                     'rihmpbot', 'riwbot', 'jcpbbot', 'riwbot', 'scpjbot']
     for atom_example in atom_examples:
         cmd = 'rosrun ' + atom_example + '_calibration configure'
         execColored(cmd)

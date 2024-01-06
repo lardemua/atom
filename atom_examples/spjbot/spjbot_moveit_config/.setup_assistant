@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: spjbot_description
+    relative_path: urdf/scara.urdf.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/spjbot.srdf
+  CONFIG:
+    author_name: Miguel Oliveira
+    author_email: mriem@ua.pt
+    generated_timestamp: 1704026936
