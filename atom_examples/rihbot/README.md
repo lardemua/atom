@@ -41,15 +41,10 @@ This will put the bag file into your $ROS_BAGS folder.
 
 # Calibration
 
-As always, we recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details.
+As always, we recommend a careful reading of the [documentation](https://lardemua.github.io/atom_documentation/) to learn all the details. In this section, out goal is to describe the calibration pipeline for the **rihbot**. To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1_YYIaJfvP8G7_mBr3oT7S7RkVTymu2pb/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 
-In this section, out goal is to describe the calibration pipeline for the **rihbot**.
-
-To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1_YYIaJfvP8G7_mBr3oT7S7RkVTymu2pb/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 We produced the bagfile by bringing up the system and then recording a bagfile as described above.
-This is a bagfile with 140 seconds / 115MB for demonstration purposes. Typically, calibration bagfiles are larger.
-
-Download the bagfile and put it in **$ROS_BAGS/rihbot**.
+This is a bagfile with 140 seconds / 115MB for demonstration purposes. Typically, calibration bagfiles are larger. Download the bagfile and put it in **$ROS_BAGS/rihbot**.
 
 Next we describe each of the steps in the calibration pipeline.
 

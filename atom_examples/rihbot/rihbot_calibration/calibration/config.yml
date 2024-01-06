@@ -110,23 +110,7 @@ joints:
   #
   # EXAMPLE:
   #head_pan_joint:
-  shoulder_pan_joint:
-    params_to_calibrate: ['origin_yaw']
 
-  shoulder_lift_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  elbow_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  wrist_1_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  wrist_2_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  wrist_3_joint:
-    params_to_calibrate: ['origin_yaw']
 
 # The calibration requires a detectable pattern.
 # This section describes the properties of the calibration pattern used in the calibration.
