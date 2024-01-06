@@ -62,18 +62,6 @@ Download the bagfile and put it in **$ROS_BAGS/riwmpbot**.
 
 Next we describe each of the steps in the calibration pipeline.
 
-## Adding a bias to the joints in the bagfile
-
-The instructions in [How to Run](#how-to-run) will produce a bagfile that will contain joint values in the **/joint_states** message topic. Since these are produced by a simulation, the values will be perfect. To test the calibration of joint bias, we need to insert some bias to disrupt those perfect measurements, using the following command:
-
-    rosrun atom_calibration add_noise_to_joint_state_in_bag -bfi $ROS_BAGS/mrjbot/train.bag -bfo $ROS_BAGS/mrjbot/train_with_noise.bag -jn shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint shoulder_pan_joint -jb 0.034 -0.03 0.05 0.01 -0.03 -0.01
-
-which means we are introducing a bias in the joints values of non-neglectable magnitude, which should present a challenge for the calibration.
-
-You can download [train_with_noise.bag](https://drive.google.com/file/d/19xjwTXsZkcx5NNL_K3OPWv_Dv6El9ym0/view?usp=sharing) if you wish to skip this step.
-
-We can now move forward to the configuration of the calibration package.
-
 ## Creating a calibration package
 
 See also the [generic documentation](https://lardemua.github.io/atom_documentation/procedures/#create-a-calibration-package) on this topic.
@@ -110,7 +98,7 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/1YlFdik-38zhtI8fByY27XR7pxYdN-h_9/view?usp=sharing) dataset, which contains 11 collections. Some are shown below.
+We will use as example the [train](https://drive.google.com/file/d/1YlFdik-38zhtI8fByY27XR7pxYdN-h_9/view?usp=sharing) dataset, which contains 44 collections. Some are shown below.
 
 Download and decompress the dataset to **$ATOM_DATASETS/riwmpbot/train**.
 
@@ -118,8 +106,8 @@ Collection |           rgb_hand
 :----------------:|:-------------------------:
 0 | ![](docs/rgb_world_000.jpg)
 1 | ![](docs/rgb_world_001.jpg)
-2 | ![](docs/rgb_world_009.jpg)
-3 | ![](docs/rgb_world_010.jpg)
+7 | ![](docs/rgb_world_007.jpg)
+44 | ![](docs/rgb_world_044.jpg)
 
 
 ## Running the Calibration
@@ -134,7 +122,10 @@ This is useful to visualize the collections stored in the dataset.
 
 Then carry out the actual calibration including noise, using:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/riwmpbot/train/dataset.json -v -rv -nig 0.1 0.1
+    rosrun atom_calibration calibrate -json $ATOM_DATASETS/riwmpbot/train/dataset.json \
+    -v -rv -pp \
+    -jbn shoulder_pan_joint shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint \
+    -jbv -0.01 0.034 -0.03 0.05 0.01 -0.03
 
 This will produce a table of residuals per iteration, like this:
 
