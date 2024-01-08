@@ -1,6 +1,6 @@
 # RDBOT
 
-The **rdbot**, i.e. **R**GB **D**epth ro**b**ot is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
+The **R**GB **D**epth ro**bot** (**rdbot**) is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners.
 
 ![gazebo](docs/system.png)
 

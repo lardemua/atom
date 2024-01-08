@@ -1,6 +1,6 @@
 # SPJBOT
 
-The **s**cara with **p**rismatic **j**oint ro**bot** (**spjbot**) is a simulated robotic system used to exemplify prismatic joint calibrations in ATOM.
+The **s**cara with **p**rismatic **j**oints ro**bot** (**spjbot**) is a simulated robotic system used to exemplify prismatic joint calibrations in ATOM.
 
 The goal of this system is to show how ATOM may be configured to calibrate prismatic joints in a robotic system.
 

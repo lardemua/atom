@@ -1,6 +1,6 @@
 # RGB_EYE_IN_WORLD_SYSTEM
 
-The **riwbot** is a robotic system used to evaluate hand eye calibrations in ATOM.
+The **R**GB **i**n **w**orld ro**bot** (**riwbot**) is a robotic system used to evaluate hand eye calibrations in ATOM.
 
 ![gazebo](docs/system.png)
 

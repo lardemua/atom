@@ -1,6 +1,6 @@
 <!-- # RGB RGB SYSTEM CHESSBOARD -->
 
-The **rrcbot** is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners. The novelty here is that the system uses a chessboard as calibration pattern, instead of the usual charuco board.
+The **R**GB **R**GB with **c**hessboard ro**bot** (**rrcbot**) is a robotic system meant to be use in simple tests and to serve as example for ATOM beginners. The novelty here is that the system uses a chessboard as calibration pattern, instead of the usual charuco board.
 
 ![gazebo](docs/system.png)
 

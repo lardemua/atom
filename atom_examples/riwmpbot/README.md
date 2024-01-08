@@ -1,6 +1,6 @@
 # RGB Eye in World Multiple Pattern system
 
-The **riwmpbot** is a robotic system used to evaluate joint calibrations using multiple patterns in ATOM.
+The **R**GB **i**n **w**orld **m**ultiple **p**atterns ro**bot** (**riwmpbot**) is a robotic system used to evaluate how the usage of multiple patterns in ATOM can improve joint calibration.
 
 ![gazebo](docs/system.png)
 
