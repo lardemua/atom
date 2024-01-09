@@ -365,7 +365,7 @@ class Optimizer:
         bounds_min = []
         bounds_max = []
         for name in self.groups:
-            _, _, _, _, _, bound_max, bound_min = self.groups[name]
+            _, _, _, _, _, bound_max, bound_min, _ = self.groups[name]
             bounds_max.extend(bound_max)
             bounds_min.extend(bound_min)
 
@@ -609,17 +609,27 @@ class Optimizer:
             values_in_data = group.getter(self.data_models[group.data_key])
             for i, param_name in enumerate(group.param_names):
                 rows.append(param_name)
-                table.append(
-                    [group_name, self.x0[group.idx[i]],
-                     x[group.idx[i]],
-                     group.ground_truth_values[i]])
+
+                error_initial = None if group.ground_truth_values[i] is None else abs(
+                    group.ground_truth_values[i] - self.x0[group.idx[i]])
+                error = None if group.ground_truth_values[i] is None else abs(
+                    group.ground_truth_values[i] - x[group.idx[i]])
+
+                if error < error_initial:
+                    error = Fore.GREEN + '{:.5f}'.format(error) + Style.RESET_ALL
+                else:
+                    error = Fore.RED + '{:.5f}'.format(error) + Style.RESET_ALL
+
+                table.append([self.x0[group.idx[i]], x[group.idx[i]],
+                             group.ground_truth_values[i], error_initial, error])
 
         if text is None:
             print('\n\nParameters:')
         else:
             print(text)
 
-        df = pandas.DataFrame(table, rows, ['Group', 'Initial', 'Estimated', 'Ground truth'])
+        df = pandas.DataFrame(table, rows, ['Initial', 'Estimated', 'Ground truth',
+                              'Initial Error', Fore.BLACK + 'Error' + Style.RESET_ALL])
         if flg_simple:
             # https://medium.com/dunder-data/selecting-subsets-of-data-in-pandas-6fcd0170be9c
             print(df[['x']])

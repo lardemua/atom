@@ -111,22 +111,40 @@ joints:
   #head_pan_joint:
   #  params_to_calibrate: ['origin_yaw']
   shoulder_pan_joint:
-    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+    params_to_calibrate: ['origin_yaw']
 
   shoulder_lift_joint:
-    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+    params_to_calibrate: ['origin_yaw']
 
   elbow_joint:
-    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+    params_to_calibrate: ['origin_yaw']
 
   wrist_1_joint:
-    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+    params_to_calibrate: ['origin_yaw']
 
   wrist_2_joint:
-    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+    params_to_calibrate: ['origin_yaw']
 
   wrist_3_joint:
-    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+    params_to_calibrate: ['origin_yaw']
+
+#   shoulder_pan_joint:
+#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#
+#   shoulder_lift_joint:
+#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#
+#   elbow_joint:
+#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#
+#   wrist_1_joint:
+#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#
+#   wrist_2_joint:
+#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#
+#   wrist_3_joint:
+#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
 
 
 # The calibration requires a detectable pattern.

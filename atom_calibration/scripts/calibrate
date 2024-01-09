@@ -195,7 +195,7 @@ def main():
     # ---------------------------------------
     # --- Add noise to the transformations and joint parameters to be calibrated.
     # ---------------------------------------
-    dataset_initial = deepcopy(dataset)  # make a copy of the dataset initial values
+    dataset_initial = deepcopy(dataset)  # make a copy before adding noise
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
     addNoiseToJointParameters(dataset, args)
 
@@ -312,12 +312,20 @@ def main():
     if args["optimize_intrinsics"]:
         for sensor_key, sensor in dataset["sensors"].items():
             if sensor["modality"] == "rgb":  # if sensor is a camera add intrinsics
+
+                fx = sensor['camera_info']['K'][0]
+                fy = sensor['camera_info']['K'][4]
+                cx = sensor['camera_info']['K'][2]
+                cy = sensor['camera_info']['K'][5]
+                ground_truth_values = getterCameraIntrinsics(dataset_initial, sensor_key)
                 opt.pushParamVector(group_name=str(sensor_key) + "_intrinsics", data_key="dataset",
                                     getter=partial(
                                         getterCameraIntrinsics, sensor_key=sensor_key),
                                     setter=partial(
                                         setterCameraIntrinsics, sensor_key=sensor_key),
-                                    suffix=["_fx", "_fy", "_cx", "_cy", "_k1", "_k2", "_t1", "_t2", "_k3"])
+                                    suffix=["_fx", "_fy", "_cx", "_cy", "_k1", "_k2", "_t1", "_t2", "_k3"],
+                                    ground_truth_values=ground_truth_values)
+    # TODO add ground truth for intrinsics?
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add pattern(s) parameters
@@ -340,11 +348,18 @@ def main():
             for collection_key, collection in dataset["collections"].items():
 
                 # Set transform using the initial estimate of the transformations.
+
                 initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][collection_key]
                 if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
                         not child == initial_estimate["child"]:
                     atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL + "at collection " +
                               collection_key + '. You must run the calibration without this collection. Check how to use the csf flag.')
+
+                if transform_key not in dataset_initial['collections'][selected_collection_key]['transforms'].keys():
+                    ground_truth_transform = None
+                else:
+                    ground_truth_transform = getterTransform(dataset_initial, transform_key=transform_key,
+                                                             collection_name=collection_key)
 
                 collection["transforms"][transform_key] = {"parent": parent, "child": child,
                                                            "trans": initial_estimate["trans"],
@@ -360,7 +375,8 @@ def main():
                                         getter=partial(getterTransform, transform_key=transform_key,
                                                        collection_name=collection_key),
                                         setter=partial(setterTransform, transform_key=transform_key,
-                                                       collection_name=collection_key))
+                                                       collection_name=collection_key),
+                                        ground_truth_values=ground_truth_transform)
 
         else:  # fixed pattern ----------------------------------------------------------------------------------
             # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
@@ -376,6 +392,12 @@ def main():
                     or not child == initial_estimate["child"]:
                 raise ValueError("Cannot set initial estimate for pattern " + Fore.BLUE +
                                  pattern_key + Style.RESET_ALL + " at collection " + selected_collection_key)
+
+            if transform_key not in dataset_initial['collections'][selected_collection_key]['transforms'].keys():
+                ground_truth_transform = None
+            else:
+                ground_truth_transform = getterTransform(dataset_initial, transform_key=transform_key,
+                                                         collection_name=selected_collection_key)
 
             # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
             for collection_key, collection in dataset["collections"].items():
@@ -394,7 +416,8 @@ def main():
                                                    collection_name=selected_collection_key),
                                     setter=partial(setterTransform, transform_key=transform_key,
                                                    collection_name=None),
-                                    suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"])
+                                    suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+                                    ground_truth_values=ground_truth_transform)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add joint(s) parameters
@@ -546,12 +569,8 @@ def main():
                 # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
                 #       ' affected by parameters:\n' + str(params))
 
-    def printCalibrationResults(opt, dataset, dataset_ground_truth):
-        pass
-
-    opt.printParametersErrors()
+    # opt.printParametersErrors()
     # opt.printResiduals()
-    exit(0)
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
@@ -605,7 +624,7 @@ def main():
         opt.data_models), normalizer=normalizer, args=args)
 
     if args['print_parameters']:
-        opt.printParameters()
+        opt.printParametersErrors()
 
     # ---------------------------------------
     # --- Save updated JSON file
