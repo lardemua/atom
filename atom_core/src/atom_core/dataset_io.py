@@ -752,7 +752,7 @@ def filterAdditionalTfsFromDataset(dataset, args):
     return dataset
 
 
-def addNoiseToJointParameters(dataset, args, selected_collection_key):
+def addNoiseToJointParameters(dataset, args):
     """
     Adds noise
     :param dataset:
@@ -760,17 +760,25 @@ def addNoiseToJointParameters(dataset, args, selected_collection_key):
     """
 
     if dataset['calibration_config']['joints'] is None:  # nothing to do if no joints are being optimized
+        print('No joints are being optimized')
         return
 
-    if args['joint_bias_names'] is None or args['joint_bias_values'] is None:
+    if args['joint_bias_names'] is None and args['joint_bias_values'] is None and args['joint_bias_values']:
+        print('No bias to add')
         return
 
-    if not len(args['joint_bias_names']) == len(args['joint_bias_values']):
-        atomError('Args joint_bias_names and joint_bias_values must have the same size. Aborting.')
+    if np.any([args['joint_bias_names'] is None, args['joint_bias_values'] is None, args['joint_bias_values'] is None]):
+        atomError('At least one of the arguments joint_bias_names, joint_bias_params or joint_bias_values are not given. These three must be used in tandem.')
 
-    for joint_name, joint_bias in zip(args['joint_bias_names'], args['joint_bias_values']):
+    if len(args['joint_bias_names']) != len(args['joint_bias_params']) or \
+            len(args['joint_bias_names']) != len(args['joint_bias_values']):
+        atomError('Args joint_bias_names, joint_bias_params and joint_bias_values must have the same size. Aborting.')
+
+    for joint_name, joint_param, joint_bias in zip(args['joint_bias_names'], args['joint_bias_params'], args['joint_bias_values']):
+        print('Adding bias ' + Fore.BLUE + str(joint_bias) + Style.RESET_ALL + ' to joint ' + Fore.GREEN +
+              joint_name + Style.RESET_ALL + ' parameter ' + Fore.CYAN + joint_param + Style.RESET_ALL)
         for collection_key, collection in dataset['collections'].items():
-            collection['joints'][joint_name]['position'] = collection['joints'][joint_name]['position'] + joint_bias
+            collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][joint_param] + joint_bias
 
 
 def addNoiseToInitialGuess(dataset, args, selected_collection_key):

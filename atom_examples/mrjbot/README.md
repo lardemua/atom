@@ -96,6 +96,7 @@ Carry out the actual calibration including noise in the joints using the -jbn an
     rosrun atom_calibration calibrate -json $ATOM_DATASETS/mrjbot/train/dataset.json \
     -v -rv -nig 0.1 0.1 --phased -pp \
     -jbn shoulder_pan_joint shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint \
+    -jbp origin_yaw origin_yaw origin_yaw origin_yaw origin_yaw origin_yaw \
     -jbv -0.01 0.034 -0.03 0.05 0.01 -0.03
 
 The **--phased** flag will make the optimization halt before starting to change the parameters. With it it is possible to see the visual representation of the initial values of the parameters.

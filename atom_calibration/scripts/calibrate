@@ -11,6 +11,7 @@ import random
 import signal
 import sys
 from functools import partial
+from copy import deepcopy
 
 import numpy as np
 
@@ -18,7 +19,7 @@ import numpy as np
 from colorama import Fore, Style
 from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
-                                                              setterCameraIntrinsics, setterTransform)
+                                                              setterCameraIntrinsics, setterTransform, getterJointParam, setterJointParam)
 from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess,
@@ -68,7 +69,7 @@ def main():
     ap.add_argument("-si", "--show_images", action="store_true",
                     default=False, help="shows images for each camera")
     ap.add_argument("-oi", "--optimize_intrinsics", action="store_true", default=False,
-                    help="Adds camera instrinsics to the  ptimization",)
+                    help="Adds camera intrinsics to the  optimization",)
     ap.add_argument("-sr", "--sample_residuals",
                     help="Samples residuals", type=float, default=1)
     ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
@@ -93,6 +94,8 @@ def main():
                     help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
     ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
                     help='Joints to add bias to', type=str, required=False)
+    ap.add_argument("-jbp", "--joint_bias_params", nargs='+',
+                    help='Joint parameters to add bias to. One of [origin_x, origin_y, origin_z, origin_roll, origin_pitch, origin_yaw].', type=str, required=False)
     ap.add_argument("-jbv", "--joint_bias_values", nargs='+',
                     help='Operates in tandem with "joint_bias_names"', type=float, required=False)
     ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=lambda s: eval(s, globals()),
@@ -185,15 +188,16 @@ def main():
     # ---------------------------------------
     # --- Define selected collection key.
     # ---------------------------------------
-    # For the getters we only need to get one collection because optimized transformations are static. Lets take the first key in the dictionary and always get that transformation.
+    # For the getters we only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
     selected_collection_key = list(dataset["collections"].keys())[0]
     print("Selected collection key is " + str(selected_collection_key))
 
     # ---------------------------------------
     # --- Add noise to the transformations and joint parameters to be calibrated.
     # ---------------------------------------
+    dataset_initial = deepcopy(dataset)  # make a copy of the dataset initial values
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
-    addNoiseToJointParameters(dataset, args, selected_collection_key)
+    addNoiseToJointParameters(dataset, args)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -248,7 +252,7 @@ def main():
             atomError('Anchored sensor ' + dataset["calibration_config"]
                       ["anchored_sensor"] + ' does not exist in dataset.')
 
-    # TODO If we want an anchored sensor we should search (and fix) all the transforms in its chain that do are
+    # TODO If we want an anchored sensor we should search (and fix) all the transforms in its chain that are
     #  being optimized
 
     if args['anchor_sensors'] is not None:
@@ -280,6 +284,9 @@ def main():
 
     # push six parameters for each transform to be optimized.
     for transform_key in transforms_set:
+        ground_truth_transform = getterTransform(dataset_initial, transform_key=transform_key,
+                                                 collection_name=selected_collection_key)
+
         initial_transform = getterTransform(dataset, transform_key=transform_key,
                                             collection_name=selected_collection_key)
 
@@ -298,7 +305,8 @@ def main():
                            collection_name=selected_collection_key,),
             setter=partial(setterTransform,
                            transform_key=transform_key, collection_name=None),
-            suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"])
+            suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+            ground_truth_values=ground_truth_transform)
 
     # Intrinsic parameters. TODO bound_min and max for intrinsics
     if args["optimize_intrinsics"]:
@@ -393,27 +401,20 @@ def main():
     # ---------------------------------------
 
     if not dataset['calibration_config']['joints'] == "":
-        def getterJointParam(dataset, joint_key, param_key, collection_name):
-            return [dataset['collections'][collection_name]['joints'][joint_key][param_key]]
-
-        def setterJointParam(dataset, value, joint_key, param_key, collection_name):
-            if collection_name is None:  # if collection_name is None, set all collections with the same value
-                for collection_key in dataset['collections']:
-                    dataset['collections'][collection_key]['joints'][joint_key][param_key] = value[0]
-            else:
-                dataset['collections'][collection_name]['joints'][joint_key][param_key] = value
 
         for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
             joint_config = dataset['calibration_config']['joints'][joint_key]
 
             for param_key in joint_config['params_to_calibrate']:
+                ground_truth_value = getterJointParam(dataset_initial, joint_key, param_key, selected_collection_key)
 
                 group_name = 'joint-' + joint_key + '-' + param_key
                 getter = partial(getterJointParam, joint_key=joint_key,
                                  param_key=param_key, collection_name=selected_collection_key)
                 setter = partial(setterJointParam, joint_key=joint_key,
                                  param_key=param_key, collection_name=None)
-                opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter, setter=setter)
+                opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter,
+                                    setter=setter, ground_truth_value=ground_truth_value)
 
     # opt.printParameters()
 
@@ -545,8 +546,12 @@ def main():
                 # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
                 #       ' affected by parameters:\n' + str(params))
 
-    # opt.printParameters()
+    def printCalibrationResults(opt, dataset, dataset_ground_truth):
+        pass
+
+    opt.printParametersErrors()
     # opt.printResiduals()
+    exit(0)
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX

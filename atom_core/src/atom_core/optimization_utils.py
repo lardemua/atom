@@ -21,7 +21,7 @@ from atom_core.key_press_manager import WindowManager
 # ------------------------
 # DATA STRUCTURES   ##
 # ------------------------
-ParamT = namedtuple('ParamT', 'param_names idx data_key getter setter bound_max bound_min')
+ParamT = namedtuple('ParamT', 'param_names idx data_key getter setter bound_max bound_min ground_truth_values')
 
 
 def tic():
@@ -115,7 +115,8 @@ class Optimizer:
             self.data_models[name] = data
             # print('Added data ' + name + ' to model dict.')
 
-    def pushParamScalar(self, group_name, data_key, getter, setter, bound_max=+inf, bound_min=-inf):
+    def pushParamScalar(self, group_name, data_key, getter, setter,
+                        bound_max=+inf, bound_min=-inf, ground_truth_value=None):
         """
         Pushes a new scalar parameter to the parameter vector. The parameter group contains a single element.
         Group name is the same as parameter name.
@@ -140,63 +141,23 @@ class Optimizer:
         param_names = [group_name]  # a single parameter with the same name as the group
         idx = [len(self.x)]
         self.groups[group_name] = ParamT(param_names, idx, data_key, getter, setter, [bound_max],
-                                         [bound_min])  # add to group dict
+                                         [bound_min], ground_truth_value)  # add to group dict
         self.x.append(value[0])  # set initial value in x using the value from the data model
         # print('Pushed scalar param ' + group_name + ' to group ' + group_name)
 
-    def pushParamV3(self, group_name, data_key, getter, setter, bound_max=(+inf, +inf, +inf),
-                    bound_min=(-inf, -inf, -inf), suffix=['x', 'y', 'z']):
-        """
-        DEPRECATED
-        Pushes a new parameter group of type translation to the parameter vector.
-        There will be 3 parameters, *_tx, *_ty, *_tz per translation group
-        :param suffix:
-        :param group_name: the name of the group of parameters, which will have their name derived from the group name.
-        :param data_key: the key of the model into which the parameters map
-        :param getter: a function to retrieve the parameter value from the model
-        :param setter: a function to set the parameter value from the model
-        :param bound_max: a tuple (max_x, max_y, max_z)
-        :param bound_min: a tuple (min_x, min_y, min_z)
-        """
-        if group_name in self.groups:  # Cannot add a parameter that already exists
-            raise ValueError('Group ' + group_name + ' already exists. Cannot add it.')
-
-        if not data_key in self.data_models:  # Check if we have the data_key in the data dictionary
-            raise ValueError('Dataset ' + data_key + ' does not exist. Cannot add group ' + group_name + '.')
-
-        if not len(bound_max) == 3:  # check size of bound_max
-            raise ValueError('bound_max ' + str(bound_max) + ' must be a tuple of size 3, e.g. (max_x, max_y, max_z).')
-
-        if not len(bound_min) == 3:  # check size of bound_min
-            raise ValueError('bound_min ' + str(bound_min) + ' must be a tuple of size 3, e.g. (min_x, min_y, min_z).')
-
-        if not len(suffix) == 3:
-            raise ValueError('sufix ' + str(suffix) + ' must be a list of size 3, e.g. ["x", "y", "z"].')
-
-        idxs = range(len(self.x), len(self.x) + 3)  # Compute value of indices
-
-        param_names = [group_name + suffix[0], group_name + suffix[1], group_name + suffix[2]]
-
-        self.groups[group_name] = ParamT(param_names, idxs, data_key, getter, setter, bound_max,
-                                         bound_min)  # add to params dict
-        values = getter(self.data_models[data_key])
-        for value in values:
-            self.x.append(value)  # set initial value in x
-        # print('Pushed translation group ' + group_name + ' with params ' + str(param_names))
-
     def pushParamVector(self, group_name, data_key, getter, setter, bound_max=None,
-                        bound_min=None, suffix=None, number_of_params=None):
+                        bound_min=None, suffix=None, number_of_params=None, ground_truth_values=None):
         """
-        Pushes a new parameter group of type translation to the parameter vector.
-        There will be 3 parameters, *_tx, *_ty, *_tz per translation group
+        Pushes a new parameter group of variable size to the parameter vector.
         :param group_name: the name of the group of parameters, which will have their name derived from the group name.
         :param data_key: the key of the model into which the parameters map
         :param getter: a function to retrieve the parameter value from the model
         :param setter: a function to set the parameter value from the model
-        :param bound_max: a tuple (max_x, max_y, max_z)
-        :param bound_min: a tuple (min_x, min_y, min_z)
+        :param bound_max: a tuple of the size of number_of_params
+        :param bound_min: a tuple of the size of number_of_params
         :param suffix:
         :param number_of_params:
+        :param gt_values: ground truth value for each parameter.
         """
         if group_name in self.groups:  # Cannot add a parameter that already exists
             raise ValueError('Group ' + group_name + ' already exists. Cannot add it.')
@@ -224,12 +185,17 @@ class Optimizer:
         elif not len(suffix) == number_of_params:
             raise ValueError('suffix ' + str(suffix) + ' must be a list, e.g. ["x", "y", "z"].')
 
+        if ground_truth_values is None:  # Create a list of Nones the same size as params
+            ground_truth_values = [None]*number_of_params
+        elif len(ground_truth_values) != number_of_params:
+            raise ValueError('Invalid ground truth values. Size must be the number of parameters.')
+
         idxs = range(len(self.x), len(self.x) + number_of_params)  # Compute value of indices
 
         param_names = [group_name + s for s in suffix]
 
         self.groups[group_name] = ParamT(param_names, idxs, data_key, getter, setter, bound_max,
-                                         bound_min)  # add to params dict
+                                         bound_min, ground_truth_values)  # add to params dict
         values = getter(self.data_models[data_key])
         for value in values:
             self.x.append(value)  # set initial value in x
@@ -616,6 +582,44 @@ class Optimizer:
             print(text)
 
         df = pandas.DataFrame(table, rows, ['Group', 'x0', 'x', 'data', 'Min', 'Max'])
+        if flg_simple:
+            # https://medium.com/dunder-data/selecting-subsets-of-data-in-pandas-6fcd0170be9c
+            print(df[['x']])
+        else:
+            print(df.to_string())
+
+    def printParametersErrors(self, x=None, flg_simple=False, text=None):
+        """ Prints the current values of the parameters in the parameter list as well as the corresponding data
+        models.
+
+        :param x: list of parameters. If None prints the currently stored list.
+        :param flg_simple:
+        :param text: string to write as a header for the table of parameter values
+        """
+        if x is None:
+            x = self.x
+
+        if self.x0 == []:
+            self.x0 = deepcopy(x)
+
+        # Build a panda data frame and then print a nice table
+        rows = []  # get a list of parameters
+        table = []
+        for group_name, group in self.groups.items():
+            values_in_data = group.getter(self.data_models[group.data_key])
+            for i, param_name in enumerate(group.param_names):
+                rows.append(param_name)
+                table.append(
+                    [group_name, self.x0[group.idx[i]],
+                     x[group.idx[i]],
+                     group.ground_truth_values[i]])
+
+        if text is None:
+            print('\n\nParameters:')
+        else:
+            print(text)
+
+        df = pandas.DataFrame(table, rows, ['Group', 'Initial', 'Estimated', 'Ground truth'])
         if flg_simple:
             # https://medium.com/dunder-data/selecting-subsets-of-data-in-pandas-6fcd0170be9c
             print(df[['x']])

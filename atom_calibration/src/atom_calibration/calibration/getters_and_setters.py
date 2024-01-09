@@ -170,3 +170,15 @@ def setterPatternRotation(data, value, collection_key):
     hmatrix[0:3, 0:3] = matrix
     quat = transformations.quaternion_from_matrix(hmatrix)
     data['patterns']['collections'][collection_key]['quat'] = quat
+
+
+def getterJointParam(dataset, joint_key, param_key, collection_name):
+    return [dataset['collections'][collection_name]['joints'][joint_key][param_key]]
+
+
+def setterJointParam(dataset, value, joint_key, param_key, collection_name):
+    if collection_name is None:  # if collection_name is None, set all collections with the same value
+        for collection_key in dataset['collections']:
+            dataset['collections'][collection_key]['joints'][joint_key][param_key] = value[0]
+    else:
+        dataset['collections'][collection_name]['joints'][joint_key][param_key] = value
