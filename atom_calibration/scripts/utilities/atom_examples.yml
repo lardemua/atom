@@ -114,3 +114,14 @@ rihmpbot:
             file: train.zip
             extract_to: train
             id: 1PJ-nb-BEBhcB2Nsn4M84ttXWGGQkLySQ
+
+riwmpbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1bS9wr6EPHVjENyNwODlrF0cU_PJ74bFS
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1bzgNoFnqLvJ0zE8bvWJjVV50w2bfkage
