@@ -509,8 +509,8 @@ def main():
                 # TODO Append joint params. Right now appending all joint params. Should be clever and know, from residual, which will affect
                 if not dataset['calibration_config']['joints'] == "":
                     for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
-                        pattern = 'joint-' + joint_key
-                        params.extend(opt.getParamsContainingPattern(pattern))  # pattern related params
+                        pattern_joint = 'joint-' + joint_key
+                        params.extend(opt.getParamsContainingPattern(pattern_joint))  # pattern related params
 
                 if sensor["modality"] == "rgb":
                     # Compute step as a function of residual sampling factor

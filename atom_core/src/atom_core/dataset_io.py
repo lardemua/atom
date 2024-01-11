@@ -763,7 +763,7 @@ def addNoiseToJointParameters(dataset, args):
         print('No joints are being optimized')
         return
 
-    if args['joint_bias_names'] is None and args['joint_bias_values'] is None and args['joint_bias_values']:
+    if args['joint_bias_names'] is None and args['joint_bias_values'] is None and args['joint_bias_values'] is None:
         print('No bias to add')
         return
 
