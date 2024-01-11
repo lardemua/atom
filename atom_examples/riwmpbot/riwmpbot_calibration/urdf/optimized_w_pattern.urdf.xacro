@@ -402,7 +402,7 @@
     <child link="base_link_inertia"/>
   </joint>
   <joint name="shoulder_pan_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 -0.05625165425337494"/>
+    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 -0.08207204208585493"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="shoulder_link"/>
@@ -410,7 +410,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="shoulder_lift_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.001523594063923136"/>
+    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.05436123631567176"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
@@ -418,7 +418,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="elbow_joint" type="revolute">
-    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 -0.0003168872004018331"/>
+    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.004078404020126384"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -426,7 +426,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_1_joint" type="revolute">
-    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.0005063622910966569"/>
+    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 0.001249152402600338"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_1_link"/>
@@ -434,7 +434,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_2_joint" type="revolute">
-    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 -0.0005243698082626411"/>
+    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 -0.0031671515977441554"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_1_link"/>
     <child link="wrist_2_link"/>
@@ -442,7 +442,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_3_joint" type="revolute">
-    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.145851420705217"/>
+    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.131730950999273"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_2_link"/>
     <child link="wrist_3_link"/>
@@ -554,7 +554,7 @@
     <child link="tripod_center_support"/>
   </joint>
   <joint name="rgb_world_joint" type="fixed">
-    <origin xyz="-0.01852046309669971 0.04355794030949294 0.022928976216741517" rpy="0.018774531776997533 0.00033413141586237784 -0.05369666833386372"/>
+    <origin xyz="-0.02804793754764452 0.02875482141608135 -0.010685232209137863" rpy="0.07960990590367759 -0.009056331952273752 -0.059898132857513435"/>
     <parent link="tripod_center_support"/>
     <child link="rgb_world_link"/>
   </joint>
@@ -693,20 +693,6 @@
     <parent link="upper_arm_link"/>
     <child link="charuco_200x120_3x6"/>
   </joint>
-  <link name="charuco_170x100_3x6">
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-    <visual name="forearm_pattern_visual">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="forearm_link-charuco_170x100_3x6" type="fixed">
-    <origin xyz="-0.19991939172654224 0.019908773347669356 -0.029667247195872347" rpy="-8.580415694149842e-05 -0.0027796983125768456 3.140571696094266"/>
-    <parent link="forearm_link"/>
-    <child link="charuco_170x100_3x6"/>
-  </joint>
   <link name="charuco_200x200_8x8">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual name="hand_pattern_visual">
@@ -717,22 +703,8 @@
     </visual>
   </link>
   <joint name="flange-charuco_200x200_8x8" type="fixed">
-    <origin xyz="0.060207072669968005 -0.059545882239939146 0.0009528583981800399" rpy="-0.005252217162090667 0.0006430595110670217 0.0005278650964964551"/>
+    <origin xyz="0.06042907727439765 -0.05970960104276578 0.0005633484812680199" rpy="0.0036482304087431037 0.002681590952068309 -0.0007273360247412384"/>
     <parent link="flange"/>
     <child link="charuco_200x200_8x8"/>
-  </joint>
-  <link name="charuco_200x120_3x6">
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-    <visual name="upper_arm_pattern_visual">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="upper_arm_link-charuco_200x120_3x6" type="fixed">
-    <origin xyz="-0.24018329232428023 0.030002889981482102 0.09056138171280471" rpy="0.0008115095891808838 -0.00022301930081180068 3.139962337622029"/>
-    <parent link="upper_arm_link"/>
-    <child link="charuco_200x120_3x6"/>
   </joint>
 </robot>

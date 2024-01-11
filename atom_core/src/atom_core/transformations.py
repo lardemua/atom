@@ -7,7 +7,7 @@ A set of functions related to geometric transformations
 # --- IMPORTS (standard, then third party, then my own modules)
 # -------------------------------------------------------------------------------
 
-from tf.transformations import euler_from_matrix
+from tf.transformations import euler_from_matrix, quaternion_matrix
 
 # Standard imports
 
@@ -38,6 +38,13 @@ def compareTransforms(t1, t2):
         t1: transformation 1
         t2: transformation 2
     """
+
+    if type(t1) == 'dict' and type(t2) == 'dict':
+        quat1 = t1['quat']
+
+        M1 = quaternion_matrix(quat1)
+        print(M1)
+        exit(0)
 
     # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation the amount of rotation and translation in the resulting matrix.
     # print('Comparing \nt1= ' + str(t1) + ' \n\nt2=' + str(t2))

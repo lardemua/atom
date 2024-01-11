@@ -11,22 +11,188 @@ import os
 import subprocess
 from statistics import mean
 from signal import setitimer, signal, SIGALRM, ITIMER_REAL
+from prettytable import PrettyTable
 
 import readchar
 import rospkg
 from colorama import Fore, Style
-from atom_core.system import execute
+import numpy as np
 
 # 3rd-party
 from rospy_message_converter import message_converter
 from pynput import keyboard
 
-# from open3d import * # This cannot be used. It itereferes with the Image for getMessageTypeFromTopic(topic):
+from tf.transformations import quaternion_matrix, euler_from_matrix
 
+from atom_core.naming import generateKey
+from atom_core.system import execute
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
+
+def compareAtomTransforms(transform_1, transform_2):
+    """Compares two different transformations and returns the following metrics:
+    Args:
+        transform_1: transformation 1
+        transform_2: transformation 2
+    """
+
+    # Create a 4x4 transformation for transform_1
+    t1 = quaternion_matrix(transform_1['quat'])
+    t1[0:3, 3] = transform_1['trans']
+
+    # Create a 4x4 transformation for transform_2
+    t2 = quaternion_matrix(transform_2['quat'])
+    t2[0:3, 3] = transform_2['trans']
+
+    # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation the amount of rotation and translation in the resulting matrix.
+    # print('Comparing \nt1= ' + str(t1) + ' \n\nt2=' + str(t2))
+
+    t_delta = np.dot(np.linalg.inv(t1), t2)
+    # print('t_delta = ' + str(t_delta))
+
+    rotation_delta = t_delta[0:3, 0:3]
+    roll, pitch, yaw = euler_from_matrix(rotation_delta)
+
+    translation_delta = t_delta[0:3, 3]
+    # print('translation_delta = ' + str(translation_delta))
+
+    # global metrics
+    translation_error = float(abs(np.average(translation_delta)))
+    rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
+
+    return translation_error, rotation_error
+
+
+def getNumberQualifier(n, unit='meters'):
+
+    if unit == 'meters':
+        if n < 0.001:
+            return Fore.GREEN + '{:.5f}'.format(n) + ' (<1 mm)' + Style.RESET_ALL
+        elif n < 0.01:
+            return Fore.YELLOW + '{:.5f}'.format(n) + ' (<1 cm)' + Style.RESET_ALL
+        elif n < 0.05:
+            return Fore.MAGENTA + '{:.5f}'.format(n) + ' (<5 cm)' + Style.RESET_ALL
+        else:
+            return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
+
+    if unit == 'rad':
+        n_deg = n*180/math.pi
+        if n_deg < 0.1:
+            return Fore.LIGHTGREEN_EX + '{:.5f}'.format(n) + ' (<0.1 deg)' + Style.RESET_ALL
+        if n_deg < 0.5:
+            return Fore.GREEN + '{:.5f}'.format(n) + ' (<0.5 deg)' + Style.RESET_ALL
+        elif n_deg < 1:
+            return Fore.YELLOW + '{:.5f}'.format(n) + ' (<1.0 deg)' + Style.RESET_ALL
+        elif n_deg < 3:
+            return Fore.MAGENTA + '{:.5f}'.format(n) + ' (<3.0 deg)' + Style.RESET_ALL
+        else:
+            return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
+
+
+def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, selected_collection_key):
+
+    # --------------------------------------------------
+    # Evaluate sensor poses
+    # --------------------------------------------------
+    for sensor_key, sensor in dataset["sensors"].items():
+        header = ['Transform', 'Description', 'et (ini)', 'et (cal)', 'erot (ini)', 'erot (cal)']
+        table = PrettyTable(header)
+
+        transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
+        row = [transform_key, 'Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL]
+
+        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+
+        translation_error_1, rotation_error_1 = compareAtomTransforms(transform_initial, transform_ground_truth)
+        translation_error_2, rotation_error_2 = compareAtomTransforms(transform_calibrated, transform_ground_truth)
+
+        row.append(getNumberQualifier(translation_error_1))
+        row.append(getNumberQualifier(translation_error_2))
+        row.append(getNumberQualifier(rotation_error_1, unit='rad'))
+        row.append(getNumberQualifier(rotation_error_2, unit='rad'))
+
+        table.add_row(row)
+
+    # TODO Evaluate intrinsics
+
+    # --------------------------------------------------
+    # Evaluate additional transforms
+    # --------------------------------------------------
+    if dataset['calibration_config']['additional_tfs'] is not None:
+        for additional_tf_key, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+
+            transform_key = generateKey(additional_tf["parent_link"], sensor["child_link"])
+            row = [transform_key, 'Additional_tf ' + Fore.LIGHTCYAN_EX + additional_tf_key + Style.RESET_ALL]
+
+            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+            transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
+            transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+
+            translation_error_1, rotation_error_1 = compareAtomTransforms(transform_initial, transform_ground_truth)
+            translation_error_2, rotation_error_2 = compareAtomTransforms(transform_calibrated, transform_ground_truth)
+
+            row.append(getNumberQualifier(translation_error_1))
+            row.append(getNumberQualifier(translation_error_2))
+            row.append(getNumberQualifier(rotation_error_1, unit='rad'))
+            row.append(getNumberQualifier(rotation_error_2, unit='rad'))
+            table.add_row(row)
+
+    # --------------------------------------------------
+    # Evaluate pattern transforms
+    # --------------------------------------------------
+    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+
+        transform_key = generateKey(pattern["parent_link"], pattern["link"])
+        row = [transform_key, 'Pattern ' + Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
+
+        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+
+        translation_error_1, rotation_error_1 = compareAtomTransforms(transform_initial, transform_ground_truth)
+        translation_error_2, rotation_error_2 = compareAtomTransforms(transform_calibrated, transform_ground_truth)
+
+        row.append(getNumberQualifier(translation_error_1))
+        row.append(getNumberQualifier(translation_error_2))
+        row.append(getNumberQualifier(rotation_error_1, unit='rad'))
+        row.append(getNumberQualifier(rotation_error_2, unit='rad'))
+        table.add_row(row)
+
+    print(Style.DIM + '\nTransforms Calibration' + Style.RESET_ALL)
+    print(table)
+
+    # --------------------------------------------------
+    # Evaluate joints
+    # --------------------------------------------------
+
+    if dataset['calibration_config']['joints'] is not None:
+        header = ['Joint', 'Param', 'Error (ini)', 'Error (calib)']
+        table = PrettyTable(header)
+
+        for joint_key, joint in dataset['calibration_config']['joints'].items():
+            for param in joint['params_to_calibrate']:
+                row = [joint_key, param]
+
+                value_calibrated = dataset['collections'][selected_collection_key]['joints'][joint_key][param]
+                value_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['joints'][joint_key][param]
+                value_initial = dataset_initial['collections'][selected_collection_key]['joints'][joint_key][param]
+
+                error_initial = getNumberQualifier(abs(value_ground_truth-value_initial), unit='rad')
+                row.append(error_initial)
+
+                error_calibrated = getNumberQualifier(abs(value_ground_truth-value_calibrated), unit='rad')
+                row.append(error_calibrated)
+
+                table.add_row(row)
+
+        print(Style.DIM + '\nJoints Calibration' + Style.RESET_ALL)
+        print(table)
+
 
 def raise_timeout_error(signum, frame):
     raise subprocess.TimeoutExpired(None, 1)
