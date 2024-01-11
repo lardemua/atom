@@ -84,6 +84,8 @@ def main():
                     help='Anchor sensors. You can name as many sensors as needed. Sensors names should be the ones defined in the config.yml. Example: -as rgb_hand lidar_center', type=str, required=False)
     ap.add_argument("-ap", "--anchor_patterns", action="store_true", default=False,
                     help="Runs optimization without changing the poses of the patterns.")
+    ap.add_argument("-gtpp", "--ground_truth_pattern_poses", action="store_true", default=False,
+                    help="Sets pattern poses from initial transforms stored in the dataset. Only for simulation, these are the values before eventually adding noise, which in the case of simulation consist of the ground truth.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-ias", "--ignore_anchored_sensor", action="store_true", default=False,
@@ -361,9 +363,10 @@ def main():
                     ground_truth_transform = getterTransform(dataset_initial, transform_key=transform_key,
                                                              collection_name=collection_key)
 
-                collection["transforms"][transform_key] = {"parent": parent, "child": child,
-                                                           "trans": initial_estimate["trans"],
-                                                           "quat": initial_estimate["quat"]}
+                if not args['ground_truth_pattern_poses']:
+                    collection["transforms"][transform_key] = {"parent": parent, "child": child,
+                                                               "trans": initial_estimate["trans"],
+                                                               "quat": initial_estimate["quat"]}
 
                 # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
                 #   a) The Getter will pick up transform from the collection collection_key;
@@ -400,10 +403,12 @@ def main():
                                                          collection_name=selected_collection_key)
 
             # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
-            for collection_key, collection in dataset["collections"].items():
-                collection["transforms"][transform_key] = {"parent": parent, "child": child,
-                                                           "trans": initial_estimate["trans"],
-                                                           "quat": initial_estimate["quat"]}
+
+            if not args['ground_truth_pattern_poses']:  # nothing to do if we should use ground truth
+                for collection_key, collection in dataset["collections"].items():
+                    collection["transforms"][transform_key] = {"parent": parent, "child": child,
+                                                               "trans": initial_estimate["trans"],
+                                                               "quat": initial_estimate["quat"]}
 
             # Finally push the six parameters to describe the patterns pose w.r.t its parent link:
             #   a) The Getter will pick up the collection from one selected collection (it does not really matter which,

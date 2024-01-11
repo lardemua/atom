@@ -610,26 +610,35 @@ class Optimizer:
             for i, param_name in enumerate(group.param_names):
                 rows.append(param_name)
 
+                v_ini = '{:.5f}'.format(self.x0[group.idx[i]])
+
+                v_calib = '{:.5f}'.format(x[group.idx[i]])
+
+                v_gt = '{:.5f}'.format(group.ground_truth_values[i])
+
                 error_initial = None if group.ground_truth_values[i] is None else abs(
                     group.ground_truth_values[i] - self.x0[group.idx[i]])
                 error = None if group.ground_truth_values[i] is None else abs(
                     group.ground_truth_values[i] - x[group.idx[i]])
 
-                if error < error_initial:
+                if error <= error_initial:
                     error = Fore.GREEN + '{:.5f}'.format(error) + Style.RESET_ALL
                 else:
                     error = Fore.RED + '{:.5f}'.format(error) + Style.RESET_ALL
 
-                table.append([self.x0[group.idx[i]], x[group.idx[i]],
-                             group.ground_truth_values[i], error_initial, error])
+                if error_initial is not None:
+                    error_initial = '{:.5f}'.format(error_initial)
+
+                table.append([v_ini, v_calib,
+                             v_gt, error_initial, error])
 
         if text is None:
             print('\n\nParameters:')
         else:
             print(text)
 
-        df = pandas.DataFrame(table, rows, ['Initial', 'Estimated', 'Ground truth',
-                              'Initial Error', Fore.BLACK + 'Error' + Style.RESET_ALL])
+        df = pandas.DataFrame(table, rows, ['V ini', 'V calib', 'V GT',
+                              'E ini', Fore.BLACK + 'E fin' + Style.RESET_ALL])
         if flg_simple:
             # https://medium.com/dunder-data/selecting-subsets-of-data-in-pandas-6fcd0170be9c
             print(df[['x']])
