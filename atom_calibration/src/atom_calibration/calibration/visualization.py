@@ -683,14 +683,14 @@ def visualizationFunction(models):
             for sensor_key, sensor in sensors.items():
 
                 # check if sensor detects any of the patterns
-                # flag_detects_at_leas_one_pattern = False
-                # for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
-                #     if collection['labels'][pattern_key][sensor_key]['detected']:
-                #         flag_detects_at_leas_one_pattern = True
+                flag_detects_at_least_one_pattern = False
+                for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                    if collection['labels'][pattern_key][sensor_key]['detected']:
+                        flag_detects_at_least_one_pattern = True
 
                 # If in this collection, sensor did not detect any of the patterns, continue
-                # if flag_detects_at_leas_one_pattern == False:
-                # continue
+                if flag_detects_at_least_one_pattern == False:
+                    continue
 
                 if sensor['modality'] == 'rgb':
                     image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
