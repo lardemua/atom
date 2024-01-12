@@ -8,6 +8,7 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 # 3rd-party
 import math
 import os
+import re
 import subprocess
 from statistics import mean
 from signal import setitimer, signal, SIGALRM, ITIMER_REAL
@@ -70,26 +71,61 @@ def getNumberQualifier(n, unit='meters'):
 
     if unit == 'meters':
         if n < 0.001:
-            return Fore.GREEN + '{:.5f}'.format(n) + ' (<1 mm)' + Style.RESET_ALL
+            return Fore.LIGHTGREEN_EX + '{:.5f}'.format(n) + Style.RESET_ALL
         elif n < 0.01:
-            return Fore.YELLOW + '{:.5f}'.format(n) + ' (<1 cm)' + Style.RESET_ALL
+            return Fore.GREEN + '{:.5f}'.format(n) + Style.RESET_ALL
         elif n < 0.05:
-            return Fore.MAGENTA + '{:.5f}'.format(n) + ' (<5 cm)' + Style.RESET_ALL
+            return Fore.YELLOW + '{:.5f}'.format(n) + Style.RESET_ALL
         else:
             return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
 
     if unit == 'rad':
         n_deg = n*180/math.pi
         if n_deg < 0.1:
-            return Fore.LIGHTGREEN_EX + '{:.5f}'.format(n) + ' (<0.1 deg)' + Style.RESET_ALL
+            return Fore.LIGHTGREEN_EX + '{:.5f}'.format(n) + Style.RESET_ALL
         if n_deg < 0.5:
-            return Fore.GREEN + '{:.5f}'.format(n) + ' (<0.5 deg)' + Style.RESET_ALL
+            return Fore.GREEN + '{:.5f}'.format(n) + Style.RESET_ALL
         elif n_deg < 1:
-            return Fore.YELLOW + '{:.5f}'.format(n) + ' (<1.0 deg)' + Style.RESET_ALL
+            return Fore.YELLOW + '{:.5f}'.format(n) + Style.RESET_ALL
         elif n_deg < 3:
-            return Fore.MAGENTA + '{:.5f}'.format(n) + ' (<3.0 deg)' + Style.RESET_ALL
+            return Fore.MAGENTA + '{:.5f}'.format(n) + Style.RESET_ALL
         else:
             return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
+
+
+def addAveragesBottomRowToTable(table, header):
+
+    # Compute averages and add a bottom row
+    bottom_row = []  # Compute averages and add bottom row to table
+    for col_idx, _ in enumerate(header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + 'Averages' + Fore.BLACK + Style.RESET_ALL)
+            continue
+
+        total = 0
+        count = 0
+        for row in table.rows:
+            # Must remove ansi escape characters so that its possible to convert to float
+            # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
+            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+            cell_without_color_codes = ansi_escape.sub('', row[col_idx])
+
+            try:
+                value = float(cell_without_color_codes)
+                total += float(value)
+                count += 1
+            except:
+                pass
+
+        if count > 0:
+            value = '%.5f' % (total / count)
+        else:
+            value = '---'
+
+        bottom_row.append(Fore.BLUE + value + Fore.BLACK + Style.RESET_ALL)
+
+    table.add_row(bottom_row)
+    return table
 
 
 def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, selected_collection_key):
@@ -98,11 +134,11 @@ def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, sele
     # Evaluate sensor poses
     # --------------------------------------------------
     for sensor_key, sensor in dataset["sensors"].items():
-        header = ['Transform', 'Description', 'et (ini)', 'et (cal)', 'erot (ini)', 'erot (cal)']
+        header = ['Transform', 'Description', 'Et0 [m]', 'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
         table = PrettyTable(header)
 
         transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
-        row = [transform_key, 'Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL]
+        row = [transform_key, Fore.BLUE + sensor_key + Style.RESET_ALL]
 
         transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
         transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
@@ -127,7 +163,7 @@ def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, sele
         for additional_tf_key, additional_tf in dataset['calibration_config']['additional_tfs'].items():
 
             transform_key = generateKey(additional_tf["parent_link"], sensor["child_link"])
-            row = [transform_key, 'Additional_tf ' + Fore.LIGHTCYAN_EX + additional_tf_key + Style.RESET_ALL]
+            row = [transform_key, Fore.LIGHTCYAN_EX + additional_tf_key + Style.RESET_ALL]
 
             transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
             transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
@@ -148,7 +184,7 @@ def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, sele
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
         transform_key = generateKey(pattern["parent_link"], pattern["link"])
-        row = [transform_key, 'Pattern ' + Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
+        row = [transform_key, Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
 
         transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
         transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
@@ -163,7 +199,16 @@ def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, sele
         row.append(getNumberQualifier(rotation_error_2, unit='rad'))
         table.add_row(row)
 
-    print(Style.DIM + '\nTransforms Calibration' + Style.RESET_ALL)
+    # Add bottom row with averages
+    table = addAveragesBottomRowToTable(table, header)
+
+    print(Style.BRIGHT + '\nTransforms Calibration' + Style.RESET_ALL)
+    print('Et: average translation error (Et0 - initial) [m],  Erot: average rotation error (Erot0 - initial) [rad]')
+    print('Translation errors: ' + Fore.LIGHTGREEN_EX + '< 1 mm' + Fore.BLACK + ' | ' + Fore.GREEN + '< 1 cm' +
+          Fore.BLACK + ' | ' + Fore.YELLOW + '< 5 cm' + Fore.BLACK + ' | ' + Fore.RED + '>= 5 cm' + Style.RESET_ALL)
+    print('Rotation errors: ' + Fore.LIGHTGREEN_EX + '< 0.1 deg' + Fore.BLACK + ' | ' + Fore.GREEN + '< 0.5 deg' + Fore.BLACK + ' | ' +
+          Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
+
     print(table)
 
     # --------------------------------------------------
@@ -190,7 +235,15 @@ def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, sele
 
                 table.add_row(row)
 
-        print(Style.DIM + '\nJoints Calibration' + Style.RESET_ALL)
+        # Add bottom row with averages
+        table = addAveragesBottomRowToTable(table, header)
+
+        print(Style.BRIGHT + '\nJoints Calibration' + Style.RESET_ALL)
+        print('Translation errors: ' + Fore.LIGHTGREEN_EX + '< 1 mm' + Fore.BLACK + ' | ' + Fore.GREEN + '< 1 cm' +
+              Fore.BLACK + ' | ' + Fore.YELLOW + '< 5 cm' + Fore.BLACK + ' | ' + Fore.RED + '>= 5 cm' + Style.RESET_ALL)
+        print('Rotation errors: ' + Fore.LIGHTGREEN_EX + '< 0.1 deg' + Fore.BLACK + ' | ' + Fore.GREEN + '< 0.5 deg' + Fore.BLACK + ' | ' +
+              Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
+
         print(table)
 
 
