@@ -128,7 +128,7 @@ def addAveragesBottomRowToTable(table, header):
     return table
 
 
-def printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, selected_collection_key):
+def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key):
 
     # --------------------------------------------------
     # Evaluate sensor poses

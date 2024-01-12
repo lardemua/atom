@@ -34,7 +34,11 @@ from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   filterAdditionalTfsFromDataset,
                                   filterPatternsFromDataset)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import atomError, waitForKeyPress2, atomStartupPrint, verifyAnchoredSensor, printOptimizationReport
+from atom_core.utilities import (atomError,
+                                 waitForKeyPress2,
+                                 atomStartupPrint,
+                                 verifyAnchoredSensor,
+                                 printComparisonToGroundTruth)
 from atom_core.xacro_io import saveResultsXacro
 from atom_core.results_yml_io import saveResultsYml
 
@@ -135,8 +139,8 @@ def main():
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
     ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
                     type=str, required=False, default=None)
-    ap.add_argument("-pp", "--print_parameters",
-                    help="Will print the value of the estimated parameters at the end of the optimization.", action="store_true", default=False)
+    ap.add_argument("-ctgt", "--comparison_to_ground_truth",
+                    help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.", action="store_true", default=False)
     ap.add_argument("-sfr", "--save_file_results",
                     help="Output folder to where the results will be stored.", type=str, required=False)
 
@@ -620,8 +624,6 @@ def main():
     options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
     # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5,
-    #    'diff_step': None, 'x_scale': 'jac', 'max_nfev': 1}
 
     opt.startOptimization(optimization_options=options)
 
@@ -635,10 +637,9 @@ def main():
     # ---------------------------------------
     # --- Print Results
     # ---------------------------------------
-    if args['print_parameters']:
-        opt.printParametersErrors()
-        printOptimizationReport(dataset, dataset_initial, dataset_ground_truth, selected_collection_key)
-    exit(0)
+    if args['comparison_to_ground_truth']:
+        # opt.printParametersErrors() # only if we want to see the value of each parameter
+        printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key)
 
     # ---------------------------------------
     # --- Save updated JSON file
