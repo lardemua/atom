@@ -84,20 +84,20 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
     package_name = dataset["_metadata"]["package_name"]
 
     path_to_urdf_directory = (rospack.get_path(package_name) + "/urdf/")
-    path_to_optimized_directory = (path_to_urdf_directory + "optimized/")
+    # path_to_optimized_directory = (path_to_urdf_directory + "optimized/")
 
-    if not os.path.exists(path_to_optimized_directory):
-        os.mkdir(path_to_optimized_directory)
-    filename_results_xacro = path_to_optimized_directory + file_name
-    with open(filename_results_xacro, "w") as out:
-        out.write(URDF.to_xml_string(xml_robot))
+    # if not os.path.exists(path_to_optimized_directory):
+    #     os.mkdir(path_to_optimized_directory)
+    # filename_results_xacro = path_to_optimized_directory + file_name
+    # with open(filename_results_xacro, "w") as out:
+    #     out.write(URDF.to_xml_string(xml_robot))
 
     optimized_urdf_file = path_to_urdf_directory + 'optimized.urdf.xacro'
     with open(optimized_urdf_file, "w", ) as out:
         out.write(URDF.to_xml_string(xml_robot))
         # print("Saving optimized.urdf.xacro in " + filename_results_xacro + ".")
 
-    print("Optimized xacro saved to " + str(filename_results_xacro) + " . You can use it as a ROS robot_description.")
+    print("Optimized xacro saved to " + str(optimized_urdf_file) + " . You can use it as a ROS robot_description.")
 
     # Save optimized xacro with patterns
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
