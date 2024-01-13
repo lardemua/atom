@@ -4,6 +4,7 @@ Runs several calibration executions in batch_execution. A yml file is used to co
 """
 import argparse
 import os
+import shutil
 import subprocess
 import yaml
 import jinja2
@@ -11,17 +12,26 @@ import jinja2
 from colorama import Fore, Back, Style
 from pytictoc import TicToc
 
+from atom_core.config_io import atomError
+from atom_core.system import resolvePath
+from atom_core.utilities import removeColorsFromText
+
+
+def bprint(text):
+    """bprint (batch print) will always print in blue color with yellow background """
+    print(Fore.BLUE + Back.YELLOW + text + Style.RESET_ALL)
+
+
 def main():
     ap = argparse.ArgumentParser()  # Parse command line arguments
-    ap.add_argument("-v", "--verbose", help="Prints the stdout_data of each command to the terminal.", action='store_true',
-                    default=False)
+    ap.add_argument("-v", "--verbose", help="Prints the stdout_data of each command to the terminal.",
+                    action='store_true', default=False)
     ap.add_argument("-f", "--filename", help="Yml file containing a description of all the commands to run in batch.",
                     required=True, type=str)
+    ap.add_argument("-ow", "--overwrite", help="Overwrite output folder if needed.",
+                    required=False, action='store_true')
 
     args = vars(ap.parse_args())
-
-    # Load and render config file
-    print('reading file ' + args['filename'])
 
     # Getting data map
     with open(args['filename']) as f:
@@ -39,21 +49,29 @@ def main():
             break
 
     config = yaml.safe_load(template)
-
-    print(Fore.BLUE + Back.YELLOW + 'Loaded config file ' + args['filename'] + '(rendered with nested variable '
-                                                                               'substitution)' + Style.RESET_ALL)
-    if args['verbose']:
-        print(config)
+    # bprint('Loaded config file ' + args['filename'] + '(rendered with nested variable substitution)')
+    # if args['verbose']:
+    # bprint(str(config))
 
     tictoc = TicToc()
 
+    config['output_folder'] = resolvePath(config['output_folder'])
     if not os.path.exists(config['output_folder']):  # create stdout_data folder if it does not exist.
-        print(Fore.BLUE + Back.YELLOW + 'Creating stdout_data folder at: ' + config['output_folder'] + Style.RESET_ALL)
+        # bprint('Creating output folder: ' + config['output_folder'])
         os.mkdir(config['output_folder'])  # Create the new folder
+    elif os.path.exists(config['output_folder']) and args['overwrite']:
+        # bprint('Overwriting output folder: ' + config['output_folder'])
+        shutil.rmtree(config['output_folder'])  # Create the new folder
+        os.mkdir(config['output_folder'])  # Create the new folder
+    else:
+        atomError(Fore.BLUE + Back.YELLOW + 'Output folder ' + config['output_folder'] +
+                  ' exists. If you want to delete use the --overwrite command line argument.' + Style.RESET_ALL)
 
-    for idx, batch in enumerate(config['batches']):  # cyce through commands in batch_execution.
-        print('\n\n' + Style.BRIGHT + Fore.BLUE + Back.YELLOW + 'Batch' + str(idx) + ', executing command:' +
-              Style.RESET_ALL + '\n' + Fore.BLUE + Back.YELLOW + batch['cmd'] + Style.RESET_ALL)
+    num_batches = len(config['batches'].keys())
+    for idx, (batch_key, batch) in enumerate(config['batches'].items()):  # cycle through commands in batch_execution.
+        print('\n')
+        bprint(Style.BRIGHT + 'Batch ' + str(idx) + ' of ' + str(num_batches-1) + ': ' + batch_key)
+        bprint('Executing command:\n' + batch['cmd'])
 
         # Start executing command.
         tictoc.tic()
@@ -74,10 +92,14 @@ def main():
             print(Fore.BLUE + Back.YELLOW + 'Batch' + str(idx) + ' terminated, stdout is:' + Style.RESET_ALL)
             print(stdout_data)
 
-        prefix = str(idx).zfill(2) + '_'
-        filename = config['output_folder'] + '/' + prefix + batch['name'] + '_stdout.txt'
+        # Create batch folder
+        batch_folder = config['output_folder'] + '/' + batch_key
+        os.mkdir(batch_folder)
+
+        # Save stdout and stderr if failed
+        filename = batch_folder + '/stdout.txt'
         with open(filename, 'w') as f:
-            f.write(stdout_data)
+            f.write(removeColorsFromText(stdout_data))
 
         # Collect stdout_data files
         for file in batch['files_to_collect']:
@@ -87,12 +109,12 @@ def main():
             if not os.path.exists(file):
                 raise ValueError('File ' + file + ' should be collected but does not exist.')
 
-            filename_out = config['output_folder'] + '/' + prefix + batch['name'] + '_' + os.path.basename(file)
+            filename_out = batch_folder + '/' + os.path.basename(file)
             print(Fore.BLUE + Back.YELLOW + 'Moving file ' + file + ' to ' + filename_out + Style.RESET_ALL)
             p = subprocess.Popen('cp ' + file + ' ' + filename_out, shell=True, universal_newlines=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
 
-        print(Fore.BLUE + Back.YELLOW + 'Command executed in ' + toc + ' secs.' + Style.RESET_ALL)
+        bprint('Batch complete in ' + toc + ' secs.')
 
 
 if __name__ == "__main__":

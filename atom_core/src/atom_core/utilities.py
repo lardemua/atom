@@ -93,6 +93,14 @@ def getNumberQualifier(n, unit='meters'):
             return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
 
 
+def removeColorsFromText(text):
+    # Must remove ansi escape characters so that its possible to convert to float
+    # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    text_without_color_codes = ansi_escape.sub('', text)
+    return text_without_color_codes
+
+
 def addAveragesBottomRowToTable(table, header):
 
     # Compute averages and add a bottom row
@@ -105,10 +113,7 @@ def addAveragesBottomRowToTable(table, header):
         total = 0
         count = 0
         for row in table.rows:
-            # Must remove ansi escape characters so that its possible to convert to float
-            # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
-            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-            cell_without_color_codes = ansi_escape.sub('', row[col_idx])
+            cell_without_color_codes = removeColorsFromText(row[col_idx])
 
             try:
                 value = float(cell_without_color_codes)
@@ -128,7 +133,7 @@ def addAveragesBottomRowToTable(table, header):
     return table
 
 
-def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key):
+def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key, output_folder):
 
     # --------------------------------------------------
     # Evaluate sensor poses
@@ -210,6 +215,10 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
           Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
 
     print(table)
+    filename = output_folder + '/comparison_to_ground_truth_transforms.csv'
+    print('Saving transforms ground truth comparison to ' + Fore.BLUE + filename + Style.RESET_ALL)
+    with open(filename, 'w', newline='') as file:
+        file.write(removeColorsFromText(table.get_csv_string()))
 
     # --------------------------------------------------
     # Evaluate joints
@@ -245,6 +254,11 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
               Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
 
         print(table)
+
+        filename = output_folder + '/comparison_to_ground_truth_joints.csv'
+        print('Saving joints ground truth comparison to ' + Fore.BLUE + filename + Style.RESET_ALL)
+        with open(filename, 'w', newline='') as file:
+            file.write(removeColorsFromText(table.get_csv_string()))
 
 
 def raise_timeout_error(signum, frame):

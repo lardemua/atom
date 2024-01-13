@@ -160,15 +160,13 @@ def loadResultsJSON(json_file, collection_selection_function=None):
     return dataset, json_file
 
 
-def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
+def saveAtomDataset(output_folder, dataset_in, dataset_folder, freeze_dataset=False):
     if freeze_dataset:  # to make sure our changes only affect the dictionary to save
         dataset = copy.deepcopy(dataset_in)
     else:
         dataset = dataset_in
 
-    output_folder = os.path.dirname(output_file)
-    if output_folder == '':
-        output_folder = './'
+    output_file = output_folder + '/atom_calibration.json'
 
     bridge = CvBridge()
 
@@ -176,7 +174,7 @@ def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
-            createDataFile(dataset, collection_key, sensor, sensor_key, output_folder)
+            createDataFile(dataset, collection_key, sensor, sensor_key, dataset_folder)
 
         # Do the same for additional data topics ...
         # for description, sensor in dataset['additional_sensor_data'].items():
@@ -764,7 +762,7 @@ def addNoiseToJointParameters(dataset, args):
         return
 
     if args['joint_bias_names'] is None and args['joint_bias_values'] is None and args['joint_bias_values'] is None:
-        print('No bias to add')
+        print('No bias to add to joints')
         return
 
     if np.any([args['joint_bias_names'] is None, args['joint_bias_values'] is None, args['joint_bias_values'] is None]):

@@ -137,12 +137,12 @@ def main():
                     "after calling the optimization. Good for debugging.", action="store_true", default=False)
     ap.add_argument("-ipg", "--initial_pose_ghost", action="store_true", default=False,
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
-    ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
-                    type=str, required=False, default=None)
     ap.add_argument("-ctgt", "--comparison_to_ground_truth",
                     help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.", action="store_true", default=False)
-    ap.add_argument("-sfr", "--save_file_results",
+    ap.add_argument("-of", "--output_folder",
                     help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sce", "--save_calibration_errors", action="store_true", default=False,
+                    help="Saves a csv file with the errors at every iteration.")
     ap.add_argument("-ftol", "--optimization_ftol", help="ftol parameter for optimization.",
                     type=float, required=False, default=1e-5)
     ap.add_argument("-xtol", "--optimization_xtol", help="xtol parameter for optimization.",
@@ -158,19 +158,30 @@ def main():
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
     args = vars(ap.parse_args(args=arglist))
 
-    atomStartupPrint('Starting calibration')
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
     # ---------------------------------------
+    atomStartupPrint('Starting calibration')
+
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
-    dataset, json_file = loadResultsJSON(
-        args["json_file"], args["collection_selection_function"])
+    dataset, json_file = loadResultsJSON(args["json_file"], args["collection_selection_function"])
 
     if float(dataset['_metadata']['version']) < 3.0:
         atomError('Your dataset not version 3.0. Before running a calibration, you need to update it first with:\nrosrun atom_calibration update_dataset_from_version_2_to_3.')
 
     # make a copy before filtering out collections and sensors
     dataset_original = copy.deepcopy(dataset)
+
+    # --------------------------------------
+    # Setup output_folder to results by default
+    # --------------------------------------
+    if args['output_folder'] is None:
+        args['output_folder'] = os.path.dirname(json_file) + '/results'
+
+    if not os.path.exists(args['output_folder']):
+        os.mkdir(args['output_folder'])  # Create the new folder
+
+    args['dataset_folder'] = os.path.dirname(json_file)
 
     # ---------------------------------------
     # --- Filter some collections, sensors, joints and additional tfs from the dataset
@@ -645,23 +656,20 @@ def main():
     # ---------------------------------------
     if args['comparison_to_ground_truth']:
         # opt.printParametersErrors() # only if we want to see the value of each parameter
-        printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key)
+        printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
+                                     selected_collection_key, args['output_folder'])
 
+    print('hello 1')
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
-    if args["output_json"] is None:
-        filename_results_json = os.path.dirname(json_file) + "/atom_calibration.json"
-    else:
-        filename_results_json = os.path.dirname(json_file) + "/" + args["output_json"]
-
     # to store all sensors that existed in the dataset, regardless of which were optimized
     # If a sensor_key exists in the original dataset but not in the optimized dataset, then it was removed from the optimization and we should copy it back to the dataset before saving.
     for sensor_key, sensor in dataset_original["sensors"].items():
         if not sensor_key in dataset['sensors']:
             dataset['sensors'][sensor_key] = sensor
 
-    saveAtomDataset(filename_results_json, dataset)
+    saveAtomDataset(args['output_folder'], dataset, dataset_folder=args['dataset_folder'])
 
     # ---------------------------------------
     # --- Save updated xacro
@@ -671,7 +679,7 @@ def main():
     # ---------------------------------------
     # --- Save results into yaml
     # ---------------------------------------
-    filename_results_yml = os.path.dirname(json_file) + "/" + 'atom_calibration_params.yml'
+    filename_results_yml = args['output_folder'] + '/atom_calibration_params.yml'
     saveResultsYml(dataset, selected_collection_key, filename_results_yml)
 
 
