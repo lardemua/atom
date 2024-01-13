@@ -143,6 +143,16 @@ def main():
                     help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.", action="store_true", default=False)
     ap.add_argument("-sfr", "--save_file_results",
                     help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-ftol", "--optimization_ftol", help="ftol parameter for optimization.",
+                    type=float, required=False, default=1e-5)
+    ap.add_argument("-xtol", "--optimization_xtol", help="xtol parameter for optimization.",
+                    type=float, required=False, default=1e-5)
+    ap.add_argument("-gtol", "--optimization_gtol", help="gtol parameter for optimization.",
+                    type=float, required=False, default=1e-5)
+    ap.add_argument("-diff_step", "--optimization_diff_step", help="diff_step parameter for optimization.",
+                    type=float, required=False, default=None)
+    ap.add_argument("-max_nfev", "--optimization_max_nfev", help="max_nfev parameter for optimization.",
+                    type=int, required=False, default=None)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -619,12 +629,8 @@ def main():
         waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
     print("Initializing optimization ...")
-    # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
-    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
-
+    options = {'ftol': args['optimization_ftol'], 'xtol': args['optimization_xtol'], 'gtol': args['optimization_gtol'],
+               'diff_step': args['optimization_diff_step'], 'max_nfev': args['optimization_max_nfev'], 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:
