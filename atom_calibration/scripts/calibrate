@@ -175,9 +175,6 @@ def main():
 
     args['dataset_folder'] = os.path.dirname(args['json_file'])
 
-    # now we have the output folder we can save the command line args
-    saveCommandLineArgsYml(args_original, args['output_folder'] + '/command_line_args.yml')
-
     # ---------------------------------------
     # --- Read data from file
     # ---------------------------------------
@@ -667,7 +664,11 @@ def main():
         printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
                                      selected_collection_key, args['output_folder'])
 
-    print('hello 1')
+    # ---------------------------------------
+    # --- Save command line args
+    # ---------------------------------------
+    saveCommandLineArgsYml(args_original, args['output_folder'] + '/command_line_args.yml')
+
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
