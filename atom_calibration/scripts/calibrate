@@ -12,11 +12,13 @@ import signal
 import sys
 from functools import partial
 from copy import deepcopy
+import types
 
 import numpy as np
 
 # Atom imports
 from colorama import Fore, Style
+import yaml
 from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
                                                               setterCameraIntrinsics, setterTransform, getterJointParam, setterJointParam)
@@ -34,11 +36,11 @@ from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   filterAdditionalTfsFromDataset,
                                   filterPatternsFromDataset)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import (atomError,
+from atom_core.utilities import (atomError, createLambdaExpressionsForArgs,
                                  waitForKeyPress2,
                                  atomStartupPrint,
                                  verifyAnchoredSensor,
-                                 printComparisonToGroundTruth)
+                                 printComparisonToGroundTruth, saveCommandLineArgsYml)
 from atom_core.xacro_io import saveResultsXacro
 from atom_core.results_yml_io import saveResultsYml
 
@@ -55,6 +57,9 @@ def signal_handler(sig, frame):
 # --- MAIN
 # -------------------------------------------------------------------------------
 def main():
+
+    atomStartupPrint('Starting calibration')
+
     # ---------------------------------------
     # --- Parse command line argument
     # ---------------------------------------
@@ -110,7 +115,7 @@ def main():
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
                     "sensors left_laser and frontal_camera")
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=str,
                     help="A string to be evaluated into a lambda function that receives a collection name as input and "
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
@@ -125,7 +130,7 @@ def main():
                     help="A string to be evaluated into a lambda function that receives a joint parameter name as input and returns True or False to indicate if the joint parameter should be calibrated (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["origin_x", "origin_roll"] , to use only these parameters')
-    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=lambda s: eval(s, globals()),
+    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=str,
                     help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
     ap.add_argument("-atsf", "--additional_tf_selection_function", default=None, type=lambda s: eval(s, globals()),
@@ -156,32 +161,35 @@ def main():
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
-    args = vars(ap.parse_args(args=arglist))
+    args_original = vars(ap.parse_args(args=arglist))  # these args have the selection functions as strings
+    args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
 
     # ---------------------------------------
-    # --- INITIALIZATION Read data from file
+    # --- Setup some variables
     # ---------------------------------------
-    atomStartupPrint('Starting calibration')
+    if args['output_folder'] is None:
+        args['output_folder'] = os.path.dirname(args['json_file']) + '/results'
+
+    if not os.path.exists(args['output_folder']):
+        os.mkdir(args['output_folder'])  # Create the new folder
+
+    args['dataset_folder'] = os.path.dirname(args['json_file'])
+
+    # now we have the output folder we can save the command line args
+    saveCommandLineArgsYml(args_original, args['output_folder'] + '/command_line_args.yml')
+
+    # ---------------------------------------
+    # --- Read data from file
+    # ---------------------------------------
 
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
-    dataset, json_file = loadResultsJSON(args["json_file"], args["collection_selection_function"])
+    dataset = loadResultsJSON(args["json_file"], args["collection_selection_function"])
 
     if float(dataset['_metadata']['version']) < 3.0:
         atomError('Your dataset not version 3.0. Before running a calibration, you need to update it first with:\nrosrun atom_calibration update_dataset_from_version_2_to_3.')
 
     # make a copy before filtering out collections and sensors
     dataset_original = copy.deepcopy(dataset)
-
-    # --------------------------------------
-    # Setup output_folder to results by default
-    # --------------------------------------
-    if args['output_folder'] is None:
-        args['output_folder'] = os.path.dirname(json_file) + '/results'
-
-    if not os.path.exists(args['output_folder']):
-        os.mkdir(args['output_folder'])  # Create the new folder
-
-    args['dataset_folder'] = os.path.dirname(json_file)
 
     # ---------------------------------------
     # --- Filter some collections, sensors, joints and additional tfs from the dataset

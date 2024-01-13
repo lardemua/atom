@@ -6,6 +6,7 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 # stdlib
 
 # 3rd-party
+from copy import deepcopy
 import math
 import os
 import re
@@ -22,6 +23,7 @@ import numpy as np
 # 3rd-party
 from rospy_message_converter import message_converter
 from pynput import keyboard
+import yaml
 
 from tf.transformations import quaternion_matrix, euler_from_matrix
 
@@ -394,7 +396,7 @@ def atomStartupPrint(message=''):
          ███████║   ██║   ██║   ██║██╔████╔██║ \n \
          ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║ \n \
   __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _  \n\
- / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |    \n\
+ / _|     ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝  | |    \n\
  | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __ \n\
  |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ / \n\
  | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <  \n\
@@ -440,3 +442,27 @@ def getJointParentChild(joint_key, description):
             child = joint.child
 
     return joint.parent, joint.child
+
+
+def saveCommandLineArgsYml(args, output_file):
+    with open(output_file, 'w') as file:
+        yaml.dump(args, file, sort_keys=False)
+
+
+def createLambdaExpressionsForArgs(args, keys_to_check=['sensor_selection_function',
+                                                        'collection_selection_function',
+                                                        'joint_selection_function',
+                                                        'joint_parameter_selection_function',
+                                                        'pattern_selection_function',
+                                                        'additional_tf_selection_function']):
+
+    args_with_lambdas = deepcopy(args)
+    for arg_key in keys_to_check:
+
+        if args_with_lambdas[arg_key] is None:  # nothing to do
+            continue
+
+        print('Creating lambda expression for arg ' + Fore.BLUE + arg_key + Style.RESET_ALL)
+        args_with_lambdas[arg_key] = eval(args_with_lambdas[arg_key], globals())
+
+    return args_with_lambdas

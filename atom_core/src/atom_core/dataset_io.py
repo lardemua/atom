@@ -157,7 +157,7 @@ def loadResultsJSON(json_file, collection_selection_function=None):
     if skipped_loading:  # list is not empty
         print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
 
-    return dataset, json_file
+    return dataset
 
 
 def saveAtomDataset(output_folder, dataset_in, dataset_folder, freeze_dataset=False):
