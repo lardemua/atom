@@ -3,11 +3,14 @@
 Runs several calibration executions in batch_execution. A yml file is used to config the batch executions.
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import yaml
 import jinja2
+from jinja2 import Template, Undefined
+from jinja2 import Environment, FileSystemLoader
 
 from colorama import Fore, Back, Style
 from pytictoc import TicToc
@@ -33,29 +36,27 @@ def main():
 
     args = vars(ap.parse_args())
 
-    # Getting data map
-    with open(args['filename']) as f:
-        dataMap = yaml.safe_load(f)
+    # Load data.yml
+    filename = os.path.dirname(args['filename']) + '/data.yml'
+    with open(filename) as f:
+        file_content = f.read()
+        data = yaml.safe_load(file_content)
 
-    # Getting initial template
-    with open(args['filename']) as f:
-        template = f.read()
+    # Template engine1 setup
+    file_loader = FileSystemLoader(os.path.dirname(args['filename']))
+    env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
+    env.add_extension('jinja2.ext.do')
+    template = env.get_template(os.path.basename(args['filename']))
 
-    # Recursive substitution of variables to allow nested variables.
-    while True:
-        previous_template = template
-        template = jinja2.Template(template).render(**dataMap)
-        if previous_template == template:
-            break
+    rendered = template.render(data)
+    config = yaml.safe_load(rendered)
+    # print('config=\n' + Back.YELLOW + str(json.dumps(config, indent=4)) + Style.RESET_ALL)
 
-    config = yaml.safe_load(template)
-    # bprint('Loaded config file ' + args['filename'] + '(rendered with nested variable substitution)')
-    # if args['verbose']:
     # bprint(str(config))
 
     tictoc = TicToc()
 
-    config['output_folder'] = resolvePath(config['output_folder'])
+    config['output_folder'] = resolvePath(data['output_folder'])
     if not os.path.exists(config['output_folder']):  # create stdout_data folder if it does not exist.
         # bprint('Creating output folder: ' + config['output_folder'])
         os.mkdir(config['output_folder'])  # Create the new folder

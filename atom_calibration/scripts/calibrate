@@ -168,9 +168,11 @@ def main():
     # --- Setup some variables
     # ---------------------------------------
     if args['output_folder'] is None:
+        print('auto_creating output folder')
         args['output_folder'] = os.path.dirname(args['json_file']) + '/results'
 
     if not os.path.exists(args['output_folder']):
+        print(args['output_folder'])
         os.mkdir(args['output_folder'])  # Create the new folder
 
     args['dataset_folder'] = os.path.dirname(args['json_file'])
