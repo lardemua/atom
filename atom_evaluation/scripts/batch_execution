@@ -29,7 +29,11 @@ def main():
     ap = argparse.ArgumentParser()  # Parse command line arguments
     ap.add_argument("-v", "--verbose", help="Prints the stdout_data of each command to the terminal.",
                     action='store_true', default=False)
-    ap.add_argument("-f", "--filename", help="Yml file containing a description of all the commands to run in batch.",
+    ap.add_argument("-tf", "--template_filename", help="Jinja2 yaml containing the batches.",
+                    required=True, type=str)
+    ap.add_argument("-df", "--data_filename", help="Yaml containing variables used in the template file.",
+                    required=True, type=str)
+    ap.add_argument("-of", "--output_folder", help="Folder where to store the results",
                     required=True, type=str)
     ap.add_argument("-ow", "--overwrite", help="Overwrite output folder if needed.",
                     required=False, action='store_true')
@@ -37,16 +41,15 @@ def main():
     args = vars(ap.parse_args())
 
     # Load data.yml
-    filename = os.path.dirname(args['filename']) + '/data.yml'
-    with open(filename) as f:
+    with open(args['data_filename']) as f:
         file_content = f.read()
         data = yaml.safe_load(file_content)
 
     # Template engine1 setup
-    file_loader = FileSystemLoader(os.path.dirname(args['filename']))
+    file_loader = FileSystemLoader(os.path.dirname(args['template_filename']))
     env = Environment(loader=file_loader, undefined=jinja2.StrictUndefined)
     env.add_extension('jinja2.ext.do')
-    template = env.get_template(os.path.basename(args['filename']))
+    template = env.get_template(os.path.basename(args['template_filename']))
 
     rendered = template.render(data)
     config = yaml.safe_load(rendered)
@@ -56,16 +59,16 @@ def main():
 
     tictoc = TicToc()
 
-    config['output_folder'] = resolvePath(data['output_folder'])
-    if not os.path.exists(config['output_folder']):  # create stdout_data folder if it does not exist.
+    args['output_folder'] = resolvePath(args['output_folder'])
+    if not os.path.exists(args['output_folder']):  # create stdout_data folder if it does not exist.
         # bprint('Creating output folder: ' + config['output_folder'])
-        os.mkdir(config['output_folder'])  # Create the new folder
-    elif os.path.exists(config['output_folder']) and args['overwrite']:
+        os.mkdir(args['output_folder'])  # Create the new folder
+    elif os.path.exists(args['output_folder']) and args['overwrite']:
         # bprint('Overwriting output folder: ' + config['output_folder'])
-        shutil.rmtree(config['output_folder'])  # Create the new folder
-        os.mkdir(config['output_folder'])  # Create the new folder
+        shutil.rmtree(args['output_folder'])  # Create the new folder
+        os.mkdir(args['output_folder'])  # Create the new folder
     else:
-        atomError(Fore.BLUE + Back.YELLOW + 'Output folder ' + config['output_folder'] +
+        atomError(Fore.BLUE + Back.YELLOW + 'Output folder ' + args['output_folder'] +
                   ' exists. If you want to delete use the --overwrite command line argument.' + Style.RESET_ALL)
 
     num_batches = len(config['batches'].keys())
@@ -94,7 +97,7 @@ def main():
             print(stdout_data)
 
         # Create batch folder
-        batch_folder = config['output_folder'] + '/' + batch_key
+        batch_folder = args['output_folder'] + '/' + batch_key
         os.mkdir(batch_folder)
 
         # Save stdout and stderr if failed

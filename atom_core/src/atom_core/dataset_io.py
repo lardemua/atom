@@ -160,27 +160,25 @@ def loadResultsJSON(json_file, collection_selection_function=None):
     return dataset
 
 
-def saveAtomDataset(output_folder, dataset_in, dataset_folder, freeze_dataset=False):
+def saveAtomDataset(filename, dataset_in, save_data_files=True, freeze_dataset=False):
     if freeze_dataset:  # to make sure our changes only affect the dictionary to save
         dataset = copy.deepcopy(dataset_in)
     else:
         dataset = dataset_in
 
-    output_file = output_folder + '/atom_calibration.json'
-
-    bridge = CvBridge()
-
-    # Process the dataset to remove data from the data fields and, if needed, write the files.
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
-            createDataFile(dataset, collection_key, sensor, sensor_key, dataset_folder)
+    if save_data_files:
+        # Process the dataset to remove data from the data fields and, if needed, write the files.
+        for collection_key, collection in dataset['collections'].items():
+            for sensor_key, sensor in dataset['sensors'].items():
+                # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
+                createDataFile(dataset, collection_key, sensor, sensor_key, os.path.dirname(filename))
 
         # Do the same for additional data topics ...
-        # for description, sensor in dataset['additional_sensor_data'].items():
-        #     createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
+        for description, sensor in dataset['additional_sensor_data'].items():
+            createDataFile(dataset_in, collection_key, sensor, description,
+                           os.path.dirname(filename), 'additional_data')
 
-    createJSONFile(output_file, dataset)  # write dictionary to json
+    createJSONFile(filename, dataset)  # write dictionary to json
 
 
 def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):

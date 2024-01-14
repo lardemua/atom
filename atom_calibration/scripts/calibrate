@@ -680,7 +680,8 @@ def main():
         if not sensor_key in dataset['sensors']:
             dataset['sensors'][sensor_key] = sensor
 
-    saveAtomDataset(args['output_folder'], dataset, dataset_folder=args['dataset_folder'])
+    saveAtomDataset(args['output_folder'] + '/atom_calibration.json', dataset,
+                    save_data_files=False)
 
     # ---------------------------------------
     # --- Save updated xacro
