@@ -120,12 +120,21 @@ This is useful to visualize the collections stored in the dataset.
 
 ![gazebo](docs/calibration.png)
 
-Then carry out the actual calibration including noise, using:
+Then carry out the actual calibration, we should include noise both in the sensor transformations as well as in the joint parameters to be estimated We do this with the arguments:
 
-    rosrun atom_calibration calibrate -json $ATOM_DATASETS/riwmpbot/train/dataset.json \
-    -v -rv -pp \
+- **--noisy_initial_guess** (-nig), which randomizes noise on the translations and rotation components of the transformations to be estimated
+- **--joint_bias_names** (-jbn), which defines which joints will be affected by a bias value
+- **--joint_bias_params** (-jbp), which defines for each joint in **-jbn** which joint parameter is affected
+- **--joint_bias_values** (-jbv), which defines for each joint / parameter combination the magnitude of the bias
+
+Lets make up some noise values. We get the actual command like this:
+
+    rosrun atom_calibration calibrate  -json ~/datasets/riwmpbot/train/dataset.json \
+    -v -nig 0.05 0.02 -ctgt \
     -jbn shoulder_pan_joint shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint \
-    -jbv -0.01 0.034 -0.03 0.05 0.01 -0.03
+    -jbp origin_yaw origin_yaw origin_yaw origin_yaw origin_yaw origin_yaw \
+    -jbv 0.03 -0.02 0.03 -0.1 0.04 -0.09
+
 
 This will produce a table of residuals per iteration, like this:
 
@@ -137,4 +146,14 @@ which are quite high, because of the incorrect pose of the sensors,  and ends up
 
 ![](docs/calibration_output_final.png)
 
-Which shows subpixel accuracy. This means the procedure achieved a successful calibration.
+ This means the procedure has converged.
+
+To be sure that the calibration was actually accurate, we can compare the estimated parameter values against the ground truth values contained in the original dataset, using the  **--comparison_to_ground_truth (-ctgt)** argument.
+This will display tables comparing the initial errors (before starting to calibrate, after adding noise) against the errors obtained after calibration. These are the produced tables:
+
+![](docs/transforms_against_ground_truth.png)
+
+
+![](docs/joints_against_ground_truth.png)
+
+These tables clearly show an improvement in the errors after calibration. Moreover, after calibration, the magnitude of the errors is quite small. For example, on average, the translation error for the estimated transforms is 0.00085 which corresponds to 0.8 millimeters. For joint parameters the average error is 0.00666 radians (these are all revolute joints), which correspond to 0.38 degrees.

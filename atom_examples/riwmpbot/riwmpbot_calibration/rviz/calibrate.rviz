@@ -1,103 +1,1578 @@
 Panels:
-- Class: rviz/Displays
-  Help Height: 0
-  Name: Displays
-  Property Tree Widget:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+      Splitter Ratio: 0.763005793094635
+    Tree Height: 581
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
     Expanded:
-    - /Global Options1
-    - /base_camera-Image1
-    Splitter Ratio: 0.763005793094635
-  Tree Height: 523
-- Class: rviz/Selection
-  Name: Selection
-- Class: rviz/Tool Properties
-  Expanded:
-  - /2D Pose Estimate1
-  - /2D Nav Goal1
-  - /Publish Point1
-  Name: Tool Properties
-  Splitter Ratio: 0.5886790156364441
-- Class: rviz/Views
-  Expanded:
-  - /Current View1
-  Name: Views
-  Splitter Ratio: 0.5
-- Class: rviz/Time
-  Experimental: false
-  Name: Time
-  SyncMode: 0
-  SyncSource: ''
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: rgb_world-Labels-Image
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
-  Class: ''
+  Class: ""
   Displays:
-  - Alpha: 0.5
-    Cell Size: 1
-    Class: rviz/Grid
-    Color: 160; 160; 164
-    Enabled: true
-    Line Style:
-      Line Width: 0.02
-      Value: Lines
-    Name: Grid
-    Normal Cell Count: 0
-    Offset:
-      X: 0
-      Y: 0
-      Z: 0
-    Plane: XY
-    Plane Cell Count: 10
-    Reference Frame: world
-    Value: true
-  - Class: rviz/TF
-    Enabled: true
-    Frame Timeout: 15
-    Frames:
-      All Enabled: true
-    Marker Scale: 1
-    Name: TF
-    Show Arrows: false
-    Show Axes: true
-    Show Names: false
-    Tree: {}
-    Update Interval: 0
-    Value: false
-  - Class: rviz/MarkerArray
-    Enabled: true
-    Marker Topic: calibrate/robot_meshes
-    Name: RobotMeshes-MarkerArray
-    Namespaces: {}
-    Queue Size: 10
-    Value: true
-  - Class: rviz/MarkerArray
-    Enabled: true
-    Marker Topic: calibrate/patterns
-    Name: Patterns-MarkerArray
-    Namespaces: {}
-    Queue Size: 10
-    Value: true
-  - Class: rviz/MarkerArray
-    Enabled: true
-    Marker Topic: calibrate/Miscellaneous
-    Name: Miscellaneous-MarkerArray
-    Namespaces: {}
-    Queue Size: 10
-    Value: true
-  - Class: rviz/Image
-    Enabled: true
-    Image Topic: /rgb_world/image_raw/c000/labeled2d
-    Max Value: 1
-    Median window: 5
-    Min Value: 0
-    Name: rgb_world-Labels-Image
-    Normalize Range: true
-    Queue Size: 2
-    Transport Hint: raw
-    Unreliable: false
-    Value: false
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.019999999552965164
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: world
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        c000_base:
+          Value: true
+        c000_base_link:
+          Value: true
+        c000_base_link_inertia:
+          Value: true
+        c000_charuco_170x100_3x6:
+          Value: true
+        c000_charuco_200x120_3x6:
+          Value: true
+        c000_charuco_200x200_8x8:
+          Value: true
+        c000_flange:
+          Value: true
+        c000_forearm_link:
+          Value: true
+        c000_leg1_table:
+          Value: true
+        c000_leg2_table:
+          Value: true
+        c000_leg3_table:
+          Value: true
+        c000_leg4_table:
+          Value: true
+        c000_rgb_world_link:
+          Value: true
+        c000_rgb_world_optical_frame:
+          Value: true
+        c000_shoulder_link:
+          Value: true
+        c000_table:
+          Value: true
+        c000_tabletop_table:
+          Value: true
+        c000_tool0:
+          Value: true
+        c000_tripod:
+          Value: true
+        c000_tripod_center_support:
+          Value: true
+        c000_tripod_plate:
+          Value: true
+        c000_upper_arm_link:
+          Value: true
+        c000_world:
+          Value: true
+        c000_wrist_1_link:
+          Value: true
+        c000_wrist_2_link:
+          Value: true
+        c000_wrist_3_link:
+          Value: true
+        c001_base:
+          Value: true
+        c001_base_link:
+          Value: true
+        c001_base_link_inertia:
+          Value: true
+        c001_charuco_170x100_3x6:
+          Value: true
+        c001_charuco_200x120_3x6:
+          Value: true
+        c001_charuco_200x200_8x8:
+          Value: true
+        c001_flange:
+          Value: true
+        c001_forearm_link:
+          Value: true
+        c001_leg1_table:
+          Value: true
+        c001_leg2_table:
+          Value: true
+        c001_leg3_table:
+          Value: true
+        c001_leg4_table:
+          Value: true
+        c001_rgb_world_link:
+          Value: true
+        c001_rgb_world_optical_frame:
+          Value: true
+        c001_shoulder_link:
+          Value: true
+        c001_table:
+          Value: true
+        c001_tabletop_table:
+          Value: true
+        c001_tool0:
+          Value: true
+        c001_tripod:
+          Value: true
+        c001_tripod_center_support:
+          Value: true
+        c001_tripod_plate:
+          Value: true
+        c001_upper_arm_link:
+          Value: true
+        c001_world:
+          Value: true
+        c001_wrist_1_link:
+          Value: true
+        c001_wrist_2_link:
+          Value: true
+        c001_wrist_3_link:
+          Value: true
+        c003_base:
+          Value: true
+        c003_base_link:
+          Value: true
+        c003_base_link_inertia:
+          Value: true
+        c003_charuco_170x100_3x6:
+          Value: true
+        c003_charuco_200x120_3x6:
+          Value: true
+        c003_charuco_200x200_8x8:
+          Value: true
+        c003_flange:
+          Value: true
+        c003_forearm_link:
+          Value: true
+        c003_leg1_table:
+          Value: true
+        c003_leg2_table:
+          Value: true
+        c003_leg3_table:
+          Value: true
+        c003_leg4_table:
+          Value: true
+        c003_rgb_world_link:
+          Value: true
+        c003_rgb_world_optical_frame:
+          Value: true
+        c003_shoulder_link:
+          Value: true
+        c003_table:
+          Value: true
+        c003_tabletop_table:
+          Value: true
+        c003_tool0:
+          Value: true
+        c003_tripod:
+          Value: true
+        c003_tripod_center_support:
+          Value: true
+        c003_tripod_plate:
+          Value: true
+        c003_upper_arm_link:
+          Value: true
+        c003_world:
+          Value: true
+        c003_wrist_1_link:
+          Value: true
+        c003_wrist_2_link:
+          Value: true
+        c003_wrist_3_link:
+          Value: true
+        c004_base:
+          Value: true
+        c004_base_link:
+          Value: true
+        c004_base_link_inertia:
+          Value: true
+        c004_charuco_170x100_3x6:
+          Value: true
+        c004_charuco_200x120_3x6:
+          Value: true
+        c004_charuco_200x200_8x8:
+          Value: true
+        c004_flange:
+          Value: true
+        c004_forearm_link:
+          Value: true
+        c004_leg1_table:
+          Value: true
+        c004_leg2_table:
+          Value: true
+        c004_leg3_table:
+          Value: true
+        c004_leg4_table:
+          Value: true
+        c004_rgb_world_link:
+          Value: true
+        c004_rgb_world_optical_frame:
+          Value: true
+        c004_shoulder_link:
+          Value: true
+        c004_table:
+          Value: true
+        c004_tabletop_table:
+          Value: true
+        c004_tool0:
+          Value: true
+        c004_tripod:
+          Value: true
+        c004_tripod_center_support:
+          Value: true
+        c004_tripod_plate:
+          Value: true
+        c004_upper_arm_link:
+          Value: true
+        c004_world:
+          Value: true
+        c004_wrist_1_link:
+          Value: true
+        c004_wrist_2_link:
+          Value: true
+        c004_wrist_3_link:
+          Value: true
+        c005_base:
+          Value: true
+        c005_base_link:
+          Value: true
+        c005_base_link_inertia:
+          Value: true
+        c005_charuco_170x100_3x6:
+          Value: true
+        c005_charuco_200x120_3x6:
+          Value: true
+        c005_charuco_200x200_8x8:
+          Value: true
+        c005_flange:
+          Value: true
+        c005_forearm_link:
+          Value: true
+        c005_leg1_table:
+          Value: true
+        c005_leg2_table:
+          Value: true
+        c005_leg3_table:
+          Value: true
+        c005_leg4_table:
+          Value: true
+        c005_rgb_world_link:
+          Value: true
+        c005_rgb_world_optical_frame:
+          Value: true
+        c005_shoulder_link:
+          Value: true
+        c005_table:
+          Value: true
+        c005_tabletop_table:
+          Value: true
+        c005_tool0:
+          Value: true
+        c005_tripod:
+          Value: true
+        c005_tripod_center_support:
+          Value: true
+        c005_tripod_plate:
+          Value: true
+        c005_upper_arm_link:
+          Value: true
+        c005_world:
+          Value: true
+        c005_wrist_1_link:
+          Value: true
+        c005_wrist_2_link:
+          Value: true
+        c005_wrist_3_link:
+          Value: true
+        c006_base:
+          Value: true
+        c006_base_link:
+          Value: true
+        c006_base_link_inertia:
+          Value: true
+        c006_charuco_170x100_3x6:
+          Value: true
+        c006_charuco_200x120_3x6:
+          Value: true
+        c006_charuco_200x200_8x8:
+          Value: true
+        c006_flange:
+          Value: true
+        c006_forearm_link:
+          Value: true
+        c006_leg1_table:
+          Value: true
+        c006_leg2_table:
+          Value: true
+        c006_leg3_table:
+          Value: true
+        c006_leg4_table:
+          Value: true
+        c006_rgb_world_link:
+          Value: true
+        c006_rgb_world_optical_frame:
+          Value: true
+        c006_shoulder_link:
+          Value: true
+        c006_table:
+          Value: true
+        c006_tabletop_table:
+          Value: true
+        c006_tool0:
+          Value: true
+        c006_tripod:
+          Value: true
+        c006_tripod_center_support:
+          Value: true
+        c006_tripod_plate:
+          Value: true
+        c006_upper_arm_link:
+          Value: true
+        c006_world:
+          Value: true
+        c006_wrist_1_link:
+          Value: true
+        c006_wrist_2_link:
+          Value: true
+        c006_wrist_3_link:
+          Value: true
+        c007_base:
+          Value: true
+        c007_base_link:
+          Value: true
+        c007_base_link_inertia:
+          Value: true
+        c007_charuco_170x100_3x6:
+          Value: true
+        c007_charuco_200x120_3x6:
+          Value: true
+        c007_charuco_200x200_8x8:
+          Value: true
+        c007_flange:
+          Value: true
+        c007_forearm_link:
+          Value: true
+        c007_leg1_table:
+          Value: true
+        c007_leg2_table:
+          Value: true
+        c007_leg3_table:
+          Value: true
+        c007_leg4_table:
+          Value: true
+        c007_rgb_world_link:
+          Value: true
+        c007_rgb_world_optical_frame:
+          Value: true
+        c007_shoulder_link:
+          Value: true
+        c007_table:
+          Value: true
+        c007_tabletop_table:
+          Value: true
+        c007_tool0:
+          Value: true
+        c007_tripod:
+          Value: true
+        c007_tripod_center_support:
+          Value: true
+        c007_tripod_plate:
+          Value: true
+        c007_upper_arm_link:
+          Value: true
+        c007_world:
+          Value: true
+        c007_wrist_1_link:
+          Value: true
+        c007_wrist_2_link:
+          Value: true
+        c007_wrist_3_link:
+          Value: true
+        c008_base:
+          Value: true
+        c008_base_link:
+          Value: true
+        c008_base_link_inertia:
+          Value: true
+        c008_charuco_170x100_3x6:
+          Value: true
+        c008_charuco_200x120_3x6:
+          Value: true
+        c008_charuco_200x200_8x8:
+          Value: true
+        c008_flange:
+          Value: true
+        c008_forearm_link:
+          Value: true
+        c008_leg1_table:
+          Value: true
+        c008_leg2_table:
+          Value: true
+        c008_leg3_table:
+          Value: true
+        c008_leg4_table:
+          Value: true
+        c008_rgb_world_link:
+          Value: true
+        c008_rgb_world_optical_frame:
+          Value: true
+        c008_shoulder_link:
+          Value: true
+        c008_table:
+          Value: true
+        c008_tabletop_table:
+          Value: true
+        c008_tool0:
+          Value: true
+        c008_tripod:
+          Value: true
+        c008_tripod_center_support:
+          Value: true
+        c008_tripod_plate:
+          Value: true
+        c008_upper_arm_link:
+          Value: true
+        c008_world:
+          Value: true
+        c008_wrist_1_link:
+          Value: true
+        c008_wrist_2_link:
+          Value: true
+        c008_wrist_3_link:
+          Value: true
+        c011_base:
+          Value: true
+        c011_base_link:
+          Value: true
+        c011_base_link_inertia:
+          Value: true
+        c011_charuco_170x100_3x6:
+          Value: true
+        c011_charuco_200x120_3x6:
+          Value: true
+        c011_charuco_200x200_8x8:
+          Value: true
+        c011_flange:
+          Value: true
+        c011_forearm_link:
+          Value: true
+        c011_leg1_table:
+          Value: true
+        c011_leg2_table:
+          Value: true
+        c011_leg3_table:
+          Value: true
+        c011_leg4_table:
+          Value: true
+        c011_rgb_world_link:
+          Value: true
+        c011_rgb_world_optical_frame:
+          Value: true
+        c011_shoulder_link:
+          Value: true
+        c011_table:
+          Value: true
+        c011_tabletop_table:
+          Value: true
+        c011_tool0:
+          Value: true
+        c011_tripod:
+          Value: true
+        c011_tripod_center_support:
+          Value: true
+        c011_tripod_plate:
+          Value: true
+        c011_upper_arm_link:
+          Value: true
+        c011_world:
+          Value: true
+        c011_wrist_1_link:
+          Value: true
+        c011_wrist_2_link:
+          Value: true
+        c011_wrist_3_link:
+          Value: true
+        c012_base:
+          Value: true
+        c012_base_link:
+          Value: true
+        c012_base_link_inertia:
+          Value: true
+        c012_charuco_170x100_3x6:
+          Value: true
+        c012_charuco_200x120_3x6:
+          Value: true
+        c012_charuco_200x200_8x8:
+          Value: true
+        c012_flange:
+          Value: true
+        c012_forearm_link:
+          Value: true
+        c012_leg1_table:
+          Value: true
+        c012_leg2_table:
+          Value: true
+        c012_leg3_table:
+          Value: true
+        c012_leg4_table:
+          Value: true
+        c012_rgb_world_link:
+          Value: true
+        c012_rgb_world_optical_frame:
+          Value: true
+        c012_shoulder_link:
+          Value: true
+        c012_table:
+          Value: true
+        c012_tabletop_table:
+          Value: true
+        c012_tool0:
+          Value: true
+        c012_tripod:
+          Value: true
+        c012_tripod_center_support:
+          Value: true
+        c012_tripod_plate:
+          Value: true
+        c012_upper_arm_link:
+          Value: true
+        c012_world:
+          Value: true
+        c012_wrist_1_link:
+          Value: true
+        c012_wrist_2_link:
+          Value: true
+        c012_wrist_3_link:
+          Value: true
+        c013_base:
+          Value: true
+        c013_base_link:
+          Value: true
+        c013_base_link_inertia:
+          Value: true
+        c013_charuco_170x100_3x6:
+          Value: true
+        c013_charuco_200x120_3x6:
+          Value: true
+        c013_charuco_200x200_8x8:
+          Value: true
+        c013_flange:
+          Value: true
+        c013_forearm_link:
+          Value: true
+        c013_leg1_table:
+          Value: true
+        c013_leg2_table:
+          Value: true
+        c013_leg3_table:
+          Value: true
+        c013_leg4_table:
+          Value: true
+        c013_rgb_world_link:
+          Value: true
+        c013_rgb_world_optical_frame:
+          Value: true
+        c013_shoulder_link:
+          Value: true
+        c013_table:
+          Value: true
+        c013_tabletop_table:
+          Value: true
+        c013_tool0:
+          Value: true
+        c013_tripod:
+          Value: true
+        c013_tripod_center_support:
+          Value: true
+        c013_tripod_plate:
+          Value: true
+        c013_upper_arm_link:
+          Value: true
+        c013_world:
+          Value: true
+        c013_wrist_1_link:
+          Value: true
+        c013_wrist_2_link:
+          Value: true
+        c013_wrist_3_link:
+          Value: true
+        c014_base:
+          Value: true
+        c014_base_link:
+          Value: true
+        c014_base_link_inertia:
+          Value: true
+        c014_charuco_170x100_3x6:
+          Value: true
+        c014_charuco_200x120_3x6:
+          Value: true
+        c014_charuco_200x200_8x8:
+          Value: true
+        c014_flange:
+          Value: true
+        c014_forearm_link:
+          Value: true
+        c014_leg1_table:
+          Value: true
+        c014_leg2_table:
+          Value: true
+        c014_leg3_table:
+          Value: true
+        c014_leg4_table:
+          Value: true
+        c014_rgb_world_link:
+          Value: true
+        c014_rgb_world_optical_frame:
+          Value: true
+        c014_shoulder_link:
+          Value: true
+        c014_table:
+          Value: true
+        c014_tabletop_table:
+          Value: true
+        c014_tool0:
+          Value: true
+        c014_tripod:
+          Value: true
+        c014_tripod_center_support:
+          Value: true
+        c014_tripod_plate:
+          Value: true
+        c014_upper_arm_link:
+          Value: true
+        c014_world:
+          Value: true
+        c014_wrist_1_link:
+          Value: true
+        c014_wrist_2_link:
+          Value: true
+        c014_wrist_3_link:
+          Value: true
+        c015_base:
+          Value: true
+        c015_base_link:
+          Value: true
+        c015_base_link_inertia:
+          Value: true
+        c015_charuco_170x100_3x6:
+          Value: true
+        c015_charuco_200x120_3x6:
+          Value: true
+        c015_charuco_200x200_8x8:
+          Value: true
+        c015_flange:
+          Value: true
+        c015_forearm_link:
+          Value: true
+        c015_leg1_table:
+          Value: true
+        c015_leg2_table:
+          Value: true
+        c015_leg3_table:
+          Value: true
+        c015_leg4_table:
+          Value: true
+        c015_rgb_world_link:
+          Value: true
+        c015_rgb_world_optical_frame:
+          Value: true
+        c015_shoulder_link:
+          Value: true
+        c015_table:
+          Value: true
+        c015_tabletop_table:
+          Value: true
+        c015_tool0:
+          Value: true
+        c015_tripod:
+          Value: true
+        c015_tripod_center_support:
+          Value: true
+        c015_tripod_plate:
+          Value: true
+        c015_upper_arm_link:
+          Value: true
+        c015_world:
+          Value: true
+        c015_wrist_1_link:
+          Value: true
+        c015_wrist_2_link:
+          Value: true
+        c015_wrist_3_link:
+          Value: true
+        c016_base:
+          Value: true
+        c016_base_link:
+          Value: true
+        c016_base_link_inertia:
+          Value: true
+        c016_charuco_170x100_3x6:
+          Value: true
+        c016_charuco_200x120_3x6:
+          Value: true
+        c016_charuco_200x200_8x8:
+          Value: true
+        c016_flange:
+          Value: true
+        c016_forearm_link:
+          Value: true
+        c016_leg1_table:
+          Value: true
+        c016_leg2_table:
+          Value: true
+        c016_leg3_table:
+          Value: true
+        c016_leg4_table:
+          Value: true
+        c016_rgb_world_link:
+          Value: true
+        c016_rgb_world_optical_frame:
+          Value: true
+        c016_shoulder_link:
+          Value: true
+        c016_table:
+          Value: true
+        c016_tabletop_table:
+          Value: true
+        c016_tool0:
+          Value: true
+        c016_tripod:
+          Value: true
+        c016_tripod_center_support:
+          Value: true
+        c016_tripod_plate:
+          Value: true
+        c016_upper_arm_link:
+          Value: true
+        c016_world:
+          Value: true
+        c016_wrist_1_link:
+          Value: true
+        c016_wrist_2_link:
+          Value: true
+        c016_wrist_3_link:
+          Value: true
+        c019_base:
+          Value: true
+        c019_base_link:
+          Value: true
+        c019_base_link_inertia:
+          Value: true
+        c019_charuco_170x100_3x6:
+          Value: true
+        c019_charuco_200x120_3x6:
+          Value: true
+        c019_charuco_200x200_8x8:
+          Value: true
+        c019_flange:
+          Value: true
+        c019_forearm_link:
+          Value: true
+        c019_leg1_table:
+          Value: true
+        c019_leg2_table:
+          Value: true
+        c019_leg3_table:
+          Value: true
+        c019_leg4_table:
+          Value: true
+        c019_rgb_world_link:
+          Value: true
+        c019_rgb_world_optical_frame:
+          Value: true
+        c019_shoulder_link:
+          Value: true
+        c019_table:
+          Value: true
+        c019_tabletop_table:
+          Value: true
+        c019_tool0:
+          Value: true
+        c019_tripod:
+          Value: true
+        c019_tripod_center_support:
+          Value: true
+        c019_tripod_plate:
+          Value: true
+        c019_upper_arm_link:
+          Value: true
+        c019_world:
+          Value: true
+        c019_wrist_1_link:
+          Value: true
+        c019_wrist_2_link:
+          Value: true
+        c019_wrist_3_link:
+          Value: true
+        world:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        world:
+          c000_world:
+            c000_table:
+              c000_leg1_table:
+                {}
+              c000_leg2_table:
+                {}
+              c000_leg3_table:
+                {}
+              c000_leg4_table:
+                {}
+              c000_tabletop_table:
+                c000_base_link:
+                  c000_base:
+                    {}
+                  c000_base_link_inertia:
+                    c000_shoulder_link:
+                      c000_upper_arm_link:
+                        c000_charuco_200x120_3x6:
+                          {}
+                        c000_forearm_link:
+                          c000_charuco_170x100_3x6:
+                            {}
+                          c000_wrist_1_link:
+                            c000_wrist_2_link:
+                              c000_wrist_3_link:
+                                c000_flange:
+                                  c000_charuco_200x200_8x8:
+                                    {}
+                                  c000_tool0:
+                                    {}
+            c000_tripod:
+              c000_tripod_plate:
+                c000_tripod_center_support:
+                  c000_rgb_world_link:
+                    c000_rgb_world_optical_frame:
+                      {}
+          c001_world:
+            c001_table:
+              c001_leg1_table:
+                {}
+              c001_leg2_table:
+                {}
+              c001_leg3_table:
+                {}
+              c001_leg4_table:
+                {}
+              c001_tabletop_table:
+                c001_base_link:
+                  c001_base:
+                    {}
+                  c001_base_link_inertia:
+                    c001_shoulder_link:
+                      c001_upper_arm_link:
+                        c001_charuco_200x120_3x6:
+                          {}
+                        c001_forearm_link:
+                          c001_charuco_170x100_3x6:
+                            {}
+                          c001_wrist_1_link:
+                            c001_wrist_2_link:
+                              c001_wrist_3_link:
+                                c001_flange:
+                                  c001_charuco_200x200_8x8:
+                                    {}
+                                  c001_tool0:
+                                    {}
+            c001_tripod:
+              c001_tripod_plate:
+                c001_tripod_center_support:
+                  c001_rgb_world_link:
+                    c001_rgb_world_optical_frame:
+                      {}
+          c003_world:
+            c003_table:
+              c003_leg1_table:
+                {}
+              c003_leg2_table:
+                {}
+              c003_leg3_table:
+                {}
+              c003_leg4_table:
+                {}
+              c003_tabletop_table:
+                c003_base_link:
+                  c003_base:
+                    {}
+                  c003_base_link_inertia:
+                    c003_shoulder_link:
+                      c003_upper_arm_link:
+                        c003_charuco_200x120_3x6:
+                          {}
+                        c003_forearm_link:
+                          c003_charuco_170x100_3x6:
+                            {}
+                          c003_wrist_1_link:
+                            c003_wrist_2_link:
+                              c003_wrist_3_link:
+                                c003_flange:
+                                  c003_charuco_200x200_8x8:
+                                    {}
+                                  c003_tool0:
+                                    {}
+            c003_tripod:
+              c003_tripod_plate:
+                c003_tripod_center_support:
+                  c003_rgb_world_link:
+                    c003_rgb_world_optical_frame:
+                      {}
+          c004_world:
+            c004_table:
+              c004_leg1_table:
+                {}
+              c004_leg2_table:
+                {}
+              c004_leg3_table:
+                {}
+              c004_leg4_table:
+                {}
+              c004_tabletop_table:
+                c004_base_link:
+                  c004_base:
+                    {}
+                  c004_base_link_inertia:
+                    c004_shoulder_link:
+                      c004_upper_arm_link:
+                        c004_charuco_200x120_3x6:
+                          {}
+                        c004_forearm_link:
+                          c004_charuco_170x100_3x6:
+                            {}
+                          c004_wrist_1_link:
+                            c004_wrist_2_link:
+                              c004_wrist_3_link:
+                                c004_flange:
+                                  c004_charuco_200x200_8x8:
+                                    {}
+                                  c004_tool0:
+                                    {}
+            c004_tripod:
+              c004_tripod_plate:
+                c004_tripod_center_support:
+                  c004_rgb_world_link:
+                    c004_rgb_world_optical_frame:
+                      {}
+          c005_world:
+            c005_table:
+              c005_leg1_table:
+                {}
+              c005_leg2_table:
+                {}
+              c005_leg3_table:
+                {}
+              c005_leg4_table:
+                {}
+              c005_tabletop_table:
+                c005_base_link:
+                  c005_base:
+                    {}
+                  c005_base_link_inertia:
+                    c005_shoulder_link:
+                      c005_upper_arm_link:
+                        c005_charuco_200x120_3x6:
+                          {}
+                        c005_forearm_link:
+                          c005_charuco_170x100_3x6:
+                            {}
+                          c005_wrist_1_link:
+                            c005_wrist_2_link:
+                              c005_wrist_3_link:
+                                c005_flange:
+                                  c005_charuco_200x200_8x8:
+                                    {}
+                                  c005_tool0:
+                                    {}
+            c005_tripod:
+              c005_tripod_plate:
+                c005_tripod_center_support:
+                  c005_rgb_world_link:
+                    c005_rgb_world_optical_frame:
+                      {}
+          c006_world:
+            c006_table:
+              c006_leg1_table:
+                {}
+              c006_leg2_table:
+                {}
+              c006_leg3_table:
+                {}
+              c006_leg4_table:
+                {}
+              c006_tabletop_table:
+                c006_base_link:
+                  c006_base:
+                    {}
+                  c006_base_link_inertia:
+                    c006_shoulder_link:
+                      c006_upper_arm_link:
+                        c006_charuco_200x120_3x6:
+                          {}
+                        c006_forearm_link:
+                          c006_charuco_170x100_3x6:
+                            {}
+                          c006_wrist_1_link:
+                            c006_wrist_2_link:
+                              c006_wrist_3_link:
+                                c006_flange:
+                                  c006_charuco_200x200_8x8:
+                                    {}
+                                  c006_tool0:
+                                    {}
+            c006_tripod:
+              c006_tripod_plate:
+                c006_tripod_center_support:
+                  c006_rgb_world_link:
+                    c006_rgb_world_optical_frame:
+                      {}
+          c007_world:
+            c007_table:
+              c007_leg1_table:
+                {}
+              c007_leg2_table:
+                {}
+              c007_leg3_table:
+                {}
+              c007_leg4_table:
+                {}
+              c007_tabletop_table:
+                c007_base_link:
+                  c007_base:
+                    {}
+                  c007_base_link_inertia:
+                    c007_shoulder_link:
+                      c007_upper_arm_link:
+                        c007_charuco_200x120_3x6:
+                          {}
+                        c007_forearm_link:
+                          c007_charuco_170x100_3x6:
+                            {}
+                          c007_wrist_1_link:
+                            c007_wrist_2_link:
+                              c007_wrist_3_link:
+                                c007_flange:
+                                  c007_charuco_200x200_8x8:
+                                    {}
+                                  c007_tool0:
+                                    {}
+            c007_tripod:
+              c007_tripod_plate:
+                c007_tripod_center_support:
+                  c007_rgb_world_link:
+                    c007_rgb_world_optical_frame:
+                      {}
+          c008_world:
+            c008_table:
+              c008_leg1_table:
+                {}
+              c008_leg2_table:
+                {}
+              c008_leg3_table:
+                {}
+              c008_leg4_table:
+                {}
+              c008_tabletop_table:
+                c008_base_link:
+                  c008_base:
+                    {}
+                  c008_base_link_inertia:
+                    c008_shoulder_link:
+                      c008_upper_arm_link:
+                        c008_charuco_200x120_3x6:
+                          {}
+                        c008_forearm_link:
+                          c008_charuco_170x100_3x6:
+                            {}
+                          c008_wrist_1_link:
+                            c008_wrist_2_link:
+                              c008_wrist_3_link:
+                                c008_flange:
+                                  c008_charuco_200x200_8x8:
+                                    {}
+                                  c008_tool0:
+                                    {}
+            c008_tripod:
+              c008_tripod_plate:
+                c008_tripod_center_support:
+                  c008_rgb_world_link:
+                    c008_rgb_world_optical_frame:
+                      {}
+          c011_world:
+            c011_table:
+              c011_leg1_table:
+                {}
+              c011_leg2_table:
+                {}
+              c011_leg3_table:
+                {}
+              c011_leg4_table:
+                {}
+              c011_tabletop_table:
+                c011_base_link:
+                  c011_base:
+                    {}
+                  c011_base_link_inertia:
+                    c011_shoulder_link:
+                      c011_upper_arm_link:
+                        c011_charuco_200x120_3x6:
+                          {}
+                        c011_forearm_link:
+                          c011_charuco_170x100_3x6:
+                            {}
+                          c011_wrist_1_link:
+                            c011_wrist_2_link:
+                              c011_wrist_3_link:
+                                c011_flange:
+                                  c011_charuco_200x200_8x8:
+                                    {}
+                                  c011_tool0:
+                                    {}
+            c011_tripod:
+              c011_tripod_plate:
+                c011_tripod_center_support:
+                  c011_rgb_world_link:
+                    c011_rgb_world_optical_frame:
+                      {}
+          c012_world:
+            c012_table:
+              c012_leg1_table:
+                {}
+              c012_leg2_table:
+                {}
+              c012_leg3_table:
+                {}
+              c012_leg4_table:
+                {}
+              c012_tabletop_table:
+                c012_base_link:
+                  c012_base:
+                    {}
+                  c012_base_link_inertia:
+                    c012_shoulder_link:
+                      c012_upper_arm_link:
+                        c012_charuco_200x120_3x6:
+                          {}
+                        c012_forearm_link:
+                          c012_charuco_170x100_3x6:
+                            {}
+                          c012_wrist_1_link:
+                            c012_wrist_2_link:
+                              c012_wrist_3_link:
+                                c012_flange:
+                                  c012_charuco_200x200_8x8:
+                                    {}
+                                  c012_tool0:
+                                    {}
+            c012_tripod:
+              c012_tripod_plate:
+                c012_tripod_center_support:
+                  c012_rgb_world_link:
+                    c012_rgb_world_optical_frame:
+                      {}
+          c013_world:
+            c013_table:
+              c013_leg1_table:
+                {}
+              c013_leg2_table:
+                {}
+              c013_leg3_table:
+                {}
+              c013_leg4_table:
+                {}
+              c013_tabletop_table:
+                c013_base_link:
+                  c013_base:
+                    {}
+                  c013_base_link_inertia:
+                    c013_shoulder_link:
+                      c013_upper_arm_link:
+                        c013_charuco_200x120_3x6:
+                          {}
+                        c013_forearm_link:
+                          c013_charuco_170x100_3x6:
+                            {}
+                          c013_wrist_1_link:
+                            c013_wrist_2_link:
+                              c013_wrist_3_link:
+                                c013_flange:
+                                  c013_charuco_200x200_8x8:
+                                    {}
+                                  c013_tool0:
+                                    {}
+            c013_tripod:
+              c013_tripod_plate:
+                c013_tripod_center_support:
+                  c013_rgb_world_link:
+                    c013_rgb_world_optical_frame:
+                      {}
+          c014_world:
+            c014_table:
+              c014_leg1_table:
+                {}
+              c014_leg2_table:
+                {}
+              c014_leg3_table:
+                {}
+              c014_leg4_table:
+                {}
+              c014_tabletop_table:
+                c014_base_link:
+                  c014_base:
+                    {}
+                  c014_base_link_inertia:
+                    c014_shoulder_link:
+                      c014_upper_arm_link:
+                        c014_charuco_200x120_3x6:
+                          {}
+                        c014_forearm_link:
+                          c014_charuco_170x100_3x6:
+                            {}
+                          c014_wrist_1_link:
+                            c014_wrist_2_link:
+                              c014_wrist_3_link:
+                                c014_flange:
+                                  c014_charuco_200x200_8x8:
+                                    {}
+                                  c014_tool0:
+                                    {}
+            c014_tripod:
+              c014_tripod_plate:
+                c014_tripod_center_support:
+                  c014_rgb_world_link:
+                    c014_rgb_world_optical_frame:
+                      {}
+          c015_world:
+            c015_table:
+              c015_leg1_table:
+                {}
+              c015_leg2_table:
+                {}
+              c015_leg3_table:
+                {}
+              c015_leg4_table:
+                {}
+              c015_tabletop_table:
+                c015_base_link:
+                  c015_base:
+                    {}
+                  c015_base_link_inertia:
+                    c015_shoulder_link:
+                      c015_upper_arm_link:
+                        c015_charuco_200x120_3x6:
+                          {}
+                        c015_forearm_link:
+                          c015_charuco_170x100_3x6:
+                            {}
+                          c015_wrist_1_link:
+                            c015_wrist_2_link:
+                              c015_wrist_3_link:
+                                c015_flange:
+                                  c015_charuco_200x200_8x8:
+                                    {}
+                                  c015_tool0:
+                                    {}
+            c015_tripod:
+              c015_tripod_plate:
+                c015_tripod_center_support:
+                  c015_rgb_world_link:
+                    c015_rgb_world_optical_frame:
+                      {}
+          c016_world:
+            c016_table:
+              c016_leg1_table:
+                {}
+              c016_leg2_table:
+                {}
+              c016_leg3_table:
+                {}
+              c016_leg4_table:
+                {}
+              c016_tabletop_table:
+                c016_base_link:
+                  c016_base:
+                    {}
+                  c016_base_link_inertia:
+                    c016_shoulder_link:
+                      c016_upper_arm_link:
+                        c016_charuco_200x120_3x6:
+                          {}
+                        c016_forearm_link:
+                          c016_charuco_170x100_3x6:
+                            {}
+                          c016_wrist_1_link:
+                            c016_wrist_2_link:
+                              c016_wrist_3_link:
+                                c016_flange:
+                                  c016_charuco_200x200_8x8:
+                                    {}
+                                  c016_tool0:
+                                    {}
+            c016_tripod:
+              c016_tripod_plate:
+                c016_tripod_center_support:
+                  c016_rgb_world_link:
+                    c016_rgb_world_optical_frame:
+                      {}
+          c019_world:
+            c019_table:
+              c019_leg1_table:
+                {}
+              c019_leg2_table:
+                {}
+              c019_leg3_table:
+                {}
+              c019_leg4_table:
+                {}
+              c019_tabletop_table:
+                c019_base_link:
+                  c019_base:
+                    {}
+                  c019_base_link_inertia:
+                    c019_shoulder_link:
+                      c019_upper_arm_link:
+                        c019_charuco_200x120_3x6:
+                          {}
+                        c019_forearm_link:
+                          c019_charuco_170x100_3x6:
+                            {}
+                          c019_wrist_1_link:
+                            c019_wrist_2_link:
+                              c019_wrist_3_link:
+                                c019_flange:
+                                  c019_charuco_200x200_8x8:
+                                    {}
+                                  c019_tool0:
+                                    {}
+            c019_tripod:
+              c019_tripod_plate:
+                c019_tripod_center_support:
+                  c019_rgb_world_link:
+                    c019_rgb_world_optical_frame:
+                      {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: calibrate/robot_meshes
+      Name: RobotMeshes-MarkerArray
+      Namespaces:
+        000: true
+        001: true
+        003: true
+        004: true
+        005: true
+        006: true
+        007: true
+        008: true
+        011: true
+        012: true
+        013: true
+        014: true
+        015: true
+        016: true
+        019: true
+        immovable: true
+      Queue Size: 10
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: calibrate/patterns
+      Name: Patterns-MarkerArray
+      Namespaces:
+        000_forearm_pattern-corners: true
+        000_forearm_pattern-frame_sampled: true
+        000_forearm_pattern-mesh: true
+        000_hand_pattern-corners: true
+        000_hand_pattern-frame_sampled: true
+        000_hand_pattern-mesh: true
+        000_upper_arm_pattern-corners: true
+        000_upper_arm_pattern-frame_sampled: true
+        000_upper_arm_pattern-mesh: true
+        001_forearm_pattern-corners: true
+        001_forearm_pattern-frame_sampled: true
+        001_forearm_pattern-mesh: true
+        001_hand_pattern-corners: true
+        001_hand_pattern-frame_sampled: true
+        001_hand_pattern-mesh: true
+        001_upper_arm_pattern-corners: true
+        001_upper_arm_pattern-frame_sampled: true
+        001_upper_arm_pattern-mesh: true
+        003_forearm_pattern-corners: true
+        003_forearm_pattern-frame_sampled: true
+        003_forearm_pattern-mesh: true
+        003_hand_pattern-corners: true
+        003_hand_pattern-frame_sampled: true
+        003_hand_pattern-mesh: true
+        003_upper_arm_pattern-corners: true
+        003_upper_arm_pattern-frame_sampled: true
+        003_upper_arm_pattern-mesh: true
+        004_forearm_pattern-corners: true
+        004_forearm_pattern-frame_sampled: true
+        004_forearm_pattern-mesh: true
+        004_hand_pattern-corners: true
+        004_hand_pattern-frame_sampled: true
+        004_hand_pattern-mesh: true
+        004_upper_arm_pattern-corners: true
+        004_upper_arm_pattern-frame_sampled: true
+        004_upper_arm_pattern-mesh: true
+        005_forearm_pattern-corners: true
+        005_forearm_pattern-frame_sampled: true
+        005_forearm_pattern-mesh: true
+        005_hand_pattern-corners: true
+        005_hand_pattern-frame_sampled: true
+        005_hand_pattern-mesh: true
+        005_upper_arm_pattern-corners: true
+        005_upper_arm_pattern-frame_sampled: true
+        005_upper_arm_pattern-mesh: true
+        006_forearm_pattern-corners: true
+        006_forearm_pattern-frame_sampled: true
+        006_forearm_pattern-mesh: true
+        006_hand_pattern-corners: true
+        006_hand_pattern-frame_sampled: true
+        006_hand_pattern-mesh: true
+        006_upper_arm_pattern-corners: true
+        006_upper_arm_pattern-frame_sampled: true
+        006_upper_arm_pattern-mesh: true
+        007_forearm_pattern-corners: true
+        007_forearm_pattern-frame_sampled: true
+        007_forearm_pattern-mesh: true
+        007_hand_pattern-corners: true
+        007_hand_pattern-frame_sampled: true
+        007_hand_pattern-mesh: true
+        007_upper_arm_pattern-corners: true
+        007_upper_arm_pattern-frame_sampled: true
+        007_upper_arm_pattern-mesh: true
+        008_forearm_pattern-corners: true
+        008_forearm_pattern-frame_sampled: true
+        008_forearm_pattern-mesh: true
+        008_hand_pattern-corners: true
+        008_hand_pattern-frame_sampled: true
+        008_hand_pattern-mesh: true
+        008_upper_arm_pattern-corners: true
+        008_upper_arm_pattern-frame_sampled: true
+        008_upper_arm_pattern-mesh: true
+        011_forearm_pattern-corners: true
+        011_forearm_pattern-frame_sampled: true
+        011_forearm_pattern-mesh: true
+        011_hand_pattern-corners: true
+        011_hand_pattern-frame_sampled: true
+        011_hand_pattern-mesh: true
+        011_upper_arm_pattern-corners: true
+        011_upper_arm_pattern-frame_sampled: true
+        011_upper_arm_pattern-mesh: true
+        012_forearm_pattern-corners: true
+        012_forearm_pattern-frame_sampled: true
+        012_forearm_pattern-mesh: true
+        012_hand_pattern-corners: true
+        012_hand_pattern-frame_sampled: true
+        012_hand_pattern-mesh: true
+        012_upper_arm_pattern-corners: true
+        012_upper_arm_pattern-frame_sampled: true
+        012_upper_arm_pattern-mesh: true
+        013_forearm_pattern-corners: true
+        013_forearm_pattern-frame_sampled: true
+        013_forearm_pattern-mesh: true
+        013_hand_pattern-corners: true
+        013_hand_pattern-frame_sampled: true
+        013_hand_pattern-mesh: true
+        013_upper_arm_pattern-corners: true
+        013_upper_arm_pattern-frame_sampled: true
+        013_upper_arm_pattern-mesh: true
+        014_forearm_pattern-corners: true
+        014_forearm_pattern-frame_sampled: true
+        014_forearm_pattern-mesh: true
+        014_hand_pattern-corners: true
+        014_hand_pattern-frame_sampled: true
+        014_hand_pattern-mesh: true
+        014_upper_arm_pattern-corners: true
+        014_upper_arm_pattern-frame_sampled: true
+        014_upper_arm_pattern-mesh: true
+        015_forearm_pattern-corners: true
+        015_forearm_pattern-frame_sampled: true
+        015_forearm_pattern-mesh: true
+        015_hand_pattern-corners: true
+        015_hand_pattern-frame_sampled: true
+        015_hand_pattern-mesh: true
+        015_upper_arm_pattern-corners: true
+        015_upper_arm_pattern-frame_sampled: true
+        015_upper_arm_pattern-mesh: true
+        016_forearm_pattern-corners: true
+        016_forearm_pattern-frame_sampled: true
+        016_forearm_pattern-mesh: true
+        016_hand_pattern-corners: true
+        016_hand_pattern-frame_sampled: true
+        016_hand_pattern-mesh: true
+        016_upper_arm_pattern-corners: true
+        016_upper_arm_pattern-frame_sampled: true
+        016_upper_arm_pattern-mesh: true
+        019_forearm_pattern-corners: true
+        019_forearm_pattern-frame_sampled: true
+        019_forearm_pattern-mesh: true
+        019_hand_pattern-corners: true
+        019_hand_pattern-frame_sampled: true
+        019_hand_pattern-mesh: true
+        019_upper_arm_pattern-corners: true
+        019_upper_arm_pattern-frame_sampled: true
+        019_upper_arm_pattern-mesh: true
+      Queue Size: 10
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: calibrate/Miscellaneous
+      Name: Miscellaneous-MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 10
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /rgb_world/image_raw/c000/labeled2d
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: rgb_world-Labels-Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -106,74 +1581,98 @@ Visualization Manager:
     Frame Rate: 30
   Name: root
   Tools:
-  - Class: rviz/Interact
-    Hide Inactive Objects: true
-  - Class: rviz/MoveCamera
-  - Class: rviz/Select
-  - Class: rviz/FocusCamera
-  - Class: rviz/Measure
-  - Class: rviz/SetInitialPose
-    Theta std deviation: 0.2617993950843811
-    Topic: /initialpose
-    X std deviation: 0.5
-    Y std deviation: 0.5
-  - Class: rviz/SetGoal
-    Topic: /move_base_simple/goal
-  - Class: rviz/PublishPoint
-    Single click: true
-    Topic: /clicked_point
-  - Class: rviz_visual_tools/KeyTool
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+    - Class: rviz_visual_tools/KeyTool
   Value: true
   Views:
     Current:
-      Class: rviz/XYOrbit
-      Distance: 8.35604476928711
+      Class: jsk_rviz_plugin/TabletViewController
+      Control Mode: Orbit
+      Distance: 2.6598856449127197
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0.3314114809036255
-        Y: 0.6464090347290039
-        Z: 9.527429938316345e-07
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
+      Eye:
+        X: 2.3273072242736816
+        Y: 0.30256497859954834
+        Z: 1.3482662439346313
+      Focus:
+        X: 0.12075948715209961
+        Y: 0.38843774795532227
+        Z: -0.13455712795257568
       Invert Z Axis: false
+      Maintain Vertical Axis: true
+      Mouse Enabled: true
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.46479693055152893
-      Target Frame: <Fixed Frame>
-      Value: XYOrbit (rviz)
-      Yaw: 2.752181053161621
+      Placement Mouse Point: /rviz/current_mouse_point
+      Placement Publish Topic: /rviz/current_camera_placement
+      Placement Topic: /rviz/camera_placement
+      Target Frame: c000_base
+      Transition Time: 10
+      Up:
+        X: 0
+        Y: 0
+        Z: 1
     Saved:
-    - Class: rviz/Orbit
-      Distance: 4.057810306549072
-      Enable Stereo Rendering:
-        Stereo Eye Separation: 0.05999999865889549
-        Stereo Focal Distance: 1
-        Swap Stereo Eyes: false
-        Value: false
-      Focal Point:
-        X: -0.424695760011673
-        Y: 0.802316427230835
-        Z: 0.9974352121353149
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
-      Invert Z Axis: false
-      Name: Orbit
-      Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5447967052459717
-      Target Frame: <Fixed Frame>
-      Value: Orbit (rviz)
-      Yaw: 3.929020881652832
+      - Class: rviz/Orbit
+        Distance: 4.057810306549072
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Field of View: 0.7853981852531433
+        Focal Point:
+          X: -0.424695760011673
+          Y: 0.802316427230835
+          Z: 0.9974352121353149
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.5447967052459717
+        Target Frame: <Fixed Frame>
+        Yaw: 3.929020881652832
+      - Angle: 0
+        Class: rviz/TopDownOrtho
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Invert Z Axis: false
+        Name: TopDownOrtho
+        Near Clip Distance: 0.009999999776482582
+        Scale: 295.1836853027344
+        Target Frame: <Fixed Frame>
+        X: -1.1829694509506226
+        Y: 0.15084557235240936
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 683
+  Height: 1022
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a0000024cfc020000000bfb0000001200530065006c0065006300740069006f006e000000003d0000009b0000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000410000024c000000dd00fffffffb0000000a00560069006500770073000000018b00000102000000b000fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e000001170000000000000000fb000000300062006100730065005f00630061006d006500720061002d004c006100620065006c0073002d0049006d00610067006500000001da000000b30000000000000000000000010000011c0000024cfc0200000015fb000000220062006100730065005f00630061006d006500720061002d0049006d00610067006500000000410000024c0000001600fffffffb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000000000000000fb0000001e0054006f007000520069006700680074002d00430061006d00650072006100000000410000003a0000000000000000fb0000001c0054006f0070004c006500660074002d00430061006d0065007200610000000041000003840000000000000000fb0000000c00430061006d00650072006100000000410000024c0000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c0065006400000000410000024c0000000000000000fb0000000c00430061006d00650072006101000000410000024c0000000000000000fb000000280054006f0070004c0065006600740049006d006100670065002d004c006100620065006c006500640000000177000001160000000000000000fb000000340054006f00700043005200470042004400430061006d002d0049006d006100670065002d004c006100620065006c006c006500640000000120000002a50000000000000000fb0000003a0054006f00700043005200470042004400430061006d006500720061002d0049006d006100670065002d004c006100620065006c006c0065006401000001630000012a0000000000000000fb000000280054006f00700043005200470042004400430061006d006500720061002d0049006d00610067006500000001da000000b30000000000000000fb0000001a0054006f0070004c006500660074002d0049006d00610067006501000000410000024c0000000000000000fb0000001c0054006f007000520069006700680074002d0049006d0061006700650100000169000001240000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650000000000000007800000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000003e60000024c00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a000003a6fc020000000bfb0000001200530065006c0065006300740069006f006e000000003d0000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003c00000281000000c800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001a00460072006f006e00740061006c00430061006d006500720061000000012e000001170000000000000000fb000000300062006100730065005f00630061006d006500720061002d004c006100620065006c0073002d0049006d00610067006500000001da000000b30000000000000000fb0000002c007200670062005f0077006f0072006c0064002d004c006100620065006c0073002d0049006d00610067006501000002c30000011f0000001600ffffff00000001000001aa000003a6fc0200000016fb0000000a00560069006500770073010000003c000003a6000000a200fffffffb000000220062006100730065005f00630061006d006500720061002d0049006d00610067006500000000410000024c0000000000000000fb0000001c00460072006f006e00740061006c002d00430061006d006500720061000000003d000001260000000000000000fb0000001e0054006f007000520069006700680074002d00430061006d00650072006100000000410000003a0000000000000000fb0000001c0054006f0070004c006500660074002d00430061006d0065007200610000000041000003840000000000000000fb0000000c00430061006d00650072006100000000410000024c0000000000000000fb0000000c00430061006d006500720061010000003d000003420000000000000000fb0000002a0054006f0070005200690067006800740049006d006100670065002d004c006100620065006c0065006400000000410000024c0000000000000000fb0000000c00430061006d00650072006101000000410000024c0000000000000000fb000000280054006f0070004c0065006600740049006d006100670065002d004c006100620065006c006500640000000177000001160000000000000000fb000000340054006f00700043005200470042004400430061006d002d0049006d006100670065002d004c006100620065006c006c006500640000000120000002a50000000000000000fb0000003a0054006f00700043005200470042004400430061006d006500720061002d0049006d006100670065002d004c006100620065006c006c0065006401000001630000012a0000000000000000fb000000280054006f00700043005200470042004400430061006d006500720061002d0049006d00610067006500000001da000000b30000000000000000fb0000001a0054006f0070004c006500660074002d0049006d00610067006501000000410000024c0000000000000000fb0000001c0054006f007000520069006700680074002d0049006d0061006700650100000169000001240000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001e004c00650066007400530074006500720065006f0049006d006100670065000000003d000001340000000000000000fb000000200052006900670068007400530074006500720065006f0049006d0061006700650000000122000000dd0000000000000000fb0000001600460072006f006e007400430061006d006500720061000000003d0000008b0000000000000000fb0000002a0052006900670068007400530074006500720065006f005700690064006500430061006d00650072006100000000ce0000008a0000000000000000fb00000026004c00650066007400530074006500720065006f00570069006400650049006d006100670065000000003d0000019d0000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650000000000000007800000047700fffffffb0000000800540069006d0065010000000000000450000000000000000000000460000003a600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -182,8 +1681,8 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1366
+  Width: 1920
   X: 0
-  Y: 28
-  base_camera-Image:
+  Y: 30
+  rgb_world-Labels-Image:
     collapsed: false
