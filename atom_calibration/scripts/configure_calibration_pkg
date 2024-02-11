@@ -417,6 +417,8 @@ if __name__ == "__main__":
         child = sensor['child_link']
         edge = nx_graph.get_edge_data(parent, child)
 
+        # print(edge['type']) DEBUG
+
         if not edge['type'] == 'fixed':
             atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent +
                       ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
@@ -524,7 +526,7 @@ if __name__ == "__main__":
     # Create dot calibration graph (used for printing out a summary)
     # --------------------------------------------------------------------------
     dot_graph = createDotGraph(nx_graph, config)
-    # dot_graph.view()
+    dot_graph.view()
     dot_graph.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
 
     # dot_graph.view()
