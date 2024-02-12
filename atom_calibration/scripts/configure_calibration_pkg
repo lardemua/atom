@@ -526,7 +526,7 @@ if __name__ == "__main__":
     # Create dot calibration graph (used for printing out a summary)
     # --------------------------------------------------------------------------
     dot_graph = createDotGraph(nx_graph, config)
-    dot_graph.view()
+    # dot_graph.view()
     dot_graph.render(filename='summary', directory=package_path + '/calibration', cleanup=True)
 
     # dot_graph.view()

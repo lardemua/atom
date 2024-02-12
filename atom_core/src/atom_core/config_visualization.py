@@ -176,7 +176,6 @@ def createDotGraph(nx_graph, config):
 
         # Define the label and color per node
         label = node_key
-        print(node)
 
         if node['is_world']:
             rgb = color_world_link
