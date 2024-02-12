@@ -144,6 +144,7 @@ def createNxGraph(args, description, config, bag):
         print('Creating transformation tree using the tfs in the bagfile ...')
 
         for topic, msg, t in bag.read_messages(topics=['/tf']):
+            # Check for the existence of edges in the graph and add it in if it's not already there
             for transform in msg.transforms:
                 if not nx_graph.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
                     # print(transform.header.frame_id, transform.child_frame_id)
@@ -155,6 +156,17 @@ def createNxGraph(args, description, config, bag):
                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
                     nx_graph.add_edge(transform.header.frame_id.replace('/', ''),
                                       transform.child_frame_id.replace('/', ''), weight=1, type='fixed')
+                    
+        ##################### DIOGO VIEIRA (#836)
+        # Add the missing node attributes
+        for node in nx_graph.nodes():
+            nx_graph.nodes[node]['is_world'] = is_world_link(node, config)
+            nx_graph.nodes[node]['pattern'] = has_pattern_link(node, config)
+            nx_graph.nodes[node]['sensor_data'] = has_sensor_data(node, config)
+
+        # DEBUG
+        for node_key, node in nx_graph.nodes().items():
+            print(f'{node_key} -> {node}')
 
     return nx_graph
 
@@ -176,7 +188,6 @@ def createDotGraph(nx_graph, config):
 
         # Define the label and color per node
         label = node_key
-        print(node)
 
         if node['is_world']:
             rgb = color_world_link
