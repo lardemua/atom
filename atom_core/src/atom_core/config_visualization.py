@@ -154,7 +154,7 @@ def createNxGraph(args, description, config, bag):
                 if not nx_graph.has_edge(transform.header.frame_id.replace('/', ''), transform.child_frame_id.replace('/', '')):
                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
                     nx_graph.add_edge(transform.header.frame_id.replace('/', ''),
-                                      transform.child_frame_id.replace('/', ''), weight=1, type='static')
+                                      transform.child_frame_id.replace('/', ''), weight=1, type='fixed')
 
     return nx_graph
 
