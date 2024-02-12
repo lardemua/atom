@@ -160,8 +160,8 @@ def createNxGraph(args, description, config, bag):
                 
                 if not nx_graph.has_edge(parent, child):
                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
-                    nx_graph.add_edge(transform.header.frame_id.replace('/', ''),
-                                      transform.child_frame_id.replace('/', ''), weight=1, type='fixed', parent=parent, child=child, is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
+                    nx_graph.add_edge(parent,
+                                      child, weight=1, type='fixed', parent=parent, child=child, is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
                     
         ##################### DIOGO VIEIRA (#836)
         # Add the missing node attributes
