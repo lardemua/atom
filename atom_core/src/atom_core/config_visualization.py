@@ -150,7 +150,13 @@ def createNxGraph(args, description, config, bag):
                 child = transform.child_frame_id.replace('/', '')
                 if not nx_graph.has_edge(parent, child):
                     # print(transform.header.frame_id, transform.child_frame_id)
-                    nx_graph.add_edge(parent, child, weight=1, type='dynamic', parent=parent, child=child, is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
+                    nx_graph.add_edge(parent,
+                                      child,
+                                      weight=1,
+                                      type='dynamic',
+                                      parent=parent,
+                                      child=child,
+                                      is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
 
         for topic, msg, t in bag.read_messages(topics=['/tf_static']):
             for transform in msg.transforms:
@@ -161,7 +167,12 @@ def createNxGraph(args, description, config, bag):
                 if not nx_graph.has_edge(parent, child):
                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
                     nx_graph.add_edge(parent,
-                                      child, weight=1, type='fixed', parent=parent, child=child, is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
+                                      child,
+                                      weight=1,
+                                      type='fixed',
+                                      parent=parent,
+                                      child=child,
+                                      is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
                     
         ##################### DIOGO VIEIRA (#836)
         # Add the missing node attributes
