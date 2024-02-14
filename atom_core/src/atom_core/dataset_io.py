@@ -10,7 +10,7 @@ import numpy as np
 # Opencv imports
 import cv2
 from atom_core.joint_models import getTransformationFromJoint
-from atom_core.utilities import atomError
+from atom_core.utilities import atomError, atomWarn
 
 # Ros imports
 import rospy
@@ -774,6 +774,10 @@ def addNoiseToJointParameters(dataset, args):
         print('Adding bias ' + Fore.BLUE + str(joint_bias) + Style.RESET_ALL + ' to joint ' + Fore.GREEN +
               joint_name + Style.RESET_ALL + ' parameter ' + Fore.CYAN + joint_param + Style.RESET_ALL)
         for collection_key, collection in dataset['collections'].items():
+            if joint_name not in collection['joints']:
+                atomWarn('Cannot add noise to joint ' + joint_name + ' for collection ' + collection_key)
+                continue
+
             collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][joint_param] + joint_bias
 
 

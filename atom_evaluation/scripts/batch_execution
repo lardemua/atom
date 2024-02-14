@@ -17,7 +17,7 @@ from pytictoc import TicToc
 
 from atom_core.config_io import atomError
 from atom_core.system import resolvePath
-from atom_core.utilities import removeColorsFromText
+from atom_core.utilities import atomWarn, removeColorsFromText
 
 
 def bprint(text):
@@ -37,6 +37,8 @@ def main():
                     required=True, type=str)
     ap.add_argument("-ow", "--overwrite", help="Overwrite output folder if needed.",
                     required=False, action='store_true')
+    ap.add_argument("-dr", "--dry_run", help="Run without actually executing the processes.",
+                    required=False, action='store_true')
 
     args = vars(ap.parse_args())
 
@@ -53,9 +55,12 @@ def main():
 
     rendered = template.render(data)
     config = yaml.safe_load(rendered)
-    # print('config=\n' + Back.YELLOW + str(json.dumps(config, indent=4)) + Style.RESET_ALL)
 
+    # Useful for debug
     # bprint(str(config))
+    with open('auto_rendered_config.yaml', 'w') as file:
+        yaml.dump(config, file)
+    # exit(0)
 
     tictoc = TicToc()
 
@@ -67,15 +72,23 @@ def main():
         # bprint('Overwriting output folder: ' + config['output_folder'])
         shutil.rmtree(args['output_folder'])  # Create the new folder
         os.mkdir(args['output_folder'])  # Create the new folder
-    else:
-        atomError(Fore.BLUE + Back.YELLOW + 'Output folder ' + args['output_folder'] +
-                  ' exists. If you want to delete use the --overwrite command line argument.' + Style.RESET_ALL)
 
     num_batches = len(config['batches'].keys())
     for idx, (batch_key, batch) in enumerate(config['batches'].items()):  # cycle through commands in batch_execution.
         print('\n')
         bprint(Style.BRIGHT + 'Batch ' + str(idx) + ' of ' + str(num_batches-1) + ': ' + batch_key)
         bprint('Executing command:\n' + batch['cmd'])
+
+        if args['dry_run']:
+            bprint('Running in dry run mode...')
+            continue
+
+        batch_folder = args['output_folder'] + '/' + batch_key
+        if os.path.exists(batch_folder) and not args['overwrite']:
+            atomWarn('Folder ' + batch_folder + ' exists. Skipping batch experiment.')
+            continue
+        else:
+            os.mkdir(batch_folder)
 
         # Start executing command.
         tictoc.tic()
@@ -95,10 +108,6 @@ def main():
         if args['verbose']:
             print(Fore.BLUE + Back.YELLOW + 'Batch' + str(idx) + ' terminated, stdout is:' + Style.RESET_ALL)
             print(stdout_data)
-
-        # Create batch folder
-        batch_folder = args['output_folder'] + '/' + batch_key
-        os.mkdir(batch_folder)
 
         # Save stdout and stderr if failed
         filename = batch_folder + '/stdout.txt'

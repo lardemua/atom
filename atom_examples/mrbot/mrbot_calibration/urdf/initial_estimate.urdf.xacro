@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- mrbot is a simple robotic system containing two rgb cameras on top of a tripop.  -->
+
+    <!-- Define  properties -->
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    <material name="Orange">
+        <color rgba="1.0 0.4 0.0 1.0" />
+    </material>
+
+    <!-- Colors -->
+    <material name="tripod_color">
+        <color rgba="0.21 0.21 .21 1" />
+    </material>
+
+    <!-- Tables properties-->
+    <xacro:property name="table_height" value="0.795"/>
+    <xacro:property name="table_width" value="1.0"/>
+    <xacro:property name="table_lenght" value="1.0"/>
+    <xacro:property name="table_tabletop_thickness" value="0.015"/>
+    <xacro:property name="table_leg_radius" value="0.02"/>
+
+
+    <!-- Includes -->
+    <xacro:include filename="$(find mrbot_description)/urdf/robot.gazebo.xacro" />
+    <xacro:include filename="$(find mrbot_description)/urdf/rgb_camera.urdf.xacro" />
+    <xacro:include filename="$(find mrbot_description)/urdf/rgb_camera_fov_40.urdf.xacro"/>
+    <xacro:include filename="$(find mrbot_description)/urdf/properties.xacro"/>
+    <xacro:include filename="$(find mrbot_description)/urdf/table.macro.xacro"/>
+
+
+    <!-- Define links and joints -->
+    <link name="world" />
+
+    <!-- Place table 1 in the scene-->
+    <xacro:table_macro name="table" parent="world" width="${table_width}"
+                       lenght="${table_lenght}" height="${table_height}"
+                       tabletop_thickness="${table_tabletop_thickness}" leg_radius="${table_leg_radius}">
+        <origin xyz="-1 0 0" rpy="0 0 ${M_PI/2}" />
+    </xacro:table_macro>
+
+    <link name="ring">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://mrbot_description/meshes/ring/ring.stl" scale="0.005 0.005 0.01" />
+            </geometry>
+            <material name="grey" />
+        </visual>
+        <collision name="ring_collision">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://mrbot_description/meshes/ring/ring.stl" scale="0.005 0.005 0.01" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1.0" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        </inertial>
+    </link>
+
+    <!-- ring  -->
+    <joint name="table_to_ring" type="fixed">
+        <parent link="table" />
+        <child link="ring" />
+        <origin xyz="0 0 1.8" rpy="0 0 0" />
+    </joint>
+
+
+    <!-- Camera 1 -->
+    <xacro:rgb_camera parent="ring" prefix="camera_1" color_gazebo="Red">
+        <origin xyz="0.23 0 0.0" rpy="0 1.6 0" />
+        <color_rgb_rviz>
+            <material name="red">
+                <color rgba="0.9 0 0 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+    <!-- Camera 2 -->
+    <xacro:rgb_camera parent="ring" prefix="camera_2" color_gazebo="Green">
+        <origin xyz="-0.24 0 0.04" rpy="0.01 1.55 0" />
+        <color_rgb_rviz>
+            <material name="green">
+                <color rgba="0 0.9 0 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+    <!-- Camera 3 -->
+    <xacro:rgb_camera parent="ring" prefix="camera_3" color_gazebo="Blue">
+        <origin xyz="0 0.24 -0.02" rpy="0 1.6 0" />
+        <color_rgb_rviz>
+            <material name="blue">
+                <color rgba="0 0 0.9 1" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+    <!-- Camera 4 -->
+    <xacro:rgb_camera parent="ring" prefix="camera_4" color_gazebo="Yellow">
+        <origin xyz="0 -0.24 0.03" rpy="0 1.6 0" />
+        <color_rgb_rviz>
+            <material name="yellow">
+                <color rgba="1.0 1.0 0.0 1.0" />
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera>
+
+    <!-- Camera 5 -->
+    <xacro:rgb_camera_fov_40 parent="ring" prefix="camera_5" color_gazebo="Pink">
+        <origin xyz="0.02 -0.01 -0.02" rpy="0 1.6 0" />
+        <color_rgb_rviz>
+            <material name="pink">
+                <color rgba="1 0 0.8 1.0"/>
+            </material>
+        </color_rgb_rviz>
+    </xacro:rgb_camera_fov_40>
+</robot>

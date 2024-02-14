@@ -1,0 +1,40 @@
+#
+#           █████╗ ████████╗ ██████╗ ███╗   ███╗
+#          ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║
+#          ███████║   ██║   ██║   ██║██╔████╔██║
+#          ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║
+#   __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _
+#  / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |
+#  | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __
+#  |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+#  | | | | | (_| | | | | | |  __/\ v  v / (_) | |  |   <
+#  |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
+#  https://github.com/lardemua/atom
+
+# this yml file contains a set of commands to be run in batch.
+# use jinja2 syntax for referencing variables
+
+# Define batches to run
+batches:
+{% for e in experiments %}
+  {{ e.name }}:
+    cmd: |
+      rosrun atom_calibration calibrate -json {{ dataset_path }}/dataset.json \
+      -v -nig {{ e.trans }} {{ e.rot }} -ctgt -ss {{ e.ss }} \
+      -csf "lambda x: int(x) < 100" \
+      -psf "lambda x: x in {{ e.patterns }}" \
+      -jbn shoulder_pan_joint shoulder_lift_joint elbow_joint wrist_1_joint wrist_2_joint wrist_3_joint \
+      -jbp origin_yaw origin_yaw origin_yaw origin_yaw origin_yaw origin_yaw \
+      -jbv {{ e.rot }} {{ e.rot }} {{ e.rot }} {{ e.rot }} {{ e.rot }} {{ e.rot }}
+    files_to_collect:
+      - '{{ dataset_path }}/results/atom_calibration.json'
+      - '{{ dataset_path }}/results/atom_calibration_params.yml'
+      - '{{ dataset_path }}/results/command_line_args.yml'
+      - '{{ dataset_path }}/results/comparison_to_ground_truth_transforms.csv'
+      - '{{ dataset_path }}/results/comparison_to_ground_truth_joints.csv'
+      - '{{ package_path }}/urdf/optimized.urdf.xacro'
+
+{% endfor %}
+# # End the loop
+
+
