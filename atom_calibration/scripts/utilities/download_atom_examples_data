@@ -25,66 +25,11 @@ from atom_core.utilities import atomStartupPrint, atomError, execute
 import sys
 import requests
 
-
-def download_file_from_google_drive(id, destination):
-    URL = "https://docs.google.com/uc?export=download&confirm=1"
-
-    session = requests.Session()
-
-    response = session.get(URL, params={"id": id}, stream=True)
-    token = get_confirm_token(response)
-
-    if token:
-        params = {"id": id, "confirm": token}
-        response = session.get(URL, params=params, stream=True)
-
-    save_response_content(response, destination)
-
-
-def get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            return value
-
-    return None
-
-
-def save_response_content(response, destination):
-    CHUNK_SIZE = 32768
-    total = int(response.headers.get('content-length', 0))
-
-    with open(destination, 'wb') as file, tqdm(desc=destination,
-                                               total=total,
-                                               unit='iB',
-                                               unit_scale=True,
-                                               unit_divisor=1024,
-                                               ) as bar:
-        for data in response.iter_content(chunk_size=CHUNK_SIZE):
-            size = file.write(data)
-            bar.update(size)
-
-
-#
-#     with open(destination, "wb") as f:
-#         for chunk in response.iter_content(CHUNK_SIZE):
-#             if chunk:  # filter out keep-alive new chunks
-#                 f.write(chunk)
-#
-
-# def main():
-#     if len(sys.argv) >= 3:
-#         file_id = sys.argv[1]
-#         destination = sys.argv[2]
-#     else:
-#         file_id = "TAKE_ID_FROM_SHAREABLE_LINK"
-#         destination = "DESTINATION_FILE_ON_YOUR_DISK"
-#     print(f"dowload {file_id} to {destination}")
-#     download_file_from_google_drive(file_id, destination)
-
-
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
+
+
 def main():
     atomStartupPrint('Download datasets and bagfiles for atom examples.')
 
@@ -141,7 +86,7 @@ def main():
                 # local_file_name = wget.download(url, file_name)
                 # Create the folder if it does not exist
                 pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
-                download_file_from_google_drive(bagfile['id'], file_name)
+                execute('gdown ' + bagfile['id'] + ' -O ' + file_name, blocking=True, verbose=False)
 
         if system['datasets'] is not None:
             for dataset_name, dataset in system['datasets'].items():
@@ -169,7 +114,8 @@ def main():
                       + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
                 # Create the folder if it does not exist
                 pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
-                download_file_from_google_drive(dataset['id'], file_name)
+
+                execute('gdown ' + dataset['id'] + ' -O ' + file_name, blocking=True, verbose=False)
 
                 print("\nDecompressing from:" + Fore.BLUE + file_name + Style.RESET_ALL +
                       " into " + Fore.BLUE + folder_name + Style.RESET_ALL)

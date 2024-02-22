@@ -85,15 +85,9 @@ mrjbot:
         train:
             file: train.bag
             id: 1trvpsJ9W5R0UkSHaOohmr4BZvnXY6ly0
-        train_with_noise:
-            file: train_with_noise.bag
-            id: 19xjwTXsZkcx5NNL_K3OPWv_Dv6El9ym0
         test:
             file: test.bag
             id: 1uncRI0clIPurlSA1cmrdTDkwbmFdVxWi
-        test_with_noise:
-            file: test_with_noise.bag
-            id: 1tKq1X0PpIRTVu8x6valOwxBfLD0RwEeo
     datasets:
         train:
             file: train.zip
