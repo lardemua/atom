@@ -461,6 +461,9 @@ def setupVisualization(dataset, args, selected_collection_key):
                               rgba=rgba, skip_links=movable_links, alpha=1.0)  # Immovable do not need alpha
         markers.markers.extend(m.markers)
 
+        if args['initial_pose_ghost']:  # add a ghost robot marker at the initial pose
+            rgba = [.1, .8, .1, 0.1]  # ipg are drawn in transparent green
+
         # Draw movable links
         for collection_key, collection in dataset['collections'].items():
 
@@ -475,15 +478,22 @@ def setupVisualization(dataset, args, selected_collection_key):
                                   verbose=False, alpha=args['draw_alpha'])
             markers.markers.extend(m.markers)
 
-        if args['initial_pose_ghost']:  # add a ghost robot marker at the initial pose
-            rgba = [.1, .8, .1, 0.1]  # ipg are drawn in transparent green
-
-            for collection_key, collection in dataset['collections'].items():
+            if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
+                rgba = [.1, .8, .1, 0.1]  # best color we could find
+                # Draw immovable links
                 m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                       frame_id_suffix=generateName('', suffix='ini'),
-                                      namespace=generateName(collection_key, suffix='ini'),
-                                      rgba=rgba, skip_links=immovable_links)
+                                      namespace=generateName('immovable', suffix='ini'),
+                                      rgba=rgba, skip_links=movable_links)
                 markers.markers.extend(m.markers)
+
+                # Draw movable links
+                for collection_key, collection in dataset['collections'].items():
+                    m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
+                                          frame_id_suffix=generateName('', suffix='ini'),
+                                          namespace=generateName(collection_key, suffix='ini'),
+                                          rgba=rgba, skip_links=immovable_links)
+                    markers.markers.extend(m.markers)
 
     graphics['ros']['RobotMeshMarkers'] = markers
 
