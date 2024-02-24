@@ -73,8 +73,12 @@ def main():
                     action="store_true", default=False)
     ap.add_argument("-snv", "--show_normalized_values", action="store_true", default=False,
                     help="In the output table, shows normalized residuals alongside the original values.")
-    ap.add_argument("-rv", "--ros_visualization",
-                    help="Publish ros visualization markers.", action="store_true")
+    ap.add_argument("-rv", "--ros_visualization", action="store_true",
+                    help="Publish ros visualization markers.")
+    ap.add_argument("-dpcc", "--draw_per_collection_colors", action="store_true",
+                    help="Publish ros visualization markers with one color per collection.")
+    ap.add_argument("-da", "--draw_alpha", type=float, default=0.5,
+                    help="Publish ros visualization markers with alpha for better visualization.")
     ap.add_argument("-si", "--show_images", action="store_true",
                     default=False, help="shows images for each camera")
     ap.add_argument("-oi", "--optimize_intrinsics", action="store_true", default=False,

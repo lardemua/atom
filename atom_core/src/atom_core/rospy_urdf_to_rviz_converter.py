@@ -26,7 +26,7 @@ def xmlDescriptionFromXacroFile(filename):
 
 
 def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespace=None, rgba=None, verbose=False,
-                      skip_links=[]):
+                      skip_links=[], alpha=None):
     """
     :param _robot_description:
     :param frame_id_prefix:
@@ -51,13 +51,22 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespa
     counter = 0
     for link in xml_robot.links:
 
+        # if link.name == 'tripod':
+        # if link.name == 'forearm_link':
+        #     verbose = True
+        # else:
+        #     verbose = False
+
         if link.name in skip_links:
-            # print('Skiping link ' + link.name)
+            if verbose:
+                print('Skipping link ' + link.name)
             continue
 
         if verbose:
-            print("Analysing link: " + str(link.name))
+            print("\nAnalyzing link: " + str(link.name))
             print(link.name + ' has ' + str(len(link.visuals)) + ' visuals.')
+            print('namespace is ' + namespace)
+            print('rgba = ' + str(rgba))
 
         for visual in link.visuals:  # iterate through all visuals in the list
             if not visual.geometry:
@@ -83,14 +92,23 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespa
                     sx, sy, sz = geom.scale[0], geom.scale[1], geom.scale[2]
                     if verbose:
                         print('Setting scale for link ' + link.name + ' to sx=' + str(sx) + ', sy=' + str(sy) + ', sz=',
-                          str(sz))
+                              str(sz))
 
             if not rgba is None:  # select link color
+                if verbose:
+                    print('Setting predefined color')
                 r, g, b, a = rgba[0], rgba[1], rgba[2], rgba[3]
-            elif visual.material:
+            elif visual.material and hasattr(visual.material.color, 'rgba'):
+                if verbose:
+                    print('Link has visual material')
                 r, g, b, a = visual.material.color.rgba
             else:
-                r, g, b, a = 1, 1, 1, 1  # white by default
+                if verbose:
+                    print('Setting default color')
+                r, g, b, a = 0.5, 0.5, 0.5, 1  # grey by default
+
+            if alpha is not None:
+                a = alpha
 
             # define the frame_id setting the prefix if needed
             frame_id = frame_id_prefix + link.name + frame_id_suffix
