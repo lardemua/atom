@@ -1,8 +1,5 @@
 <?xml version="1.0" ?>
 <robot name="riwmpbot" version="1.0">
-  <material name="tripod_color">
-    <color rgba="0.21 0.21 0.21 1.0"/>
-  </material>
   <material name="Yellow">
     <color rgba="1.0 1.0 0.0 1.0"/>
   </material>
@@ -402,7 +399,7 @@
     <child link="base_link_inertia"/>
   </joint>
   <joint name="shoulder_pan_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.01975145569862588"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="shoulder_link"/>
@@ -410,7 +407,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="shoulder_lift_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.05792003874793546"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
@@ -418,7 +415,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="elbow_joint" type="revolute">
-    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.1000000149011612"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -426,7 +423,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_1_joint" type="revolute">
-    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 0.0"/>
+    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 0.1"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_1_link"/>
@@ -434,7 +431,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_2_joint" type="revolute">
-    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.0"/>
+    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.1"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_1_link"/>
     <child link="wrist_2_link"/>
@@ -442,7 +439,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_3_joint" type="revolute">
-    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.141592653589793"/>
+    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.241592653589793"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_2_link"/>
     <child link="wrist_3_link"/>
@@ -508,7 +505,9 @@
       <geometry>
         <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl" scale="1.0 1.0 1.0"/>
       </geometry>
-      <material name="tripod_color"/>
+      <material name="tripod_color">
+        <color rgba="0.21 0.21 0.21 1.0"/>
+      </material>
     </visual>
     <collision name="tripod_collision">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
@@ -533,7 +532,9 @@
       <geometry>
         <box size="0.04 0.4 0.015"/>
       </geometry>
-      <material name="tripod_color"/>
+      <material name="tripod_color">
+        <color rgba="0.21 0.21 0.21 1.0"/>
+      </material>
     </visual>
     <collision name="tripod_collision">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
@@ -554,7 +555,7 @@
     <child link="tripod_center_support"/>
   </joint>
   <joint name="rgb_world_joint" type="fixed">
-    <origin xyz="0.0001936539500976023 -0.00016191314933734286 0.029838542958375673" rpy="0.0001650933494972848 0.0003522326651783465 -0.0003120672703493318"/>
+    <origin xyz="0.00845867852242976 -0.018804586436127927 0.03272963808730215" rpy="-0.005846135346919141 0.0006280903221295673 0.022082037670039148"/>
     <parent link="tripod_center_support"/>
     <child link="rgb_world_link"/>
   </joint>
@@ -693,34 +694,6 @@
     <parent link="upper_arm_link"/>
     <child link="charuco_200x120_3x6"/>
   </joint>
-  <link name="charuco_170x100_3x6">
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-    <visual name="forearm_pattern_visual">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="forearm_link-charuco_170x100_3x6" type="fixed">
-    <origin xyz="-0.20003582318367094 0.019887174654697356 -0.029787617867588132" rpy="-0.0005609789112673702 -0.0028280828893094186 3.1403772001109416"/>
-    <parent link="forearm_link"/>
-    <child link="charuco_170x100_3x6"/>
-  </joint>
-  <link name="charuco_200x200_8x8">
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-    <visual name="hand_pattern_visual">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"/>
-      </geometry>
-    </visual>
-  </link>
-  <joint name="flange-charuco_200x200_8x8" type="fixed">
-    <origin xyz="0.060134596703514884 -0.05970062714560451 0.0007050628705367494" rpy="-0.0010141889176716477 0.0013578865818770053 -0.00012542545331538986"/>
-    <parent link="flange"/>
-    <child link="charuco_200x200_8x8"/>
-  </joint>
   <link name="charuco_200x120_3x6">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual name="upper_arm_pattern_visual">
@@ -731,7 +704,7 @@
     </visual>
   </link>
   <joint name="upper_arm_link-charuco_200x120_3x6" type="fixed">
-    <origin xyz="-0.24019155126625746 0.02993734965722452 0.09026801721299614" rpy="0.0010219364358067206 -0.000267508570479523 3.140221331384571"/>
+    <origin xyz="-0.23847704330245673 0.04398775918561481 0.09009886105268892" rpy="0.0038944889255176215 -0.001053401234966295 3.083018460864498"/>
     <parent link="upper_arm_link"/>
     <child link="charuco_200x120_3x6"/>
   </joint>

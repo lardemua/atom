@@ -191,6 +191,7 @@ def setupVisualization(dataset, args, selected_collection_key):
             np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
     graphics['collections']['colormap'] = cm.prism(np.linspace(0, 1, len(dataset['collections'].keys())))
+    # graphics['collections']['colormap'] = cm.Wistia(np.linspace(0, 1, len(dataset['collections'].keys())))
     for idx, collection_key in enumerate(sorted(dataset['collections'].keys())):
         graphics['collections'][str(collection_key)] = {'color': graphics['collections']['colormap'][idx, :]}
 

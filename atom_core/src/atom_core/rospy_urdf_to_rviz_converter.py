@@ -51,11 +51,23 @@ def urdfToMarkerArray(xml_robot, frame_id_prefix='', frame_id_suffix='', namespa
     counter = 0
     for link in xml_robot.links:
 
-        # if link.name == 'tripod':
-        # if link.name == 'forearm_link':
-        #     verbose = True
-        # else:
-        #     verbose = False
+        # NOTE This is a hardcoded hack just for getting results of riwmpbot without showing the patterns that are not being used
+        # charuco_200x120_3x6
+        # charuco_170x100_3x6
+        # charuco_200x200_8x8
+
+        # Using upper_arm
+        # if link.name in ['charuco_170x100_3x6', 'charuco_200x200_8x8']:
+        # Using forearm
+        # if link.name in ['charuco_200x120_3x6', 'charuco_200x200_8x8']:
+        # Using hand
+        # if link.name in ['charuco_200x120_3x6', 'charuco_170x100_3x6']:
+        # Using all
+        # if False:
+        # Using none
+        # if link.name in ['charuco_200x120_3x6', 'charuco_170x100_3x6', 'charuco_200x200_8x8']:
+        # print('Custom skip for link ' + link.name)
+        # continue
 
         if link.name in skip_links:
             if verbose:
