@@ -1,0 +1,25 @@
+<launch>
+    <arg name="video_device" default="/dev/video3"/>
+    <arg name="camera" default="rgb_world"/>
+    <arg name="viz" default="false"/>
+    <arg name="width" default="1280"/>
+    <arg name="height" default="720"/>
+
+    <!--    <group ns="$(arg camera)">-->
+    <node name="$(arg camera)" pkg="usb_cam" type="usb_cam_node" output="screen">
+        <param name="video_device" value="$(arg video_device)"/>
+        <param name="camera_name" value="$(arg camera)"/>
+        <param name="image_width" value="$(arg width)"/>
+        <param name="image_height" value="$(arg height)"/>
+        <param name="pixel_format" value="mjpeg"/>
+        <param name="camera_frame_id" value="$(arg camera)_rgb_optical_frame"/>
+        <param name="io_method" value="mmap"/>
+    </node>
+
+    <group if="$(arg viz)">
+        <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+            <remap from="image" to="/$(arg camera)/rgb/image_raw"/>
+            <param name="autosize" value="true"/>
+        </node>
+    </group>
+</launch>

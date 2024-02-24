@@ -23,7 +23,6 @@ The scene contains 3 calibration patterns positioned in several links of the rob
   - positioned on the forearm, a charuco, size 170x100 millimeters, corners layout 3x6, aruco dictionary 6x6
   - positioned on the flange, a charuco, size 200x200 millimeters, corners layout 8x8, aruco dictionary 4x4
 
-
 This is a simulated system, which can be seen in gazebo:
 
 ![gazebo](docs/gazebo.png)
