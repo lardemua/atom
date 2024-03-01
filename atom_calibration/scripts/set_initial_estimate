@@ -164,7 +164,7 @@ class InteractiveFirstGuess(object):
         # outfile = rospack.get_path('atom_calibration') + os.path.abspath('/' + self.args['filename'])
         outfile = self.args['filename']
         with open(outfile, 'w') as out:
-            print("Writing fist guess urdf to '{}'".format(outfile))
+            print("Writing first guess urdf to '{}'".format(outfile))
             out.write(self.urdf.to_xml_string())
 
         if self.checkAdditionalTfs():
@@ -183,7 +183,7 @@ class InteractiveFirstGuess(object):
             # outfile = rospack.get_path('atom_calibration') + os.path.abspath('/' + self.args['filename'])
             outfile = self.args['filename']
             with open(outfile, 'w') as out:
-                print("Writing fist guess urdf to '{}'".format(outfile))
+                print("Writing first guess urdf to '{}'".format(outfile))
                 out.write(self.urdf.to_xml_string())
 
     def onResetAll(self, feedback):
