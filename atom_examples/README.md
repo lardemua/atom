@@ -12,7 +12,7 @@ System |           Name   |   Description
 <img src="mrjbot/docs/table.png" width="100%"/> | [mrjbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/mrjbot) |  Calibration of revolute joints.
 <img src="spjbot/docs/table.png" width="100%"/> | [spjbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/spjbot) | Calibration of prismatic joints.
 <img src="rihmpbot/docs/table.png" width="100%"/> | [rihmpbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rihmpbot) | Using multiple calibration patterns.
- <img src="riwmpbot/docs/table.png" width="100%"/> | [riwmpbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/riwbot) | Improving calibration with multiple patterns.
+ <img src="riwmpbot/docs/table.png" width="100%"/> | [riwmpbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/riwmpbot) | Improving calibration with multiple patterns.
 
 
 <!-- Old name | Full new name | acronym
