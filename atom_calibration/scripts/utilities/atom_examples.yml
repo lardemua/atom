@@ -119,3 +119,9 @@ riwmpbot:
             file: train.zip
             extract_to: train
             id: 1bzgNoFnqLvJ0zE8bvWJjVV50w2bfkage
+
+spjbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1M3FyPB9ZTMqF9WioXKbiHa9tIDl9zpYP
