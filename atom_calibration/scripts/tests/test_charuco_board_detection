@@ -23,6 +23,7 @@ camera_info_msg = None
 
 def onImageReceived(image_msg):
 
+    print('Image received')
     image = bridge.imgmsg_to_cv2(image_msg, 'bgr8')
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -38,11 +39,26 @@ def onImageReceived(image_msg):
     # marker_length = 0.015
     # start_id = 0
 
-    size = {'x': 2, 'y': 5}
-    charuco_dictionary = cv2.aruco.DICT_7X7_100
-    length = 0.02
-    marker_length = 0.015
+    # upper arm pattern
+    # size = {'x': 6, 'y': 3}
+    # charuco_dictionary = cv2.aruco.DICT_7X7_100
+    # length = 0.030
+    # marker_length = 0.022
+    # start_id = 0
+
+    # forearm pattern
+    size = {'x': 6, 'y': 3}
+    charuco_dictionary = cv2.aruco.DICT_6X6_100
+    length = 0.025
+    marker_length = 0.018
     start_id = 0
+
+    # hand pattern
+    # size = {'x': 8, 'y': 8}
+    # charuco_dictionary = cv2.aruco.DICT_4X4_100
+    # length = 0.02
+    # marker_length = 0.015
+    # start_id = 0
 
     if cv2.__version__ == '4.6.0':
 
@@ -108,14 +124,14 @@ def onImageReceived(image_msg):
         # np_ids .dtypeint64
         # np_corners .dtypefloat32
 
-        rvecs, tvecs = None, None
-        _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(
-            np_corners, np_ids, board,
-            camera_info_msg.K, camera_info_msg.D,
-            rvecs, tvecs)
-
-        # Draw frame on the image
-        cv2.drawFrameAxes(image, camera_info_msg.K, camera_info_msg.D, rvecs, tvecs, 0.5)
+#         rvecs, tvecs = None, None
+#         _, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(
+#             np_corners, np_ids, board,
+#             camera_info_msg.K, camera_info_msg.D,
+#             rvecs, tvecs)
+#
+#         # Draw frame on the image
+#         cv2.drawFrameAxes(image, camera_info_msg.K, camera_info_msg.D, rvecs, tvecs, 0.5)
 
 #     dict_type = aruco.DICT_4X4_100
 #     squares = (8, 8)
@@ -154,7 +170,7 @@ def main():
 
     # Wait for camera info msg
 
-    camera_info_msg = rospy.wait_for_message("/rgb_hand/camera_info",  CameraInfo)
+    camera_info_msg = rospy.wait_for_message("/rgb_world/camera_info",  CameraInfo)
     if camera_info_msg is None:
         raise ValueError("Could not receive camera_info message ")
     print(camera_info_msg)
@@ -166,7 +182,7 @@ def main():
     #     sensor['camera_info']['D']))
 
     # sub = rospy.Subscriber("image", Image, onImageReceived, queue_size=1)
-    sub = rospy.Subscriber("/rgb_hand/image_raw", Image, onImageReceived, queue_size=1)
+    sub = rospy.Subscriber("/rgb_world/image_raw", Image, onImageReceived, queue_size=1)
 
     # Read config file
     # config = atom_core.config_io.loadConfig(args['config_file'])

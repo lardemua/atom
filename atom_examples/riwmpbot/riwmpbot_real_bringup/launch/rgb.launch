@@ -12,7 +12,7 @@
         <param name="image_width" value="$(arg width)"/>
         <param name="image_height" value="$(arg height)"/>
         <param name="pixel_format" value="mjpeg"/>
-        <param name="camera_frame_id" value="$(arg camera)_rgb_optical_frame"/>
+        <param name="camera_frame_id" value="$(arg camera)_optical_frame"/>
         <param name="io_method" value="mmap"/>
     </node>
 

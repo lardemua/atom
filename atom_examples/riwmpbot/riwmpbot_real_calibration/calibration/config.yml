@@ -32,10 +32,11 @@
 #   - ROS Package Reference
 #       Example: package://your_package/urdf/description.urdf.xacro
 #
-description_file: "package://riwmpbot_description/urdf/robot.urdf.xacro"
+description_file: "package://riwmpbot_real_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/riwmpbot/train.bag"
+# bag_file: "$ROS_BAGS/riwmpbot_real/train.bag"
+bag_file: "$ROS_BAGS/riwmpbot_real/train_diogo.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -72,7 +73,7 @@ sensors:
 
   rgb_world:
     link: "rgb_world_optical_frame"
-    parent_link: "tripod_center_support"
+    parent_link: "world"
     child_link: "rgb_world_link"
     topic_name: "/rgb_world/image_raw"
     modality: "rgb"
@@ -200,7 +201,7 @@ anchored_sensor:
 max_duration_between_msgs: 1000
 
 # This parameter is automatically filled by ATOM, please only change if you know what you are doing
-package_name: "riwmpbot_calibration"
+package_name: "riwmpbot_real_calibration"
 
 # Automatically filled. Do not touch unless you know what you are doing.
 version: 2.0

@@ -10,7 +10,9 @@
 
     <xacro:property name="M_PI" value="3.1415926535897931" />
 
-
+    <material name="tripod_color">
+        <color rgba="0.21 0.21 .21 1" />
+    </material>
 
     <!-- Tables properties-->
     <xacro:property name="table_height" value="0.795"/>
@@ -45,11 +47,11 @@
     <!-- ####################################### -->
 
     <!-- Scene objets-->
-    <xacro:include filename="$(find riwmpbot_description)/urdf/properties.xacro"/>
-    <xacro:include filename="$(find riwmpbot_description)/urdf/table.macro.xacro"/>
+    <xacro:include filename="$(find riwmpbot_real_description)/urdf/properties.xacro"/>
+    <xacro:include filename="$(find riwmpbot_real_description)/urdf/table.macro.xacro"/>
 
     <!-- Sensors-->
-    <xacro:include filename="$(find riwmpbot_description)/urdf/rgb_camera.urdf.xacro" />
+    <xacro:include filename="$(find riwmpbot_real_description)/urdf/rgb_camera.urdf.xacro" />
 
     <!-- Manipulator-->
     <xacro:include filename="$(find ur_gazebo)/urdf/ur_macro.xacro"/>
@@ -58,13 +60,6 @@
     <!-- Declare links and joints -->
     <!-- ####################################### -->
     <link name="world"/>
-
-    <!-- Place table 1 in the scene-->
-    <xacro:table_macro name="table" parent="world" width="${table_width}"
-                       lenght="${table_lenght}" height="${table_height}"
-                       tabletop_thickness="${table_tabletop_thickness}" leg_radius="${table_leg_radius}">
-        <origin xyz="-1 0 0" rpy="0 0 ${M_PI/2}" />
-    </xacro:table_macro>
 
     <!--  Place manipulator1 in the scene-->
     <xacro:ur_robot_gazebo
@@ -79,89 +74,22 @@
             safety_k_position="$(arg safety_k_position)"/>
 
     <!--  Place robot on top of the table1-->
-    <joint name="tabletop_table_to_ur10e" type="fixed">
-        <parent link="tabletop_table" />
+    <joint name="world_to_ur10e" type="fixed">
+        <parent link="world" />
         <child link = "base_link"/>
-        <origin xyz="0.0 0.05 0.001" rpy="0.0 0.0 0.0" />
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
     </joint>
-
-
-    <!-- Tripod link-->
-    <link name="tripod">
-        <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl"
-                    scale="1 1 1" />
-            </geometry>
-            <material name="tripod_color">
-                <color rgba="0.21 0.21 .21 1" />
-            </material>
-        </visual>
-        <collision name="tripod_collision">
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl"
-                    scale="1 1 1" />
-            </geometry>
-        </collision>
-        <inertial>
-            <mass value="1.0" />
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
-        </inertial>
-    </link>
 
     <!-- world to tripod -->
-    <joint name="world_to_tripod" type="fixed">
-        <parent link="world" />
-        <child link="tripod" />
-        <origin xyz="-0.25 0.4 0" rpy="0 0 3.14" />
-    </joint>
 
-    <link name="tripod_plate">
-        <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.04 0.4 0.015" />
-            </geometry>
-            <material name="tripod_color">
-                <color rgba="0.21 0.21 .21 1" />
-            </material>
-        </visual>
-        <collision name="tripod_collision">
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.04 0.15 0.015" />
-            </geometry>
-        </collision>
-        <inertial>
-            <mass value="1.0" />
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
-        </inertial>
-    </link>
 
-    <!-- tripod to tripod plate-->
-    <joint name="tripod_to_tripod_plate" type="fixed">
-        <parent link="tripod" />
-        <child link="tripod_plate" />
-        <origin xyz=".01 .03 1.65" rpy="0 0.314 0" />
-    </joint>
-
-    <!-- Tripod center support-->
-    <link name="tripod_center_support" />
-
-    <!-- tripod plate to tripod center support -->
-    <joint name="tripod_plate_to_tripod_center_support" type="fixed">
-        <parent link="tripod_plate" />
-        <child link="tripod_center_support" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
+    <!-- x = 0.95 -->
+    <!-- y = 0.95 -->
+    <!-- z = 0.85 -->
 
     <!-- Hand Camera (place hand rgb in the end effector) -->
-    <xacro:rgb_camera parent="tripod_center_support" prefix="rgb_world" color_gazebo="Green">
-        <origin xyz="0 0 0.03" rpy="0 0.0 0" />
+    <xacro:rgb_camera parent="world" prefix="rgb_world" color_gazebo="Green">
+        <origin xyz="0.95 0.35 0.80" rpy="0.0 ${15*M_PI/180.0} ${180*M_PI/180.0}" />
         <color_rgb_rviz>
             <material name="green">
                 <color rgba="0 0.9 0 1" />
@@ -192,15 +120,15 @@
         </inertial>
     </link>
 
-    <!-- tripod plate to tripod center support -->
+    <!-- flange_to_charuco_200_200_8x8 -->
     <joint name="flange_to_charuco_200x200_8x8" type="fixed">
         <parent link="flange" />
         <child link="charuco_200x200_8x8"/>
-        <origin xyz="0.06 -0.06 0" rpy="0 0 0" />
+        <origin xyz="0.29 0 -0.1" rpy="${-M_PI/2} ${-M_PI/2} 0" />
     </joint>
 
-
     <!-- charuco_170x100_3x6 link-->
+    <!-- Forearm -->
     <link name="charuco_170x100_3x6">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
@@ -227,7 +155,7 @@
     <joint name="forearm_to_charuco_170x100_3x6" type="fixed">
         <parent link="forearm_link" />
         <child link="charuco_170x100_3x6"/>
-        <origin xyz="-0.20 0.02 -0.03" rpy="0 0 3.14" />
+        <origin xyz="-0.23 0.03 -0.03" rpy="0 0 3.14" />
     </joint>
 
     <!-- charuco_200x120_3x6 link-->
@@ -257,7 +185,7 @@
     <joint name="upper_arm_to_charuco_200x120_3x6" type="fixed">
         <parent link="upper_arm_link" />
         <child link="charuco_200x120_3x6"/>
-        <origin xyz="-0.24 0.03 0.09" rpy="0 0 3.14" />
+        <origin xyz="-0.25 0.05 0.10" rpy="${15*M_PI/180.0} 0 3.14" />
     </joint>
 
 
