@@ -34,7 +34,7 @@ As always, we recommend a careful reading of the [documentation](https://lardemu
 
 In this section, out goal is to describe the calibration pipeline for the **spjbot**.
 
-To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1trvpsJ9W5R0UkSHaOohmr4BZvnXY6ly0/view?usp=drive_link), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1M3FyPB9ZTMqF9WioXKbiHa9tIDl9zpYP/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 
 Download the bagfile and put it in **$ROS_BAGS/spjbot/train.bag**.
 
