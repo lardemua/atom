@@ -63,72 +63,75 @@ def main():
 
     for system_name, system in config.items():
         print('\nDownloading data for ' + Style.DIM + Fore.GREEN + system_name + Style.RESET_ALL)
-#
-        if system['bagfiles'] is not None:
-            for bagfile_name, bagfile in system['bagfiles'].items():
-                folder_name = ROS_BAGS + '/' + system_name + '/'
-                file_name = folder_name + bagfile['file']
 
-                if os.path.isfile(file_name) and not args['overwrite']:
-                    print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
-                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... skipping download.')
-                    continue
+        if 'bagfiles' in system:
+            if system['bagfiles'] is not None:
+                for bagfile_name, bagfile in system['bagfiles'].items():
+                    folder_name = ROS_BAGS + '/' + system_name + '/'
+                    file_name = folder_name + bagfile['file']
 
-                if os.path.isfile(file_name) and args['overwrite']:
-                    backup_file = '/tmp/' + system_name + '_' + bagfile['file']
-                    print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
-                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... moving to ' + backup_file)
-                    execute('mv ' + file_name + ' ' + backup_file, verbose=False)
+                    if os.path.isfile(file_name) and not args['overwrite']:
+                        print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
+                            + Fore.BLUE + file_name + Style.RESET_ALL + ' ... skipping download.')
+                        continue
 
-                print("Downloading bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' to '
-                      + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
+                    if os.path.isfile(file_name) and args['overwrite']:
+                        backup_file = '/tmp/' + system_name + '_' + bagfile['file']
+                        print("Bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' already exists in '
+                            + Fore.BLUE + file_name + Style.RESET_ALL + ' ... moving to ' + backup_file)
+                        execute('mv ' + file_name + ' ' + backup_file, verbose=False)
 
-                # local_file_name = wget.download(url, file_name)
-                # Create the folder if it does not exist
-                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
-                execute('gdown ' + bagfile['id'] + ' -O ' + file_name, blocking=True, verbose=False)
+                    print("Downloading bagfile " + Fore.BLUE + bagfile_name + Style.RESET_ALL + ' to '
+                        + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
 
-        if system['datasets'] is not None:
-            for dataset_name, dataset in system['datasets'].items():
-                file_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['file']
-                folder_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['extract_to']
-                system_folder = ATOM_DATASETS + '/' + system_name
+                    # local_file_name = wget.download(url, file_name)
+                    # Create the folder if it does not exist
+                    pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
+                    execute('gdown ' + bagfile['id'] + ' -O ' + file_name, blocking=True, verbose=False)
+        
+        
+        if 'datasets' in system:
+            if system['datasets'] is not None:
+                for dataset_name, dataset in system['datasets'].items():
+                    file_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['file']
+                    folder_name = ATOM_DATASETS + '/' + system_name + '/' + dataset['extract_to']
+                    system_folder = ATOM_DATASETS + '/' + system_name
 
-                if os.path.isdir(folder_name) and not args['overwrite']:
-                    print("dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
-                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... skipping download.')
-                    continue
+                    if os.path.isdir(folder_name) and not args['overwrite']:
+                        print("dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
+                            + Fore.BLUE + file_name + Style.RESET_ALL + ' ... skipping download.')
+                        continue
 
-                # In case th folder is there
-                if os.path.isdir(folder_name) and args['overwrite']:
-                    backup_folder = '/tmp/' + system_name + '_' + dataset['extract_to']
-                    print("Dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
-                          + Fore.BLUE + file_name + Style.RESET_ALL + ' ... moving to ' + backup_folder)
-                    execute('mv ' + folder_name + ' ' + backup_folder, verbose=False)
+                    # In case th folder is there
+                    if os.path.isdir(folder_name) and args['overwrite']:
+                        backup_folder = '/tmp/' + system_name + '_' + dataset['extract_to']
+                        print("Dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' already exists in '
+                            + Fore.BLUE + file_name + Style.RESET_ALL + ' ... moving to ' + backup_folder)
+                        execute('mv ' + folder_name + ' ' + backup_folder, verbose=False)
 
-                # In case the file.zip is there as well
-                if os.path.isfile(file_name) and args['overwrite']:
-                    execute('rm ' + file_name, verbose=False)
+                    # In case the file.zip is there as well
+                    if os.path.isfile(file_name) and args['overwrite']:
+                        execute('rm ' + file_name, verbose=False)
 
-                print("Downloading dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' to '
-                      + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
-                # Create the folder if it does not exist
-                pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
+                    print("Downloading dataset " + Fore.BLUE + dataset_name + Style.RESET_ALL + ' to '
+                        + Fore.BLUE + file_name + Style.RESET_ALL + ' ...')
+                    # Create the folder if it does not exist
+                    pathlib.Path(folder_name).mkdir(parents=True, exist_ok=True)
 
-                execute('gdown ' + dataset['id'] + ' -O ' + file_name, blocking=True, verbose=False)
+                    execute('gdown ' + dataset['id'] + ' -O ' + file_name, blocking=True, verbose=False)
 
-                print("\nDecompressing from:" + Fore.BLUE + file_name + Style.RESET_ALL +
-                      " into " + Fore.BLUE + folder_name + Style.RESET_ALL)
-                with zipfile.ZipFile(file_name, 'r') as zf:
-                    # zip_ref.extractall(folder_name)
-                    for member in tqdm(zf.infolist(), desc='Extracting '):
-                        try:
-                            zf.extract(member, system_folder)
-                        except zipfile.error as e:
-                            pass
+                    print("\nDecompressing from:" + Fore.BLUE + file_name + Style.RESET_ALL +
+                        " into " + Fore.BLUE + folder_name + Style.RESET_ALL)
+                    with zipfile.ZipFile(file_name, 'r') as zf:
+                        # zip_ref.extractall(folder_name)
+                        for member in tqdm(zf.infolist(), desc='Extracting '):
+                            try:
+                                zf.extract(member, system_folder)
+                            except zipfile.error as e:
+                                pass
 
-                if os.path.isfile(file_name) and args['overwrite']:
-                    execute('rm ' + file_name, verbose=False)
+                    if os.path.isfile(file_name) and args['overwrite']:
+                        execute('rm ' + file_name, verbose=False)
 
 
 if __name__ == "__main__":
