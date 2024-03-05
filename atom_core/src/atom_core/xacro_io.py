@@ -129,8 +129,8 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
         with open(optimized_w_pattern_urdf_file, "w", ) as out:
             out.write(URDF.to_xml_string(xml_robot))
 
-    print("Optimized xacro with pattern saved to " + str(optimized_w_pattern_urdf_file) +
-          " . You can use it as a ROS robot_description.")
+    # print("Optimized xacro with pattern saved to " + str(optimized_w_pattern_urdf_file) +
+    #       " . You can use it as a ROS robot_description.")
 
     print("You can use it as a ROS robot_description by launching:\n" +
           Fore.BLUE + 'roslaunch ' + package_name + ' playbag.launch optimized:=true' + Style.RESET_ALL)

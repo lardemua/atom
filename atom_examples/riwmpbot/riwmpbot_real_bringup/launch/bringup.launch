@@ -1,0 +1,47 @@
+<launch>
+    <!-- by default, we do not start a database (it can be large) -->
+    <arg name="db" default="false" />
+    <arg name="gui" default="true" doc="starts gazebo gui" />
+    <!-- choose larcc_patern if you want charuco -->
+    <arg name="world" default="larcc" doc="Defines Gazebo world" />
+    <arg name="moveit" default="true" doc="use moveit for motion planning" />
+
+    <!--    Be careful: rviz cannot be launched at the same time than the robot... -->
+    <!--    Otherwise, we won't be able to control the manipulator. Check README instructions-->
+    <arg name="launch_robot" default="true" doc="launch robot" />
+    <arg name="rviz" default="true" doc="launch rviz with movit planner plugin" />
+
+    <arg name="use_dummy_frames" default="true" />
+    <arg name="use_sim_time" default="true" />
+
+    <!-- Define urdf to be used -->
+    <!-- <arg name="urdf" default="larcc_sim.urdf.xacro" /> -->
+
+    <!-- start visualization with rviz-->
+    <include if="$(arg rviz)" file="$(find larcc_bringup)/launch/visualize.launch">
+    </include>
+
+    <group if="$(arg launch_robot)">
+        <include file="$(find ur_robot_driver)/launch/ur10e_bringup.launch">
+            <arg name="robot_ip" value="192.168.56.2"/>
+            <!-- <arg name="robot_description_file" value="$(find larcc_description)/launch/load.launch" /> -->
+            <arg name="robot_description_file" value="$(find riwmpbot_real_description)/launch/inc/load_ur10e.launch.xml"/>
+            <!-- <arg name="kinematics_config"
+                value="$(find larcc_ur10e)/config/my_robot_calibration.yaml" /> -->
+        </include>
+
+        <include file="$(find ur10e_moveit_config)/launch/ur10e_moveit_planning_execution.launch">
+            <arg name="load_robot_description" value="false" />
+        </include>
+
+        <node name="gripper_action_server" pkg="gripper_action_server" type="gripper_action_server_node.py" />
+    </group>
+
+    <!-- <group unless="$(arg launch_robot)">
+        <include file="$(find larcc_bringup)/launch/model.launch">
+            <! - <arg name="urdf" value="$(arg urdf)"/> ->
+        </include>
+    </group> -->
+
+
+</launch>

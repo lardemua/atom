@@ -1,0 +1,9 @@
+<launch>
+      
+    <arg name="rviz_config" default="visualize" doc="name of configuration file for rviz"/>
+
+        <node name="rviz" pkg="rviz" type="rviz"
+              args="--display-config $(find larcc_bringup)/config/$(arg rviz_config).rviz" required="false">
+        </node>
+
+</launch>

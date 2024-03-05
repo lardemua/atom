@@ -9,6 +9,8 @@ from atom_core.utilities import atomError
 
 def getTransformationFromJoint(joint):
 
+    # print(joint)
+
     if joint['joint_type'] == 'revolute' or joint['joint_type'] == 'continuous':
 
         # STEP 1: compute the rotation matrix due to the joint revolution position

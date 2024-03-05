@@ -182,14 +182,16 @@ We recommend that the labels in test dataset are also verified using the dataset
 
 and then:
 
-    rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rdbot/rdbot_example_test_dataset/dataset.json -ow
+    rosrun atom_calibration dataset_playback -json $ATOM_DATASETS/rdbot/test/dataset.json -ow
 
 
 ##### Manual annotation of pattern's boundaries in the rgb image
 
 To run the evaluation of the depth to rgb sensor, we will also need to manually annotate the ground truth pattern boundaries on the rgb images. Do this by calling:
 
-    rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset /home/mike/datasets/rdbot/rdbot_example_test_dataset/dataset.json --rgb_sensor rgb
+
+    rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset $ATOM_DATASETS/rdbot/test/dataset.json --rgb_sensor rgb
+
 
 This is the image annotation tool from ATOM. You can press "h" for help. All collections should be annotated as exemplified below:
 
@@ -201,7 +203,7 @@ This procedure produces a files called **annotation_\<sensor name\>.json**, i.e.
 
 Finally, the evaluation of the calibration is run with:
 
-    roslaunch rdbot_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rdbot/rdbot_example_test_dataset/dataset_corrected.json train_json:=$ATOM_DATASETS/rdbot/rdbot_example_train_dataset/atom_calibration.json
+    roslaunch rdbot_calibration full_evaluation.launch test_json:=$ATOM_DATASETS/rdbot/rdbot_example_test_dataset/dataset_corrected.json train_json:=$ATOM_DATASETS/rdbot/rdbot_example_train_dataseat/atom_calibration.json
 
 which results in:
 

@@ -10,7 +10,7 @@ import numpy as np
 # Opencv imports
 import cv2
 from atom_core.joint_models import getTransformationFromJoint
-from atom_core.utilities import atomError
+from atom_core.utilities import atomError, atomWarn
 
 # Ros imports
 import rospy
@@ -160,29 +160,25 @@ def loadResultsJSON(json_file, collection_selection_function=None):
     return dataset, json_file
 
 
-def saveAtomDataset(output_file, dataset_in, freeze_dataset=False):
+def saveAtomDataset(filename, dataset_in, save_data_files=True, freeze_dataset=False):
     if freeze_dataset:  # to make sure our changes only affect the dictionary to save
         dataset = copy.deepcopy(dataset_in)
     else:
         dataset = dataset_in
 
-    output_folder = os.path.dirname(output_file)
-    if output_folder == '':
-        output_folder = './'
-
-    bridge = CvBridge()
-
-    # Process the dataset to remove data from the data fields and, if needed, write the files.
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
-            createDataFile(dataset, collection_key, sensor, sensor_key, output_folder)
+    if save_data_files:
+        # Process the dataset to remove data from the data fields and, if needed, write the files.
+        for collection_key, collection in dataset['collections'].items():
+            for sensor_key, sensor in dataset['sensors'].items():
+                # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
+                createDataFile(dataset, collection_key, sensor, sensor_key, os.path.dirname(filename))
 
         # Do the same for additional data topics ...
-        # for description, sensor in dataset['additional_sensor_data'].items():
-        #     createDataFile(dataset_in, collection_key, sensor, description, output_folder, 'additional_data')
+        for description, sensor in dataset['additional_sensor_data'].items():
+            createDataFile(dataset_in, collection_key, sensor, description,
+                           os.path.dirname(filename), 'additional_data')
 
-    createJSONFile(output_file, dataset)  # write dictionary to json
+    createJSONFile(filename, dataset)  # write dictionary to json
 
 
 def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, data_type='data'):
@@ -764,7 +760,7 @@ def addNoiseToJointParameters(dataset, args):
         return
 
     if args['joint_bias_names'] is None and args['joint_bias_values'] is None and args['joint_bias_values'] is None:
-        print('No bias to add')
+        print('No bias to add to joints')
         return
 
     if np.any([args['joint_bias_names'] is None, args['joint_bias_values'] is None, args['joint_bias_values'] is None]):
@@ -778,6 +774,10 @@ def addNoiseToJointParameters(dataset, args):
         print('Adding bias ' + Fore.BLUE + str(joint_bias) + Style.RESET_ALL + ' to joint ' + Fore.GREEN +
               joint_name + Style.RESET_ALL + ' parameter ' + Fore.CYAN + joint_param + Style.RESET_ALL)
         for collection_key, collection in dataset['collections'].items():
+            if joint_name not in collection['joints']:
+                atomWarn('Cannot add noise to joint ' + joint_name + ' for collection ' + collection_key)
+                continue
+
             collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][joint_param] + joint_bias
 
 

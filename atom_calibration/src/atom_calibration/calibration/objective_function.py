@@ -17,6 +17,7 @@ from atom_core.joint_models import getTransformationFromJoint
 import atom_core.ros_numpy
 from colorama import Fore, Style
 from scipy.spatial import distance
+from atom_core.utilities import removeColorsFromText
 
 # ROS imports
 from geometry_msgs.msg import Point
@@ -156,9 +157,9 @@ def errorReport(dataset, residuals, normalizer, args):
     print(table)
 
     # save results in csv file
-    if args['save_file_results'] != None:
-        with open(args['save_file_results'] + 'calibration_results.csv', 'w', newline='') as f_output:
-            f_output.write(table_to_save.get_csv_string())
+    if args['save_calibration_errors']:
+        with open(args['output_folder'] + '/calibration_errors.csv', 'w', newline='') as f_output:
+            f_output.write(removeColorsFromText(table_to_save.get_csv_string()))
 
 
 @Cache(args_to_ignore=['_dataset'])

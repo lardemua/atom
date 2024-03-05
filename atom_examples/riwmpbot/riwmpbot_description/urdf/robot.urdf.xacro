@@ -10,9 +10,7 @@
 
     <xacro:property name="M_PI" value="3.1415926535897931" />
 
-    <material name="tripod_color">
-        <color rgba="0.21 0.21 .21 1" />
-    </material>
+
 
     <!-- Tables properties-->
     <xacro:property name="table_height" value="0.795"/>
@@ -96,7 +94,9 @@
                 <mesh filename="package://riwmpbot_description/meshes/tripod/tripod.stl"
                     scale="1 1 1" />
             </geometry>
-            <material name="tripod_color" />
+            <material name="tripod_color">
+                <color rgba="0.21 0.21 .21 1" />
+            </material>
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />
@@ -125,7 +125,9 @@
             <geometry>
                 <box size="0.04 0.4 0.015" />
             </geometry>
-            <material name="tripod_color" />
+            <material name="tripod_color">
+                <color rgba="0.21 0.21 .21 1" />
+            </material>
         </visual>
         <collision name="tripod_collision">
             <origin xyz="0 0 0" rpy="0 0 0" />

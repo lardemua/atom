@@ -6,6 +6,7 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 # stdlib
 
 # 3rd-party
+from copy import deepcopy
 import math
 import os
 import re
@@ -22,6 +23,7 @@ import numpy as np
 # 3rd-party
 from rospy_message_converter import message_converter
 from pynput import keyboard
+import yaml
 
 from tf.transformations import quaternion_matrix, euler_from_matrix
 
@@ -93,6 +95,14 @@ def getNumberQualifier(n, unit='meters'):
             return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
 
 
+def removeColorsFromText(text):
+    # Must remove ansi escape characters so that its possible to convert to float
+    # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    text_without_color_codes = ansi_escape.sub('', text)
+    return text_without_color_codes
+
+
 def addAveragesBottomRowToTable(table, header):
 
     # Compute averages and add a bottom row
@@ -105,10 +115,7 @@ def addAveragesBottomRowToTable(table, header):
         total = 0
         count = 0
         for row in table.rows:
-            # Must remove ansi escape characters so that its possible to convert to float
-            # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
-            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-            cell_without_color_codes = ansi_escape.sub('', row[col_idx])
+            cell_without_color_codes = removeColorsFromText(row[col_idx])
 
             try:
                 value = float(cell_without_color_codes)
@@ -128,7 +135,7 @@ def addAveragesBottomRowToTable(table, header):
     return table
 
 
-def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key):
+def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key, output_folder):
 
     # --------------------------------------------------
     # Evaluate sensor poses
@@ -183,10 +190,19 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
     # --------------------------------------------------
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
+        print('pattern ' + pattern_key)
+        print(pattern)
+
         transform_key = generateKey(pattern["parent_link"], pattern["link"])
         row = [transform_key, Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
 
         transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+
+        if transform_key not in dataset_ground_truth['collections'][selected_collection_key]['transforms']:
+            atomWarn('Cannot print comparison to ground truth for pattern ' +
+                     pattern_key + ' because there is no ground truth data.')
+            continue
+
         transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
         transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
 
@@ -210,6 +226,10 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
           Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
 
     print(table)
+    filename = output_folder + '/comparison_to_ground_truth_transforms.csv'
+    print('Saving transforms ground truth comparison to ' + Fore.BLUE + filename + Style.RESET_ALL)
+    with open(filename, 'w', newline='') as file:
+        file.write(removeColorsFromText(table.get_csv_string()))
 
     # --------------------------------------------------
     # Evaluate joints
@@ -245,6 +265,11 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
               Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
 
         print(table)
+
+        filename = output_folder + '/comparison_to_ground_truth_joints.csv'
+        print('Saving joints ground truth comparison to ' + Fore.BLUE + filename + Style.RESET_ALL)
+        with open(filename, 'w', newline='') as file:
+            file.write(removeColorsFromText(table.get_csv_string()))
 
 
 def raise_timeout_error(signum, frame):
@@ -380,7 +405,7 @@ def atomStartupPrint(message=''):
          ███████║   ██║   ██║   ██║██╔████╔██║ \n \
          ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║ \n \
   __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _  \n\
- / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |    \n\
+ / _|     ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝  | |    \n\
  | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __ \n\
  |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ / \n\
  | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <  \n\
@@ -426,3 +451,27 @@ def getJointParentChild(joint_key, description):
             child = joint.child
 
     return joint.parent, joint.child
+
+
+def saveCommandLineArgsYml(args, output_file):
+    with open(output_file, 'w') as file:
+        yaml.dump(args, file, sort_keys=False)
+
+
+def createLambdaExpressionsForArgs(args, keys_to_check=['sensor_selection_function',
+                                                        'collection_selection_function',
+                                                        'joint_selection_function',
+                                                        'joint_parameter_selection_function',
+                                                        'pattern_selection_function',
+                                                        'additional_tf_selection_function']):
+
+    args_with_lambdas = deepcopy(args)
+    for arg_key in keys_to_check:
+
+        if args_with_lambdas[arg_key] is None:  # nothing to do
+            continue
+
+        print('Creating lambda expression for arg ' + Fore.BLUE + arg_key + Style.RESET_ALL)
+        args_with_lambdas[arg_key] = eval(args_with_lambdas[arg_key], globals())
+
+    return args_with_lambdas

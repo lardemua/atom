@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<!--
+
+          █████╗ ████████╗ ██████╗ ███╗   ███╗
+         ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║
+         ███████║   ██║   ██║   ██║██╔████╔██║
+         ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║
+  __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _
+ / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |
+ | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __
+ |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+ | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <
+ |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
+ https://github.com/lardemua/atom
+-->
+
+<!-- WARNING WARNING WARNING WARNING auto-generated file!! -->
+<!-- Only modify this file if you know what you are doing! -->
+
+<!--
+@file full_evaluation.launch Runs a full system evaluation.
+-->
+
+<launch>
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Parameters-->
+    <arg name="train_json" default="" doc="Define train json path"/>
+    <arg name="test_json" default="" doc="Define test json path"/>
+    <arg name="csf" default="lambda x: True" doc="A string to be evaluated into a lambda function that receives a collection name as input and returns True or False to indicate if the collection should be loaded"/>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+
+
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+    <!-- Evaluation -->
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_1_to_camera_2_pattern_1_evaluation"
+        args="-ss camera_1 -st camera_2 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_1_to_camera_3_pattern_1_evaluation"
+        args="-ss camera_1 -st camera_3 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_1_to_camera_4_pattern_1_evaluation"
+        args="-ss camera_1 -st camera_4 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_1_to_camera_5_pattern_1_evaluation"
+        args="-ss camera_1 -st camera_5 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_2_to_camera_3_pattern_1_evaluation"
+        args="-ss camera_2 -st camera_3 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_2_to_camera_4_pattern_1_evaluation"
+        args="-ss camera_2 -st camera_4 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_2_to_camera_5_pattern_1_evaluation"
+        args="-ss camera_2 -st camera_5 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_3_to_camera_4_pattern_1_evaluation"
+        args="-ss camera_3 -st camera_4 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_3_to_camera_5_pattern_1_evaluation"
+        args="-ss camera_3 -st camera_5 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    <node type="rgb_to_rgb_evaluation" pkg="atom_evaluation" 
+        name="camera_4_to_camera_5_pattern_1_evaluation"
+        args="-ss camera_4 -st camera_5 -train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+
+    
+    <node type="ground_truth_frame_evaluation" pkg="atom_evaluation" name="ground_truth_frame_evaluation" 
+        args="-train_json $(arg train_json) -test_json $(arg test_json) -csf '$(arg csf)' -sfr" 
+        output="screen"/>
+    <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+
+</launch>

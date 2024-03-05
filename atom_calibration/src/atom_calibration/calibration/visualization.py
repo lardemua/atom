@@ -190,8 +190,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         graphics['patterns'][pattern_key]['colormap'] = cm.gist_rainbow(
             np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
-    # graphics['collections']['colormap'] = cm.tab20b(np.linspace(0, 1, len(dataset['collections'].keys())))
-    graphics['collections']['colormap'] = cm.Pastel2(np.linspace(0, 1, len(dataset['collections'].keys())))
+    graphics['collections']['colormap'] = cm.prism(np.linspace(0, 1, len(dataset['collections'].keys())))
+    # graphics['collections']['colormap'] = cm.Wistia(np.linspace(0, 1, len(dataset['collections'].keys())))
     for idx, collection_key in enumerate(sorted(dataset['collections'].keys())):
         graphics['collections'][str(collection_key)] = {'color': graphics['collections']['colormap'][idx, :]}
 
@@ -456,27 +456,35 @@ def setupVisualization(dataset, args, selected_collection_key):
         print('Robot has some dynamic joints. Will use advanced rendering ...')
 
         # Draw immovable links
-        rgba = [.5, .5, .5, 1]  # best color we could find
+        rgba = None  # Immovable links are always drawn with their original color
         m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
                               namespace='immovable',
-                              rgba=rgba, skip_links=movable_links)
+                              rgba=rgba, skip_links=movable_links, alpha=1.0)  # Immovable do not need alpha
         markers.markers.extend(m.markers)
+
+        if args['initial_pose_ghost']:  # add a ghost robot marker at the initial pose
+            rgba = [.1, .8, .1, 0.1]  # ipg are drawn in transparent green
 
         # Draw movable links
         for collection_key, collection in dataset['collections'].items():
-            rgba = graphics['collections'][collection_key]['color']
-            rgba[3] = 0.2  # change the alpha
+
+            if args['draw_per_collection_colors']:
+                rgba = graphics['collections'][collection_key]['color']
+            else:
+                rgba = None
+
             m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                   namespace=collection_key,
-                                  rgba=rgba, skip_links=immovable_links)
+                                  rgba=rgba, skip_links=immovable_links,
+                                  verbose=False, alpha=args['draw_alpha'])
             markers.markers.extend(m.markers)
 
             if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
-                rgba = [.1, .1, .8, 0.1]  # best color we could find
+                rgba = [.1, .8, .1, 0.1]  # best color we could find
                 # Draw immovable links
                 m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
                                       frame_id_suffix=generateName('', suffix='ini'),
-                                      namespace=generateName('immovabl', suffix='ini'),
+                                      namespace=generateName('immovable', suffix='ini'),
                                       rgba=rgba, skip_links=movable_links)
                 markers.markers.extend(m.markers)
 

@@ -20,5 +20,6 @@ scikit-image
 transformations
 rosbags
 wget
+gdown
 
 

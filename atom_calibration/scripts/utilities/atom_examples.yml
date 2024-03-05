@@ -68,7 +68,7 @@ riwbot:
         train:
             file: train.zip
             extract_to: train
-            id: 1dWxMm-bXD5CsXjjAE09Gq0dODXhCfT1h
+            id: 1uh4TjKMwsrK8L6OX9dyneeQFAPJDe1Yy
 rlbot:
     bagfiles:
         train:
@@ -85,15 +85,9 @@ mrjbot:
         train:
             file: train.bag
             id: 1trvpsJ9W5R0UkSHaOohmr4BZvnXY6ly0
-        train_with_noise:
-            file: train_with_noise.bag
-            id: 19xjwTXsZkcx5NNL_K3OPWv_Dv6El9ym0
         test:
             file: test.bag
             id: 1uncRI0clIPurlSA1cmrdTDkwbmFdVxWi
-        test_with_noise:
-            file: test_with_noise.bag
-            id: 1tKq1X0PpIRTVu8x6valOwxBfLD0RwEeo
     datasets:
         train:
             file: train.zip
@@ -125,3 +119,14 @@ riwmpbot:
             file: train.zip
             extract_to: train
             id: 1bzgNoFnqLvJ0zE8bvWJjVV50w2bfkage
+
+spjbot:
+    bagfiles:
+        train:
+            file: train.bag
+            id: 1M3FyPB9ZTMqF9WioXKbiHa9tIDl9zpYP
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1TiFjKl5lLwwzIXW8pHtCWtXtSeXFOiI7

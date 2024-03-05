@@ -12,11 +12,13 @@ import signal
 import sys
 from functools import partial
 from copy import deepcopy
+import types
 
 import numpy as np
 
 # Atom imports
 from colorama import Fore, Style
+import yaml
 from atom_core.optimization_utils import Optimizer, addArguments
 from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
                                                               setterCameraIntrinsics, setterTransform, getterJointParam, setterJointParam)
@@ -34,11 +36,11 @@ from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   filterAdditionalTfsFromDataset,
                                   filterPatternsFromDataset)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import (atomError,
+from atom_core.utilities import (atomError, createLambdaExpressionsForArgs,
                                  waitForKeyPress2,
                                  atomStartupPrint,
                                  verifyAnchoredSensor,
-                                 printComparisonToGroundTruth)
+                                 printComparisonToGroundTruth, saveCommandLineArgsYml)
 from atom_core.xacro_io import saveResultsXacro
 from atom_core.results_yml_io import saveResultsYml
 
@@ -55,6 +57,9 @@ def signal_handler(sig, frame):
 # --- MAIN
 # -------------------------------------------------------------------------------
 def main():
+
+    atomStartupPrint('Starting calibration')
+
     # ---------------------------------------
     # --- Parse command line argument
     # ---------------------------------------
@@ -68,8 +73,12 @@ def main():
                     action="store_true", default=False)
     ap.add_argument("-snv", "--show_normalized_values", action="store_true", default=False,
                     help="In the output table, shows normalized residuals alongside the original values.")
-    ap.add_argument("-rv", "--ros_visualization",
-                    help="Publish ros visualization markers.", action="store_true")
+    ap.add_argument("-rv", "--ros_visualization", action="store_true",
+                    help="Publish ros visualization markers.")
+    ap.add_argument("-dpcc", "--draw_per_collection_colors", action="store_true",
+                    help="Publish ros visualization markers with one color per collection.")
+    ap.add_argument("-da", "--draw_alpha", type=float, default=0.5,
+                    help="Publish ros visualization markers with alpha for better visualization.")
     ap.add_argument("-si", "--show_images", action="store_true",
                     default=False, help="shows images for each camera")
     ap.add_argument("-oi", "--optimize_intrinsics", action="store_true", default=False,
@@ -110,12 +119,12 @@ def main():
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
                     "sensors left_laser and frontal_camera")
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=lambda s: eval(s, globals()),
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=str,
                     help="A string to be evaluated into a lambda function that receives a collection name as input and "
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
-    ap.add_argument("-jsf", "--joint_selection_function", default=None, type=lambda s: eval(s, globals()),
+    ap.add_argument("-jsf", "--joint_selection_function", default=None, type=str,
                     help="A string to be evaluated into a lambda function that receives a joint name as input and "
                     "returns True or False to indicate if the joint should be calibrated (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
@@ -125,7 +134,7 @@ def main():
                     help="A string to be evaluated into a lambda function that receives a joint parameter name as input and returns True or False to indicate if the joint parameter should be calibrated (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     'language. Example: lambda name: name in ["origin_x", "origin_roll"] , to use only these parameters')
-    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=lambda s: eval(s, globals()),
+    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=str,
                     help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
     ap.add_argument("-atsf", "--additional_tf_selection_function", default=None, type=lambda s: eval(s, globals()),
@@ -137,24 +146,47 @@ def main():
                     "after calling the optimization. Good for debugging.", action="store_true", default=False)
     ap.add_argument("-ipg", "--initial_pose_ghost", action="store_true", default=False,
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
-    ap.add_argument("-oj", "--output_json", help="Full path to output json file.",
-                    type=str, required=False, default=None)
     ap.add_argument("-ctgt", "--comparison_to_ground_truth",
                     help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.", action="store_true", default=False)
-    ap.add_argument("-sfr", "--save_file_results",
+    ap.add_argument("-of", "--output_folder",
                     help="Output folder to where the results will be stored.", type=str, required=False)
+    ap.add_argument("-sce", "--save_calibration_errors", action="store_true", default=False,
+                    help="Saves a csv file with the errors at every iteration.")
+    ap.add_argument("-ftol", "--optimization_ftol", help="ftol parameter for optimization.",
+                    type=float, required=False, default=1e-5)
+    ap.add_argument("-xtol", "--optimization_xtol", help="xtol parameter for optimization.",
+                    type=float, required=False, default=1e-5)
+    ap.add_argument("-gtol", "--optimization_gtol", help="gtol parameter for optimization.",
+                    type=float, required=False, default=1e-5)
+    ap.add_argument("-diff_step", "--optimization_diff_step", help="diff_step parameter for optimization.",
+                    type=float, required=False, default=None)
+    ap.add_argument("-max_nfev", "--optimization_max_nfev", help="max_nfev parameter for optimization.",
+                    type=int, required=False, default=None)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
-    args = vars(ap.parse_args(args=arglist))
+    args_original = vars(ap.parse_args(args=arglist))  # these args have the selection functions as strings
+    args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
 
-    atomStartupPrint('Starting calibration')
     # ---------------------------------------
-    # --- INITIALIZATION Read data from file
+    # --- Setup some variables
     # ---------------------------------------
+    if args['output_folder'] is None:
+        print('auto_creating output folder')
+        args['output_folder'] = os.path.dirname(args['json_file']) + '/results'
+
+    if not os.path.exists(args['output_folder']):
+        print(args['output_folder'])
+        os.mkdir(args['output_folder'])  # Create the new folder
+
+    args['dataset_folder'] = os.path.dirname(args['json_file'])
+
+    # ---------------------------------------
+    # --- Read data from file
+    # ---------------------------------------
+
     # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
-    dataset, json_file = loadResultsJSON(
-        args["json_file"], args["collection_selection_function"])
+    dataset, _ = loadResultsJSON(args["json_file"], args["collection_selection_function"])
 
     if float(dataset['_metadata']['version']) < 3.0:
         atomError('Your dataset not version 3.0. Before running a calibration, you need to update it first with:\nrosrun atom_calibration update_dataset_from_version_2_to_3.')
@@ -449,6 +481,7 @@ def main():
                 opt.pushParamScalar(group_name=group_name, data_key='dataset', getter=getter,
                                     setter=setter, ground_truth_value=ground_truth_value)
 
+        # TODO add joint limits from xacro
     # opt.printParameters()
 
     # ---------------------------------------
@@ -619,12 +652,8 @@ def main():
         waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
     print("Initializing optimization ...")
-    # options = {'ftol': 1e-3, 'xtol': 1e-3, 'gtol': 1e-3, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {"ftol": 1e-4, "xtol": 1e-4, "gtol": 1e-4, "diff_step": None, "x_scale": "jac", }
-    options = {'ftol': 1e-5, 'xtol': 1e-5, 'gtol': 1e-5, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-6, 'xtol': 1e-6, 'gtol': 1e-6, 'diff_step': None, 'x_scale': 'jac'}
-    # options = {'ftol': 1e-7, 'xtol': 1e-7, 'gtol': 1e-7, 'diff_step': None, 'x_scale': 'jac'}
-
+    options = {'ftol': args['optimization_ftol'], 'xtol': args['optimization_xtol'], 'gtol': args['optimization_gtol'],
+               'diff_step': args['optimization_diff_step'], 'max_nfev': args['optimization_max_nfev'], 'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:
@@ -639,23 +668,25 @@ def main():
     # ---------------------------------------
     if args['comparison_to_ground_truth']:
         # opt.printParametersErrors() # only if we want to see the value of each parameter
-        printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key)
+        printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
+                                     selected_collection_key, args['output_folder'])
+
+    # ---------------------------------------
+    # --- Save command line args
+    # ---------------------------------------
+    saveCommandLineArgsYml(args_original, args['output_folder'] + '/command_line_args.yml')
 
     # ---------------------------------------
     # --- Save updated JSON file
     # ---------------------------------------
-    if args["output_json"] is None:
-        filename_results_json = os.path.dirname(json_file) + "/atom_calibration.json"
-    else:
-        filename_results_json = os.path.dirname(json_file) + "/" + args["output_json"]
-
     # to store all sensors that existed in the dataset, regardless of which were optimized
     # If a sensor_key exists in the original dataset but not in the optimized dataset, then it was removed from the optimization and we should copy it back to the dataset before saving.
     for sensor_key, sensor in dataset_original["sensors"].items():
         if not sensor_key in dataset['sensors']:
             dataset['sensors'][sensor_key] = sensor
 
-    saveAtomDataset(filename_results_json, dataset)
+    saveAtomDataset(args['output_folder'] + '/atom_calibration.json', dataset,
+                    save_data_files=False)
 
     # ---------------------------------------
     # --- Save updated xacro
@@ -665,8 +696,10 @@ def main():
     # ---------------------------------------
     # --- Save results into yaml
     # ---------------------------------------
-    filename_results_yml = os.path.dirname(json_file) + "/" + 'atom_calibration_params.yml'
+    filename_results_yml = args['output_folder'] + '/atom_calibration_params.yml'
     saveResultsYml(dataset, selected_collection_key, filename_results_yml)
+    filename_results_yml = args['output_folder'] + '/original_calibration_params.yml'
+    saveResultsYml(dataset_original, selected_collection_key, filename_results_yml)
 
 
 if __name__ == "__main__":

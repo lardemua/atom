@@ -5,13 +5,17 @@ Casts an optimization problem using an ATOM dataset file as input. Then calibrat
 
 
 # Standard imports
+import math
 import signal
 import sys
 import argparse
+from statistics import mean, stdev
+
 
 # Atom imports
 from colorama import Fore, Style
 from atom_core.dataset_io import loadResultsJSON, filterSensorsFromDataset
+from atom_core.utilities import addAveragesBottomRowToTable
 
 # Ros imports
 from urdf_parser_py.urdf import URDF
@@ -61,6 +65,12 @@ def main():
     print('Dataset contains ' + str(len(dataset['patterns'].keys())) +
           ' patterns: ' + str(list(dataset['patterns'].keys())))
 
+    # ---------------------------------------
+    # --- Define selected collection key.
+    # ---------------------------------------
+    # For the getters we only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
+    selected_collection_key = list(dataset["collections"].keys())[0]
+    print("Selected collection key is " + str(selected_collection_key))
     # ---------------------------------------
     # --- Count incomplete collections
     # ---------------------------------------
@@ -214,6 +224,35 @@ def main():
         table.align = 'c'
         # table.align[Back.LIGHTWHITE_EX + "Player"] = 'l'
         # table.align['Team'] = 'l'
+
+        print(Style.BRIGHT + '\nCollections' + Style.RESET_ALL)
+        print(table)
+
+    # ---------------------------------------
+    # --- Draw table with analysis of joints
+    # ---------------------------------------
+    if dataset['calibration_config']['joints'] is not None:
+        header = ['Joint', 'Mean', 'Std', 'Min', 'Max', 'Range [deg]']
+        table = PrettyTable(header)
+
+        for joint_key, joint in dataset['calibration_config']['joints'].items():
+            row = [joint_key]
+            positions = []
+            units = 'meters' if dataset['collections'][selected_collection_key]['joints'][joint_key]['joint_type'] == 'prismatic' else 'radians'
+
+            # Get all positions in the dataset
+            for collection_key, collection in dataset['collections'].items():
+                positions.append(collection['joints'][joint_key]['position'])
+
+            row.extend(['{:.5f}'.format(mean(positions)), '{:.5f}'.format(stdev(positions)),
+                        '{:.5f}'.format(max(positions)), '{:.5f}'.format(min(positions)),
+                        '{:.5f}'.format((max(positions) - min(positions))*180.0/math.pi),])
+            table.add_row(row)
+
+        # Add bottom row with averages
+        table = addAveragesBottomRowToTable(table, header)
+
+        print(Style.BRIGHT + '\nJoints' + Style.RESET_ALL)
         print(table)
 
 

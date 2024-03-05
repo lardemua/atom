@@ -34,7 +34,7 @@ As always, we recommend a careful reading of the [documentation](https://lardemu
 
 In this section, out goal is to describe the calibration pipeline for the **spjbot**.
 
-To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1trvpsJ9W5R0UkSHaOohmr4BZvnXY6ly0/view?usp=drive_link), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1M3FyPB9ZTMqF9WioXKbiHa9tIDl9zpYP/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 
 Download the bagfile and put it in **$ROS_BAGS/spjbot/train.bag**.
 
@@ -99,8 +99,10 @@ To carry out the actual calibration we should add some noise to the starting poi
 Let's add 0.01 radians (0.57 degrees) to joints j1 and j2, and 0.08 meters to prismatic joint j3.
 
     rosrun atom_calibration calibrate -json $ATOM_DATASETS/spjbot/train/dataset.json \
-    -v -rv  -pp -ipg -phased \
-    -jbn j1_joint j2_joint j3_joint -jbv 0.01 0.01 0.08
+    -v -rv -ipg -phased \
+    -jbn j1_joint j2_joint j3_joint j4_joint -jbv 0.01 0.01 0.08 0.01 \
+    -jbp origin_yaw origin_yaw origin_z origin_yaw
+
 
 The calibration will carry out and produce very low reprojection errors. The final table should be like this:
 
@@ -110,6 +112,7 @@ However, from rviz we can clearly observe that the estimated poses are not coinc
 
 ![](docs/calibration1.png)
 
+** This flag is being reworked atm**
 Also, since we are using the **--print_parameters (-pp)** option, at the end of the optimization we can see that the estimated parameter values are:
 
 Joint name | Inserted bias (rad) | Estimated bias (rad) |

@@ -1,0 +1,511 @@
+<?xml version="1.0" ?>
+<robot name="riwmpbot" version="1.0">
+  <material name="tripod_color">
+    <color rgba="0.21 0.21 0.21 1.0"/>
+  </material>
+  <material name="Yellow">
+    <color rgba="1.0 1.0 0.0 1.0"/>
+  </material>
+  <material name="Orange">
+    <color rgba="1.0 0.4 0.0 1.0"/>
+  </material>
+  <material name="grey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+  <material name="Pink">
+    <color rgba="1.0 0.0 0.8 1.0"/>
+  </material>
+  <link name="world"/>
+  <transmission name="shoulder_pan_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="shoulder_pan_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="shoulder_pan_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="shoulder_lift_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="shoulder_lift_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="shoulder_lift_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="elbow_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="elbow_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="elbow_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="wrist_1_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="wrist_1_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="wrist_1_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="wrist_2_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="wrist_2_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="wrist_2_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="wrist_3_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="wrist_3_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="wrist_3_motor">
+      <mechanicalReduction>1.0</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <link name="base_link"/>
+  <link name="base_link_inertia">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="4.0"/>
+      <inertia ixx="0.0061063308908" ixy="0.0" ixz="0.0" iyy="0.0061063308908" iyz="0.0" izz="0.01125"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/base.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/base.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shoulder_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="7.778"/>
+      <inertia ixx="0.03147431257693659" ixy="0.0" ixz="0.0" iyy="0.03147431257693659" iyz="0.0" izz="0.021875624999999996"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/shoulder.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/shoulder.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="upper_arm_link">
+    <inertial>
+      <origin xyz="-0.306 0.0 0.175" rpy="0.0 1.5707963267948966 0.0"/>
+      <mass value="12.93"/>
+      <inertia ixx="0.42175380379841093" ixy="0.0" ixz="0.0" iyy="0.42175380379841093" iyz="0.0" izz="0.03636562499999999"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.1762" rpy="1.5707963267948966 0.0 -1.5707963267948966"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/upperarm.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.1762" rpy="1.5707963267948966 0.0 -1.5707963267948966"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/upperarm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="forearm_link">
+    <inertial>
+      <origin xyz="-0.285775 0.0 0.0393" rpy="0.0 1.5707963267948966 0.0"/>
+      <mass value="3.87"/>
+      <inertia ixx="0.11079302548902206" ixy="0.0" ixz="0.0" iyy="0.11079302548902206" iyz="0.0" izz="0.010884375"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0393" rpy="1.5707963267948966 0.0 -1.5707963267948966"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/forearm.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0393" rpy="1.5707963267948966 0.0 -1.5707963267948966"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/forearm.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="wrist_1_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.96"/>
+      <inertia ixx="0.005108247956699999" ixy="0.0" ixz="0.0" iyy="0.005108247956699999" iyz="0.0" izz="0.005512499999999999"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 -0.135" rpy="1.5707963267948966 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/wrist1.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 -0.135" rpy="1.5707963267948966 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/wrist1.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="wrist_2_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.96"/>
+      <inertia ixx="0.005108247956699999" ixy="0.0" ixz="0.0" iyy="0.005108247956699999" iyz="0.0" izz="0.005512499999999999"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 -0.12" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/wrist2.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 -0.12" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/wrist2.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="wrist_3_link">
+    <inertial>
+      <origin xyz="0.0 0.0 -0.025" rpy="0.0 0.0 0.0"/>
+      <mass value="0.202"/>
+      <inertia ixx="0.00014434577559500002" ixy="0.0" ixz="0.0" iyy="0.00014434577559500002" iyz="0.0" izz="0.00020452500000000002"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 -0.1168" rpy="1.5707963267948966 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/visual/wrist3.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 -0.1168" rpy="1.5707963267948966 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur10e/collision/wrist3.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_link-base_link_inertia" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+    <parent link="base_link"/>
+    <child link="base_link_inertia"/>
+  </joint>
+  <joint name="shoulder_pan_joint" type="revolute">
+    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.07674188501164143"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="base_link_inertia"/>
+    <child link="shoulder_link"/>
+    <limit effort="330.0" lower="-3.141592653589793" upper="3.141592653589793" velocity="2.0943951023931953"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <joint name="shoulder_lift_joint" type="revolute">
+    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.03186955739531561"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="shoulder_link"/>
+    <child link="upper_arm_link"/>
+    <limit effort="330.0" lower="-1.8325957145940461" upper="0.0" velocity="2.0943951023931953"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <joint name="elbow_joint" type="revolute">
+    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.001576827651516932"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="upper_arm_link"/>
+    <child link="forearm_link"/>
+    <limit effort="150.0" lower="-3.141592653589793" upper="3.141592653589793" velocity="3.141592653589793"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <joint name="wrist_1_joint" type="revolute">
+    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.011303978157411944"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="forearm_link"/>
+    <child link="wrist_1_link"/>
+    <limit effort="56.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <joint name="wrist_2_joint" type="revolute">
+    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 -0.002380656087006292"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="wrist_1_link"/>
+    <child link="wrist_2_link"/>
+    <limit effort="56.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <joint name="wrist_3_joint" type="revolute">
+    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.2323974286067454"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="wrist_2_link"/>
+    <child link="wrist_3_link"/>
+    <limit effort="56.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.141592653589793"/>
+    <dynamics damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="base"/>
+  <joint name="base_link-base_fixed_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+    <parent link="base_link"/>
+    <child link="base"/>
+  </joint>
+  <link name="flange"/>
+  <joint name="wrist_3-flange" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 -1.5707963267948966 -1.5707963267948966"/>
+    <parent link="wrist_3_link"/>
+    <child link="flange"/>
+  </joint>
+  <link name="tool0"/>
+  <joint name="flange-tool0" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="1.5707963267948966 0.0 1.5707963267948966"/>
+    <parent link="flange"/>
+    <child link="tool0"/>
+  </joint>
+  <gazebo reference="shoulder_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="upper_arm_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="forearm_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="wrist_1_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="wrist_3_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="wrist_2_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo reference="ee_link">
+    <selfCollide>true</selfCollide>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_control.so" name="ros_control">
+    </plugin>
+  </gazebo>
+  <joint name="world_to_ur10e" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+  <joint name="rgb_world_joint" type="fixed">
+    <origin xyz="0.8951212301869304 0.3937247041762815 0.7840209137014122" rpy="0.037490854275979126 0.1969284950477124 3.0944840129391333"/>
+    <parent link="world"/>
+    <child link="rgb_world_link"/>
+  </joint>
+  <link name="rgb_world_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.00564"/>
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.01 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://riwmpbot_real_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0.0 0.9 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://riwmpbot_real_description/meshes/rgb_camera/rgb_camera.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="rgb_world_link">
+    <selfCollide>false</selfCollide>
+    <material>Gazebo/Green</material>
+  </gazebo>
+  <joint name="rgb_world_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
+    <parent link="rgb_world_link"/>
+    <child link="rgb_world_optical_frame"/>
+  </joint>
+  <link name="rgb_world_optical_frame"/>
+  <gazebo reference="rgb_world_link">
+    <sensor name="camera" type="camera">
+      <update_rate>10.0</update_rate>
+      <camera>
+        <horizontal_fov>1.0471975511965976</horizontal_fov>
+        <image>
+          <format>B8G8R8</format>
+          <width>1200</width>
+          <height>800</height>
+        </image>
+        <clip>
+          <near>0.10</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_camera.so" name="rgb_world_rgb_camera_controller">
+        <cameraName>rgb_world</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0</updateRate>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>rgb_world_optical_frame</frameName>
+        <baseline>0.0</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <link name="charuco_200x200_8x8">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision name="charuco_200x200_8x8_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="flange_to_charuco_200x200_8x8" type="fixed">
+    <origin xyz="0.29 0.0 -0.1" rpy="-1.5707963267948966 -1.5707963267948966 0.0"/>
+    <parent link="flange"/>
+    <child link="charuco_200x200_8x8"/>
+  </joint>
+  <link name="charuco_170x100_3x6">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision name="charuco_170x100_3x6_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="forearm_to_charuco_170x100_3x6" type="fixed">
+    <origin xyz="-0.23 0.03 -0.03" rpy="0.0 0.0 3.14"/>
+    <parent link="forearm_link"/>
+    <child link="charuco_170x100_3x6"/>
+  </joint>
+  <link name="charuco_200x120_3x6">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision name="charuco_200x120_3x6_collision">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="upper_arm_to_charuco_200x120_3x6" type="fixed">
+    <origin xyz="-0.25 0.05 0.1" rpy="0.2617993877991494 0.0 3.14"/>
+    <parent link="upper_arm_link"/>
+    <child link="charuco_200x120_3x6"/>
+  </joint>
+  <link name="charuco_170x100_3x6">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual name="forearm_pattern_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_170x100_3x6_25_18_DICT_6X6/model.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="forearm_link-charuco_170x100_3x6" type="fixed">
+    <origin xyz="-0.22966736710237823 0.026105100098055254 -0.04512410891294524" rpy="0.15871386790872472 0.005642000937622307 3.114305564264507"/>
+    <parent link="forearm_link"/>
+    <child link="charuco_170x100_3x6"/>
+  </joint>
+  <link name="charuco_200x200_8x8">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual name="hand_pattern_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x200_8x8_20_15_DICT_4x4/model.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="flange-charuco_200x200_8x8" type="fixed">
+    <origin xyz="0.28955203126849505 -0.00937358897679858 -0.08860266131624434" rpy="-3.0219825477134528 -1.5256196387167134 1.4675909306433417"/>
+    <parent link="flange"/>
+    <child link="charuco_200x200_8x8"/>
+  </joint>
+  <link name="charuco_200x120_3x6">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual name="upper_arm_pattern_visual">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://atom_worlds/pattern/models/charuco_200x120_3x6_30_22_DICT_7X7/model.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="upper_arm_link-charuco_200x120_3x6" type="fixed">
+    <origin xyz="-0.25346715294220046 0.03461940931950556 0.08090259818003159" rpy="0.22523871749433652 0.0012112585337772158 -3.134170290667222"/>
+    <parent link="upper_arm_link"/>
+    <child link="charuco_200x120_3x6"/>
+  </joint>
+</robot>

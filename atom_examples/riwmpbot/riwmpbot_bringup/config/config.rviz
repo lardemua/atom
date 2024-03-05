@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: world_rgb
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -39,7 +39,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -52,7 +52,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -72,6 +72,21 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        charuco_170x100_3x6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        charuco_200x120_3x6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        charuco_200x200_8x8:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -137,7 +152,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        tripod_left_support:
+        tripod_center_support:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -146,10 +161,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        tripod_right_support:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         upper_arm_link:
           Alpha: 1
           Show Axes: false
@@ -181,7 +192,7 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /rgb_world/image_raw
       Max Value: 1
       Median window: 5
@@ -191,7 +202,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
       Enabled: true
@@ -202,58 +213,10 @@ Visualization Manager:
       Update Topic: /interactive_pattern/update
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base:
-          Value: true
-        base_link:
-          Value: true
-        base_link_inertia:
-          Value: true
-        flange:
-          Value: true
-        forearm_link:
-          Value: true
-        leg1_table:
-          Value: true
-        leg2_table:
-          Value: true
-        leg3_table:
-          Value: true
-        leg4_table:
-          Value: true
-        rgb_world_link:
-          Value: true
-        rgb_world_optical_frame:
-          Value: true
-        shoulder_link:
-          Value: true
-        table:
-          Value: true
-        tabletop_table:
-          Value: true
-        tool0:
-          Value: true
-        tripod:
-          Value: true
-        tripod_left_support:
-          Value: true
-        tripod_plate:
-          Value: true
-        tripod_right_support:
-          Value: true
-        upper_arm_link:
-          Value: true
-        world:
-          Value: true
-        wrist_1_link:
-          Value: true
-        wrist_2_link:
-          Value: true
-        wrist_3_link:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 0.4000000059604645
       Name: TF
@@ -261,41 +224,10 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        world:
-          table:
-            leg1_table:
-              {}
-            leg2_table:
-              {}
-            leg3_table:
-              {}
-            leg4_table:
-              {}
-            tabletop_table:
-              base_link:
-                base:
-                  {}
-                base_link_inertia:
-                  shoulder_link:
-                    upper_arm_link:
-                      forearm_link:
-                        wrist_1_link:
-                          wrist_2_link:
-                            wrist_3_link:
-                              flange:
-                                tool0:
-                                  {}
-          tripod:
-            tripod_plate:
-              tripod_left_support:
-                {}
-              tripod_right_support:
-                rgb_world_link:
-                  rgb_world_optical_frame:
-                    {}
+        {}
       Update Interval: 0
-      Value: true
-    - Acceleration_Scaling_Factor: 0.1
+      Value: false
+    - Acceleration_Scaling_Factor: 1
       Class: moveit_rviz_plugin/MotionPlanning
       Enabled: true
       Move Group Namespace: ""
@@ -335,6 +267,21 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
           base_link_inertia:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          charuco_170x100_3x6:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          charuco_200x120_3x6:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          charuco_200x200_8x8:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -400,7 +347,7 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          tripod_left_support:
+          tripod_center_support:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -409,10 +356,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          tripod_right_support:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           upper_arm_link:
             Alpha: 1
             Show Axes: false
@@ -496,6 +439,21 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          charuco_170x100_3x6:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          charuco_200x120_3x6:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          charuco_200x200_8x8:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           flange:
             Alpha: 1
             Show Axes: false
@@ -557,7 +515,7 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          tripod_left_support:
+          tripod_center_support:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -566,10 +524,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          tripod_right_support:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           upper_arm_link:
             Alpha: 1
             Show Axes: false
@@ -598,16 +552,16 @@ Visualization Manager:
         Show Robot Collision: false
         Show Robot Visual: true
       Value: true
-      Velocity_Scaling_Factor: 0.1
+      Velocity_Scaling_Factor: 1
     - Alpha: 1
       Class: rviz/Axes
-      Enabled: true
+      Enabled: false
       Length: 1
       Name: Axes
       Radius: 0.009999999776482582
       Reference Frame: world
       Show Trail: false
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -636,7 +590,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.172661304473877
+      Distance: 2.1411685943603516
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -644,17 +598,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.03689466044306755
-        Y: -0.12323968857526779
-        Z: 1.462047815322876
+        X: -0.722561240196228
+        Y: 0.3262718915939331
+        Z: 1.1452847719192505
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5453988909721375
+      Pitch: 0.33539915084838867
       Target Frame: <Fixed Frame>
-      Yaw: 5.7672038078308105
+      Yaw: 5.677178859710693
     Saved: ~
 Window Geometry:
   Displays:
@@ -666,7 +620,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000023000000362fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003c000001df000000c800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002210000017d0000017100fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff000000160000001600000001000001d300000362fc0200000005fb000000120077006f0072006c0064005f007200670062010000003c000003620000001600fffffffb00000012007200670062005f00720069006700680074000000003c000003620000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003c000002b2000000a200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000029800fffffffb0000000800540069006d00650100000000000004500000000000000000000003710000036200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000023000000362fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003c000001df000000c800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000002210000017d0000017c00fffffffb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff000000160000001600000001000001d300000362fc0200000005fb000000120077006f0072006c0064005f007200670062000000003c000003620000001600fffffffb00000012007200670062005f00720069006700680074000000003c000003620000000000000000fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003c000002b2000000a200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000029800fffffffb0000000800540069006d006501000000000000045000000000000000000000054a0000036200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
