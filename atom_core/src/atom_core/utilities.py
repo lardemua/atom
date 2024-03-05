@@ -190,10 +190,19 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
     # --------------------------------------------------
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
+        print('pattern ' + pattern_key)
+        print(pattern)
+
         transform_key = generateKey(pattern["parent_link"], pattern["link"])
         row = [transform_key, Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
 
         transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+
+        if transform_key not in dataset_ground_truth['collections'][selected_collection_key]['transforms']:
+            atomWarn('Cannot print comparison to ground truth for pattern ' +
+                     pattern_key + ' because there is no ground truth data.')
+            continue
+
         transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
         transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
 
