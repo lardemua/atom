@@ -9,7 +9,7 @@ from atom_core.utilities import atomError
 
 def getTransformationFromJoint(joint):
 
-    print(joint)
+    # print(joint)
 
     if joint['joint_type'] == 'revolute' or joint['joint_type'] == 'continuous':
 
