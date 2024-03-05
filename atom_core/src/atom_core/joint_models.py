@@ -11,13 +11,13 @@ def getTransformationFromJoint(joint):
 
     print(joint)
 
-    if joint['xacro_joint_type'] == 'revolute' or joint['xacro_joint_type'] == 'continuous':
+    if joint['joint_type'] == 'revolute' or joint['joint_type'] == 'continuous':
 
         # STEP 1: compute the rotation matrix due to the joint revolution position
         joint_axis = [joint['axis_x'], joint['axis_y'], joint['axis_z']]
         joint_position_matrix = rotation_matrix(joint['position'], joint_axis, point=None)
 
-    elif joint['xacro_joint_type'] == 'prismatic':
+    elif joint['joint_type'] == 'prismatic':
 
         # STEP 1: compute the translation matrix due to the joint prismatic position
         if joint['axis_x'] == 1 and joint['axis_y'] == 0 and joint['axis_z'] == 0:
@@ -27,10 +27,10 @@ def getTransformationFromJoint(joint):
         elif joint['axis_x'] == 0 and joint['axis_y'] == 0 and joint['axis_z'] == 1:
             joint_position_matrix = translation_matrix([0, 0, joint['position']])
         else:
-            atomError('Unknown joint_type' + joint['xacro_joint_type'])
+            atomError('Unknown joint_type' + joint['joint_type'])
 
     else:
-        atomError('Cannot model unknown joint type ' + joint['xacro_joint_type'])
+        atomError('Cannot model unknown joint type ' + joint['joint_type'])
 
     # STEP 2: compute the rotation due to the origin rpy
     # Check https://github.com/lardemua/atom/issues/803
