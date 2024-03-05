@@ -125,3 +125,8 @@ spjbot:
         train:
             file: train.bag
             id: 1M3FyPB9ZTMqF9WioXKbiHa9tIDl9zpYP
+    datasets:
+        train:
+            file: train.zip
+            extract_to: train
+            id: 1TiFjKl5lLwwzIXW8pHtCWtXtSeXFOiI7
