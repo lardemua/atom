@@ -8,6 +8,7 @@ Reads the calibration results from a json file and computes the evaluation metri
 # --- IMPORTS
 # -------------------------------------------------------------------------------
 
+import json
 import sys
 
 import argparse
@@ -23,7 +24,6 @@ from atom_core.atom import getTransform
 from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset, filterSensorsFromDataset
 from atom_core.utilities import saveFileResults, atomError
 from atom_core.vision import projectToCamera
-
 
 
 # -------------------------------------------------------------------------------
@@ -52,6 +52,7 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _pattern_key, _sensor_key
 # --- MAIN
 # -------------------------------------------------------------------------------
 
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-train_json", "--train_json_file", help="Json file containing input training dataset.", type=str,
@@ -72,10 +73,17 @@ if __name__ == "__main__":
     # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                   "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+                    "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+    ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
+                    help="Remove any collection which does not have a detection for all sensors.", )
+    ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
+                            "Used or the Charuco.", action="store_true", default=False)
+    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=str,
+                    help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
 
     # - Save args
-    args= vars(ap.parse_known_args()[0])
+    args = vars(ap.parse_known_args()[0])
 
     # ---------------------------------------
     # --- INITIALIZATION Read calibration data from file
@@ -97,21 +105,23 @@ if __name__ == "__main__":
     # ---------------------------------------
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
-
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
-    print(Fore.BLUE + '\nStarting evalutation...' + Style.RESET_ALL)
+    print(Fore.BLUE + '\nStarting evaluation...' + Style.RESET_ALL)
     e = {}
     for collection_key, collection in mixed_dataset['collections'].items():
         if 'labels' not in collection:
             print(f'Collection {collection_key} does not have labels information. Skipping...')
             continue
         e[collection_key] = {}
-        for sensor_key, sensor in mixed_dataset['sensors'].items():  # iterate all sensors
-            if sensor ['modality'] != 'rgb':
-                continue
-            for pattern_key, pattern in mixed_dataset['calibration_config']['calibration_patterns'].items():
+
+        for pattern_key, pattern in mixed_dataset['calibration_config']['calibration_patterns'].items():
+            e[collection_key][pattern_key] = {}
+
+            for sensor_key, sensor in mixed_dataset['sensors'].items():  # iterate all sensors
+                if sensor['modality'] != 'rgb':
+                    continue
 
                 if not collection['labels'][pattern_key][sensor_key]['detected']:  # pattern not detected by sensor in collection
                     continue
@@ -143,26 +153,31 @@ if __name__ == "__main__":
                 corners_errors = []
                 for idx, label_idx in enumerate(collection['labels'][pattern_key][sensor_key]['idxs']):
                     corners_errors.append(np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
-                                         (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2))
-                e[collection_key][sensor_key] = np.mean(corners_errors)
-    
+                                                  (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2))
+                e[collection_key][pattern_key][sensor_key] = np.mean(corners_errors)
+
+    # print(json.dumps(e, indent=4))
+
     if not e:
         atomError('No rgb labelling found. Exiting...')
-
 
     # -------------------------------------------------------------
     # Print output table
     # -------------------------------------------------------------
     table_header = ['Collection']
 
-    for sensor_key, sensor in mixed_dataset['sensors'].items():
-        if sensor['modality'] not in ['rgb']:
-            continue
+    for pattern_key, pattern in mixed_dataset['calibration_config']['calibration_patterns'].items():
+        for sensor_key, sensor in mixed_dataset['sensors'].items():
+            if sensor['modality'] not in ['rgb']:
+                continue
 
-        table_header.append(sensor_key + ' [px]')
-    
+            column_name = sensor_key + '-' + pattern_key
+            table_header.append(column_name + ' [px]')
+
+    table_header.append('all' + ' [px]')
     table = PrettyTable(table_header)
-    table_to_save = PrettyTable(table_header) # table to save. This table was created, because the original has colors and the output csv save them as random characters
+    # table to save. This table was created, because the original has colors and the output csv save them as random characters
+    table_to_save = PrettyTable(table_header)
 
     od = OrderedDict(sorted(mixed_dataset['collections'].items(), key=lambda t: int(t[0])))
     for collection_key, collection in od.items():
@@ -170,17 +185,26 @@ if __name__ == "__main__":
             continue
         row = [collection_key]
         row_save = [collection_key]
-        for sensor_key, sensor in mixed_dataset['sensors'].items():
-            if sensor['modality'] not in ['rgb']:
-                continue
 
-            if sensor_key in e[collection_key]:
-                value = '%.4f' % e[collection_key][sensor_key]
-                row.append(value)
-                row_save.append(value)
-            else:
-                row.append(Fore.LIGHTBLACK_EX + '---' + Style.RESET_ALL)
-                row_save.append('---')
+        errors = []
+        for pattern_key, pattern in mixed_dataset['calibration_config']['calibration_patterns'].items():
+            for sensor_key, sensor in mixed_dataset['sensors'].items():  # columns ...
+                if sensor['modality'] not in ['rgb']:
+                    continue
+
+                if sensor_key in e[collection_key][pattern_key]:
+                    value = '%.4f' % e[collection_key][pattern_key][sensor_key]
+                    row.append(value)
+                    row_save.append(value)
+                    errors.append(float(e[collection_key][pattern_key][sensor_key]))
+                else:
+                    row.append(Fore.LIGHTBLACK_EX + '---' + Style.RESET_ALL)
+                    row_save.append('---')
+
+        # Add all as an average of the errors for this row
+        average = sum(errors)/len(errors)
+        average = '%.4f' % average
+        row.append(average)
 
         table.add_row(row)
         table_to_save.add_row(row)
@@ -237,12 +261,12 @@ if __name__ == "__main__":
     print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL)
     print(table)
 
-    # save results in csv file 
-    if args['save_file_results']: 
+    # save results in csv file
+    if args['save_file_results']:
         if args['save_file_results_name'] is None:
             results_name = f'rgb_results.csv'
             saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
-        else: 
+        else:
             with open(args['save_file_results_name'], 'w', newline='') as f_output:
                 f_output.write(table_to_save.get_csv_string())
 
