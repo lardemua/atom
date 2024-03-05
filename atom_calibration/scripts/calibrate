@@ -698,6 +698,8 @@ def main():
     # ---------------------------------------
     filename_results_yml = args['output_folder'] + '/atom_calibration_params.yml'
     saveResultsYml(dataset, selected_collection_key, filename_results_yml)
+    filename_results_yml = args['output_folder'] + '/original_calibration_params.yml'
+    saveResultsYml(dataset_original, selected_collection_key, filename_results_yml)
 
 
 if __name__ == "__main__":
