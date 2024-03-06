@@ -425,12 +425,26 @@ def main():
             child = pattern["link"]
             transform_key = generateKey(parent, child)
 
+            import json
+            with open('data.json', 'w') as f:
+                json.dump(dataset['patterns'], f, indent=4)
+
             # Set transform using the initial estimate of the transformations.
-            initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][selected_collection_key]
-            if not initial_estimate["detected"] or not parent == initial_estimate["parent"] \
-                    or not child == initial_estimate["child"]:
-                raise ValueError("Cannot set initial estimate for pattern " + Fore.BLUE +
-                                 pattern_key + Style.RESET_ALL + " at collection " + selected_collection_key)
+            # Because the pattern is fixed we can select any collection which provides a transform initial and use that one (see https://github.com/lardemua/atom/issues/866 )
+            flg_have_initial_estimate = False
+            for collection_key, collection in dataset["collections"].items():
+                if dataset["patterns"][pattern_key]["transforms_initial"][collection_key]['detected']:
+                    initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][collection_key]
+                    flg_have_initial_estimate = True
+                    break  # select the first available initial_estimate
+
+            if flg_have_initial_estimate == False:
+                atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL)
+
+            # TODO not sure why this check is here ...
+            if not parent == initial_estimate["parent"] or not child == initial_estimate["child"]:
+                atomError("Initial estimate for pattern " + Fore.BLUE +
+                          pattern_key + Style.RESET_ALL + " does not have expected parent and child frame ids.")
 
             if transform_key not in dataset_ground_truth['collections'][selected_collection_key]['transforms'].keys():
                 ground_truth_transform = None
@@ -439,7 +453,6 @@ def main():
                                                          collection_name=selected_collection_key)
 
             # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
-
             if not args['ground_truth_pattern_poses']:  # nothing to do if we should use ground truth
                 for collection_key, collection in dataset["collections"].items():
                     collection["transforms"][transform_key] = {"parent": parent, "child": child,

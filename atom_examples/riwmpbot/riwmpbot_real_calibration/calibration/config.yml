@@ -37,6 +37,8 @@ description_file: "package://riwmpbot_real_description/urdf/robot.urdf.xacro"
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
 # bag_file: "$ROS_BAGS/riwmpbot_real/train.bag"
 bag_file: "$ROS_BAGS/riwmpbot_real/train_diogo.bag"
+# bag_file: "$ROS_BAGS/riwmpbot_real/train_miguel.bag"
+# bag_file: "$ROS_BAGS/riwmpbot_real/train_bruno.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.

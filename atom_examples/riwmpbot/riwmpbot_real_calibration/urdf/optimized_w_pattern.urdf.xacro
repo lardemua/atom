@@ -231,7 +231,7 @@
     <child link="base_link_inertia"/>
   </joint>
   <joint name="shoulder_pan_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.07674188501164143"/>
+    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.08247610195389375"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="shoulder_link"/>
@@ -239,7 +239,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="shoulder_lift_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.03186955739531561"/>
+    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.00384052180304222"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
@@ -247,7 +247,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="elbow_joint" type="revolute">
-    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.001576827651516932"/>
+    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.0021025736190257885"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -255,7 +255,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_1_joint" type="revolute">
-    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.011303978157411944"/>
+    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.011638934121678272"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_1_link"/>
@@ -263,7 +263,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_2_joint" type="revolute">
-    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 -0.002380656087006292"/>
+    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.000817516768077408"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_1_link"/>
     <child link="wrist_2_link"/>
@@ -271,7 +271,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_3_joint" type="revolute">
-    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.2323974286067454"/>
+    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.040682888934066"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_2_link"/>
     <child link="wrist_3_link"/>
@@ -327,7 +327,7 @@
     <child link="base_link"/>
   </joint>
   <joint name="rgb_world_joint" type="fixed">
-    <origin xyz="0.8951212301869304 0.3937247041762815 0.7840209137014122" rpy="0.037490854275979126 0.1969284950477124 3.0944840129391333"/>
+    <origin xyz="0.8972664603191516 0.38546506644465894 0.7890661252208409" rpy="0.006699252263354212 0.19001137670858192 3.097424746424984"/>
     <parent link="world"/>
     <child link="rgb_world_link"/>
   </joint>
@@ -476,7 +476,7 @@
     </visual>
   </link>
   <joint name="forearm_link-charuco_170x100_3x6" type="fixed">
-    <origin xyz="-0.22966736710237823 0.026105100098055254 -0.04512410891294524" rpy="0.15871386790872472 0.005642000937622307 3.114305564264507"/>
+    <origin xyz="-0.23030947470677612 0.025210805053674967 -0.04174991167465683" rpy="0.1353812095591838 0.01980013496555183 3.1105799226323128"/>
     <parent link="forearm_link"/>
     <child link="charuco_170x100_3x6"/>
   </joint>
@@ -490,7 +490,7 @@
     </visual>
   </link>
   <joint name="flange-charuco_200x200_8x8" type="fixed">
-    <origin xyz="0.28955203126849505 -0.00937358897679858 -0.08860266131624434" rpy="-3.0219825477134528 -1.5256196387167134 1.4675909306433417"/>
+    <origin xyz="0.28965456812260126 0.007407915025531259 -0.08703857822070203" rpy="0.040428928763401824 -1.4260207807947143 -1.5991767846382356"/>
     <parent link="flange"/>
     <child link="charuco_200x200_8x8"/>
   </joint>
@@ -504,7 +504,7 @@
     </visual>
   </link>
   <joint name="upper_arm_link-charuco_200x120_3x6" type="fixed">
-    <origin xyz="-0.25346715294220046 0.03461940931950556 0.08090259818003159" rpy="0.22523871749433652 0.0012112585337772158 -3.134170290667222"/>
+    <origin xyz="-0.25082800139087297 0.03383564570676676 0.08218412165297458" rpy="0.20773107808394004 -0.007553680282443692 -3.1397727918595697"/>
     <parent link="upper_arm_link"/>
     <child link="charuco_200x120_3x6"/>
   </joint>
