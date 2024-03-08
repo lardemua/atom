@@ -61,8 +61,6 @@ def main():
     train_collection_list = random.sample(collection_list,
                                           int(len(collection_list) * args['train_percentage'] / 100))
 
-    print(train_collection_list)
-    exit(0)
     test_collection_list = list(set(collection_list) - set(train_collection_list))
 
     # Create train and test datasets

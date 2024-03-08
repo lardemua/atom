@@ -425,10 +425,6 @@ def main():
             child = pattern["link"]
             transform_key = generateKey(parent, child)
 
-            import json
-            with open('data.json', 'w') as f:
-                json.dump(dataset['patterns'], f, indent=4)
-
             # Set transform using the initial estimate of the transformations.
             # Because the pattern is fixed we can select any collection which provides a transform initial and use that one (see https://github.com/lardemua/atom/issues/866 )
             flg_have_initial_estimate = False
