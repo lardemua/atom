@@ -686,7 +686,7 @@ def main():
             dataset['sensors'][sensor_key] = sensor
 
     saveAtomDataset(output_folder + '/atom_calibration.json', dataset,
-                    save_data_files=False)
+                    save_data_files=True)
 
     # ---------------------------------------
     # --- Save updated xacro
