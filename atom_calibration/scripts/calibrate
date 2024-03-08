@@ -148,8 +148,6 @@ def main():
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
     ap.add_argument("-ctgt", "--comparison_to_ground_truth",
                     help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.", action="store_true", default=False)
-    ap.add_argument("-of", "--output_folder",
-                    help="Output folder to where the results will be stored.", type=str, required=False)
     ap.add_argument("-sce", "--save_calibration_errors", action="store_true", default=False,
                     help="Saves a csv file with the errors at every iteration.")
     ap.add_argument("-ftol", "--optimization_ftol", help="ftol parameter for optimization.",
@@ -171,15 +169,8 @@ def main():
     # ---------------------------------------
     # --- Setup some variables
     # ---------------------------------------
-    if args['output_folder'] is None:
-        print('auto_creating output folder')
-        args['output_folder'] = os.path.dirname(args['json_file']) + '/results'
-
-    if not os.path.exists(args['output_folder']):
-        print(args['output_folder'])
-        os.mkdir(args['output_folder'])  # Create the new folder
-
     args['dataset_folder'] = os.path.dirname(args['json_file'])
+    output_folder = os.path.dirname(args['json_file'])
 
     # ---------------------------------------
     # --- Read data from file
@@ -678,12 +669,12 @@ def main():
     if args['comparison_to_ground_truth']:
         # opt.printParametersErrors() # only if we want to see the value of each parameter
         printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
-                                     selected_collection_key, args['output_folder'])
+                                     selected_collection_key, output_folder)
 
     # ---------------------------------------
     # --- Save command line args
     # ---------------------------------------
-    saveCommandLineArgsYml(args_original, args['output_folder'] + '/command_line_args.yml')
+    saveCommandLineArgsYml(args_original, output_folder + '/command_line_args.yml')
 
     # ---------------------------------------
     # --- Save updated JSON file
@@ -694,7 +685,7 @@ def main():
         if not sensor_key in dataset['sensors']:
             dataset['sensors'][sensor_key] = sensor
 
-    saveAtomDataset(args['output_folder'] + '/atom_calibration.json', dataset,
+    saveAtomDataset(output_folder + '/atom_calibration.json', dataset,
                     save_data_files=False)
 
     # ---------------------------------------
@@ -705,9 +696,9 @@ def main():
     # ---------------------------------------
     # --- Save results into yaml
     # ---------------------------------------
-    filename_results_yml = args['output_folder'] + '/atom_calibration_params.yml'
+    filename_results_yml = output_folder + '/atom_calibration_params.yml'
     saveResultsYml(dataset, selected_collection_key, filename_results_yml)
-    filename_results_yml = args['output_folder'] + '/original_calibration_params.yml'
+    filename_results_yml = output_folder + '/original_calibration_params.yml'
     saveResultsYml(dataset_original, selected_collection_key, filename_results_yml)
 
 
