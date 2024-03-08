@@ -9,9 +9,12 @@ Reads the calibration results from a json file and computes the evaluation metri
 # -------------------------------------------------------------------------------
 
 import json
+import os
 import sys
 
 import argparse
+import cv2
+from matplotlib import cm
 import numpy as np
 from prettytable import PrettyTable
 from collections import OrderedDict
@@ -21,7 +24,8 @@ from copy import deepcopy
 
 # Atom imports
 from atom_core.atom import getTransform
-from atom_core.dataset_io import getMixedDataset, loadResultsJSON, filterCollectionsFromDataset, filterSensorsFromDataset
+from atom_core.dataset_io import copyTFToDataset, getMixedDataset, loadResultsJSON, filterCollectionsFromDataset, filterSensorsFromDataset
+from atom_core.drawing import drawCross2D, drawSquare2D
 from atom_core.utilities import saveFileResults, atomError
 from atom_core.vision import projectToCamera
 
@@ -81,6 +85,9 @@ if __name__ == "__main__":
     ap.add_argument("-psf", "--pattern_selection_function", default=None, type=str,
                     help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
+    ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
+    ap.add_argument("-cpt", "--copy_pattern_transforms",
+                    help="If true the transformations of the pattern will be copied from train to mixed dataset. See https://github.com/lardemua/atom/issues/870", action='store_true', default=False)
 
     # - Save args
     args = vars(ap.parse_known_args()[0])
@@ -106,6 +113,16 @@ if __name__ == "__main__":
     mixed_dataset = getMixedDataset(train_dataset, test_dataset)
 
     # ---------------------------------------
+    # --- Copy transforms of the patterns (if they are fixed).
+    # ---------------------------------------
+    # NOTE Not sure if we should do this all the time. see discussion in
+    # https://github.com/lardemua/atom/issues/870
+    if args['copy_pattern_transforms']:
+        for pattern_key, pattern in train_dataset['calibration_config']['calibration_patterns'].items():
+            if pattern['fixed'] is True:
+                copyTFToDataset(pattern['parent_link'], pattern['link'], train_dataset, mixed_dataset)
+
+    # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
     print(Fore.BLUE + '\nStarting evaluation...' + Style.RESET_ALL)
@@ -118,6 +135,9 @@ if __name__ == "__main__":
 
         for pattern_key, pattern in mixed_dataset['calibration_config']['calibration_patterns'].items():
             e[collection_key][pattern_key] = {}
+            # Get pattern number of corners
+            nx = mixed_dataset['calibration_config']['calibration_patterns'][pattern_key]['dimension']['x']
+            ny = mixed_dataset['calibration_config']['calibration_patterns'][pattern_key]['dimension']['y']
 
             for sensor_key, sensor in mixed_dataset['sensors'].items():  # iterate all sensors
                 if sensor['modality'] != 'rgb':
@@ -129,11 +149,14 @@ if __name__ == "__main__":
                 # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                 # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
                 pts_in_pattern = getPointsInPatternAsNPArray(collection_key, pattern_key, sensor_key, mixed_dataset)
+                # print('pts_in_pattern' + str(pattern_key))
+                # print(pts_in_pattern)
 
                 # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                 from_frame = sensor['parent']
                 to_frame = mixed_dataset['calibration_config']['calibration_patterns'][pattern_key]['link']
                 sensor_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
+
                 pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
                 # q = transformations.quaternion_from_matrix(sensor_to_pattern)
@@ -149,6 +172,38 @@ if __name__ == "__main__":
                 # Get the detected points to use as ground truth--------------------------------------------------------
                 pts_detected_in_image = getPointsDetectedInImageAsNPArray(
                     collection_key, pattern_key, sensor_key, mixed_dataset)
+
+                if args['show_images']:
+                    print('showing image for collection ' + collection_key +
+                          ' pattern ' + pattern_key + ' sensor ' + sensor_key)
+
+                    image_path = collection['data'][sensor_key]['data_file']
+                    dataset_path = os.path.dirname(test_json_file)
+                    full_image_path = dataset_path + '/' + image_path
+                    print(full_image_path)
+                    image = cv2.imread(full_image_path)
+
+                    # Draw labels on target image (squares)
+                    print(pts_in_image)
+                    print(pts_in_image.shape)
+
+                    lst_pts = pts_in_image.tolist()
+                    print(lst_pts)
+                    xs = lst_pts[0]
+                    ys = lst_pts[1]
+                    print(xs)
+
+                    cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+                    for x, y in zip(xs, ys):
+
+                        drawCross2D(image, x, y, 15, color=(255, 0, 0), thickness=1)
+
+                        # drawSquare2D(image, x_t, y_t, 6, color=color, thickness=1)
+
+                    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+                    cv2.imshow('image', image)
+                    cv2.waitKey(0)
+                    # exit(0)
 
                 corners_errors = []
                 for idx, label_idx in enumerate(collection['labels'][pattern_key][sensor_key]['idxs']):
