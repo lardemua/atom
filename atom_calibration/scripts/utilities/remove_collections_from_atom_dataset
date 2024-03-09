@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import sys
+import random
+import copy
+from pathlib import Path
+from colorama import Fore, Style
+
+# Atom imports
+from atom_core.dataset_io import (filterCollectionsFromDataset, loadJSONFile,
+                                  createJSONFile, loadResultsJSON, saveAtomDataset)
+from atom_core.utilities import createLambdaExpressionsForArgs
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+def filterDatasetByCollections(dataset, collection_list):
+    original_dataset = copy.deepcopy(dataset)
+    for collection_key in original_dataset['collections']:
+        if collection_key not in collection_list:
+            del dataset['collections'][collection_key]
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+
+
+def main():
+    ap = argparse.ArgumentParser(description='Splits an ATOM dataset json into train and test datasets.')
+    ap.add_argument("-json", "--dataset_json",
+                    help="Dataset json file to be split.", type=str, required=True)
+    ap.add_argument("-csf", "--collection_selection_function", default=None, type=str,
+                    help="A string to be evaluated into a lambda function that receives a collection name as input and "
+                    "returns True or False to indicate if the collection should be loaded (and used in the "
+                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+                    "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+
+    # - Save args
+    # args = vars(ap.parse_known_args()[0])
+    arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
+    args_original = vars(ap.parse_args(args=arglist))  # these args have the selection functions as strings
+    args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
+
+    args['use_incomplete_collections'] = True  # We want to be able to filter all collections.
+    args['remove_partial_detections'] = False  # We want to be able to filter all collections.
+
+    # Loads the train json file containing the calibration results
+    dataset, json_file = loadResultsJSON(args["dataset_json"], args["collection_selection_function"])
+
+    filtered_dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
+    # createJSONFile(args['dataset_json'].replace('.json', '_filtered.json'), filtered_dataset)
+    saveAtomDataset(args['dataset_json'].replace('.json', '_filtered.json'), filtered_dataset,
+                    save_data_files=True)
+
+
+if __name__ == "__main__":
+    main()
