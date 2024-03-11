@@ -38,7 +38,9 @@ def main():
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
-
+    ap.add_argument("-o", "--output", help="Name for the output file.",
+                    required=False, type=str)
+    
     # - Save args
     # args = vars(ap.parse_known_args()[0])
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -53,9 +55,14 @@ def main():
 
     filtered_dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     # createJSONFile(args['dataset_json'].replace('.json', '_filtered.json'), filtered_dataset)
-    saveAtomDataset(args['dataset_json'].replace('.json', '_filtered.json'), filtered_dataset,
-                    save_data_files=True)
 
+    if args['output'] is None:
+         output_name = args['dataset_json'].replace('.json', '_filtered.json')           
+
+    else:
+        output_name = args['output']
+
+    saveAtomDataset(output_name, filtered_dataset, save_data_files=True)
 
 if __name__ == "__main__":
     main()
