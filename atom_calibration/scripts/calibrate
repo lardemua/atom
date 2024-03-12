@@ -622,10 +622,6 @@ def main():
     opt.computeSparseMatrix()
     # opt.printSparseMatrix()
 
-    print('Optimization setup with ' + Fore.BLUE + str(len(opt.getParamNames())) +
-          Style.RESET_ALL + ' parameters: ' + str(opt.getParamNames()))
-    exit(0)
-
     # ---------------------------------------
     # --- Get a normalizer for each residual type
     # ---------------------------------------
@@ -649,6 +645,8 @@ def main():
     # ---------------------------------------
     # --- Start Optimization
     # ---------------------------------------
+    print('Optimization setup with ' + Fore.BLUE + str(len(opt.getParamNames())) +
+          Style.RESET_ALL + ' parameters: ' + str(opt.getParamNames()))
 
     dataset_initial = deepcopy(dataset)  # store initial values of dataset before starting optimization
 
