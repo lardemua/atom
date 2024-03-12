@@ -231,7 +231,7 @@
     <child link="base_link_inertia"/>
   </joint>
   <joint name="shoulder_pan_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.06401148706013562"/>
+    <origin xyz="0.0 0.0 0.1807" rpy="0.0 0.0 0.06054631110770013"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="base_link_inertia"/>
     <child link="shoulder_link"/>
@@ -239,7 +239,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="shoulder_lift_joint" type="revolute">
-    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.009910204783218489"/>
+    <origin xyz="0.0 0.0 0.0" rpy="1.570796327 0.0 0.00843600239413617"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
@@ -247,7 +247,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="elbow_joint" type="revolute">
-    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 -0.002139318459194392"/>
+    <origin xyz="-0.6127 0.0 0.0" rpy="0.0 0.0 0.0034924794019561226"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
@@ -255,7 +255,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_1_joint" type="revolute">
-    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.011633411894526994"/>
+    <origin xyz="-0.57155 0.0 0.17415" rpy="0.0 0.0 -0.0038882384676595"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="forearm_link"/>
     <child link="wrist_1_link"/>
@@ -263,7 +263,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_2_joint" type="revolute">
-    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.00235299412437361"/>
+    <origin xyz="0.0 -0.11985 -2.458164590756244e-11" rpy="1.570796327 0.0 0.0011432279000107165"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_1_link"/>
     <child link="wrist_2_link"/>
@@ -271,7 +271,7 @@
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="wrist_3_joint" type="revolute">
-    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 2.971795491526189"/>
+    <origin xyz="0.0 0.11655 -2.390480459346185e-11" rpy="1.570796326589793 3.141592653589793 3.0555958845900384"/>
     <axis xyz="0.0 0.0 1.0"/>
     <parent link="wrist_2_link"/>
     <child link="wrist_3_link"/>
@@ -327,7 +327,7 @@
     <child link="base_link"/>
   </joint>
   <joint name="rgb_world_joint" type="fixed">
-    <origin xyz="0.9040307558583056 0.37340685909697446 0.7863156345009282" rpy="0.011250318836873024 0.18824459381100403 3.0808278801572553"/>
+    <origin xyz="0.9037432096416733 0.37228473224250047 0.7818112606308044" rpy="0.012699362404344034 0.18629151269149116 3.080059426410463"/>
     <parent link="world"/>
     <child link="rgb_world_link"/>
   </joint>
@@ -414,7 +414,7 @@
     </collision>
   </link>
   <joint name="flange_to_charuco_200x200_8x8" type="fixed">
-    <origin xyz="0.29 0.0 -0.1" rpy="-1.5707963267948966 -1.5707963267948966 0.0"/>
+    <origin xyz="0.28943924319848274 0.004388912856234545 -0.08400990383902193" rpy="0.12446009135288653 -1.4490551595331114 -1.7025546842710928"/>
     <parent link="flange"/>
     <child link="charuco_200x200_8x8"/>
   </joint>

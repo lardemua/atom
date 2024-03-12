@@ -37,8 +37,11 @@
     <arg name="rviz_file" default="$(find riwmpbot_real_calibration)/rviz/playbag.rviz"/>
     <arg name="description_file" default="$(find riwmpbot_real_calibration)/urdf/initial_estimate.urdf.xacro"
          unless="$(arg optimized)"/>
-    <arg name="description_file" default="$(find riwmpbot_real_calibration)/urdf/optimized.urdf.xacro"
+    <!-- <arg name="description_file" default="$(find riwmpbot_real_calibration)/urdf/optimized.urdf.xacro" -->
+         <!-- if="$(arg optimized)"/> -->
+    <arg name="description_file" default="$(find riwmpbot_real_calibration)/urdf/optimized_w_pattern.urdf.xacro"
          if="$(arg optimized)"/>
+
 
     <!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
     <!-- Throttle topics -->

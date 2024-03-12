@@ -691,7 +691,7 @@ def main():
     # ---------------------------------------
     # --- Save updated xacro
     # ---------------------------------------
-    saveResultsXacro(dataset, selected_collection_key, list(transforms_set))
+    saveResultsXacro(dataset, selected_collection_key, list(transforms_set), verbose=False)
 
     # ---------------------------------------
     # --- Save results into yaml
