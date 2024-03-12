@@ -26,7 +26,7 @@ from copy import deepcopy
 from atom_core.atom import getTransform
 from atom_core.dataset_io import copyTFToDataset, filterPatternsFromDataset, getMixedDataset, loadResultsJSON, filterCollectionsFromDataset, filterSensorsFromDataset
 from atom_core.drawing import drawCross2D, drawSquare2D
-from atom_core.utilities import createLambdaExpressionsForArgs, saveFileResults, atomError
+from atom_core.utilities import atomStartupPrint, createLambdaExpressionsForArgs, saveFileResults, atomError
 from atom_core.vision import projectToCamera
 
 
@@ -58,6 +58,9 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _pattern_key, _sensor_key
 
 
 if __name__ == "__main__":
+
+    atomStartupPrint('Single rgb evaluation')
+
     ap = argparse.ArgumentParser()
     ap.add_argument("-train_json", "--train_json_file", help="Json file containing input training dataset.", type=str,
                     required=True)
@@ -129,7 +132,6 @@ if __name__ == "__main__":
     # ---------------------------------------
     # --- INITIALIZATION Read evaluation data from file ---> if desired <---
     # ---------------------------------------
-    print(Fore.BLUE + '\nStarting evaluation...' + Style.RESET_ALL)
     e = {}
     for collection_key, collection in mixed_dataset['collections'].items():
         if 'labels' not in collection:
@@ -215,7 +217,7 @@ if __name__ == "__main__":
                                                   (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2))
                 e[collection_key][pattern_key][sensor_key] = np.mean(corners_errors)
 
-    print(json.dumps(e, indent=4))
+    # print(json.dumps(e, indent=4))
 
     if not e:
         atomError('No rgb labelling found. Exiting...')
@@ -252,19 +254,16 @@ if __name__ == "__main__":
                 if sensor['modality'] not in ['rgb']:
                     continue
 
-                print('Analyzing collection ' + collection_key + ' pattern ' + pattern_key + ' sensor ' + sensor_key)
+                # print('Analyzing collection ' + collection_key + ' pattern ' + pattern_key + ' sensor ' + sensor_key)
                 if sensor_key in e[collection_key][pattern_key]:
 
                     value = '%.4f' % e[collection_key][pattern_key][sensor_key]
                     row.append(value)
                     row_save.append(value)
                     errors.append(float(e[collection_key][pattern_key][sensor_key]))
-                    print('Using error')
-                    print(errors)
                 else:
                     row.append(Fore.LIGHTBLACK_EX + '---' + Style.RESET_ALL)
                     row_save.append('---')
-                    print('Not Using error')
 
         # Add all as an average of the errors for this row
         if errors:

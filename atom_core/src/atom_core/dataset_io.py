@@ -694,7 +694,7 @@ def filterJointParametersFromDataset(dataset, args):
                         deleted.append(param)
 
                 for param in deleted:
-                    print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
+                    # print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
                     dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(param)
 
                 print("Deleted parameters " + str(deleted) + ' from joint ' + joint_key)

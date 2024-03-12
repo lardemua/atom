@@ -11,7 +11,7 @@ from colorama import Fore, Style
 # Atom imports
 from atom_core.dataset_io import (filterCollectionsFromDataset, loadJSONFile,
                                   createJSONFile, loadResultsJSON, saveAtomDataset)
-from atom_core.utilities import createLambdaExpressionsForArgs
+from atom_core.utilities import atomStartupPrint, createLambdaExpressionsForArgs
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -30,6 +30,9 @@ def filterDatasetByCollections(dataset, collection_list):
 
 
 def main():
+
+    atomStartupPrint('Removing collections from dataset')
+
     ap = argparse.ArgumentParser(description='Splits an ATOM dataset json into train and test datasets.')
     ap.add_argument("-json", "--dataset_json",
                     help="Dataset json file to be split.", type=str, required=True)
@@ -40,7 +43,7 @@ def main():
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
     ap.add_argument("-o", "--output", help="Name for the output file.",
                     required=False, type=str)
-    
+
     # - Save args
     # args = vars(ap.parse_known_args()[0])
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -57,12 +60,13 @@ def main():
     # createJSONFile(args['dataset_json'].replace('.json', '_filtered.json'), filtered_dataset)
 
     if args['output'] is None:
-         output_name = args['dataset_json'].replace('.json', '_filtered.json')           
+        output_name = args['dataset_json'].replace('.json', '_filtered.json')
 
     else:
         output_name = args['output']
 
     saveAtomDataset(output_name, filtered_dataset, save_data_files=True)
+
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,7 @@ from colorama import Fore, Style
 # Atom imports
 from atom_core.dataset_io import (loadJSONFile,
                                   createJSONFile)
+from atom_core.utilities import atomStartupPrint
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -29,6 +30,9 @@ def filterDatasetByCollections(dataset, collection_list):
 
 
 def main():
+
+    atomStartupPrint('Splitting dataset')
+
     ap = argparse.ArgumentParser(description='Splits an ATOM dataset json into train and test datasets.')
     ap.add_argument("-json", "--dataset_json",
                     help="Dataset json file to be split.", type=str, required=True)
