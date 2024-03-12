@@ -622,6 +622,10 @@ def main():
     opt.computeSparseMatrix()
     # opt.printSparseMatrix()
 
+    print('Optimization setup with ' + Fore.BLUE + str(len(opt.getParamNames())) +
+          Style.RESET_ALL + ' parameters: ' + str(opt.getParamNames()))
+    exit(0)
+
     # ---------------------------------------
     # --- Get a normalizer for each residual type
     # ---------------------------------------
