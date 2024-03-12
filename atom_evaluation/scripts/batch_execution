@@ -53,17 +53,13 @@ def main():
     env.add_extension('jinja2.ext.do')
     template = env.get_template(os.path.basename(args['template_filename']))
 
+    # Print the rendered jinja file just for debug
     rendered = template.render(data)
-    config = yaml.safe_load(rendered)
-
-    # Useful for debug
-    # bprint(str(config))
-    with open('auto_rendered_config.yaml', 'w') as file:
-        yaml.dump(config, file)
-    # exit(0)
+    with open('auto_rendered.yaml', 'w') as file:
+        file.write(rendered)
 
     tictoc = TicToc()
-
+    config = yaml.safe_load(rendered)
     args['output_folder'] = resolvePath(args['output_folder'])
     if not os.path.exists(args['output_folder']):  # create stdout_data folder if it does not exist.
         # bprint('Creating output folder: ' + config['output_folder'])
@@ -73,17 +69,17 @@ def main():
         shutil.rmtree(args['output_folder'])  # Create the new folder
         os.mkdir(args['output_folder'])  # Create the new folder
 
-    num_batches = len(config['batches'].keys())
-    for idx, (batch_key, batch) in enumerate(config['batches'].items()):  # cycle through commands in batch_execution.
+    num_experiments = len(config['experiments'].keys())
+    for idx, (experiment_key, experiment) in enumerate(config['experiments'].items()):
         print('\n')
-        bprint(Style.BRIGHT + 'Batch ' + str(idx) + ' of ' + str(num_batches-1) + ': ' + batch_key)
-        bprint('Executing command:\n' + batch['cmd'])
+        bprint(Style.BRIGHT + 'Experiment ' + str(idx) + ' of ' + str(num_experiments-1) + ': ' + experiment_key)
+        bprint('Executing command:\n' + experiment['cmd'])
 
         if args['dry_run']:
             bprint('Running in dry run mode...')
             continue
 
-        batch_folder = args['output_folder'] + '/' + batch_key
+        batch_folder = args['output_folder'] + '/' + experiment_key
         if os.path.exists(batch_folder) and not args['overwrite']:
             atomWarn('Folder ' + batch_folder + ' exists. Skipping batch experiment.')
             continue
@@ -92,7 +88,7 @@ def main():
 
         # Start executing command.
         tictoc.tic()
-        proc = subprocess.Popen(batch['cmd'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
+        proc = subprocess.Popen(experiment['cmd'], shell=True, universal_newlines=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
 
         # proc.wait()  # wait for command to finish. Wait blocks with large pipes.
@@ -115,7 +111,7 @@ def main():
             f.write(removeColorsFromText(stdout_data))
 
         # Collect stdout_data files
-        for file in batch['files_to_collect']:
+        for file in experiment['files_to_collect']:
             if file is None:
                 raise ValueError('File in files to collect is None. Aborting.')
 
