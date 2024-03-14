@@ -153,7 +153,7 @@ def createNxGraph(args, description, config, bag):
                     nx_graph.add_edge(parent,
                                       child,
                                       weight=1,
-                                      type='dynamic',
+                                      type='multiple',
                                       parent=parent,
                                       child=child,
                                       is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
@@ -161,9 +161,9 @@ def createNxGraph(args, description, config, bag):
         for topic, msg, t in bag.read_messages(topics=['/tf_static']):
             for transform in msg.transforms:
 
-                parent = transform.header.frame_id.replace('/','')
-                child = transform.child_frame_id.replace('/','')
-                
+                parent = transform.header.frame_id.replace('/', '')
+                child = transform.child_frame_id.replace('/', '')
+
                 if not nx_graph.has_edge(parent, child):
                     # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
                     nx_graph.add_edge(parent,
@@ -173,14 +173,13 @@ def createNxGraph(args, description, config, bag):
                                       parent=parent,
                                       child=child,
                                       is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
-                    
-        ##################### DIOGO VIEIRA (#836)
+
+        # DIOGO VIEIRA (#836)
         # Add the missing node attributes
         for node in nx_graph.nodes():
             nx_graph.nodes[node]['is_world'] = is_world_link(node, config)
             nx_graph.nodes[node]['pattern'] = has_pattern_link(node, config)
             nx_graph.nodes[node]['sensor_data'] = has_sensor_data(node, config)
-
 
     return nx_graph
 
@@ -256,7 +255,9 @@ def createDotGraph(nx_graph, config):
         elif edge['type'] == 'continuous':
             label = edge['joint_name'] + '\n (continuous)'
             rgb_font = color_grey
-
+        elif edge['type'] == 'multiple':
+            label = 'dynamic' + '\n (from tf msg)'
+            rgb_font = color_grey
         elif edge['type'] == 'fixed':
             label = ' static'
             rgb_font = color_grey
