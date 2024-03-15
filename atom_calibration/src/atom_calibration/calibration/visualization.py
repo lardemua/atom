@@ -147,7 +147,6 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
     rospy.loginfo('Reading description file ' + description_file + '...')
-    # TODO not sure this should be done because of the use_tfs functionality ...
     xml_robot = readXacroFile(description_file)
 
     # Initialize ROS stuff
