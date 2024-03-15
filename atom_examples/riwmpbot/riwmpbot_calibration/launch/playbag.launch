@@ -25,7 +25,6 @@
     default: $(env ROS_BAGS)/riwmpbot/train.bag
 @arg bag_start Playback starting time (in seconds). default: 0.0
 @arg bag_rate  Playback rate. default: 1.0
-@arg use_tfs  Use tfs in the bag file or generate new ones using the urdf, joint state messages and the robot state publisher. default: False
 -->
 
 <launch>

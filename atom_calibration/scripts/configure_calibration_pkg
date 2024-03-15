@@ -27,7 +27,7 @@ import networkx as nx
 from pytictoc import TicToc
 
 # local packages
-from atom_core.utilities import atomPrintOK, checkDirectoryExistence, atomError, atomStartupPrint, getJointParentChild, verifyAnchoredSensor
+from atom_core.utilities import atomPrintOK, atomWarn, checkDirectoryExistence, atomError, atomStartupPrint, getJointParentChild, verifyAnchoredSensor
 from atom_core.naming import generateLabeledTopic
 from atom_core.system import execute
 from atom_core.rosbag2 import is_rosbag2, convert_rosbag2_to_rosbag1
@@ -42,9 +42,6 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package name', type=str, required=True)
-    ap.add_argument("-utf", "--use_tfs", action="store_true",
-                    help='Use transformations in the bag file instead of generating new tfs from the xacro, '
-                         'joint_state_msgs and robot state publisher.')
     ap.add_argument("-cgt", "--collect_ground_truth", action="store_true",
                     help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
     ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
@@ -197,6 +194,58 @@ if __name__ == "__main__":
     nx_graph = createNxGraph(args, description, config, bag)
 
     # --------------------------------------------------------------------------
+    # Check if a new bagfile needs to be created
+    # See https://github.com/lardemua/atom/issues/838
+    # --------------------------------------------------------------------------
+    transforms_from_bag = []
+    for edge_key, edge in nx_graph.edges.items():
+        if edge['from_bag']:
+            t = {'parent': edge['parent'], 'child': edge['child']}
+            transforms_from_bag.append(t)
+
+    use_atom_bag_file = False  # by default we use the original bagfile
+    selected_bag_file_relative = bag_file_relative
+    if transforms_from_bag:
+        atomWarn('The urdf does not contain all the transforms in the bagfile. Atom will use transformations from the urdf description, combined with transformations from the bagfile that do not exist in the urdf. This implies the creation of a new bagfile.')
+        print('Transforms exclusive to the bag file are: ' + str(transforms_from_bag))
+
+        # Initial setup
+        use_atom_bag_file = True
+
+        tictoc_bag_creation = TicToc()
+        tictoc_bag_creation.tic()
+
+        atom_bag_file = bag_file[:-4] + '_atom_filtered.bag'
+        atom_bag_file_relative = bag_file_relative[:-4] + '_atom.bag'
+        selected_bag_file_relative = atom_bag_file_relative
+
+        print('Creating atom_filtered bagfile ' + Fore.BLUE + atom_bag_file + Style.RESET_ALL + ' ... please wait ...')
+        bag_out = rosbag.Bag(atom_bag_file, 'w')
+
+        # Writing the filtered bagfile
+        for topic, msg, stamp, connection_header in bag.read_messages(return_connection_header=True):
+
+            if ((topic == "/tf" or topic == "/tf_static") and msg.transforms):
+                transforms_to_keep = []
+                for i in range(len(msg.transforms)):
+                    msg_parent = msg.transforms[i].header.frame_id
+                    msg_child = msg.transforms[i].child_frame_id
+
+                    for transform_from_bag in transforms_from_bag:
+                        if msg_parent == transform_from_bag['parent'] and msg_child == transform_from_bag['child']:
+                            transforms_to_keep.append(msg.transforms[i])
+                            break
+
+                # print('Transformations to keep: ' + str(transforms_to_keep))
+                msg.transforms = transforms_to_keep
+
+            bag_out.write(topic, msg, stamp, connection_header=connection_header)
+
+        bag_out.close()  # close the bag file.
+
+        print('Completed in ' + str(round(tictoc_bag_creation.tocvalue(), 2)) + ' seconds.')
+
+    # --------------------------------------------------------------------------
     # Verifications: Run as much as we can think of to see if something is wrong. Better early than late.
     # --------------------------------------------------------------------------
     print('Running several verifications ... please wait ...')
@@ -308,8 +357,8 @@ if __name__ == "__main__":
 
             # Check if frames exits
             if additional_tf['child_link'] not in nx_graph.nodes:
-                atomError('Additional tf for child link ' + Fore.BLUE + additional_tf['child_link'] + Style.RESET_ALL + ' not found.\nCheck the frames you entered in the config.yaml. Consider using the ' +
-                          Fore.GREEN + '-utf/--use_tfs' + Style.RESET_ALL + ' option to use the tranforms on the /tf and /tf_static topics.')
+                atomError('Additional tf for child link ' + Fore.BLUE +
+                          additional_tf['child_link'] + Style.RESET_ALL + ' not found.\nCheck the frames you entered in the config.yaml.')
 
             # path between root and additional_tfs data frame
             print('\nChecking path from ' + config['world_link'] + ' to ' + additional_tf['child_link'])
@@ -372,7 +421,7 @@ if __name__ == "__main__":
     else:
         pos = nx.random_layout(nx_graph)
         edges, weights = zip(*nx.get_edge_attributes(nx_graph, 'weight').items())
-        edge_labels = nx.draw_networkx_edge_labels(nx_graph, pos)
+        # edge_labels = nx.draw_networkx_edge_labels(nx_graph, pos)
         nx.draw(nx_graph, with_labels=True)
         plt.show()
         raise ValueError('TF tree is not connected. Aborting.')
@@ -542,14 +591,14 @@ if __name__ == "__main__":
     with open(launch_file, 'wb') as f:
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
-                                    'bag_file': bag_file_relative,
-                                    'use_tfs': args['use_tfs'],
+                                    'bag_file': selected_bag_file_relative,
                                     'collect_ground_truth': args['collect_ground_truth'],
                                     'package_name': package_name,
                                     'rviz_playbag': rviz_playbag,
                                     'use_compressed_topics': bool(compressed_topics),
                                     'compressed_topics': compressed_topics,
-                                    'throttle_topics': throttle_topics
+                                    'throttle_topics': throttle_topics,
+                                    'use_atom_bag_file': use_atom_bag_file,
                                     })
         f.write(output.encode('utf-8'))
 
@@ -565,7 +614,7 @@ if __name__ == "__main__":
                                     'date': dt_string,
                                     'package_name': package_name,
                                     'rviz_set_initial_estimate': rviz_set_initial_estimate,
-                                    'bag_file': bag_file_relative,
+                                    'bag_file': selected_bag_file_relative,
                                     'marker_size': 0.5,
                                     'config_file': os.path.basename(args['config_file'])
                                     })
@@ -595,7 +644,7 @@ if __name__ == "__main__":
                                     'date': dt_string,
                                     'package_name': package_name,
                                     'rviz_collect_data': rviz_collect_data,
-                                    'bag_file': bag_file_relative,
+                                    'bag_file': selected_bag_file_relative,
                                     'config_file': os.path.basename(args['config_file']),
                                     'labelers': labelers
                                     })
@@ -626,7 +675,7 @@ if __name__ == "__main__":
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'package_name': package_name,
-                                    'bag_file': bag_file_relative,
+                                    'bag_file': selected_bag_file_relative,
                                     'rviz_dataset_playback': rviz_dataset_playback
                                     })
         f.write(output.encode('utf-8'))

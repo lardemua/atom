@@ -29,9 +29,6 @@ def main():
     parser = argparse.ArgumentParser(
         description='Configure rlbot_calibration calibration package. See  https://lardemua.github.io/atom_documentation/procedures/#configure-a-calibration-package for more info.')
 
-    parser.add_argument('-utf', '--use_tfs', action='store_true',
-                        help='ATOM will use the transforms on /tf and /tf_static topics. See https://lardemua.github.io/atom_documentation/procedures/#using-tfs-instead-of-the-xacro-file for more info.')
-
     parser.add_argument('-cfg', '--config_file', type=str,
                         help='Uses a custom calibration config.yml file.', default=None)
 
@@ -41,9 +38,6 @@ def main():
     # Prepare command to run
     # ---------------------------------------------------
     command = 'rosrun atom_calibration configure_calibration_pkg -n rlbot_calibration'
-
-    if args['use_tfs']:  # Add -utf flag if that's the case
-        command += ' --use_tfs'
 
     if args['config_file'] is not None:  # Add custom config file if needed
         command += ' --config_file ' + args['config_file']
