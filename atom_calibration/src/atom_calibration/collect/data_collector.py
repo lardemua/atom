@@ -71,12 +71,6 @@ class DataCollector:
                                                         tf_topic='tf',
                                                         tf_static_topic='tf_static')
 
-        # Add special transform listener to get ground truth tfs
-        self.tf_buffer_ground_truth = tf2_ros.Buffer()
-        self.listener_ground_truth = ConfigurableTransformListener(self.tf_buffer_ground_truth,
-                                                                   tf_topic='tf_ground_truth',
-                                                                   tf_static_topic='tf_static_ground_truth')
-
         self.sensors = {}
         self.server = server
         self.menu_handler = menu_handler
@@ -89,7 +83,6 @@ class DataCollector:
         self.metadata = {}
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
-        self.collect_ground_truth = None
         self.joint_state_position_dict = {}
 
         # print(args['calibration_file'])
@@ -121,19 +114,6 @@ class DataCollector:
                       Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
 
         self.urdf_description = URDF.from_xml_file(urdf_file)  # read the urdf file
-
-        # Check if there is ground truth information, i.e. messages on topics /tf_ground_truth and /tf_static_ground_truth
-        print("Checking the existence of ground truth data, waiting for one msg on topic " +
-              Fore.BLUE + '/tf_ground_truth' + Style.RESET_ALL, end='')
-        try:
-            msg = rospy.wait_for_message('tf_ground_truth', rospy.AnyMsg, 1)
-            print('... received!\n' + Fore.GREEN +
-                  'Recording ground truth data from topics /tf_ground_truth and /tf_static_ground_truth' + Style.RESET_ALL)
-        except:
-            print('... not received!\n' + Fore.YELLOW + 'Assuming there is no ground truth information.' + Style.RESET_ALL)
-            self.collect_ground_truth = False
-        else:
-            self.collect_ground_truth = True
 
         # Setup joint_state message subscriber
         self.subscriber_joint_states = rospy.Subscriber(
@@ -427,11 +407,6 @@ class DataCollector:
                                         self.tf_buffer,
                                         average_time)  # use average time of label msgs
 
-        if self.collect_ground_truth:  # collect ground truth transforms
-            transforms_ground_truth = self.getTransforms(self.abstract_transforms,
-                                                         self.tf_buffer_ground_truth,
-                                                         average_time)  # use average time of sensor msgs
-
         printRosTime(average_time, "Collected transforms for time ")
 
         # --------------------------------------
@@ -569,8 +544,6 @@ class DataCollector:
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
                            'transforms': transforms,
                            'additional_data': all_additional_data_dict, 'joints': joints_dict}
-        if self.collect_ground_truth:
-            collection_dict['transforms_ground_truth'] = transforms_ground_truth
 
         collection_key = str(self.data_stamp).zfill(3)  # collection names are 000, 001, etc
         self.collections[collection_key] = collection_dict
