@@ -42,8 +42,6 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package name', type=str, required=True)
-    ap.add_argument("-cgt", "--collect_ground_truth", action="store_true",
-                    help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
     ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',
                     type=str, required=False, default=None)
     args = vars(ap.parse_args())
@@ -592,7 +590,6 @@ if __name__ == "__main__":
         output = template.render(c={'filename': os.path.basename(launch_file),
                                     'date': dt_string,
                                     'bag_file': selected_bag_file_relative,
-                                    'collect_ground_truth': args['collect_ground_truth'],
                                     'package_name': package_name,
                                     'rviz_playbag': rviz_playbag,
                                     'use_compressed_topics': bool(compressed_topics),

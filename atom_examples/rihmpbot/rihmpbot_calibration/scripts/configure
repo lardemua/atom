@@ -29,9 +29,6 @@ def main():
     parser = argparse.ArgumentParser(
         description='Configure rihmpbot_calibration calibration package. See  https://lardemua.github.io/atom_documentation/procedures/#configure-a-calibration-package for more info.')
 
-    parser.add_argument("-cgt", "--collect_ground_truth", action="store_true",
-                        help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
-
     parser.add_argument('-cfg', '--config_file', type=str,
                         help='Uses a custom calibration config.yml file.', default=None)
 
@@ -41,9 +38,6 @@ def main():
     # Prepare command to run
     # ---------------------------------------------------
     command = 'rosrun atom_calibration configure_calibration_pkg -n rihmpbot_calibration'
-
-    if args['collect_ground_truth']:  # Add -utf flag if that's the case
-        command += ' --collect_ground_truth'
 
     if args['config_file'] is not None:  # Add custom config file if needed
         command += ' --config_file ' + args['config_file']
