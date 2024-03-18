@@ -213,8 +213,9 @@ if __name__ == "__main__":
         tictoc_bag_creation = TicToc()
         tictoc_bag_creation.tic()
 
+        # TODO should'nt here be used the generateName function? 
         atom_bag_file = bag_file[:-4] + '_atom_filtered.bag'
-        atom_bag_file_relative = bag_file_relative[:-4] + '_atom.bag'
+        atom_bag_file_relative = bag_file_relative[:-4] + '_atom_filtered.bag'
         selected_bag_file_relative = atom_bag_file_relative
 
         print('Creating atom_filtered bagfile ' + Fore.BLUE + atom_bag_file + Style.RESET_ALL + ' ... please wait ...')
