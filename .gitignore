@@ -217,6 +217,7 @@ snaps/
 *.vsix
 .vscode/settings.json
 atom_calibration/scripts/deprecated/calibration.code-workspace
+*.code-workspace
 /atom_evaluation/scripts/incomplete.txt
 /atom_evaluation/scripts/output_total.txt
 /atom_evaluation/scripts/partials.txt
