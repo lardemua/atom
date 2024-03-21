@@ -128,6 +128,7 @@ def main():
                 complete_detections[pattern_key]))
                 print('Sensor ' + sensor_key + ' has ' + str(len(partial_detections[pattern_key])) + ' partial detections of pattern ' + pattern_key + ': ' + str(
                 partial_detections[pattern_key]))
+
         else:
             print('Sensor ' + sensor_key + ' is not a camera. All detections are complete.')
 
@@ -180,6 +181,9 @@ def main():
     sensor_keys = list(dataset['sensors'].keys())
 
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+
+        # Number of corners var needs to be redefined for each pattern otherwise it holds the value of the last one (issue #892)
+        number_of_corners = int(pattern['dimension']['x']) * int(pattern['dimension']['y'])
 
         print('\nAnalysis for pattern ' + Style.BRIGHT + Fore.BLUE + pattern_key + Style.RESET_ALL)
         table_header = ['Collection', 'is complete']
