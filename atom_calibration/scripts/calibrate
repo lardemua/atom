@@ -26,6 +26,7 @@ from atom_calibration.calibration.objective_function import errorReport, objecti
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   addNoiseToJointParameters,
+                                  addNoiseToTF,
                                   checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset,
                                   filterSensorsFromDataset,
@@ -43,6 +44,7 @@ from atom_core.utilities import (atomError, createLambdaExpressionsForArgs,
                                  printComparisonToGroundTruth, saveCommandLineArgsYml)
 from atom_core.xacro_io import saveResultsXacro
 from atom_core.results_yml_io import saveResultsYml
+from atom_core.config_io import parse_list_of_transformations
 
 
 # -------------------------------------------------------------------------------
@@ -105,8 +107,15 @@ def main():
                     help="Ignore the anchored sensor information in the dataset.", )
     ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
                             "Used or the Charuco.", action="store_true", default=False)
+    
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
                     help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
+    
+    ap.add_argument("-ntfl","--noisy_tf_links" ,type = parse_list_of_transformations,
+                    help="Pairs of links defining the transformations to which noise will be added, in the format link1:link2,linkA,linkB") 
+    ap.add_argument("-ntfv","--noisy_tf_values",nargs=2,type=float,metavar=("translation","rotation"),
+                    help="Noise values to add to the transformations specified by-ntfl")
+
     ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
                     help='Joints to add bias to', type=str, required=False)
     ap.add_argument("-jbp", "--joint_bias_params", nargs='+',
@@ -225,8 +234,31 @@ def main():
     # --- Add noise to the transformations and joint parameters to be calibrated.
     # ---------------------------------------
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
+
+    
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
     addNoiseToJointParameters(dataset, args)
+
+    # Verify both arguments were provided
+
+    # Unfortunately, mutually inclusive arguments are not built into argparse
+    # https://github.com/python/cpython/issues/55797
+
+    if args['noisy_tf_links'] is None and args['noisy_tf_values'] is None:
+        atomError(f'{Fore.RED}-ntfl{Style.RESET_ALL} and {Fore.RED}-ntfv{Style.RESET_ALL} flags are mutually inclusive') 
+        exit()
+
+    # Iterate through pairs of tf's and apply noise
+    translation_tf_noise = args['noisy_tf_values'][0]
+    rotation_tf_noise    = args['noisy_tf_values'][1] 
+
+    for tf_pair in args['noisy_tf_links']:
+        addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
+        tf_link = generateKey(tf_pair[0],tf_pair[1])
+        # debugging print
+        # from pprint import pprint
+        # pprint(dataset['collections'][selected_collection_key]['transforms'][tf_link])
+        # pprint(dataset_ground_truth['collections'][selected_collection_key]['transforms'][tf_link])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models

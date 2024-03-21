@@ -788,11 +788,16 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     :param args: Makes use of nig, i.e., the amount of noise to add to the initial guess atomic transformations to be
                  calibrated
     """
+    if args['noisy_initial_guess'] == [0,0]:
+        print("No noise added to transform's initial guess")
+        return
+    
     if args['sample_seed'] is not None:
         np.random.seed(args['sample_seed'])
 
     nig_trans = args['noisy_initial_guess'][0]
     nig_rot = args['noisy_initial_guess'][1]
+
 
     # add noise to additional tfs for simulation
     if dataset['calibration_config']['additional_tfs'] is not None:
@@ -838,6 +843,7 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
     for collection_key, collection in dataset['collections'].items():
         dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = \
             dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
+            
         dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
             dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
 

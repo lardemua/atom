@@ -16,6 +16,14 @@ from colorama import Fore, Style
 from atom_core.utilities import atomError
 from atom_core.system import resolvePath, expandToLaunchEnv
 
+def parse_list_of_transformations(s):
+    list_of_transformations = []
+    for pair in s.split(','):
+        elements = pair.split(':')
+        if len(elements) != 2:
+            raise atomError("Each pair of transformations parsed must contain exactly 2 elements separated by ':'")
+        list_of_transformations.append(elements)
+    return list_of_transformations
 
 def dictionaries_have_same_keys(d1, d2):
 
