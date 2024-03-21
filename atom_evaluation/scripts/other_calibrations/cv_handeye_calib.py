@@ -103,6 +103,18 @@ def cvStereoCalibrate(objp):
     return camera_model
 
 
+def getPatternConfig(dataset, pattern):
+    # Pattern configs
+    nx = dataset['calibration_config']['calibration_patterns'][pattern]['dimension']['x']
+    ny = dataset['calibration_config']['calibration_patterns'][pattern]['dimension']['y']
+    square = dataset['calibration_config']['calibration_patterns'][pattern]['size']
+    inner_square = dataset['calibration_config']['calibration_patterns'][pattern]['inner_size']
+    objp = np.zeros((nx * ny, 3), np.float32)
+    objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+
+    return nx, ny, square, inner_square, objp
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file", help="Json file containing train input dataset.", type=str,
@@ -128,12 +140,13 @@ def main():
     # DATASET PREPROCESSING
     #########################################
 
+    nx, ny, square, inner_square, objp = getPatternConfig(dataset=dataset, pattern=pattern)
+
     # Remove partial detections (OpenCV does not support them)
     collections_to_delete = []
     # TODO only works for first pattern
     # first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
-    number_of_corners = int(dataset['calibration_config']['calibration_patterns'][pattern]['dimension']['x']) * \
-        int(dataset['calibration_config']['calibration_patterns'][pattern]['dimension']['y'])
+    number_of_corners = int(nx) * int(ny)
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor_key != camera:
@@ -160,8 +173,9 @@ def main():
 
     for collection_key in collections_to_delete:
         del dataset['collections'][collection_key]
-        
+
     print('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
+    
     exit(0)
 
 if __name__ == '__main__':
@@ -170,13 +184,6 @@ if __name__ == '__main__':
     
 
 
-    # # Pattern configs
-    # nx = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']
-    # ny = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y']
-    # square = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['size']
-    # inner_square = dataset['calibration_config']['calibration_patterns'][first_pattern_key]['inner_size']
-    # objp = np.zeros((nx * ny, 3), np.float32)
-    # objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
 
     # # Compute OpenCV stereo calibration
     # calib_model = cvStereoCalibrate(objp)
