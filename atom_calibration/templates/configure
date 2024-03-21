@@ -42,9 +42,6 @@ def main():
     # ---------------------------------------------------
     command = 'rosrun atom_calibration configure_calibration_pkg -n {{ c.package_name }}'
 
-    if args['use_tfs']:  # Add -utf flag if that's the case
-        command += ' --use_tfs'
-
     if args['collect_ground_truth']:  # Add -utf flag if that's the case
         command += ' --cgt'
 
