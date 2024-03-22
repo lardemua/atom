@@ -114,7 +114,7 @@ def main():
     ap.add_argument("-ntfl","--noisy_tf_links" ,type = parse_list_of_transformations,
                     help="Pairs of links defining the transformations to which noise will be added, in the format link1:link2,linkA,linkB") 
     ap.add_argument("-ntfv","--noisy_tf_values",nargs=2,type=float,metavar=("translation","rotation"),
-                    help="Noise values to add to the transformations specified by-ntfl")
+                    help="Translation(m) and Rotation(rad)(respectively) noise values to add to the transformations specified by-ntfl")
 
     ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
                     help='Joints to add bias to', type=str, required=False)
@@ -239,8 +239,8 @@ def main():
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
     addNoiseToJointParameters(dataset, args)
 
-    # Verify both arguments were provided
 
+    # Verify both arguments were provided
     # Unfortunately, mutually inclusive arguments are not built into argparse
     # https://github.com/python/cpython/issues/55797
 
