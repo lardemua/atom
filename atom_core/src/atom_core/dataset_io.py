@@ -788,9 +788,10 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     :param args: Makes use of nig, i.e., the amount of noise to add to the initial guess atomic transformations to be
                  calibrated
     """
-    if args['noisy_initial_guess'] == [0,0]:
-        print("No noise added to transform's initial guess")
-        return
+    # TODO create a issue to discuss if its ok to skip this function call when the noise is 0
+    # if args['noisy_initial_guess'] == [0,0]:
+    #     print("No noise added to transform's initial guess")
+    #     return
     
     if args['sample_seed'] is not None:
         np.random.seed(args['sample_seed'])
@@ -819,6 +820,9 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
 
 def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
     tf_link = generateKey(calibration_parent, calibration_child, suffix='')
+
+    if tf_link not in dataset['collections'][selected_collection_key]['transforms']:
+        atomError("The atomic transformation " + Fore.BLUE + tf_link + Style.RESET_ALL + " does not exist in the transforms pool of the dataset provided.")
 
     # Get original transformation
     quat = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']

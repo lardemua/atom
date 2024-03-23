@@ -111,7 +111,8 @@ def main():
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
                     help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
     
-    ap.add_argument("-ntfl","--noisy_tf_links" ,type = parse_list_of_transformations,help='''Pairs of links defining the transformations to which noise will be added, in the format link1:link2,linkA,linkB (links defining a transformation separated by 
+    # todo changet to - instead of : 
+    ap.add_argument("-ntfl","--noisy_tf_links" ,type = parse_list_of_transformations,help='''Pairs of links defining the transformations to which noise will be added, in the format link1:link2,linkA:linkB (links defining a transformation separated by 
                     : and different pairs separeted by ,)''')
     ap.add_argument("-ntfv","--noisy_tf_values",nargs=2,type=float,metavar=("translation","rotation"),
                     help="Translation(m) and Rotation(rad)(respectively) noise values to add to the transformations specified by-ntfl")
@@ -254,8 +255,8 @@ def main():
 
     for tf_pair in args['noisy_tf_links']:
         addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
-        tf_link = generateKey(tf_pair[0],tf_pair[1])
         # debugging print
+        # tf_link = generateKey(tf_pair[0],tf_pair[1])
         # from pprint import pprint
         # pprint(dataset['collections'][selected_collection_key]['transforms'][tf_link])
         # pprint(dataset_ground_truth['collections'][selected_collection_key]['transforms'][tf_link])
