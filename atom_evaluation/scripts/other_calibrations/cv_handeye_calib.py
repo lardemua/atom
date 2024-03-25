@@ -22,67 +22,65 @@ from atom_core.atom import getTransform
 from atom_core.dataset_io import saveAtomDataset
 
 
-def cvStereoCalibrate(objp):
+def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
     # Arrays to store object points and image points from all the images.
     objpoints = []  # 3d point in real world space
-    imgpoints_l = []  # 2d points in image plane.
-    imgpoints_r = []  # 2d points in image plane.
+    imgpoints_camera = []  # 2d points in image plane.
 
     for collection_key, collection in dataset['collections'].items():
-        # Find the chess board corners
-        # TODO only works for first pattern
-        first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
-        n_points = int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['x']) * \
-            int(dataset['calibration_config']['calibration_patterns'][first_pattern_key]['dimension']['y'])
-        image_points_r = np.ones((n_points, 2), np.float32)
-        image_points_l = np.ones((n_points, 2), np.float32)
+        
+        tmp_imgpoints_camera = np.ones((number_of_corners, 2), np.float32) # temporary var
 
-        for idx, point in enumerate(collection['labels'][right_camera]['idxs']):
-            image_points_r[idx, 0] = point['x']
-            image_points_r[idx, 1] = point['y']
+        for idx, point in enumerate(collection['labels'][pattern][camera]['idxs']):
+            tmp_imgpoints_camera[idx, 0] = point['x']
+            tmp_imgpoints_camera[idx, 1] = point['y']
 
-        for idx, point in enumerate(collection['labels'][left_camera]['idxs']):
-            image_points_l[idx, 0] = point['x']
-            image_points_l[idx, 1] = point['y']
+        imgpoints_camera.append(tmp_imgpoints_camera)
+        objpoints.append(objp)            #### I don't understand this
 
-        imgpoints_l.append(image_points_l)
-        imgpoints_r.append(image_points_r)
-        objpoints.append(objp)
+    # print(imgpoints_camera)
 
     # ---------------------------------------
-    # --- Get intrinsic data for both sensors
+    # --- Get intrinsic data for the sensor
     # ---------------------------------------
     # Source sensor
-    K_r = np.zeros((3, 3), np.float32)
-    D_r = np.zeros((5, 1), np.float32)
-    K_r[0, :] = dataset['sensors'][right_camera]['camera_info']['K'][0:3]
-    K_r[1, :] = dataset['sensors'][right_camera]['camera_info']['K'][3:6]
-    K_r[2, :] = dataset['sensors'][right_camera]['camera_info']['K'][6:9]
-    D_r[:, 0] = dataset['sensors'][right_camera]['camera_info']['D'][0:5]
+    K = np.zeros((3, 3), np.float32)
+    D = np.zeros((5, 1), np.float32)
+    K[0, :] = dataset['sensors'][camera]['camera_info']['K'][0:3]
+    K[1, :] = dataset['sensors'][camera]['camera_info']['K'][3:6]
+    K[2, :] = dataset['sensors'][camera]['camera_info']['K'][6:9]
+    D[:, 0] = dataset['sensors'][camera]['camera_info']['D'][0:5]
 
-    # Target sensor
-    K_l = np.zeros((3, 3), np.float32)
-    D_l = np.zeros((5, 1), np.float32)
-    K_l[0, :] = dataset['sensors'][left_camera]['camera_info']['K'][0:3]
-    K_l[1, :] = dataset['sensors'][left_camera]['camera_info']['K'][3:6]
-    K_l[2, :] = dataset['sensors'][left_camera]['camera_info']['K'][6:9]
-    D_l[:, 0] = dataset['sensors'][left_camera]['camera_info']['D'][0:5]
-
-    height = dataset['sensors'][right_camera]['camera_info']['height']
-    width = dataset['sensors'][right_camera]['camera_info']['width']
+    height = dataset['sensors'][camera]['camera_info']['height']
+    width = dataset['sensors'][camera]['camera_info']['width']
     image_size = (height, width)
 
-    print('\n---------------------\n Starting stereo calibration ...')
+    #############################
+    # Undistort detection points
+    #############################
 
-    # Extrinsic stereo calibration
-    stereocalib_criteria = (cv2.TERM_CRITERIA_MAX_ITER +
-                            cv2.TERM_CRITERIA_EPS, 100, 1e-5)
-    flags = (cv2.CALIB_USE_INTRINSIC_GUESS)
+    print(f'Calculating undistorted corner detection coordinates...')
+    undistorted_imgpoints_camera = [] # Init matrix with points for every collection
+    
+    for i in range(0, len(imgpoints_camera)): # Iterate through the collections
+        tmp_undistorted_imgpoints_camera = cv2.undistortPoints(imgpoints_camera[i], K, D)
+        undistorted_imgpoints_camera.append(tmp_undistorted_imgpoints_camera)
 
-    ret, K_l, D_l, K_r, D_r, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_l,
-                                                              imgpoints_r, K_l, D_l, K_r,
-                                                              D_r, image_size,
-                                                              criteria=stereocalib_criteria, flags=flags)
+    exit(0)
+    
+    ########################################################################
+
+
+   # print('\n---------------------\n Starting stereo calibration ...')
+    # # Extrinsic stereo calibration
+    # stereocalib_criteria = (cv2.TERM_CRITERIA_MAX_ITER +
+    #                         cv2.TERM_CRITERIA_EPS, 100, 1e-5)
+    # flags = (cv2.CALIB_USE_INTRINSIC_GUESS)
+
+    # ret, K_l, D_l, K_r, D_r, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_l,
+    #                                                           imgpoints_r, K_l, D_l, K_r,
+    #                                                           D_r, image_size,
+    #                                                           criteria=stereocalib_criteria, flags=flags)
 
     print('\n---------------------\n Done!\n\n------\nCalibration results:\n------\n')
 
@@ -110,7 +108,7 @@ def getPatternConfig(dataset, pattern):
     square = dataset['calibration_config']['calibration_patterns'][pattern]['size']
     inner_square = dataset['calibration_config']['calibration_patterns'][pattern]['inner_size']
     objp = np.zeros((nx * ny, 3), np.float32)
-    objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+    objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2) # set of coordinates (w.r.t. the pattern frame) of the corners 
 
     return nx, ny, square, inner_square, objp
 
@@ -144,8 +142,11 @@ def main():
 
     # Remove partial detections (OpenCV does not support them)
     collections_to_delete = []
-    # TODO only works for first pattern
-    # first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]
+
+    # TODO only works for first pattern -------> Changed it to calibrate w.r.t. a pattern passed as an argument
+                                                                                                    #    ^
+    # first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]----------'
+    
     number_of_corners = int(nx) * int(ny)
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
@@ -176,7 +177,8 @@ def main():
 
     print('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
     
-    exit(0)
+    # # Compute OpenCV stereo calibration
+    cvHandEyeCalibrate(objp=objp, dataset=dataset, camera=camera, pattern=pattern, number_of_corners=number_of_corners)
 
 if __name__ == '__main__':
 
@@ -185,8 +187,6 @@ if __name__ == '__main__':
 
 
 
-    # # Compute OpenCV stereo calibration
-    # calib_model = cvStereoCalibrate(objp)
     # R = calib_model['R']
     # t = calib_model['T']
     # K_r = calib_model['K_r']
