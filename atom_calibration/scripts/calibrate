@@ -772,8 +772,13 @@ def main():
     # --- Save updated xacro
     # ---------------------------------------
     # TODO #897 now that the transforms can also come from the bagfile, this must be updated tackle this.
-    # saveResultsXacro(dataset, selected_collection_key, list(transforms_set), verbose=False)
-
+    sensors_transforms_list = list(sensors_transforms_set)
+    additional_transforms_list = list(additional_transforms_set)
+    print(sensors_transforms_list)
+    print(additional_transforms_list)
+    transforms_list = sensors_transforms_list + additional_transforms_list
+    print(transforms_list)
+    saveResultsXacro(dataset, selected_collection_key, transforms_list, verbose=False)
 
     # ---------------------------------------
     # --- Save results into yaml
