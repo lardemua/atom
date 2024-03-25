@@ -771,8 +771,9 @@ def main():
     # ---------------------------------------
     # --- Save updated xacro
     # ---------------------------------------
-    # TODO this must be adapted to the fact that transforms_set does not include all tfs now
-    saveResultsXacro(dataset, selected_collection_key, list(transforms_set), verbose=False)
+    # TODO #897 now that the transforms can also come from the bagfile, this must be updated tackle this.
+    # saveResultsXacro(dataset, selected_collection_key, list(transforms_set), verbose=False)
+
 
     # ---------------------------------------
     # --- Save results into yaml

@@ -76,7 +76,11 @@ def main():
     experiments = list(set([x[:-suffix_size] for x in folders]))  # Remove the "_runXX" suffix
 
     # files_to_process = ['comparison_to_ground_truth_transforms.csv', 'comparison_to_ground_truth_joints.csv']
-    files_to_process = ['single_rgb_evaluation.csv']
+    # files_to_process = ['single_rgb_evaluation.csv']
+    abspath = os.listdir(os.path.abspath(args['results_folder']) + '/' + folders[0])
+    filenames = abspath
+    files_to_process = [filename for filename in filenames if filename.endswith('.csv')]
+    print(files_to_process)
 
     for experiment in experiments:
         print('Averaging experiment ' + Fore.BLUE + experiment + Style.RESET_ALL)
