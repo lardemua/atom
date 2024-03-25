@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # stdlib
+import json
 import os
 import sys
 import argparse
@@ -213,7 +214,7 @@ if __name__ == "__main__":
         tictoc_bag_creation = TicToc()
         tictoc_bag_creation.tic()
 
-        # TODO should'nt here be used the generateName function? 
+        # TODO should'nt here be used the generateName function?
         atom_bag_file = bag_file[:-4] + '_atom_filtered.bag'
         atom_bag_file_relative = bag_file_relative[:-4] + '_atom_filtered.bag'
         selected_bag_file_relative = atom_bag_file_relative
@@ -410,7 +411,6 @@ if __name__ == "__main__":
             if not msg.header.frame_id == frame_in_config:
                 atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' calibration config defined link ' + Fore.YELLOW + frame_in_config + Fore.BLACK + ' but bagfile messages on topic ' +
                           Fore.BLUE + topic_in_config + Fore.BLACK + ' have header.frame_id ' + Fore.YELLOW + msg.header.frame_id + Fore.BLACK + '. These should be the same! Check #514.' + Style.RESET_ALL)
-                exit(0)
             break  # check consistency only for the first message
     atomPrintOK()
 
@@ -470,16 +470,6 @@ if __name__ == "__main__":
         if not edge['type'] == 'fixed':
             atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX + parent +
                       ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
-
-    if config['additional_tfs'] is not None:
-        for additional_tf_key, additional_tf in config['additional_tfs'].items():
-            parent = additional_tf['parent_link']
-            child = additional_tf['child_link']
-            edge = nx_graph.get_edge_data(parent, child)
-
-            if not edge['type'] == 'fixed':
-                atomError('Additional_tf  ' + Fore.BLUE + additional_tf_key + Style.RESET_ALL + ' defines transformation ' + Fore.LIGHTMAGENTA_EX +
-                          parent + ' to ' + child + Style.RESET_ALL + ' to be calibrated but this transformation is not static and therefore cannot be calibrated.')
 
     # Verify if urdf contains joints defined to be calibrated
     if config['joints'] is not None:
@@ -1010,17 +1000,17 @@ if __name__ == "__main__":
         elif modality == 'lidar2d':
             rendered = env.get_template('/rviz/LaserScan.rviz.j2').render(c={'Name': sensor_key + '-LaserScan',
                                                                           'Topic': topic,
-                                                                          'Color': color})
+                                                                             'Color': color})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # Labels
             rendered = env.get_template('/rviz/PointCloud2.rviz.j2').render(c={'Name': sensor_key + '-Labels-PointCloud2',
                                                                             'Topic': topic + '/labeled',
-                                                                            'Color': color,
-                                                                            'Color_Transformer': 'FlatColor',
-                                                                            'Style': 'Spheres',
-                                                                            'Size__m_': 0.2,
-                                                                            'Alpha': 0.05})
+                                                                               'Color': color,
+                                                                               'Color_Transformer': 'FlatColor',
+                                                                               'Style': 'Spheres',
+                                                                               'Size__m_': 0.2,
+                                                                               'Alpha': 0.05})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # TODO Add markers to display data clusters
@@ -1036,21 +1026,21 @@ if __name__ == "__main__":
             # Raw data
             rendered = env.get_template('/rviz/PointCloud2.rviz.j2').render(c={'Name': sensor_key + '-PointCloud2',
                                                                             'Topic': topic,
-                                                                            'Color': color,
-                                                                            'Color_Transformer': 'FlatColor',
-                                                                            'Style': 'Spheres',
-                                                                            'Size__m_': 0.02,
-                                                                            'Alpha': 1})
+                                                                               'Color': color,
+                                                                               'Color_Transformer': 'FlatColor',
+                                                                               'Style': 'Spheres',
+                                                                               'Size__m_': 0.02,
+                                                                               'Alpha': 1})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # Labeled data
             rendered = env.get_template('/rviz/PointCloud2.rviz.j2').render(c={'Name': sensor_key + '-Labels-PointCloud2',
                                                                             'Topic': topic + '/labeled',
-                                                                            'Color': color,
-                                                                            'Color_Transformer': 'FlatColor',
-                                                                            'Style': 'Spheres',
-                                                                            'Size__m_': 0.2,
-                                                                            'Alpha': 0.05})
+                                                                               'Color': color,
+                                                                               'Color_Transformer': 'FlatColor',
+                                                                               'Style': 'Spheres',
+                                                                               'Size__m_': 0.2,
+                                                                               'Alpha': 0.05})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
             # Interactive marker for the labeler
@@ -1109,7 +1099,7 @@ if __name__ == "__main__":
             labeled_topic = generateLabeledTopic(topic, type='3d')
             rendered = env.get_template('/rviz/LaserScan.rviz.j2').render(c={'Name': sensor_key + '-Labels-LaserScan',
                                                                           'Topic': labeled_topic,
-                                                                          'Color': color})
+                                                                             'Color': color})
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'lidar3d':
@@ -1220,14 +1210,14 @@ if __name__ == "__main__":
             labeled_topic = generateLabeledTopic(topic, type='3d')
             rendered = env.get_template('/rviz/MarkerArray.rviz.j2').render(c={'Name': sensor_key + '-Labels-3D',
                                                                             'Marker_Topic': labeled_topic}
-                                                                         )
+                                                                            )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'lidar2d':
             labeled_topic = generateLabeledTopic(topic, type='2d')
             rendered = env.get_template('/rviz/MarkerArray.rviz.j2').render(c={'Name': sensor_key + '-Labels3D',
                                                                             'Marker_Topic': labeled_topic}
-                                                                         )
+                                                                            )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
         elif modality == 'lidar3d':
@@ -1235,11 +1225,19 @@ if __name__ == "__main__":
             labeled_topic = generateLabeledTopic(topic, type='3d')
             rendered = env.get_template('/rviz/MarkerArray.rviz.j2').render(c={'Name': sensor_key + '-LabeledData',
                                                                             'Marker_Topic': labeled_topic}
-                                                                         )
+                                                                            )
             displays.append(yaml.load(rendered, Loader=yaml.SafeLoader))
 
     rviz['Visualization Manager']['Displays'] = displays
     yaml.dump(rviz, open(package_path + '/rviz/' + rviz_calibrate, 'w'))
+
+    # Create the transforms_graph json file
+    transforms_graph_file = package_path + '/calibration/transforms_graph.json'
+    print('Saving transforms graph to ' + Fore.BLUE + transforms_graph_file + Style.RESET_ALL)
+    # nx_graph_json = nx.node_link_data(nx_graph, link="edges", source="parent", target="child")
+    nx_graph_json = nx.node_link_data(nx_graph)
+    with open(transforms_graph_file, 'w') as f:
+        json.dump(nx_graph_json, f, indent=2, sort_keys=True)
 
     bag.close()  # close the bag file.
 
