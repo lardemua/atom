@@ -224,6 +224,7 @@ def main():
     # ---------------------------------------
     # --- Add noise to the transformations and joint parameters to be calibrated.
     # ---------------------------------------
+
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
     addNoiseToJointParameters(dataset, args)
@@ -352,7 +353,7 @@ def main():
 
                 # push six parameters for each transform to be optimized.
                 ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
-                                                        collection_name=selected_collection_key)
+                                                         collection_name=selected_collection_key)
 
                 initial_transform = getterTransform(dataset, transform_key=transform_key,
                                                     collection_name=selected_collection_key)
@@ -367,16 +368,41 @@ def main():
                 opt.pushParamVector(
                     group_name=transform_key, data_key="dataset", bound_max=bound_max, bound_min=bound_min,
                     getter=partial(getterTransform, transform_key=transform_key,
-                                collection_name=selected_collection_key,),
+                                   collection_name=selected_collection_key,),
                     setter=partial(setterTransform,
-                                transform_key=transform_key, collection_name=None),
+                                   transform_key=transform_key, collection_name=None),
                     suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
                     ground_truth_values=ground_truth_transform)
 
-            elif dataset['transforms'][transform_key]['type'] == 'dynamic':
+            elif dataset['transforms'][transform_key]['type'] == 'multiple':
 
+                # iterate all collections
+                for collection_key, collection in dataset["collections"].items():
+
+                    # push six parameters for each transform to be optimized.
+                    ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
+                                                             collection_name=collection_key)
+
+                    initial_transform = getterTransform(dataset, transform_key=transform_key,
+                                                        collection_name=collection_key)
+
+                    if transform_key in anchored_transform_keys:
+                        bound_max = [x + 2 * sys.float_info.epsilon for x in initial_transform]
+                        bound_min = [x - 2 * sys.float_info.epsilon for x in initial_transform]
+                    else:
+                        bound_max = [+np.inf for x in initial_transform]
+                        bound_min = [-np.inf for x in initial_transform]
+
+                    opt.pushParamVector(group_name="c" + collection_key + "_" + transform_key,
+                                        data_key="dataset", bound_max=bound_max, bound_min=bound_min,
+                                        getter=partial(getterTransform, transform_key=transform_key,
+                                                       collection_name=collection_key),
+                                        setter=partial(setterTransform, transform_key=transform_key,
+                                                       collection_name=collection_key),
+                                        suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+                                        ground_truth_values=ground_truth_transform)
             else:
-                atomError('Unknown transform type.')
+                atomError('Unknown transform type ' + dataset['transforms'][transform_key]['type'])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add intrinsic rgb sensor parameters
@@ -507,7 +533,6 @@ def main():
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add joint(s) parameters
     # ---------------------------------------
-
     if not dataset['calibration_config']['joints'] == "":
 
         for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
@@ -563,14 +588,23 @@ def main():
 
                 # Issue #543: Create the list of transformations that influence this residual by analyzing the transformation chain.
                 params = []
-                # because not sure if we can use a set for some of the next steps
-                transforms_list = list(transforms_set)
+
+                # Sensor based residuals
+                transforms_list = list(sensors_transforms_set)
                 for transform_in_chain in sensor['chain']:
                     transform_key = generateKey(
                         transform_in_chain["parent"], transform_in_chain["child"])
                     if transform_key in transforms_list:
-                        params.extend(
-                            opt.getParamsContainingPattern(transform_key))
+                        params.extend(opt.getParamsContainingPattern(transform_key))
+
+                # Additional_tf based residuals
+                if dataset['calibration_config']['additional_tfs'] is not None:
+                    for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+                        transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+                        if dataset['transforms'][transform_key]['type'] == 'fixed':
+                            params.extend(opt.getParamsContainingPattern(transform_key))
+                        elif dataset['transforms'][transform_key]['type'] == 'multiple':
+                            params.extend(opt.getParamsContainingPattern("c" + collection_key + "_" + transform_key))
 
                 # Intrinsics parameters
                 if sensor["modality"] == "rgb" and args["optimize_intrinsics"]:
@@ -665,7 +699,6 @@ def main():
     opt.computeSparseMatrix()
     opt.printSparseMatrix()
     opt.printParameters()
-    exit(0)
 
     # ---------------------------------------
     # --- Get a normalizer for each residual type
