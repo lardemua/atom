@@ -349,7 +349,9 @@ def main():
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
 
-            if dataset['transforms'][transform_key]['type'] == 'fixed':
+            # because of #900, and for retrocompatibility with old datasets, we will assume that if the transforms
+            # field does not exist in the dataset, then the transformation is fixed
+            if 'transforms' not in dataset or dataset['transforms'][transform_key]['type'] == 'fixed':
 
                 # push six parameters for each transform to be optimized.
                 ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
