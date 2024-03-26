@@ -71,7 +71,7 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list, verbose=
                 break
 
         if not found:
-            raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
+            continue  # see $897
 
     # Output optimized joints
     calibration_config = dataset['calibration_config']

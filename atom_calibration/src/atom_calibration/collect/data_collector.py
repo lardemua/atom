@@ -1,5 +1,6 @@
 # stdlib
 from functools import partial
+import json
 import os
 import time
 import getpass
@@ -14,6 +15,7 @@ import atom_core.config_io
 import atom_core.dataset_io
 
 # 3rd-party
+from networkx.readwrite import json_graph
 import rospy
 import atom_msgs.srv
 import tf
@@ -72,6 +74,7 @@ class DataCollector:
                                                         tf_static_topic='tf_static')
 
         self.sensors = {}
+        self.transforms = {}
         self.server = server
         self.menu_handler = menu_handler
         self.data_stamp = 0
@@ -123,6 +126,20 @@ class DataCollector:
         print('Initializing patterns ... ', end='')
         self.patterns_dict = initializePatternsDict(self.config)
         atomPrintOK()
+
+        # load the transforms_graph.json
+        transforms_graph_file = '/home/mike/workspaces/catkin_ws/src/calibration/robots/softbot/softbot_calibration/calibration/transforms_graph.json'
+        f = open(transforms_graph_file, 'r')
+        d = json.load(f)
+
+        # Create a dictionary where the keys are the transform keys in the format
+        # parent-child.
+        for edge in d['links']:
+            transform_key = generateKey(edge['source'], edge["target"])
+            # remove keys source and target from edge before saving
+            del edge['source']
+            del edge['target']
+            self.transforms[transform_key] = edge  # only the edges of the graph are needed
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
@@ -554,6 +571,7 @@ class DataCollector:
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
                    'sensors': self.sensors,
+                   'transforms': self.transforms,
                    'patterns': self.patterns_dict}
 
         print('Estimating pattern poses for collection ...')
