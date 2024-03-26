@@ -816,7 +816,9 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
     transform_key = generateKey(calibration_parent, calibration_child, suffix='')
 
-    if dataset['transforms'][transform_key]['type'] == 'fixed':
+    # because of #900, and for retrocompatibility with old datasets, we will assume that if the transforms field does
+    # not exist in the dataset, then the transformation is fixed
+    if 'transforms' not in dataset or dataset['transforms'][transform_key]['type'] == 'fixed':
 
         # Get original transformation
         quat = dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat']
