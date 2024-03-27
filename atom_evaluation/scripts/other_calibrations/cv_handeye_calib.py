@@ -66,7 +66,19 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
         tmp_undistorted_imgpoints_camera = cv2.undistortPoints(imgpoints_camera[i], K, D)
         undistorted_imgpoints_camera.append(tmp_undistorted_imgpoints_camera)
 
+    #####################################
+    # Get transform from base to cam (Z)
+    #####################################
+
+    # Hard coded for now
+    tmp_transforms = dataset['collections']['006']['transforms']
+    base_T_cam = getTransform('base_link', 'rgb_world_link', tmp_transforms)
+    print(base_T_cam)
     exit(0)
+
+    #####################################
+    # Get transform from 
+
     
     ########################################################################
 
