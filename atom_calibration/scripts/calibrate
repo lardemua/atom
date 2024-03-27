@@ -382,7 +382,9 @@ def main():
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
 
-            if dataset['transforms'][transform_key]['type'] == 'fixed':
+            # because of #900, and for retrocompatibility with old datasets, we will assume that if the transforms
+            # field does not exist in the dataset, then the transformation is fixed
+            if 'transforms' not in dataset or dataset['transforms'][transform_key]['type'] == 'fixed':
 
                 # push six parameters for each transform to be optimized.
                 ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
@@ -807,10 +809,7 @@ def main():
     # TODO #897 now that the transforms can also come from the bagfile, this must be updated tackle this.
     sensors_transforms_list = list(sensors_transforms_set)
     additional_transforms_list = list(additional_transforms_set)
-    print(sensors_transforms_list)
-    print(additional_transforms_list)
     transforms_list = sensors_transforms_list + additional_transforms_list
-    print(transforms_list)
     saveResultsXacro(dataset, selected_collection_key, transforms_list, verbose=False)
 
     # ---------------------------------------
