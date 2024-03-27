@@ -128,6 +128,7 @@ class DataCollector:
         atomPrintOK()
 
         # load the transforms_graph.json
+        # TODO THIS IS HARDCODED
         transforms_graph_file = '/home/mike/workspaces/catkin_ws/src/calibration/robots/softbot/softbot_calibration/calibration/transforms_graph.json'
         f = open(transforms_graph_file, 'r')
         d = json.load(f)
