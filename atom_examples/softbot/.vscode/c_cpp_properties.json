@@ -1,0 +1,33 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/brunofavs/atom_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/brunofavs/catkin_ws/devel/include/**",
+        "/home/brunofavs/catkin_ws/src/ROS_mess_arround/RobutlerAlberto/alberto_bringup/include/**",
+        "/home/brunofavs/catkin_ws/src/ROS_mess_arround/RobutlerAlberto/alberto_missions/include/**",
+        "/home/brunofavs/catkin_ws/src/ROS_mess_arround/RobutlerAlberto/alberto_navigation/include/**",
+        "/home/brunofavs/catkin_ws/src/ROS_mess_arround/beginner_tutorials/include/**",
+        "/home/brunofavs/catkin_ws/src/darknet_ros/darknet_ros/include/**",
+        "/home/brunofavs/atom_ws/src/atom/atom_rviz_plugins/selected_points_publisher/include/**",
+        "/home/brunofavs/catkin_ws/src/steer_drive_ros/steer_bot_hardware_gazebo/include/**",
+        "/home/brunofavs/catkin_ws/src/steer_drive_ros/steer_drive_controller/include/**",
+        "/home/brunofavs/catkin_ws/src/steer_drive_ros/stepback_and_steerturn_recovery/include/**",
+        "/home/brunofavs/catkin_ws/src/turtlebot3/turtlebot3_slam/include/**",
+        "/home/brunofavs/atom_ws/src/universal_robot/ur_kinematics/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
