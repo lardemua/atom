@@ -29,7 +29,7 @@ from pytictoc import TicToc
 
 # local packages
 from atom_core.utilities import atomPrintOK, atomWarn, checkDirectoryExistence, atomError, atomStartupPrint, getJointParentChild, verifyAnchoredSensor
-from atom_core.naming import generateLabeledTopic
+from atom_core.naming import generateKey, generateLabeledTopic
 from atom_core.system import execute
 from atom_core.rosbag2 import is_rosbag2, convert_rosbag2_to_rosbag1
 from colorama import Style, Fore
@@ -559,6 +559,35 @@ if __name__ == "__main__":
         atomError('There are two or more calibration patterns with the same aruco dictionary. This is not a valid configuration. Repeated aruco dictionaries are: ' + str(list(set(duplicates))))
 
     atomPrintOK()
+
+    # Verify if there are equal transformations in the config file
+    # https://github.com/lardemua/atom/issues/895
+
+    print("Checking if there transformations in the config file are unique ...")
+    transforms_list = []
+
+    for sensor_key, sensor in config['sensors'].items():
+        transform_key = generateKey(sensor["parent_link"], sensor["child_link"])
+        transforms_list.append(transform_key)
+
+    if config['additional_tfs'] is not None:
+        for additional_tf_key, additional_tf in config['additional_tfs'].items():
+            transform_key = generateKey(sensor["parent_link"], sensor["child_link"])
+            transforms_list.append(transform_key)
+
+    print('List of transformations to optimize is: ' + Fore.BLUE + str(transforms_list) + Style.RESET_ALL)
+    transforms_set = set(transforms_list)
+    if len(transforms_list) != len(transforms_set):
+        tmp_list = []
+        duplicate_transforms = []
+        for transform in transforms_list:
+            if transform not in tmp_list:
+                tmp_list.append(transform)
+            else:
+                duplicate_transforms.append(transform)  # this method catches the first
+
+        atomError('Config file has duplicate transform(s) ' + Fore.BLUE +
+                  str(duplicate_transforms) + Style.RESET_ALL + '. Invalid configuration.')
 
     # --------------------------------------------------------------------------
     # Create dot calibration graph (used for printing out a summary)
