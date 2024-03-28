@@ -1,0 +1,44 @@
+#
+#           █████╗ ████████╗ ██████╗ ███╗   ███╗
+#          ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║
+#          ███████║   ██║   ██║   ██║██╔████╔██║
+#          ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║
+#   __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _
+#  / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |
+#  | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __
+#  |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+#  | | | | | (_| | | | | | |  __/\ v  v / (_) | |  |   <
+#  |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
+#  https://github.com/lardemua/atom
+
+# this yml file contains a set of commands to be run in batch.
+# use jinja2 syntax for referencing variables
+
+# Preprocessing will run only once before all experiments.
+preprocessing:
+  cmd: |
+    ls /tmp
+
+# Define batches to run
+experiments:
+{%- for e in experiments %}
+  {% for run in runs %}
+    {{ e.name }}_run{{ '%03d' % loop.index }}:
+      cmd: |
+        rosrun atom_calibration calibrate -json {{ dataset_path }}/dataset.json \
+        -v -max_nfev 2 -ss {{ run }} \
+        -nig {{ e.nig_value }} {{ e.nig_value }} \
+        && \
+        rosrun atom_evaluation rgb_to_rgb_evaluation \
+        -train_json {{ dataset_path }}/atom_calibration.json \
+        -test_json $ATOM_DATASETS/softbot/train/dataset.json \
+        -ss front_left_camera -st front_right_camera \
+        -sfr -sfrn /tmp/rgb_rgb_evaluation.csv
+      files_to_collect:
+        - '{{ dataset_path }}/atom_calibration.json'
+        - '{{ dataset_path }}/atom_calibration_params.yml'
+        - '{{ dataset_path }}/command_line_args.yml'
+        - '/tmp/rgb_rgb_evaluation.csv'
+  {%- endfor %}
+{%- endfor %}
+# End the loop
