@@ -20,6 +20,7 @@ from collections import OrderedDict
 from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
 from atom_core.dataset_io import saveAtomDataset
+from atom_core.geometry import traslationRodriguesToTransform
 
 
 def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
@@ -67,50 +68,54 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
         undistorted_imgpoints_camera.append(tmp_undistorted_imgpoints_camera)
 
     #####################################
-    # Get transform from base to cam (Z)
+    # Get transform from target to cam
     #####################################
 
-    # Hard coded for now
+    # NOTE: The documentation calls this the transform from world to cam because in their example (which is eye-in-hand), their pattern's frame is their world frame. This is not the case in ours. So when the documentation mentions the world to cam tf, it corresponds to our pattern/target to camera tf. (I think.)
+
+    # Use solvePnP() to get this transformation
+
+    print('Calculating transform from camera to pattern for collection 006....')
+
+    _, rvec, tvec = cv2.solvePnP(objp, undistorted_imgpoints_camera[0], K, D)
+
+    print(f'rvec = {rvec}')
+
+    print(f'tvec = {tvec}')
+
+    # Convert it into an homogenous transform
+    cam_optical_frame_T_pattern = traslationRodriguesToTransform(tvec,rvec)
+    
+    print(f'Transform from the camera\'s optical frame to the pattern frame = {cam_optical_frame_T_pattern}')
+
+    # Get tf from camera's optical frame to camera frame
     tmp_transforms = dataset['collections']['006']['transforms']
-    base_T_cam = getTransform('base_link', 'rgb_world_link', tmp_transforms)
-    print(base_T_cam)
+    cam_T_cam_optical_frame = getTransform('rgb_world_link','rgb_world_optical_frame', tmp_transforms)
+
+    print(f'Transform from cam to cam optical = {cam_T_cam_optical_frame}')
+
+    cam_T_pattern = np.dot(cam_T_cam_optical_frame, cam_optical_frame_T_pattern)
+
+    print(f'Transform from camera to pattern = {cam_T_pattern}')
+
+
+    # I think I need to invert the transform matrix
+    
+
+    ################################################
+    # Get transform from base to gripper
+    ################################################
+    
+    # Hard coded for now, testin w/ one collection before iterating through all collections
+    base_T_gripper = getTransform('base_link', 'flange', tmp_transforms)
+    # print(base_T_gripper)
+
+    ################################################
+    # Calibrate
+    ################################################
     exit(0)
 
-    #####################################
-    # Get transform from 
-
-    
-    ########################################################################
-
-
-   # print('\n---------------------\n Starting stereo calibration ...')
-    # # Extrinsic stereo calibration
-    # stereocalib_criteria = (cv2.TERM_CRITERIA_MAX_ITER +
-    #                         cv2.TERM_CRITERIA_EPS, 100, 1e-5)
-    # flags = (cv2.CALIB_USE_INTRINSIC_GUESS)
-
-    # ret, K_l, D_l, K_r, D_r, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_l,
-    #                                                           imgpoints_r, K_l, D_l, K_r,
-    #                                                           D_r, image_size,
-    #                                                           criteria=stereocalib_criteria, flags=flags)
-
-    print('\n---------------------\n Done!\n\n------\nCalibration results:\n------\n')
-
-    print('K_left', K_l)
-    print('D_left', D_l)
-    print('K_right', K_r)
-    print('D_right', D_r)
-    print('R', R)
-    print('T', T)
-    print('E', E)
-    print('F', F)
-
-    camera_model = dict([('K_l', K_l), ('K_r', K_r), ('D_l', D_l),
-                         ('D_r', D_r), ('R', R), ('T', T),
-                         ('E', E), ('F', F)])
-
-    cv2.destroyAllWindows()
-    return camera_model
+    cv2.calibrateRobotWorldHandEye()
 
 
 def getPatternConfig(dataset, pattern):
@@ -154,10 +159,6 @@ def main():
 
     # Remove partial detections (OpenCV does not support them)
     collections_to_delete = []
-
-    # TODO only works for first pattern -------> Changed it to calibrate w.r.t. a pattern passed as an argument
-                                                                                                    #    ^
-    # first_pattern_key = list(dataset['calibration_config']['calibration_patterns'].keys())[0]----------'
     
     number_of_corners = int(nx) * int(ny)
     for collection_key, collection in dataset['collections'].items():
