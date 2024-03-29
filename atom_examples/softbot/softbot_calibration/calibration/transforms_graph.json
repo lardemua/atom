@@ -1,0 +1,525 @@
+{
+  "directed": true,
+  "graph": {},
+  "links": [
+    {
+      "child": "base_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "base_joint",
+      "joint_params_calibrated": null,
+      "parent": "base_footprint",
+      "source": "base_footprint",
+      "target": "base_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "wheel_left_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "wheel_left_joint",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "wheel_left_link",
+      "type": "continuous",
+      "weight": 1
+    },
+    {
+      "child": "wheel_right_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "wheel_right_joint",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "wheel_right_link",
+      "type": "continuous",
+      "weight": 1
+    },
+    {
+      "child": "caster_back_right_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "caster_back_right_joint",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "caster_back_right_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "caster_back_left_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "caster_back_left_joint",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "caster_back_left_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "imu_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "imu_joint",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "imu_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "platform_support_leg1_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "base_link_to_platform_support_leg1_link",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "platform_support_leg1_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "platform_support_leg2_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "base_link_to_platform_support_leg2_link",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "platform_support_leg2_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "platform_support_leg3_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "base_link_to_platform_support_leg3_link",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "platform_support_leg3_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "platform_support_leg4_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "base_link_to_platform_support_leg4_link",
+      "joint_params_calibrated": null,
+      "parent": "base_link",
+      "source": "base_link",
+      "target": "platform_support_leg4_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "lidar3d_plate_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "platform_support_leg1_link_to_lidar3d_plate_link",
+      "joint_params_calibrated": null,
+      "parent": "platform_support_leg1_link",
+      "source": "platform_support_leg1_link",
+      "target": "lidar3d_plate_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_left_camera_support_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "platform_support_leg3_link_to_front_left_camera_support_link",
+      "joint_params_calibrated": null,
+      "parent": "platform_support_leg3_link",
+      "source": "platform_support_leg3_link",
+      "target": "front_left_camera_support_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_right_camera_support_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "platform_support_leg4_link_to_front_right_camera_support_link",
+      "joint_params_calibrated": null,
+      "parent": "platform_support_leg4_link",
+      "source": "platform_support_leg4_link",
+      "target": "front_right_camera_support_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "lidar3d_base_link",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": "lidar3d_base_mount_joint",
+      "joint_params_calibrated": null,
+      "parent": "lidar3d_plate_link",
+      "source": "lidar3d_plate_link",
+      "target": "lidar3d_base_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "lidar3d",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "lidar3d_base_scan_joint",
+      "joint_params_calibrated": null,
+      "parent": "lidar3d_base_link",
+      "source": "lidar3d_base_link",
+      "target": "lidar3d",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_left_camera_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_left_camera_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_left_camera_support_link",
+      "source": "front_left_camera_support_link",
+      "target": "front_left_camera_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_left_camera_rgb_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": "front_left_camera_rgb_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_left_camera_link",
+      "source": "front_left_camera_link",
+      "target": "front_left_camera_rgb_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_left_camera_depth_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_left_camera_depth_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_left_camera_link",
+      "source": "front_left_camera_link",
+      "target": "front_left_camera_depth_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_left_camera_rgb_optical_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_left_camera_rgb_optical_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_left_camera_rgb_frame",
+      "source": "front_left_camera_rgb_frame",
+      "target": "front_left_camera_rgb_optical_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_left_camera_depth_optical_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_left_camera_depth_optical_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_left_camera_depth_frame",
+      "source": "front_left_camera_depth_frame",
+      "target": "front_left_camera_depth_optical_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_right_camera_link",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_right_camera_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_right_camera_support_link",
+      "source": "front_right_camera_support_link",
+      "target": "front_right_camera_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_right_camera_rgb_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": "front_right_camera_rgb_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_right_camera_link",
+      "source": "front_right_camera_link",
+      "target": "front_right_camera_rgb_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_right_camera_depth_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_right_camera_depth_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_right_camera_link",
+      "source": "front_right_camera_link",
+      "target": "front_right_camera_depth_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_right_camera_rgb_optical_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_right_camera_rgb_optical_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_right_camera_rgb_frame",
+      "source": "front_right_camera_rgb_frame",
+      "target": "front_right_camera_rgb_optical_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "front_right_camera_depth_optical_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "front_right_camera_depth_optical_joint",
+      "joint_params_calibrated": null,
+      "parent": "front_right_camera_depth_frame",
+      "source": "front_right_camera_depth_frame",
+      "target": "front_right_camera_depth_optical_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "pattern_link",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": null,
+      "joint_params_calibrated": null,
+      "parent": "world",
+      "source": "world",
+      "target": "pattern_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "base_footprint",
+      "from_bag": true,
+      "is_transformation_calibrated": false,
+      "parent": "world",
+      "source": "world",
+      "target": "base_footprint",
+      "type": "multiple",
+      "weight": 1
+    }
+  ],
+  "multigraph": false,
+  "nodes": [
+    {
+      "from_bag": false,
+      "id": "base_footprint",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "base_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "wheel_left_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "wheel_right_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "caster_back_right_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "caster_back_left_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "imu_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "platform_support_leg1_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "platform_support_leg2_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "platform_support_leg3_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "platform_support_leg4_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "lidar3d_plate_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "lidar3d_base_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "lidar3d",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": "lidar3d"
+    },
+    {
+      "from_bag": false,
+      "id": "front_left_camera_support_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_left_camera_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_left_camera_rgb_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_left_camera_rgb_optical_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": "front_left_camera"
+    },
+    {
+      "from_bag": false,
+      "id": "front_left_camera_depth_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_left_camera_depth_optical_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_right_camera_support_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_right_camera_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_right_camera_rgb_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_right_camera_rgb_optical_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": "front_right_camera"
+    },
+    {
+      "from_bag": false,
+      "id": "front_right_camera_depth_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "front_right_camera_depth_optical_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "id": "pattern_link",
+      "is_world": false,
+      "pattern": "pattern_1",
+      "sensor_data": null
+    },
+    {
+      "id": "world",
+      "is_world": true,
+      "pattern": null,
+      "sensor_data": null
+    }
+  ]
+}
