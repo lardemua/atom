@@ -74,6 +74,7 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
     # NOTE: The documentation calls this the transform from world to cam because in their example (which is eye-in-hand), their pattern's frame is their world frame. This is not the case in ours. So when the documentation mentions the world to cam tf, it corresponds to our pattern/target to camera tf. (I think.)
 
     # Use solvePnP() to get this transformation
+    # Need to check if these calculations (from here to l. 108) are correct
 
     print('Calculating transform from camera to pattern for collection 006....')
 
@@ -100,7 +101,12 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
 
 
     # I think I need to invert the transform matrix
+    pattern_T_cam = np.linalg.inv(cam_T_pattern)
     
+    #Split into R and t matrices for the calibration function
+    pattern_R_cam = pattern_T_cam[0:3, 0:3]
+    pattern_t_cam = (pattern_T_cam[0:3, 3]).T
+
 
     ################################################
     # Get transform from base to gripper
@@ -108,14 +114,20 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
     
     # Hard coded for now, testin w/ one collection before iterating through all collections
     base_T_gripper = getTransform('base_link', 'flange', tmp_transforms)
-    # print(base_T_gripper)
+
+    # Split into R and t matrices for the calibration function
+    base_R_gripper = base_T_gripper[0:3,0:3]
+    base_t_gripper = (base_T_gripper[0:3, 3]).T
+
 
     ################################################
     # Calibrate
     ################################################
+
+    cv2.calibrateRobotWorldHandEye(pattern_R_cam, pattern_t_cam, base_R_gripper, base_t_gripper) # THIS IS PRODUCING AN ERROR, SEE ISSUE #912
+
     exit(0)
 
-    cv2.calibrateRobotWorldHandEye()
 
 
 def getPatternConfig(dataset, pattern):
