@@ -13,4 +13,5 @@ System |           Name   |   Description
 <img src="spjbot/docs/table.png" width="100%"/> | [spjbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/spjbot) | Calibration of prismatic joints.
 <img src="rihmpbot/docs/table.png" width="100%"/> | [rihmpbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/rihmpbot) | Using multiple calibration patterns.
  <img src="riwmpbot/docs/table.png" width="100%"/> | [riwmpbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/riwmpbot) | Improving calibration with multiple patterns.
+ <img src="softbot/docs/softbot_bringup.png" width="100%"/> | [softbot](https://github.com/lardemua/atom/tree/noetic-devel/atom_examples/softbot) | Calibrating robotic vehicles
 

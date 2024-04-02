@@ -1,4 +1,15 @@
 # SOFTBot
+
+## Downloadables
+[Train bagfile](https://gofile.me/7nlMj/PAmVjWhxy)
+[Train dataset](https://gofile.me/7nlMj/5XvOf6TS2)
+
+[Test bagfile](https://gofile.me/7nlMj/czx2rL51T)
+[Test dataset](https://gofile.me/7nlMj/P7BflqUVp) 
+
+
+
+## Introduction
 **S**ensors to **O**dom **F**rame **T**est ro**B**ot (softbot) is a conceptual robot designed to test advanced calibration methodologies for mobile robotic platforms. In particular, this platform is focused on the calibration of sensors such as rgb cameras or LiDARs w.r.t. the coordination frame of the motion model of the robot. 
 
 We refer to this functional coordinate frame, around which the robot rotates as it moves, as the **odom frame**, since it is used to compute the odometry. Naturally, the odom frame changes position in accordance with the motion model of the robot, e.g. differential drive, ackerman steering etc. 
@@ -72,15 +83,7 @@ After configuring, the user can play the bag file:
 
     roslaunch softbot_calibration playbag.launch
 
-Here is a pre-recorded bagfile should the user decide to skip the recording and proceed to the calibration itself. 
-
-**PLACEHOLDER FOR BAGFILE LINK
-E
-E
-E
-E
-E
-E**
+Here is a pre-recorded [bagfile](https://gofile.me/7nlMj/PAmVjWhxy) should the user decide to skip the recording and proceed to the calibration itself. 
 
 **Note :**
 Previously ATOM wasn't prepared to lead with transformations not defined in the xacro seamlessly, as is the case here in the transformation from the odom's frame to the robot's `base_footprint` hence it was required to configure with a now depracated flag `-utf`, which would discard the transformations from the xacro and use exclusively the data from the bagfile. This approach had the big downside that the user would lost all joint related info such as the type of joint. Now ATOM leads with this technicality seamlessly, the user doesn't have to use anything.
@@ -111,15 +114,7 @@ The user's goal is to make sure the **only** green points being those of the pat
 
 More information regarding this topic can be found in [*Atom*'s wiki](https://lardemua.github.io/atom_documentation/procedures/#3d-lidar-labeling).
 
-Here is a pre-labeled dataset should the user decide to skip the recording and proceed to the calibration itself. 
-
-**PLACEHOLDER FOR TRAIN DATASET LINK
-E
-E
-E
-E
-E
-E**
+Here is a pre-labeled [dataset](https://gofile.me/7nlMj/5XvOf6TS2) should the user decide to skip the recording and proceed to the calibration itself. 
 
 Collection |           front_left_camera        | front_right_camera            |           lidar3d/points
 :---------:|:----------------------------------:|:-----------------------------:|:------------------------------:
@@ -177,14 +172,9 @@ And by comparing with the **initial position ghost** (-ipg), the user can visual
 
 ## Evaluation
 
-Before anything, the user must annotate the pattern in the RGB images : (To do so it's necessary a test dataset, which the user can record or download here **PLACEHOLDER FOR Test DATASET LINK
-E
-E
-E
-E
-E
-E**
-)
+Before anything, the user must annotate the pattern in the RGB images : (To do so it's necessary a test [dataset](https://gofile.me/7nlMj/P7BflqUVp) & [bagfile](https://gofile.me/7nlMj/czx2rL51T), which the user can record or download here. 
+
+**Note:** The *test bagfile* isn't mandatory to have for evaluation, however it's nice to have if the user decides to record another dataset.
 
     rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth \
     --dataset $ATOM_DATASETS/softbot/test_dataset/dataset_corrected.json \
