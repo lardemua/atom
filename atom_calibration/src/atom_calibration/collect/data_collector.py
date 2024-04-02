@@ -1,5 +1,6 @@
 # stdlib
 from functools import partial
+import json
 import os
 import time
 import getpass
@@ -14,6 +15,7 @@ import atom_core.config_io
 import atom_core.dataset_io
 
 # 3rd-party
+from networkx.readwrite import json_graph
 import rospy
 import atom_msgs.srv
 import tf
@@ -71,13 +73,8 @@ class DataCollector:
                                                         tf_topic='tf',
                                                         tf_static_topic='tf_static')
 
-        # Add special transform listener to get ground truth tfs
-        self.tf_buffer_ground_truth = tf2_ros.Buffer()
-        self.listener_ground_truth = ConfigurableTransformListener(self.tf_buffer_ground_truth,
-                                                                   tf_topic='tf_ground_truth',
-                                                                   tf_static_topic='tf_static_ground_truth')
-
         self.sensors = {}
+        self.transforms = {}
         self.server = server
         self.menu_handler = menu_handler
         self.data_stamp = 0
@@ -89,7 +86,6 @@ class DataCollector:
         self.metadata = {}
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
-        self.collect_ground_truth = None
         self.joint_state_position_dict = {}
 
         # print(args['calibration_file'])
@@ -122,19 +118,6 @@ class DataCollector:
 
         self.urdf_description = URDF.from_xml_file(urdf_file)  # read the urdf file
 
-        # Check if there is ground truth information, i.e. messages on topics /tf_ground_truth and /tf_static_ground_truth
-        print("Checking the existence of ground truth data, waiting for one msg on topic " +
-              Fore.BLUE + '/tf_ground_truth' + Style.RESET_ALL, end='')
-        try:
-            msg = rospy.wait_for_message('tf_ground_truth', rospy.AnyMsg, 1)
-            print('... received!\n' + Fore.GREEN +
-                  'Recording ground truth data from topics /tf_ground_truth and /tf_static_ground_truth' + Style.RESET_ALL)
-        except:
-            print('... not received!\n' + Fore.YELLOW + 'Assuming there is no ground truth information.' + Style.RESET_ALL)
-            self.collect_ground_truth = False
-        else:
-            self.collect_ground_truth = True
-
         # Setup joint_state message subscriber
         self.subscriber_joint_states = rospy.Subscriber(
             '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1)
@@ -143,6 +126,20 @@ class DataCollector:
         print('Initializing patterns ... ', end='')
         self.patterns_dict = initializePatternsDict(self.config)
         atomPrintOK()
+
+        # load the transforms_graph.json
+        transforms_graph_file = '/home/mike/workspaces/catkin_ws/src/calibration/robots/softbot/softbot_calibration/calibration/transforms_graph.json'
+        f = open(transforms_graph_file, 'r')
+        d = json.load(f)
+
+        # Create a dictionary where the keys are the transform keys in the format
+        # parent-child.
+        for edge in d['links']:
+            transform_key = generateKey(edge['source'], edge["target"])
+            # remove keys source and target from edge before saving
+            del edge['source']
+            del edge['target']
+            self.transforms[transform_key] = edge  # only the edges of the graph are needed
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
@@ -427,11 +424,6 @@ class DataCollector:
                                         self.tf_buffer,
                                         average_time)  # use average time of label msgs
 
-        if self.collect_ground_truth:  # collect ground truth transforms
-            transforms_ground_truth = self.getTransforms(self.abstract_transforms,
-                                                         self.tf_buffer_ground_truth,
-                                                         average_time)  # use average time of sensor msgs
-
         printRosTime(average_time, "Collected transforms for time ")
 
         # --------------------------------------
@@ -569,8 +561,6 @@ class DataCollector:
         collection_dict = {'data': all_sensor_data_dict, 'labels': all_sensor_labels_dict,
                            'transforms': transforms,
                            'additional_data': all_additional_data_dict, 'joints': joints_dict}
-        if self.collect_ground_truth:
-            collection_dict['transforms_ground_truth'] = transforms_ground_truth
 
         collection_key = str(self.data_stamp).zfill(3)  # collection names are 000, 001, etc
         self.collections[collection_key] = collection_dict
@@ -581,6 +571,7 @@ class DataCollector:
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
                    'sensors': self.sensors,
+                   'transforms': self.transforms,
                    'patterns': self.patterns_dict}
 
         print('Estimating pattern poses for collection ...')

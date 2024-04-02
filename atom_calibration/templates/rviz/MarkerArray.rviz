@@ -1,8 +1,0 @@
-Class: rviz/MarkerArray
-Enabled: {{ c.Enabled | default(true) }}
-Marker Topic: {{ c.Marker_Topic | default("/marker_array")}}
-Name: {{ c.Name | default("MarkerArray") }}
-Namespaces:
-  {}
-Queue Size: 10
-Value: true

@@ -1,0 +1,13 @@
+Class: rviz/TF
+Enabled: {{ c.Enabled | default(true) }}
+Frame Timeout: 15
+Frames:
+  All Enabled: true
+Marker Scale: {{ c.MarKer_Scale | default(1) }}
+Name: {{ c.Name | default("Grid") }}
+Show Arrows: {{ c.Show_Arrows | default(false) }}
+Show Axes: {{ c.Show_Axes | default(true) }}
+Show Names: {{ c.Show_Names | default(false) }}
+Tree: {}
+Update Interval: 0
+Value: false

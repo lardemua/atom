@@ -1,0 +1,13 @@
+Class: rviz/Camera
+Enabled: {{ c.Enabled | default(true) }}
+Image Rendering: background and overlay
+Image Topic: {{ c.Image_Topic | default("/camera/image_color")}}
+Name: {{ c.Name | default("Camera") }}
+Overlay Alpha: 0.5
+Queue Size: 2
+Transport Hint: raw
+Unreliable: false
+Value: false
+Visibility:
+  Value: true
+Zoom Factor: 1

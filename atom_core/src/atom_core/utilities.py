@@ -468,6 +468,9 @@ def createLambdaExpressionsForArgs(args, keys_to_check=['sensor_selection_functi
     args_with_lambdas = deepcopy(args)
     for arg_key in keys_to_check:
 
+        if arg_key not in args_with_lambdas:
+            continue
+
         if args_with_lambdas[arg_key] is None:  # nothing to do
             continue
 

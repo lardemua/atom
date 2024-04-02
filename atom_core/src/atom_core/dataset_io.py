@@ -694,7 +694,7 @@ def filterJointParametersFromDataset(dataset, args):
                         deleted.append(param)
 
                 for param in deleted:
-                    print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
+                    # print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
                     dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(param)
 
                 print("Deleted parameters " + str(deleted) + ' from joint ' + joint_key)
@@ -813,33 +813,59 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
 
 
 def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
-    tf_link = generateKey(calibration_parent, calibration_child, suffix='')
 
-    # Get original transformation
-    quat = dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
-    translation = dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
+    transform_key = generateKey(calibration_parent, calibration_child, suffix='')
 
-    euler_angles = tf.transformations.euler_from_quaternion(quat)
+    # because of #900, and for retrocompatibility with old datasets, we will assume that if the transforms field does
+    # not exist in the dataset, then the transformation is fixed
+    if 'transforms' not in dataset or dataset['transforms'][transform_key]['type'] == 'fixed':
 
-    # Add noise to the 6 pose parameters
-    v = np.random.uniform(-1.0, 1.0, 3)
-    v = v / np.linalg.norm(v)
-    new_translation = translation + v * nig_trans
+        # Get original transformation
+        quat = dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat']
+        translation = dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans']
 
-    v = np.random.choice([-1.0, 1.0], 3) * nig_rot
-    new_angles = euler_angles + v
+        # Add noise to the 6 pose parameters
+        v = np.random.uniform(-1.0, 1.0, 3)
+        v = v / np.linalg.norm(v)
+        new_translation = translation + v * nig_trans
 
-    # Replace the original atomic transformations by the new noisy ones
-    new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
-    dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat'] = new_quat
-    dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans'] = list(new_translation)
+        v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+        euler_angles = tf.transformations.euler_from_quaternion(quat)
+        new_angles = euler_angles + v
 
-    # Copy randomized transform to all collections
-    for collection_key, collection in dataset['collections'].items():
-        dataset['collections'][collection_key]['transforms'][tf_link]['quat'] = \
-            dataset['collections'][selected_collection_key]['transforms'][tf_link]['quat']
-        dataset['collections'][collection_key]['transforms'][tf_link]['trans'] = \
-            dataset['collections'][selected_collection_key]['transforms'][tf_link]['trans']
+        # Replace the original atomic transformations by the new noisy ones
+        new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+        dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat'] = new_quat
+        dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans'] = list(new_translation)
+
+        # Copy randomized transform to all collections
+        for collection_key, collection in dataset['collections'].items():
+            dataset['collections'][collection_key]['transforms'][transform_key]['quat'] = \
+                dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat']
+            dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = \
+                dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans']
+
+    elif dataset['transforms'][transform_key]['type'] == 'multiple':
+
+        for collection_key, collection in dataset["collections"].items():
+
+            # Get original transformation
+            quat = dataset['collections'][collection_key]['transforms'][transform_key]['quat']
+            translation = dataset['collections'][collection_key]['transforms'][transform_key]['trans']
+
+            # Add noise to the 6 pose parameters
+            v = np.random.uniform(-1.0, 1.0, 3)
+            v = v / np.linalg.norm(v)
+            new_translation = translation + v * nig_trans
+
+            v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+            euler_angles = tf.transformations.euler_from_quaternion(quat)
+            new_angles = euler_angles + v
+
+            # Replace the original atomic transformations by the new noisy ones
+            new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+            dataset['collections'][collection_key]['transforms'][transform_key]['quat'] = new_quat
+            dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = list(new_translation)
 
 
 def copyTFToDataset(calibration_parent, calibration_child, source_dataset, target_dataset):

@@ -11,10 +11,13 @@ from colorama import Fore, Style
 # Atom imports
 from atom_core.dataset_io import (loadJSONFile,
                                   createJSONFile)
+from atom_core.utilities import atomStartupPrint
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
+
+
 def filterDatasetByCollections(dataset, collection_list):
     original_dataset = copy.deepcopy(dataset)
     for collection_key in original_dataset['collections']:
@@ -24,16 +27,26 @@ def filterDatasetByCollections(dataset, collection_list):
 # -------------------------------------------------------------------------------
 # --- MAIN
 # -------------------------------------------------------------------------------
+
+
 def main():
+
+    atomStartupPrint('Splitting dataset')
+
     ap = argparse.ArgumentParser(description='Splits an ATOM dataset json into train and test datasets.')
     ap.add_argument("-json", "--dataset_json",
                     help="Dataset json file to be split.", type=str, required=True)
     ap.add_argument("-tp", "--train_percentage", help="Percentage of dataset to be used to the train dataset.",
                     required=True, type=int)
+    ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int, default=None)
 
-    args= vars(ap.parse_known_args()[0])
+    args = vars(ap.parse_known_args()[0])
 
     args['dataset_json'] = str(Path(args['dataset_json']))
+
+    # Define random seed if given in args
+    if args["sample_seed"] is not None:
+        random.seed(args["sample_seed"])
 
     # ---------------------------------------
     # --- Verify that the dataset is ok
@@ -41,7 +54,7 @@ def main():
     if not os.path.isfile(args['dataset_json']):
         sys.exit(Fore.RED + 'Dataset ' + args['dataset_json'] + ' does not exist.' + Style.RESET_ALL)
 
-    # Load a json file 
+    # Load a json file
     print('Loading json file ' + args['dataset_json'])
     dataset = loadJSONFile(args['dataset_json'])
 
@@ -49,9 +62,9 @@ def main():
     collection_list = list(dataset['collections'].keys())
 
     # Create train and test collection list
-    train_collection_list = random.sample(collection_list, 
-                            int(len(collection_list) * args['train_percentage'] / 100))
-    
+    train_collection_list = random.sample(collection_list,
+                                          int(len(collection_list) * args['train_percentage'] / 100))
+
     test_collection_list = list(set(collection_list) - set(train_collection_list))
 
     # Create train and test datasets

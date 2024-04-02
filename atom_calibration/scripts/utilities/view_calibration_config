@@ -34,9 +34,6 @@ if __name__ == "__main__":
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", "--name", help='package name', type=str, required=True)
-    ap.add_argument("-utf", "--use_tfs", action="store_true",
-                    help='Use transformations in the bag file instead of generating new tfs from the xacro, '
-                         'joint_state_msgs and robot state publisher.')
     ap.add_argument("-cgt", "--collect_ground_truth", action="store_true",
                     help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
     ap.add_argument("-cfg", "--config_file", help='Specify if you want to configure the calibration package with a specific configuration file. If this flag is not given, the standard config.yml ill be used.',

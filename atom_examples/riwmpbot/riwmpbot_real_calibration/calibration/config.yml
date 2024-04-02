@@ -37,6 +37,8 @@ description_file: "package://riwmpbot_real_description/urdf/robot.urdf.xacro"
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
 # bag_file: "$ROS_BAGS/riwmpbot_real/train.bag"
 bag_file: "$ROS_BAGS/riwmpbot_real/train_diogo.bag"
+# bag_file: "$ROS_BAGS/riwmpbot_real/train_miguel.bag"
+# bag_file: "$ROS_BAGS/riwmpbot_real/train_bruno.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
@@ -111,41 +113,41 @@ joints:
   # EXAMPLE:
   #head_pan_joint:
   #  params_to_calibrate: ['origin_yaw']
-  shoulder_pan_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  shoulder_lift_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  elbow_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  wrist_1_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  wrist_2_joint:
-    params_to_calibrate: ['origin_yaw']
-
-  wrist_3_joint:
-    params_to_calibrate: ['origin_yaw']
-
 #   shoulder_pan_joint:
-#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#     params_to_calibrate: ['origin_yaw']
 #
 #   shoulder_lift_joint:
-#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#     params_to_calibrate: ['origin_yaw']
 #
 #   elbow_joint:
-#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#     params_to_calibrate: ['origin_yaw']
 #
 #   wrist_1_joint:
-#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#     params_to_calibrate: ['origin_yaw']
 #
 #   wrist_2_joint:
-#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#     params_to_calibrate: ['origin_yaw']
 #
 #   wrist_3_joint:
-#     params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+#     params_to_calibrate: ['origin_yaw']
+
+  shoulder_pan_joint:
+    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+
+  shoulder_lift_joint:
+    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+
+  elbow_joint:
+    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+
+  wrist_1_joint:
+    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+
+  wrist_2_joint:
+    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
+
+  wrist_3_joint:
+    params_to_calibrate: ['origin_x', 'origin_y', 'origin_z', 'origin_roll', 'origin_pitch', 'origin_yaw']
 
 
 # The calibration requires a detectable pattern.

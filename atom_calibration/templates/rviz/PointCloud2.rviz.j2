@@ -1,0 +1,30 @@
+Class: rviz/PointCloud2
+Alpha: {{ c.Alpha | default("1") }}
+Autocompute Intensity Bounds: true
+Autocompute Value Bounds:
+  Max Value: 10
+  Min Value: -10
+  Value: true
+Axis: {{ c.Axis | default("Z") }}
+Channel Name: intensity
+Color: {{ c.Color | default("255; 255; 255") }}
+Color Transformer: {{ c.Color_Transformer | default("RGB8") }}
+Decay Time: 0
+Enabled: {{ c.Enabled | default(true) }}
+Invert Rainbow: false
+Max Color: 255; 255; 255
+Max Intensity: 4096
+Min Color: 0; 0; 0
+Min Intensity: 0
+Name: {{ c.Name | default("PointCloud2") }}
+Position Transformer: ""
+Queue Size: 10
+Selectable: true
+Size (Pixels): 3
+Size (m): {{ c.Size__m_ | default("0.01")}}
+Style: {{ c.Style | default("Points")}}
+Topic: {{ c.Topic | default("/pointcloud2")}}
+Unreliable: false
+Use Fixed Frame: true
+Use rainbow: true
+Value: true

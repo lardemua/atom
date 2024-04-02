@@ -7,6 +7,7 @@ from copy import deepcopy
 # Ros imports
 import rospkg
 import atom_core
+from atom_core.utilities import atomError
 import tf
 
 # Atom imports
@@ -30,12 +31,13 @@ def readXacroFile(description_file):
     return xml_robot
 
 
-def saveResultsXacro(dataset, selected_collection_key, transforms_list):
+def saveResultsXacro(dataset, selected_collection_key, transforms_list, verbose=False):
     # Cycle all sensors in calibration config, and for each replace the optimized transform in the original xacro
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset["calibration_config"]["description_file"])
     xml_robot = readXacroFile(description_file)
 
+    # Put transformations from sensors and additional_tfs into the urdf
     for transform_key in transforms_list:
 
         # NOTE This is only valid if the generateTransformKey was called with argument separator='-'
@@ -61,20 +63,36 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
                 rpy = list(tf.transformations.euler_from_quaternion(quat, axes="sxyz"))
                 # print("Replacing rpy = " + str(joint.origin.rpy) + " by " + str(rpy))
                 joint.origin.rpy = rpy
+
+                if verbose:
+                    print(parent)
+                    print('Saving transform key ' + transform_key + ' to joint ' +
+                          joint.name + ' with parent ' + parent + ' and child ' + child)
                 break
 
         if not found:
-            raise ValueError("Could not find transform " + str(transform_key) + " in " + description_file)
+            continue  # see $897
 
-        calibration_config = dataset['calibration_config']
-        if calibration_config['joints'] is not None:
-            for joint_key, joint_dict in dataset['collections'][selected_collection_key]['joints'].items():
-                for joint in xml_robot.joints:
-                    if joint_key != joint.name:
-                        continue
+    # Output optimized joints
+    calibration_config = dataset['calibration_config']
+    if calibration_config['joints'] is not None:
+        for joint_key, joint_dict in dataset['collections'][selected_collection_key]['joints'].items():
+            found = False
 
-                    joint.origin.xyz = [joint_dict['origin_x'], joint_dict['origin_y'], joint_dict['origin_z']]
-                    joint.origin.rpy = [joint_dict['origin_roll'], joint_dict['origin_pitch'], joint_dict['origin_yaw']]
+            for joint in xml_robot.joints:
+                if joint_key != joint.name:
+                    continue
+
+                joint.origin.xyz = [joint_dict['origin_x'], joint_dict['origin_y'], joint_dict['origin_z']]
+                joint.origin.rpy = [joint_dict['origin_roll'], joint_dict['origin_pitch'], joint_dict['origin_yaw']]
+                found = True
+                if verbose:
+                    print('Saving optimized joint key ' + joint_key + ' to xacro joint ' +
+                          joint.name + ' with parent ' + joint.parent + ' and child ' + joint.child)
+                break
+
+            if not found:
+                atomError('Could not find optimized joint ' + joint_key + ' in urdf')
 
     time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     file_name = "optimized_" + time + ".urdf.xacro"
@@ -92,6 +110,7 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
     # with open(filename_results_xacro, "w") as out:
     #     out.write(URDF.to_xml_string(xml_robot))
 
+    # Save the urdf without the pattern
     optimized_urdf_file = path_to_urdf_directory + 'optimized.urdf.xacro'
     with open(optimized_urdf_file, "w", ) as out:
         out.write(URDF.to_xml_string(xml_robot))
@@ -125,9 +144,14 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list):
 
         xml_robot.add_joint(pattern_joint)
 
-        optimized_w_pattern_urdf_file = path_to_urdf_directory + 'optimized_w_pattern.urdf.xacro'
-        with open(optimized_w_pattern_urdf_file, "w", ) as out:
-            out.write(URDF.to_xml_string(xml_robot))
+        if verbose:
+            print('Saving optimized pattern key ' + pattern_key + ' to xacro by creating a new joint ' +
+                  pattern_joint.name + ' with parent ' + pattern_joint.parent + ' and child ' + pattern_joint.child)
+
+    # Save the urdf with the pattern
+    optimized_w_pattern_urdf_file = path_to_urdf_directory + 'optimized_w_pattern.urdf.xacro'
+    with open(optimized_w_pattern_urdf_file, "w", ) as out:
+        out.write(URDF.to_xml_string(xml_robot))
 
     # print("Optimized xacro with pattern saved to " + str(optimized_w_pattern_urdf_file) +
     #       " . You can use it as a ROS robot_description.")

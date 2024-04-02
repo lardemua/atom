@@ -97,90 +97,100 @@ def joint_params_calibrated(joint_name, config):
 
 
 def createNxGraph(args, description, config, bag):
+
     nx_graph = nx.DiGraph()
-    if not args['use_tfs']:  # create a graph using the information in the urdf
-        print('Creating transformation tree using the urdf robot description ...')
 
-        for link in description.links:  # A graph node for each link in the urdf
-            nx_graph.add_node(link.name,
-                              is_world=is_world_link(link.name, config),
-                              pattern=has_pattern_link(link.name, config),
-                              sensor_data=has_sensor_data(link.name, config))
+    # -------------------------------------
+    # Create graph from the xacro description
+    # -------------------------------------
+    print('Creating transformation tree using the urdf robot description ...', end=' ')
 
-        # Graph node for each calibration pattern
-        for pattern_key, pattern in config['calibration_patterns'].items():
+    for link in description.links:  # A graph node for each link in the urdf
+        nx_graph.add_node(link.name,
+                          is_world=is_world_link(link.name, config),
+                          pattern=has_pattern_link(link.name, config),
+                          sensor_data=has_sensor_data(link.name, config),
+                          from_bag=False)
+
+    # Graph node for each calibration pattern
+    for pattern_key, pattern in config['calibration_patterns'].items():
+        if not nx_graph.has_node(pattern['link']):
             nx_graph.add_node(pattern['link'],
                               is_world=is_world_link(pattern['link'], config),
                               pattern=has_pattern_link(pattern['link'], config),
                               sensor_data=has_sensor_data(pattern['link'], config))
 
-        # Graph edges from joints in description
-        for joint in description.joints:
-            parent = joint.parent
-            child = joint.child
-            nx_graph.add_edge(parent, child, weight=1, type=joint.type,
-                              parent=parent, child=child,
-                              is_transformation_calibrated=is_transformation_calibrated(parent, child, config),
-                              joint_params_calibrated=joint_params_calibrated(joint.name, config),
-                              joint_name=joint.name)
+    # Graph edges from joints in description
+    for joint in description.joints:
+        parent = joint.parent
+        child = joint.child
+        nx_graph.add_edge(parent, child, weight=1, type=joint.type,
+                          parent=parent, child=child,
+                          is_transformation_calibrated=is_transformation_calibrated(parent, child, config),
+                          joint_params_calibrated=joint_params_calibrated(joint.name, config),
+                          joint_name=joint.name,
+                          from_bag=False)
 
-        # Graph edges from calibration patterns
-        for pattern_key, pattern in config['calibration_patterns'].items():
-            if pattern['fixed']:
-                edge_type = 'fixed'
-            else:
-                edge_type = 'multiple'
+    # Graph edges from calibration patterns
+    for pattern_key, pattern in config['calibration_patterns'].items():
+        if pattern['fixed']:
+            edge_type = 'fixed'
+        else:
+            edge_type = 'multiple'
 
-            parent = pattern['parent_link']
-            child = pattern['link']
-            nx_graph.add_edge(parent, child, weight=1, type=edge_type,
-                              parent=parent, child=child,
-                              is_transformation_calibrated=True,
-                              joint_params_calibrated=joint_params_calibrated(
-                                  get_joint_name(parent, child, description), config),
-                              joint_name=None)
+        parent = pattern['parent_link']
+        child = pattern['link']
+        nx_graph.add_edge(parent, child, weight=1, type=edge_type,
+                          parent=parent, child=child,
+                          is_transformation_calibrated=True,
+                          joint_params_calibrated=joint_params_calibrated(
+                              get_joint_name(parent, child, description), config),
+                          joint_name=None,
+                          from_bag=False)
 
-    else:
-        print('Creating transformation tree using the tfs in the bagfile ...')
+    atomPrintOK()
 
-        for topic, msg, t in bag.read_messages(topics=['/tf']):
-            # Check for the existence of edges in the graph and add it in if it's not already there
-            for transform in msg.transforms:
-                parent = transform.header.frame_id.replace('/', '')
-                child = transform.child_frame_id.replace('/', '')
-                if not nx_graph.has_edge(parent, child):
-                    # print(transform.header.frame_id, transform.child_frame_id)
-                    nx_graph.add_edge(parent,
-                                      child,
-                                      weight=1,
-                                      type='dynamic',
-                                      parent=parent,
-                                      child=child,
-                                      is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
+    # -------------------------------------
+    # Now go through the bagfile and add any nodes/transformations that were not present in the xacro
+    # -------------------------------------
+    # See https://github.com/lardemua/atom/issues/838
+    print('Adding transformations from the bagfile ...')
 
-        for topic, msg, t in bag.read_messages(topics=['/tf_static']):
-            for transform in msg.transforms:
+    for topic, msg, t in bag.read_messages(topics=['/tf']):
+        # Check for the existence of edges in the graph and add it in if it's not already there
+        for transform in msg.transforms:
+            parent = transform.header.frame_id.replace('/', '')
+            child = transform.child_frame_id.replace('/', '')
+            if not nx_graph.has_edge(parent, child):
+                print('Adding transformation ' + Fore.BLUE + parent + Style.RESET_ALL + ' to ' + Fore.BLUE +
+                      child + Style.RESET_ALL + ' from bagfile ' + Fore.GREEN + '/tf' + Style.RESET_ALL + ' topic because it does not exist in xacro.')
+                nx_graph.add_edge(parent, child, weight=1, type='multiple',
+                                  parent=parent, child=child,
+                                  is_transformation_calibrated=is_transformation_calibrated(parent, child, config),
+                                  from_bag=True)
 
-                parent = transform.header.frame_id.replace('/','')
-                child = transform.child_frame_id.replace('/','')
-                
-                if not nx_graph.has_edge(parent, child):
-                    # print(transform.header.frame_id.replace('/',''), transform.child_frame_id.replace('/',''))
-                    nx_graph.add_edge(parent,
-                                      child,
-                                      weight=1,
-                                      type='fixed',
-                                      parent=parent,
-                                      child=child,
-                                      is_transformation_calibrated=is_transformation_calibrated(parent, child, config))
-                    
-        ##################### DIOGO VIEIRA (#836)
-        # Add the missing node attributes
-        for node in nx_graph.nodes():
-            nx_graph.nodes[node]['is_world'] = is_world_link(node, config)
-            nx_graph.nodes[node]['pattern'] = has_pattern_link(node, config)
-            nx_graph.nodes[node]['sensor_data'] = has_sensor_data(node, config)
+    for topic, msg, t in bag.read_messages(topics=['/tf_static']):
+        for transform in msg.transforms:
+            parent = transform.header.frame_id.replace('/', '')
+            child = transform.child_frame_id.replace('/', '')
+            if not nx_graph.has_edge(parent, child):
+                print('Adding transformation ' + Fore.BLUE + parent + Style.RESET_ALL + ' to ' + Fore.BLUE +
+                      child + Style.RESET_ALL + ' from bagfile ' + Fore.GREEN + '/tf_static' + Style.RESET_ALL + ' topic because it does not exist in xacro.')
+                nx_graph.add_edge(parent,
+                                  child,
+                                  weight=1,
+                                  type='fixed',
+                                  parent=parent,
+                                  child=child,
+                                  is_transformation_calibrated=is_transformation_calibrated(parent, child, config),
+                                  from_bag=True)
 
+    # Add the missing node attributes (Diogo Vieira)
+    # See https://github.com/lardemua/atom/issues/836
+    for node in nx_graph.nodes():
+        nx_graph.nodes[node]['is_world'] = is_world_link(node, config)
+        nx_graph.nodes[node]['pattern'] = has_pattern_link(node, config)
+        nx_graph.nodes[node]['sensor_data'] = has_sensor_data(node, config)
 
     return nx_graph
 
@@ -224,45 +234,37 @@ def createDotGraph(nx_graph, config):
         rgb = matplotlib.colors.rgb2hex([0, 0, 0])
         rgb_font = matplotlib.colors.rgb2hex([0, 0, 0])
 
-        if edge['type'] == 'fixed' and edge['is_transformation_calibrated']:
-            label = ' static\n calibrate transform'
-            rgb_font = rgb = color_transform_optimized
+        if edge['type'] == 'fixed':
+            if edge['is_transformation_calibrated']:
+                label = ' static\n calibrate transform'
+                rgb_font = rgb = color_transform_optimized
+            else:
+                label = ' static'
+                rgb_font = color_grey
 
-        elif edge['type'] == 'multiple' and edge['is_transformation_calibrated']:
-            label = ' dynamic\n calibrate multiple transforms'
-            rgb_font = rgb = color_transform_optimized
+        elif edge['type'] == 'multiple':
+            if edge['is_transformation_calibrated']:
+                label = ' dynamic\n calibrate multiple transforms'
+                rgb_font = rgb = color_transform_optimized
+            else:
+                label = ' multiple'
+                rgb_font = color_grey
 
-        elif edge['type'] == 'revolute' and edge['joint_params_calibrated']:
-            label = ' ' + edge['joint_name'] + '\n (revolute)\n calibrate ' + str(edge['joint_params_calibrated'])
-            rgb_font = matplotlib.colors.rgb2hex([0.6, 0, 0.6])
-            rgb_font = rgb = color_joint_optimized
+        elif edge['type'] in ['revolute', 'prismatic', 'continuous']:
 
-        elif edge['type'] == 'prismatic' and edge['joint_params_calibrated']:
-            label = ' ' + edge['joint_name'] + '\n (prismatic)\n calibrate ' + str(edge['joint_params_calibrated'])
-            rgb_font = rgb = color_joint_optimized
-
-        elif edge['type'] == 'continuous' and edge['joint_params_calibrated']:
-            label = ' ' + edge['joint_name'] + '\n (continuous)\n calibrate ' + str(edge['joint_params_calibrated'])
-            rgb_font = rgb = color_joint_optimized
-
-        elif edge['type'] == 'revolute':
-            label = edge['joint_name'] + '\n (revolute)'
-            rgb_font = color_grey
-
-        elif edge['type'] == 'prismatic':
-            label = edge['joint_name'] + '\n (prismatic)'
-            rgb_font = color_grey
-
-        elif edge['type'] == 'continuous':
-            label = edge['joint_name'] + '\n (continuous)'
-            rgb_font = color_grey
-
-        elif edge['type'] == 'fixed':
-            label = ' static'
-            rgb_font = color_grey
+            if edge['joint_params_calibrated']:
+                label = ' ' + edge['joint_name'] + '\n (revolute)\n calibrate ' + str(edge['joint_params_calibrated'])
+                rgb_font = matplotlib.colors.rgb2hex([0.6, 0, 0.6])
+                rgb_font = rgb = color_joint_optimized
+            else:
+                label = edge['joint_name'] + '\n (revolute)'
+                rgb_font = color_grey
         else:
             label = 'Unknown case'
             rgb_font = matplotlib.colors.rgb2hex([1, 0, 0])
+
+        if edge['from_bag']:
+            label += '\n (from bagfile)'
 
         dot_graph.edge(edge['parent'], edge['child'], color=rgb, style='solid',
                        _attributes={'penwidth': '1', 'fontcolor': rgb_font},

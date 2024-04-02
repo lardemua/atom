@@ -1,0 +1,648 @@
+<?xml version="1.0" ?>
+<robot name="softbot" version="1.0">
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="dark">
+    <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <material name="light_black">
+    <color rgba="0.4 0.4 0.4 1.0"/>
+  </material>
+  <material name="blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+  <material name="green">
+    <color rgba="0.0 0.8 0.0 1.0"/>
+  </material>
+  <material name="grey">
+    <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+  <material name="orange">
+    <color rgba="1.0 0.4235294117647059 0.0392156862745098 1.0"/>
+  </material>
+  <material name="brown">
+    <color rgba="0.8705882352941177 0.8117647058823529 0.7647058823529411 1.0"/>
+  </material>
+  <material name="red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="white">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  <material name="Yellow">
+    <color rgba="1.0 1.0 0.0 1.0"/>
+  </material>
+  <material name="Orange">
+    <color rgba="1.0 0.4 0.0 1.0"/>
+  </material>
+  <material name="Gray">
+    <color rgba="1.0 0.4 0.0 1.0"/>
+  </material>
+  <gazebo reference="base_link">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="base_link">
+    <sensor name="base_link" type="contact">
+      <update_rate>1000.0</update_rate>
+      <always_on>true</always_on>
+      <contact>
+        <collision>base_footprint_fixed_joint_lump__base_link_collision_collision</collision>
+      </contact>
+      <plugin filename="libgazebo_ros_bumper.so" name="base_link_contact_sensor_plugin">
+        <bumperTopicName>contact</bumperTopicName>
+        <frameName>world</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="wheel_left_link">
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <kp>500000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.1</maxVel>
+    <fdir1>1 0 0</fdir1>
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="wheel_right_link">
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <kp>500000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.01</maxVel>
+    <fdir1>1 0 0</fdir1>
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="caster_back_right_link">
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/FlatBlack</material>
+  </gazebo>
+  <gazebo reference="caster_back_left_link">
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/FlatBlack</material>
+  </gazebo>
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <always_on>true</always_on>
+      <visualize>True</visualize>
+    </sensor>
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_diff_drive.so" name="turtlebot3_waffle_pi_controller">
+      <commandTopic>cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>world</odometryFrame>
+      <odometrySource>world</odometrySource>
+      <publishOdomTF>true</publishOdomTF>
+      <robotBaseFrame>base_footprint</robotBaseFrame>
+      <publishWheelTF>false</publishWheelTF>
+      <publishTf>true</publishTf>
+      <publishWheelJointState>true</publishWheelJointState>
+      <legacyMode>false</legacyMode>
+      <updateRate>30</updateRate>
+      <leftJoint>wheel_left_joint</leftJoint>
+      <rightJoint>wheel_right_joint</rightJoint>
+      <wheelSeparation>0.287</wheelSeparation>
+      <wheelDiameter>0.066</wheelDiameter>
+      <wheelAcceleration>1</wheelAcceleration>
+      <wheelTorque>10</wheelTorque>
+      <rosDebugLevel>na</rosDebugLevel>
+    </plugin>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libgazebo_ros_imu.so" name="imu_plugin">
+      <alwaysOn>true</alwaysOn>
+      <bodyName>imu_link</bodyName>
+      <frameName>imu_link</frameName>
+      <topicName>imu</topicName>
+      <serviceName>imu_service</serviceName>
+      <gaussianNoise>0.0</gaussianNoise>
+      <updateRate>200</updateRate>
+      <imu>
+        <noise>
+          <type>gaussian</type>
+          <rate>
+            <mean>0.0</mean>
+            <stddev>2e-4</stddev>
+            <bias_mean>0.0000075</bias_mean>
+            <bias_stddev>0.0000008</bias_stddev>
+          </rate>
+          <accel>
+            <mean>0.0</mean>
+            <stddev>1.7e-2</stddev>
+            <bias_mean>0.1</bias_mean>
+            <bias_stddev>0.001</bias_stddev>
+          </accel>
+        </noise>
+      </imu>
+    </plugin>
+  </gazebo>
+  <gazebo reference="base_scan">
+    <material>Gazebo/FlatBlack</material>
+    <sensor name="lds_lfcd_sensor" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>False</visualize>
+      <update_rate>5</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>0.0</min_angle>
+            <max_angle>6.28319</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.120</min>
+          <max>3.5</max>
+          <resolution>0.015</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin filename="libgazebo_ros_laser.so" name="gazebo_ros_lds_lfcd_controller">
+        <topicName>scan</topicName>
+        <frameName>base_scan</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <link name="base_footprint"/>
+  <joint name="base_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.01" rpy="0.0 0.0 0.0"/>
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+  </joint>
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="1.3729096"/>
+      <inertia ixx="0.0087002718" ixy="-4.7576583e-05" ixz="0.00011160499" iyy="0.0086195418" iyz="-3.5422299e-06" izz="0.014612727"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.064 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://turtlebot3_description/meshes/bases/waffle_pi_base.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="light_black"/>
+    </visual>
+    <collision name="base_link_collision">
+      <origin xyz="-0.064 0.0 0.047" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.3 0.3 0.094"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wheel_left_joint" type="continuous">
+    <origin xyz="0.0 0.144 0.023" rpy="-1.57 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="base_link"/>
+    <child link="wheel_left_link"/>
+  </joint>
+  <link name="wheel_left_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.02849894"/>
+      <inertia ixx="1.117558e-05" ixy="-4.2369783e-11" ixz="-5.9381719e-09" iyy="1.1192413e-05" iyz="-1.4400107e-11" izz="2.0712558e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="1.57 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://turtlebot3_description/meshes/wheels/left_tire.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.033" length="0.018"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wheel_right_joint" type="continuous">
+    <origin xyz="0.0 -0.144 0.023" rpy="-1.57 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="base_link"/>
+    <child link="wheel_right_link"/>
+  </joint>
+  <link name="wheel_right_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.02849894"/>
+      <inertia ixx="1.117558e-05" ixy="-4.2369783e-11" ixz="-5.9381719e-09" iyy="1.1192413e-05" iyz="-1.4400107e-11" izz="2.0712558e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="1.57 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://turtlebot3_description/meshes/wheels/right_tire.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.033" length="0.018"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="caster_back_right_joint" type="fixed">
+    <origin xyz="-0.177 -0.064 -0.004" rpy="-1.57 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="caster_back_right_link"/>
+  </joint>
+  <link name="caster_back_right_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.005"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin xyz="0.0 0.001 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03 0.009 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="caster_back_left_joint" type="fixed">
+    <origin xyz="-0.177 0.064 -0.004" rpy="-1.57 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="caster_back_left_link"/>
+  </joint>
+  <link name="caster_back_left_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.005"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin xyz="0.0 0.001 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.03 0.009 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.068" rpy="0.0 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+  </joint>
+  <link name="imu_link"/>
+  <link name="platform_support_leg1_link">
+    <visual>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.004" length="0.2"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <joint name="base_link_to_platform_support_leg1_link" type="fixed">
+    <origin xyz="-0.114 0.05 0.222" rpy="0.0 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="platform_support_leg1_link"/>
+  </joint>
+  <link name="platform_support_leg2_link">
+    <visual>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.004" length="0.2"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <joint name="base_link_to_platform_support_leg2_link" type="fixed">
+    <origin xyz="-0.114 -0.05 0.222" rpy="0.0 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="platform_support_leg2_link"/>
+  </joint>
+  <link name="platform_support_leg3_link">
+    <visual>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.004" length="0.2"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <joint name="base_link_to_platform_support_leg3_link" type="fixed">
+    <origin xyz="-0.014 0.05 0.222" rpy="0.0 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="platform_support_leg3_link"/>
+  </joint>
+  <link name="platform_support_leg4_link">
+    <visual>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.004" length="0.2"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <joint name="base_link_to_platform_support_leg4_link" type="fixed">
+    <origin xyz="-0.014 -0.05 0.222" rpy="0.0 0.0 0.0"/>
+    <parent link="base_link"/>
+    <child link="platform_support_leg4_link"/>
+  </joint>
+  <link name="lidar3d_plate_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.14 0.14 0.005"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <joint name="platform_support_leg1_link_to_lidar3d_plate_link" type="fixed">
+    <origin xyz="0.05 -0.05 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="platform_support_leg1_link"/>
+    <child link="lidar3d_plate_link"/>
+  </joint>
+  <joint name="lidar3d_base_mount_joint" type="fixed">
+    <origin xyz="4.438044141947997e-16 -3.3567055786269235e-16 -4.440891593897578e-16" rpy="-4.4408913177390826e-16 4.4401323532796685e-16 -4.440890130132144e-16"/>
+    <parent link="lidar3d_plate_link"/>
+    <child link="lidar3d_base_link"/>
+  </joint>
+  <link name="lidar3d_base_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.03585" rpy="0 0 0"/>
+      <mass value="0.083"/>
+      <inertia ixx="0.000908059425" ixy="0.0" ixz="0.0" iyy="0.000908059425" iyz="0.0" izz="0.0011049624"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://velodyne_description/meshes/VLP16_base_1.dae"/>
+      </geometry>
+    </visual>
+    <visual>
+      <geometry>
+        <mesh filename="package://velodyne_description/meshes/VLP16_base_2.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.03585" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <cylinder radius="0.0516" length="0.0717"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="lidar3d_base_scan_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0377" rpy="0.0 0.0 0.0"/>
+    <parent link="lidar3d_base_link"/>
+    <child link="lidar3d"/>
+  </joint>
+  <link name="lidar3d">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="1e-07" ixy="0.0" ixz="0.0" iyy="1e-07" iyz="0.0" izz="1e-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 -0.0377" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://velodyne_description/meshes/VLP16_scan.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <gazebo reference="lidar3d">
+    <sensor name="lidar3d-VLP16" type="ray">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1875</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.141592653589793</min_angle>
+            <max_angle>3.141592653589793</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>16</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.2617993877991494</min_angle>
+            <max_angle> 0.2617993877991494</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>131.0</max>
+          <resolution>0.001</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.0</stddev>
+        </noise>
+      </ray>
+      <plugin filename="libgazebo_ros_velodyne_laser.so" name="gazebo_ros_laser_controller">
+        <topicName>/lidar3d/points</topicName>
+        <frameName>lidar3d</frameName>
+        <organize_cloud>False</organize_cloud>
+        <min_range>0.9</min_range>
+        <max_range>130.0</max_range>
+        <gaussianNoise>0.008</gaussianNoise>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <link name="front_left_camera_support_link"/>
+  <joint name="platform_support_leg3_link_to_front_left_camera_support_link" type="fixed">
+    <origin xyz="0.02 0.0 -0.09" rpy="0.01 -0.35 0.2"/>
+    <parent link="platform_support_leg3_link"/>
+    <child link="front_left_camera_support_link"/>
+  </joint>
+  <joint name="front_left_camera_joint" type="fixed">
+    <origin xyz="0.019128951150184714 0.09622477198272436 0.011491975429385355" rpy="-0.00011102593929324018 0.000432866349022773 -0.0008815743252232054"/>
+    <parent link="front_left_camera_support_link"/>
+    <child link="front_left_camera_link"/>
+  </joint>
+  <link name="front_left_camera_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.00564"/>
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.03 -0.06 0.0" rpy="3.141592653589793 0.0 1.5707963267948966"/>
+      <geometry>
+        <mesh filename="package://softbot_description/meshes/astra2/astra2.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 -0.06 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.04 0.165 0.03"/>
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="front_left_camera_link">
+    <selfCollide>false</selfCollide>
+  </gazebo>
+  <joint name="front_left_camera_rgb_joint" type="fixed">
+    <origin xyz="0.0 -0.045 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="front_left_camera_link"/>
+    <child link="front_left_camera_rgb_frame"/>
+  </joint>
+  <link name="front_left_camera_rgb_frame"/>
+  <joint name="front_left_camera_rgb_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
+    <parent link="front_left_camera_rgb_frame"/>
+    <child link="front_left_camera_rgb_optical_frame"/>
+  </joint>
+  <link name="front_left_camera_rgb_optical_frame"/>
+  <joint name="front_left_camera_depth_joint" type="fixed">
+    <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="front_left_camera_link"/>
+    <child link="front_left_camera_depth_frame"/>
+  </joint>
+  <link name="front_left_camera_depth_frame"/>
+  <joint name="front_left_camera_depth_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
+    <parent link="front_left_camera_depth_frame"/>
+    <child link="front_left_camera_depth_optical_frame"/>
+  </joint>
+  <link name="front_left_camera_depth_optical_frame"/>
+  <gazebo reference="front_left_camera_depth_frame">
+    <sensor name="camera" type="depth">
+      <always_on>true</always_on>
+      <update_rate>10.0</update_rate>
+      <camera>
+        <horizontal_fov>1.0471975511965976</horizontal_fov>
+        <image>
+          <format>B8G8R8</format>
+          <width>1280</width>
+          <height>720</height>
+        </image>
+        <clip>
+          <near>0.10</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_openni_kinect.so" name="front_left_camera_camera_controller">
+        <cameraName>front_left_camera</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0</updateRate>
+        <imageTopicName>rgb/image_raw</imageTopicName>
+        <depthImageTopicName>depth/image_raw</depthImageTopicName>
+        <pointCloudTopicName>depth/points</pointCloudTopicName>
+        <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+        <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+        <frameName>front_left_camera_rgb_optical_frame</frameName>
+        <baseline>0.1</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
+        <pointCloudCutoff>0.4</pointCloudCutoff>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <link name="front_right_camera_support_link"/>
+  <joint name="platform_support_leg4_link_to_front_right_camera_support_link" type="fixed">
+    <origin xyz="0.02 0.0 -0.05" rpy="0.01 -0.35 -0.22"/>
+    <parent link="platform_support_leg4_link"/>
+    <child link="front_right_camera_support_link"/>
+  </joint>
+  <joint name="front_right_camera_joint" type="fixed">
+    <origin xyz="0.018678763660725434 0.09589135336666572 0.011603158264384503" rpy="-0.0001820055780953038 0.00042645457637731257 -0.0007605714467599055"/>
+    <parent link="front_right_camera_support_link"/>
+    <child link="front_right_camera_link"/>
+  </joint>
+  <link name="front_right_camera_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+      <mass value="0.00564"/>
+      <inertia ixx="0.003881243" ixy="0.0" ixz="0.0" iyy="0.00049894" iyz="0.0" izz="0.003879257"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.03 -0.06 0.0" rpy="3.141592653589793 0.0 1.5707963267948966"/>
+      <geometry>
+        <mesh filename="package://softbot_description/meshes/astra2/astra2.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 -0.06 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.04 0.165 0.03"/>
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="front_right_camera_link">
+    <selfCollide>false</selfCollide>
+  </gazebo>
+  <joint name="front_right_camera_rgb_joint" type="fixed">
+    <origin xyz="0.0 -0.045 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="front_right_camera_link"/>
+    <child link="front_right_camera_rgb_frame"/>
+  </joint>
+  <link name="front_right_camera_rgb_frame"/>
+  <joint name="front_right_camera_rgb_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
+    <parent link="front_right_camera_rgb_frame"/>
+    <child link="front_right_camera_rgb_optical_frame"/>
+  </joint>
+  <link name="front_right_camera_rgb_optical_frame"/>
+  <joint name="front_right_camera_depth_joint" type="fixed">
+    <origin xyz="0.0 -0.02 0.0" rpy="0.0 0.0 0.0"/>
+    <parent link="front_right_camera_link"/>
+    <child link="front_right_camera_depth_frame"/>
+  </joint>
+  <link name="front_right_camera_depth_frame"/>
+  <joint name="front_right_camera_depth_optical_joint" type="fixed">
+    <origin xyz="0.0 0.0 0.0" rpy="-1.5707963267948966 0.0 -1.5707963267948966"/>
+    <parent link="front_right_camera_depth_frame"/>
+    <child link="front_right_camera_depth_optical_frame"/>
+  </joint>
+  <link name="front_right_camera_depth_optical_frame"/>
+  <gazebo reference="front_right_camera_depth_frame">
+    <sensor name="camera" type="depth">
+      <always_on>true</always_on>
+      <update_rate>10.0</update_rate>
+      <camera>
+        <horizontal_fov>1.0471975511965976</horizontal_fov>
+        <image>
+          <format>B8G8R8</format>
+          <width>1280</width>
+          <height>720</height>
+        </image>
+        <clip>
+          <near>0.10</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin filename="libgazebo_ros_openni_kinect.so" name="front_right_camera_camera_controller">
+        <cameraName>front_right_camera</cameraName>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>0</updateRate>
+        <imageTopicName>rgb/image_raw</imageTopicName>
+        <depthImageTopicName>depth/image_raw</depthImageTopicName>
+        <pointCloudTopicName>depth/points</pointCloudTopicName>
+        <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+        <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+        <frameName>front_right_camera_rgb_optical_frame</frameName>
+        <baseline>0.1</baseline>
+        <distortion_k1>0.0</distortion_k1>
+        <distortion_k2>0.0</distortion_k2>
+        <distortion_k3>0.0</distortion_k3>
+        <distortion_t1>0.0</distortion_t1>
+        <distortion_t2>0.0</distortion_t2>
+        <pointCloudCutoff>0.4</pointCloudCutoff>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>
