@@ -53,7 +53,7 @@ The calibration of any robotic system using **ATOM** may have several variants. 
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **rdbot**.
 
-To calibrate, we will need a bagfile called [rdbot_example_bag.bag](https://drive.google.com/file/d/1Z8mSfHqSesCOYEu3Ugx9F3VTpqe7j1gM/view?usp=sharing), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [train.bag](https://gofile.me/7nlMj/x5KiecTzs), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 We produced the bagfile by bringing up the system and then recording a bagfile as described above.
 This is a medium sized bagfile with 60 seconds / 600MB for demonstration purposes.
 
@@ -93,12 +93,9 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing) dataset, which contains 4 collections, as shown bellow.
+We will use as example the [train](https://gofile.me/7nlMj/4gBf52PjL) dataset, which contains 4 collections, as shown bellow.
 
-Download and decompress the dataset to **$ATOM_DATASETS/rdbot/train**:
-
-    export DP=$ATOM_DATASETS/rdbot && wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh' -O $DP/train.zip && unzip $DP/train.zip && rm $DP/train.zip
-
+Download the dataset to **$ATOM_DATASETS/rdbot/train**:
 
 Collection |           rgb             |           depth
 :----------------:|:-------------------------:|:-------------------------:
@@ -141,7 +138,7 @@ The result of this manual labeling is the following:
 
 which now should a very accurate labeling of the boundaries of the pattern.
 
-This procedure should be carried out for all collections in the dataset. The dataset playback produces a corrected dataset. You can use the **dataset_corrected.json** file contained in the [rdbot_example_train_dataset](https://drive.google.com/file/d/19MNEF-cDy-_YsI21oHDPrcEiZ8VTGTKh/view?usp=sharing) you downloaded before.
+This procedure should be carried out for all collections in the dataset. The dataset playback produces a corrected dataset. You can use the **dataset_corrected.json** file contained in the **train dataset** you downloaded before.
 
 ## Running the Calibration
 
@@ -171,10 +168,7 @@ The evaluation be conducted with a second dataset which has not been seen during
 
 ##### Download and verification of Test dataset
 
-Download the [test](https://drive.google.com/file/d/1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-/view?usp=sharing) dataset and decompress to **$ATOM_DATASETS/rdbot/test**:
-
-    export DP=$ATOM_DATASETS/rdbot && wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1ziKR0kAoJPa6bSUF6akUSTC4LcU6Pe9-' -O $DP/test.zip && unzip $DP/test.zip && rm $DP/test.zip
-
+Download the [test dataset](https://gofile.me/7nlMj/UCqD3ZwL5) to **$ATOM_DATASETS/rdbot/test**:
 
 We recommend that the labels in test dataset are also verified using the dataset playback:
 

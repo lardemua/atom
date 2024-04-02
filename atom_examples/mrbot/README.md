@@ -46,7 +46,7 @@ The calibration of any robotic system using **ATOM** may have several variants. 
 
 In this section, out goal is to carry out the simplest possible calibration pipeline for the **mrbot**.
 
-To calibrate, we will use the [$ROS_BAGS/mrbot/train.bag](https://drive.google.com/file/d/1Noo3eZh72m-xRobYZywdo1wtqg7e4wGa/view?usp=sharing) bagfile, which contains a recording of the system's data when viewing a calibration pattern in several positions. We produced the bagfile by bringing up the system and then recording a bagfile as described above. This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
+To calibrate, we will use the [$ROS_BAGS/mrbot/train.bag](https://gofile.me/7nlMj/N54PK2GZK) bagfile, which contains a recording of the system's data when viewing a calibration pattern in several positions. We produced the bagfile by bringing up the system and then recording a bagfile as described above. This is a small bagfile with 40 seconds / 60MB for demonstration purposes. Typically, calibration bagfiles are larger.
 
 Next we describe each of the steps in the calibration pipeline.
 
@@ -82,7 +82,7 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/1FobBsyxtI29hDt5NlKfAg7kFdsZxrcbG/view?usp=drive_link) dataset, which contains 4 collections, as shown bellow.
+We will use as example the [train](https://gofile.me/7nlMj/g6mWaRb1M) dataset, which contains 4 collections, as shown bellow.
 
 Download and decompress the dataset to **$ATOM_DATASETS/mrbot/train**.
 
