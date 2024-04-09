@@ -200,14 +200,14 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
 
         _, rvec, tvec = cv2.solvePnP(objp, undistorted_imgpoints_camera[0], K, D)
 
-        print(f'rvec = {rvec}')
-        print(f'tvec = {tvec}')
+        # print(f'rvec = {rvec}')
+        # print(f'tvec = {tvec}')
 
         # Convert it into an homogenous transform
         cam_optical_frame_T_pattern = traslationRodriguesToTransform(tvec, rvec)
 
         # NOTE fstrings are forbidden in atom :-)
-        print(f'cam_optical_frame_T_pattern = {cam_optical_frame_T_pattern}')
+        # print(f'cam_optical_frame_T_pattern = {cam_optical_frame_T_pattern}')
 
         # NOTE: you do not need to compute the transform from camera to camera_optical_frame
 
@@ -240,10 +240,11 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
     # ---------------------------------------
 
     # Running with lists of np.arrays
-    cv2.calibrateRobotWorldHandEye(list_cam_optical_frame_T_pattern_R,
-                                   list_cam_optical_frame_T_pattern_t,
-                                   list_base_T_gripper_R, list_base_T_gripper_t)
+    o = cv2.calibrateRobotWorldHandEye( list_cam_optical_frame_T_pattern_R,
+                                        list_cam_optical_frame_T_pattern_t,
+                                        list_base_T_gripper_R, list_base_T_gripper_t)
 
+    return o
 
 def getPatternConfig(dataset, pattern):
     # Pattern configs
@@ -257,6 +258,12 @@ def getPatternConfig(dataset, pattern):
 
     return nx, ny, square, inner_square, objp
 
+def getWantedTransformsFromOpenCVHandEyeCalib(dataset, calib_tf_base2pattern, calib_tf_gripper2cam):
+
+    world_link = dataset['calibration_config']['world_link']
+
+    for collection_key, collection in dataset['collections'].items():
+        pass
 
 def main():
     ap = argparse.ArgumentParser()
@@ -318,7 +325,27 @@ def main():
 
     # Compute OpenCV stereo calibration
     # Now does not crash!!!
-    cvHandEyeCalibrate(objp=objp, dataset=dataset, camera=camera, pattern=pattern, number_of_corners=number_of_corners)
+    R_base2pattern, t_base2pattern, R_gripper2cam, t_gripper2cam = cvHandEyeCalibrate(objp=objp, dataset=dataset, camera=camera, pattern=pattern, number_of_corners=number_of_corners)
+
+    ########################################
+    # Get calibrated homogenous tfs
+    ########################################
+
+    calib_tf_base2pattern = np.zeros((4,4))
+    calib_tf_base2pattern[0:3, 0:3] = R_base2pattern
+    calib_tf_base2pattern[0:3, 3] = t_base2pattern.T
+    calib_tf_base2pattern[3, 3] = 1
+
+    # print(calib_tf_base2pattern)
+        
+    calib_tf_gripper2cam = np.zeros((4,4))
+    calib_tf_gripper2cam[0:3, 0:3] = R_gripper2cam
+    calib_tf_gripper2cam[0:3, 3] = t_gripper2cam.T    
+    calib_tf_gripper2cam[3, 3] = 1
+
+    # print(calib_tf_gripper2cam)
+
+    # res_gripper2cam = atomicTfFromCalibration(dataset, camera, pattern, calib_tf_gripper2cam)
 
 
 if __name__ == '__main__':
