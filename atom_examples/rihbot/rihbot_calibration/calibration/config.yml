@@ -35,7 +35,7 @@
 description_file: "package://rihbot_description/urdf/robot.urdf.xacro"
 
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
-bag_file: "$ROS_BAGS/rihbot/train_with_noise_all_joints.bag"
+bag_file: "$ROS_BAGS/rihbot/bag_diogo.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.

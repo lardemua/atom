@@ -28,7 +28,7 @@ As always, we recommend a careful reading of the [documentation](https://lardemu
 
 In this section, out goal is to describe the calibration pipeline for the **mrjbot**.
 
-To calibrate, we will need a bagfile called [train.bag](https://drive.google.com/file/d/1trvpsJ9W5R0UkSHaOohmr4BZvnXY6ly0/view?usp=drive_link), which contains a recording of the system's data when viewing a calibration pattern in several positions.
+To calibrate, we will need a bagfile called [train.bag](https://gofile.me/7nlMj/byL8M7tjj), which contains a recording of the system's data when viewing a calibration pattern in several positions.
 
 Download the bagfile and put it in **$ROS_BAGS/mrjbot/train.bag**.
 
@@ -68,7 +68,7 @@ To collect a dataset we run:
 
 And save a few collections.
 
-We will use as example the [train](https://drive.google.com/file/d/1WjbzB9MRPmGcowggLKX-zDOaKnj89yRF/view?usp=sharing) dataset, which was created using the train_with_noise bagfile and thus contains joint position errors. The dataset contains 11 collections. Some are shown below.
+We will use as example the [train](https://gofile.me/7nlMj/Rd22v8b25) dataset, which was created using the train_with_noise bagfile and thus contains joint position errors. The dataset contains 11 collections. Some are shown below.
 
 Download and decompress the dataset to **$ATOM_DATASETS/mrjbot/train**.
 

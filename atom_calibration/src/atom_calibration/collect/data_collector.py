@@ -7,6 +7,7 @@ import getpass
 from datetime import datetime
 
 import numpy as np
+import rospkg
 from atom_calibration.collect.patterns import estimatePatternPosesForCollection, initializePatternsDict
 from atom_core.utilities import atomError, atomPrintOK
 import tf2_ros
@@ -131,7 +132,15 @@ class DataCollector:
         atomPrintOK()
 
         # load the transforms_graph.json
-        transforms_graph_file = self.rospack.get_path(self.config['package_name']) + '/calibration/transforms_graph.json'
+        rospack = rospkg.RosPack()
+        package_path = rospack.get_path(self.config['package_name'])  # full path to the package, including its name.
+        transforms_graph_file = package_path + '/calibration/transforms_graph.json'
+
+        if not os.path.exists(transforms_graph_file):  # file does not exist, abort
+            atomError('Transforms graph file should exist at ' + Fore.BLUE +
+                      transforms_graph_file + Style.RESET_ALL +
+                      '\nReconfigure your package and try again.')
+
         f = open(transforms_graph_file, 'r')
         d = json.load(f)
 

@@ -732,8 +732,8 @@ def main():
     # ---------------------------------------
     print("Computing sparse matrix ... ")
     opt.computeSparseMatrix()
-    opt.printSparseMatrix()
-    opt.printParameters()
+    # opt.printSparseMatrix()
+    # opt.printParameters()
 
     # ---------------------------------------
     # --- Get a normalizer for each residual type

@@ -1,0 +1,186 @@
+{
+  "directed": true,
+  "graph": {},
+  "links": [
+    {
+      "child": "rgb_left_optical_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "rgb_left_optical_joint",
+      "joint_params_calibrated": null,
+      "parent": "rgb_left_link",
+      "source": "rgb_left_link",
+      "target": "rgb_left_optical_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "rgb_right_optical_frame",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "rgb_right_optical_joint",
+      "joint_params_calibrated": null,
+      "parent": "rgb_right_link",
+      "source": "rgb_right_link",
+      "target": "rgb_right_optical_frame",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "tripod",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "world_to_tripod",
+      "joint_params_calibrated": null,
+      "parent": "world",
+      "source": "world",
+      "target": "tripod",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "pattern_link",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": null,
+      "joint_params_calibrated": null,
+      "parent": "world",
+      "source": "world",
+      "target": "pattern_link",
+      "type": "multiple",
+      "weight": 1
+    },
+    {
+      "child": "tripod_plate",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "tripod_to_tripod_plate",
+      "joint_params_calibrated": null,
+      "parent": "tripod",
+      "source": "tripod",
+      "target": "tripod_plate",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "tripod_left_support",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "tripod_plate_to_tripod_left_support",
+      "joint_params_calibrated": null,
+      "parent": "tripod_plate",
+      "source": "tripod_plate",
+      "target": "tripod_left_support",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "tripod_right_support",
+      "from_bag": false,
+      "is_transformation_calibrated": false,
+      "joint_name": "tripod_plate_to_tripod_right_support",
+      "joint_params_calibrated": null,
+      "parent": "tripod_plate",
+      "source": "tripod_plate",
+      "target": "tripod_right_support",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "rgb_left_link",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": "rgb_left_joint",
+      "joint_params_calibrated": null,
+      "parent": "tripod_left_support",
+      "source": "tripod_left_support",
+      "target": "rgb_left_link",
+      "type": "fixed",
+      "weight": 1
+    },
+    {
+      "child": "rgb_right_link",
+      "from_bag": false,
+      "is_transformation_calibrated": true,
+      "joint_name": "rgb_right_joint",
+      "joint_params_calibrated": null,
+      "parent": "tripod_right_support",
+      "source": "tripod_right_support",
+      "target": "rgb_right_link",
+      "type": "fixed",
+      "weight": 1
+    }
+  ],
+  "multigraph": false,
+  "nodes": [
+    {
+      "from_bag": false,
+      "id": "rgb_left_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "rgb_left_optical_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": "rgb_left"
+    },
+    {
+      "from_bag": false,
+      "id": "rgb_right_link",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "rgb_right_optical_frame",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": "rgb_right"
+    },
+    {
+      "from_bag": false,
+      "id": "world",
+      "is_world": true,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "tripod",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "tripod_plate",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "tripod_left_support",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "from_bag": false,
+      "id": "tripod_right_support",
+      "is_world": false,
+      "pattern": null,
+      "sensor_data": null
+    },
+    {
+      "id": "pattern_link",
+      "is_world": false,
+      "pattern": "pattern_1",
+      "sensor_data": null
+    }
+  ]
+}
