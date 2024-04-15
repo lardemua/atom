@@ -46,9 +46,8 @@ class DataCollector:
         self.output_folder = resolvePath(args['output_folder'])
 
         if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
-            print('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
-                  ' exists.\nIf you want to replace it add a "--overwrite" flag.' + Style.RESET_ALL + '\n')
-            rospy.signal_shutdown()
+            atomError('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
+                      ' exists.\nIf you want to replace it add a "--overwrite" flag.' + Style.RESET_ALL + '\n')
 
         elif os.path.exists(self.output_folder) and args['overwrite']:  # move existing path to a backup location
             now = datetime.now()
