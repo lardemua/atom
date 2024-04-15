@@ -46,6 +46,8 @@ class DataCollector:
         self.output_folder = resolvePath(args['output_folder'])
 
         if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
+
+            time.sleep(1.5)
             atomError('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
                       ' exists.\nIf you want to replace it add a "--overwrite" flag.' + Style.RESET_ALL + '\n')
 

@@ -6,6 +6,7 @@ import math
 import struct
 import sys
 from colorama import Fore, Style
+from functools import partial
 
 # ROS imports
 import rospy
@@ -21,6 +22,7 @@ from atom_core.utilities import atomError
 from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
 from atom_calibration.collect.label_messages import labelPointCloud2Msg, numpyFromPointCloudMsg
 from atom_msgs.msg import Lidar3DLabels, PointCloudWithLidar3DLabels
+from atom_core.utilities import atomWarn
 
 
 class Lidar3DLabeler:
@@ -242,6 +244,10 @@ class Lidar3DLabeler:
         # self.menu_handler.apply(self.server, self.marker.name)
 
 
+def shutdownCallback(node_name):
+    atomWarn(node_name + ' shutting down.')
+
+
 def main():
 
     # Parse command line arguments
@@ -260,6 +266,8 @@ def main():
     rospy.init_node(node_name)
 
     lidar_labeler = Lidar3DLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'], color=args['color'])
+
+    rospy.on_shutdown(partial(shutdownCallback, node_name=node_name))
     rospy.spin()
 
 
