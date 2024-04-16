@@ -9,6 +9,7 @@ import numpy as np
 import cv2
 from matplotlib import cm
 from colorama import Fore, Style
+from functools import partial
 
 # ROS Imports
 import rospy
@@ -21,6 +22,7 @@ from atom_core.ros_utils import getMessageTypeFromTopic, filterLaunchArguments
 from atom_core.utilities import atomError
 from atom_calibration.collect import patterns
 from atom_msgs.msg import ImageWithRGBLabels, RGBLabels, Detection2D
+from atom_core.utilities import atomWarn
 
 
 class RGBLabeler:
@@ -168,6 +170,10 @@ class RGBLabeler:
                 rospy.signal_shutdown(1)
 
 
+def shutdownCallback(node_name):
+    atomWarn(node_name + ' shutting down.')
+
+
 def main():
 
     # Parse command line arguments
@@ -188,6 +194,7 @@ def main():
 
     rgb_labeler = RGBLabeler(config, sensor_name=args['sensor_name'], debug=args['debug'], color=args['color'])
 
+    rospy.on_shutdown(partial(shutdownCallback, node_name=node_name))
     rospy.spin()
 
 
