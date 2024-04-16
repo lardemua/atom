@@ -16,6 +16,20 @@ from colorama import Fore, Style
 from atom_core.utilities import atomError
 from atom_core.system import resolvePath, expandToLaunchEnv
 
+def mutually_inclusive_conditions(A,B):
+
+    print(A is None)
+    print(B is None)
+
+    if A is not None and B is not None:
+        return True
+    elif A is None and B is None:
+        return False
+    else:
+        atomError(f'{Fore.RED}-ntfl{Style.RESET_ALL} and {Fore.RED}-ntfv{Style.RESET_ALL} flags are mutually inclusive') 
+        exit()
+
+
 def parse_list_of_transformations(s):
     list_of_transformations = []
     for pair in s.split(','):

@@ -44,7 +44,7 @@ from atom_core.utilities import (atomError, createLambdaExpressionsForArgs,
                                  printComparisonToGroundTruth, saveCommandLineArgsYml)
 from atom_core.xacro_io import saveResultsXacro
 from atom_core.results_yml_io import saveResultsYml
-from atom_core.config_io import parse_list_of_transformations
+from atom_core.config_io import parse_list_of_transformations,mutually_inclusive_conditions
 
 
 # -------------------------------------------------------------------------------
@@ -245,22 +245,24 @@ def main():
     # Verify both arguments were provided
     # Unfortunately, mutually inclusive arguments are not built into argparse
     # https://github.com/python/cpython/issues/55797
+    
+    if mutually_inclusive_conditions(args['noisy_tf_links'],args['noisy_tf_values']):
+        # Iterate through pairs of tf's and apply noise
+        translation_tf_noise = args['noisy_tf_values'][0]
+        rotation_tf_noise    = args['noisy_tf_values'][1] 
 
-    if args['noisy_tf_links'] is None and args['noisy_tf_values'] is None:
-        atomError(f'{Fore.RED}-ntfl{Style.RESET_ALL} and {Fore.RED}-ntfv{Style.RESET_ALL} flags are mutually inclusive') 
-        exit()
+        # print("Adding noise")
+        # print(translation_tf_noise)
+        # print(rotation_tf_noise)
 
-    # Iterate through pairs of tf's and apply noise
-    translation_tf_noise = args['noisy_tf_values'][0]
-    rotation_tf_noise    = args['noisy_tf_values'][1] 
+        for tf_pair in args['noisy_tf_links']:
+            addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
+            # debugging print
+            # tf_link = generateKey(tf_pair[0],tf_pair[1])
+            # from pprint import pprint
+            # pprint(dataset['collections'][selected_collection_key]['transforms'][tf_link])
+            # pprint(dataset_ground_truth['collections'][selected_collection_key]['transforms'][tf_link])
 
-    for tf_pair in args['noisy_tf_links']:
-        addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
-        # debugging print
-        # tf_link = generateKey(tf_pair[0],tf_pair[1])
-        # from pprint import pprint
-        # pprint(dataset['collections'][selected_collection_key]['transforms'][tf_link])
-        # pprint(dataset_ground_truth['collections'][selected_collection_key]['transforms'][tf_link])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -734,6 +736,7 @@ def main():
     opt.computeSparseMatrix()
     # opt.printSparseMatrix()
     # opt.printParameters()
+    opt.getParamNames()
 
     # ---------------------------------------
     # --- Get a normalizer for each residual type
