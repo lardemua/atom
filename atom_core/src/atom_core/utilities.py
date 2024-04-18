@@ -42,6 +42,7 @@ def compareAtomTransforms(transform_1, transform_2):
         transform_2: transformation 2
     """
 
+
     # Create a 4x4 transformation for transform_1
     t1 = quaternion_matrix(transform_1['quat'])
     t1[0:3, 3] = transform_1['trans']
@@ -50,31 +51,49 @@ def compareAtomTransforms(transform_1, transform_2):
     t2 = quaternion_matrix(transform_2['quat'])
     t2[0:3, 3] = transform_2['trans']
 
-    print('t1 =\n' + str(t1))
-    print('t2 =\n' + str(t2))
+    # print('t1 =\n' + str(t1))
+    # print('t2 =\n' + str(t2))
 
     v = t2[0:3, 3] - t1[0:3, 3]
-    nor = np.linalg.norm(v)
-    print('nor = ' + str(nor))
+    # nor = np.linalg.norm(v)
+    # print('nor = ' + str(nor))
 
     # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation of the amount of rotation and translation in the resulting matrix.
     # print('Comparing \nt1= ' + str(t1) + ' \n\nt2=' + str(t2))
 
     t_delta = np.dot(np.linalg.inv(t1), t2)
-    print('t_delta = ' + str(t_delta))
+    # print('t_delta = ' + str(t_delta))
 
     rotation_delta = t_delta[0:3, 0:3]
-    roll, pitch, yaw = euler_from_matrix(rotation_delta)
+    # roll, pitch, yaw = euler_from_matrix(rotation_delta)
+
+    import tf
+    euler_angles_init = tf.transformations.euler_from_quaternion(transform_1['quat'])
+    euler_angles_final = tf.transformations.euler_from_quaternion(transform_2['quat'])
+
+
+    deuler = np.subtract(euler_angles_final,euler_angles_init)
+
 
     translation_delta = t_delta[0:3, 3]
-    print('translation_delta = ' + str(translation_delta))
-    nor = np.linalg.norm(translation_delta)
-    print('nor = ' + str(nor))
+    # print('translation_delta = ' + str(translation_delta))
+    # nor = np.linalg.norm(translation_delta)
+    # print('nor = ' + str(nor))
 
     # global metrics
     # translation_error = float(abs(np.average(translation_delta)))
     translation_error = np.linalg.norm(translation_delta)
-    rotation_error = np.linalg.norm([roll, pitch, yaw])
+    # rotation_error = np.linalg.norm([roll, pitch, yaw])
+    rotation_error = np.linalg.norm(deuler)
+
+    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
+    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
+    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
+    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
+    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
+    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
+    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
+    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
     # rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
 
     print('translation error = ' + str(translation_error))

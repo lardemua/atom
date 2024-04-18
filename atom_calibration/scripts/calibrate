@@ -25,7 +25,7 @@ from atom_calibration.calibration.getters_and_setters import (getterCameraIntrin
 from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess,
-                                  addNoiseToJointParameters,
+                                  addBiasToJointParameters,
                                   addNoiseToTF,
                                   checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset,
@@ -238,8 +238,9 @@ def main():
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
 
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
-    # addNoiseToJointParameters(dataset, args)
+    # addBiasToJointParameters(dataset, args)
 
+    # TODO Put this encapsulated in a single function
     # Verify both arguments were provided
     # Unfortunately, mutually inclusive arguments are not built into argparse
     # https://github.com/python/cpython/issues/55797
@@ -249,18 +250,8 @@ def main():
         translation_tf_noise = args['noisy_tf_values'][0]
         rotation_tf_noise = args['noisy_tf_values'][1]
 
-        # print("Adding noise")
-        # print(translation_tf_noise)
-        # print(rotation_tf_noise)
-
         # for tf_pair in args['noisy_tf_links']:
         # addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
-        # addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],1,1)
-        # debugging print
-        # tf_link = generateKey(tf_pair[0],tf_pair[1])
-        # from pprint import pprint
-        # pprint(dataset['collections'][selected_collection_key]['transforms'][tf_link])
-        # pprint(dataset_ground_truth['collections'][selected_collection_key]['transforms'][tf_link])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
