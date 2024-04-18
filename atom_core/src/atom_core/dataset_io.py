@@ -748,6 +748,7 @@ def filterAdditionalTfsFromDataset(dataset, args):
     return dataset
 
 
+# TODO change to reflect the fact that this is not random noise but instead a fixed bias
 def addNoiseToJointParameters(dataset, args):
     """
     Adds noise
@@ -780,6 +781,8 @@ def addNoiseToJointParameters(dataset, args):
 
             collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][joint_param] + joint_bias
 
+# TODO Create a new function called addNoiseFromNoisyTFLinks
+
 
 def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     """
@@ -792,13 +795,15 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     # if args['noisy_initial_guess'] == [0,0]:
     #     print("No noise added to transform's initial guess")
     #     return
-    
+
     if args['sample_seed'] is not None:
         np.random.seed(args['sample_seed'])
 
     nig_trans = args['noisy_initial_guess'][0]
     nig_rot = args['noisy_initial_guess'][1]
 
+    # TODO if the transform to get get is also in the args noisy_tf_links, then we should not add noise to it.
+    # skip it. with a warn
 
     # add noise to additional tfs for simulation
     if dataset['calibration_config']['additional_tfs'] is not None:
@@ -819,9 +824,12 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
             print(calibration_parent)
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
 
+# TODO make a basic function called by fixed and multiple
+
 
 def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
 
+    print(Fore.RED + 'Transformation parent ' + calibration_parent + ' child ' + calibration_child + Style.RESET_ALL)
     transform_key = generateKey(calibration_parent, calibration_child, suffix='')
 
     # because of #900, and for retrocompatibility with old datasets, we will assume that if the transforms field does
@@ -855,55 +863,72 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
     elif dataset['transforms'][transform_key]['type'] == 'multiple':
 
-
         for collection_key, collection in dataset["collections"].items():
 
             # Get original transformation
             tf_gt = copy.deepcopy(dataset['collections'][collection_key]['transforms'][transform_key])
+            print('tf_gt=' + str(tf_gt))
 
             quat = dataset['collections'][collection_key]['transforms'][transform_key]['quat']
             translation = dataset['collections'][collection_key]['transforms'][transform_key]['trans']
 
             # Add noise to the 6 pose parameters
             v = np.random.uniform(-1.0, 1.0, 3)
+            print('translation v =' + str(v))
             v = v / np.linalg.norm(v)
-            new_translation = translation + v * nig_trans
+            print('normalized translation v =' + str(v))
+            translation_delta = v * nig_trans
+            print('translation delta=' + str(translation_delta))
 
-            v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+            nor = np.linalg.norm(translation_delta)
+            print('nor =' + str(nor))
+
+            new_translation = translation + translation_delta
+
+            print('old_translation=' + str(tf_gt['trans']))
+            print('new_translation=' + str(new_translation))
+
+            # v = np.random.choice([-1.0, 1.0], 3) * nig_rot
+            v = np.random.uniform(-1.0, 1.0, 3)
+            print('rotation v =' + str(v))
+            v = v / np.linalg.norm(v)
+            print('normalized rotation v =' + str(v))
+
+            rotation_delta = v * nig_rot
+            print('rotation_delta=' + str(rotation_delta))
+            nor = np.linalg.norm(rotation_delta)
+            print('nor =' + str(nor))
+
             euler_angles = tf.transformations.euler_from_quaternion(quat)
-            new_angles = euler_angles + v
+            new_angles = euler_angles + rotation_delta
+            new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
 
             # Replace the original atomic transformations by the new noisy ones
-            new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
             dataset['collections'][collection_key]['transforms'][transform_key]['quat'] = new_quat
             dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = list(new_translation)
 
             print(f'{Fore.BLUE}{type(new_quat)}{Style.RESET_ALL}')
             print(f'{Fore.BLUE}{type(list(new_translation))}{Style.RESET_ALL}')
-            
+
             from atom_core.utilities import compareAtomTransforms
             from pprint import pprint
 
-            et,er = compareAtomTransforms(tf_gt,dataset['collections'][collection_key]['transforms'][transform_key])
+            et, er = compareAtomTransforms(tf_gt, dataset['collections'][collection_key]['transforms'][transform_key])
             # pprint(tf_gt)
             # pprint(dataset['collections'][collection_key]['transforms'][transform_key])
 
             print("\n\nTranslation")
             # print(f'{Fore.BLUE}{list(np.around(np.array(translation),4))}{Style.RESET_ALL}')
             # print(f'{Fore.RED}{list(np.around(np.array(new_translation),4))}{Style.RESET_ALL}')
-            print(f'{Fore.GREEN}Diference\n{round(et,3)}{Style.RESET_ALL}')
-
-
+            print(f'{Fore.GREEN}Diference\n{round(et,5)}{Style.RESET_ALL}')
 
             print("\n\nRotation")
             # print(f'{Fore.BLUE}{list(np.around(np.array(euler_angles),4))}{Style.RESET_ALL}')
             # print(f'{Fore.RED}{list(np.around(np.array(new_angles),4))}{Style.RESET_ALL}')
 
-            print(f'{Fore.GREEN}Diference\n{round(er,3)}{Style.RESET_ALL}')
+            print(f'{Fore.GREEN}Diference\n{round(er,5)}{Style.RESET_ALL}')
 
-
-
-            # exit()
+            # exit(0)
 
 
 def copyTFToDataset(calibration_parent, calibration_child, source_dataset, target_dataset):

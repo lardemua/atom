@@ -50,21 +50,35 @@ def compareAtomTransforms(transform_1, transform_2):
     t2 = quaternion_matrix(transform_2['quat'])
     t2[0:3, 3] = transform_2['trans']
 
-    # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation the amount of rotation and translation in the resulting matrix.
+    print('t1 =\n' + str(t1))
+    print('t2 =\n' + str(t2))
+
+    v = t2[0:3, 3] - t1[0:3, 3]
+    nor = np.linalg.norm(v)
+    print('nor = ' + str(nor))
+
+    # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation of the amount of rotation and translation in the resulting matrix.
     # print('Comparing \nt1= ' + str(t1) + ' \n\nt2=' + str(t2))
 
     t_delta = np.dot(np.linalg.inv(t1), t2)
-    # print('t_delta = ' + str(t_delta))
+    print('t_delta = ' + str(t_delta))
 
     rotation_delta = t_delta[0:3, 0:3]
     roll, pitch, yaw = euler_from_matrix(rotation_delta)
 
     translation_delta = t_delta[0:3, 3]
-    # print('translation_delta = ' + str(translation_delta))
+    print('translation_delta = ' + str(translation_delta))
+    nor = np.linalg.norm(translation_delta)
+    print('nor = ' + str(nor))
 
     # global metrics
-    translation_error = float(abs(np.average(translation_delta)))
-    rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
+    # translation_error = float(abs(np.average(translation_delta)))
+    translation_error = np.linalg.norm(translation_delta)
+    rotation_error = np.linalg.norm([roll, pitch, yaw])
+    # rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
+
+    print('translation error = ' + str(translation_error))
+    print('rotation error = ' + str(rotation_error))
 
     return translation_error, rotation_error
 
