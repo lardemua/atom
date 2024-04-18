@@ -169,7 +169,7 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
     if dataset['calibration_config']['additional_tfs'] is not None:
         for additional_tf_key, additional_tf in dataset['calibration_config']['additional_tfs'].items():
 
-            transform_key = generateKey(additional_tf["parent_link"], sensor["child_link"])
+            transform_key = generateKey(additional_tf["parent_link"], additional_tf["child_link"])
             row = [transform_key, Fore.LIGHTCYAN_EX + additional_tf_key + Style.RESET_ALL]
 
             transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]

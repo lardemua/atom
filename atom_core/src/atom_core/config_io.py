@@ -18,9 +18,6 @@ from atom_core.system import resolvePath, expandToLaunchEnv
 
 def mutually_inclusive_conditions(A,B):
 
-    print(A is None)
-    print(B is None)
-
     if A is not None and B is not None:
         return True
     elif A is None and B is None:

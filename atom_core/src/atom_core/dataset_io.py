@@ -815,6 +815,8 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         if sensor_key != dataset['calibration_config']['anchored_sensor']:
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
+            print(calibration_child)
+            print(calibration_parent)
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
 
 
@@ -853,9 +855,12 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
     elif dataset['transforms'][transform_key]['type'] == 'multiple':
 
+
         for collection_key, collection in dataset["collections"].items():
 
             # Get original transformation
+            tf_gt = copy.deepcopy(dataset['collections'][collection_key]['transforms'][transform_key])
+
             quat = dataset['collections'][collection_key]['transforms'][transform_key]['quat']
             translation = dataset['collections'][collection_key]['transforms'][transform_key]['trans']
 
@@ -872,6 +877,33 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
             new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
             dataset['collections'][collection_key]['transforms'][transform_key]['quat'] = new_quat
             dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = list(new_translation)
+
+            print(f'{Fore.BLUE}{type(new_quat)}{Style.RESET_ALL}')
+            print(f'{Fore.BLUE}{type(list(new_translation))}{Style.RESET_ALL}')
+            
+            from atom_core.utilities import compareAtomTransforms
+            from pprint import pprint
+
+            et,er = compareAtomTransforms(tf_gt,dataset['collections'][collection_key]['transforms'][transform_key])
+            # pprint(tf_gt)
+            # pprint(dataset['collections'][collection_key]['transforms'][transform_key])
+
+            print("\n\nTranslation")
+            # print(f'{Fore.BLUE}{list(np.around(np.array(translation),4))}{Style.RESET_ALL}')
+            # print(f'{Fore.RED}{list(np.around(np.array(new_translation),4))}{Style.RESET_ALL}')
+            print(f'{Fore.GREEN}Diference\n{round(et,3)}{Style.RESET_ALL}')
+
+
+
+            print("\n\nRotation")
+            # print(f'{Fore.BLUE}{list(np.around(np.array(euler_angles),4))}{Style.RESET_ALL}')
+            # print(f'{Fore.RED}{list(np.around(np.array(new_angles),4))}{Style.RESET_ALL}')
+
+            print(f'{Fore.GREEN}Diference\n{round(er,3)}{Style.RESET_ALL}')
+
+
+
+            # exit()
 
 
 def copyTFToDataset(calibration_parent, calibration_child, source_dataset, target_dataset):

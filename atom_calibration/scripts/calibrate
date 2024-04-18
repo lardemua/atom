@@ -60,6 +60,8 @@ def signal_handler(sig, frame):
 # -------------------------------------------------------------------------------
 def main():
 
+
+
     atomStartupPrint('Starting calibration')
 
     # ---------------------------------------
@@ -239,7 +241,7 @@ def main():
 
     
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
-    addNoiseToJointParameters(dataset, args)
+    # addNoiseToJointParameters(dataset, args)
 
 
     # Verify both arguments were provided
@@ -255,8 +257,9 @@ def main():
         # print(translation_tf_noise)
         # print(rotation_tf_noise)
 
-        for tf_pair in args['noisy_tf_links']:
-            addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
+        # for tf_pair in args['noisy_tf_links']:
+            # addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
+            # addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],1,1)
             # debugging print
             # tf_link = generateKey(tf_pair[0],tf_pair[1])
             # from pprint import pprint
@@ -338,6 +341,7 @@ def main():
     # Steaming from the config json, we define a transform to be optimized for each sensor. It could happen that two
     # or more sensors define the same transform to be optimized (#120). To cope with this we first create a list of
     # transformations to be optimized and then compute the unique set of that list.
+    
     print("Creating sensor transformation parameters ...")
     sensors_transforms_set = set()
     for sensor_key, sensor in dataset["sensors"].items():
@@ -379,6 +383,7 @@ def main():
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
             additional_transforms_set.add(transform_key)
+
 
     if dataset['calibration_config']['additional_tfs'] is not None:
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
@@ -736,7 +741,9 @@ def main():
     opt.computeSparseMatrix()
     # opt.printSparseMatrix()
     # opt.printParameters()
-    opt.getParamNames()
+    # opt.getParamNames()
+
+
 
     # ---------------------------------------
     # --- Get a normalizer for each residual type
