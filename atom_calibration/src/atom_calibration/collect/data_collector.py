@@ -45,13 +45,15 @@ class DataCollector:
 
         self.output_folder = resolvePath(args['output_folder'])
 
-        if os.path.exists(self.output_folder) and not args['overwrite']:  # dataset path exists, abort
+        # dataset path exists, abort
+        if os.path.exists(self.output_folder) and not args['overwrite']:
 
             time.sleep(1.5)
             atomError('\n' + Fore.RED + 'Error: Dataset ' + self.output_folder +
                       ' exists.\nIf you want to replace it add a "--overwrite" flag.' + Style.RESET_ALL + '\n')
 
-        elif os.path.exists(self.output_folder) and args['overwrite']:  # move existing path to a backup location
+        # move existing path to a backup location
+        elif os.path.exists(self.output_folder) and args['overwrite']:
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
             basename = os.path.basename(self.output_folder)
@@ -63,11 +65,14 @@ class DataCollector:
                   '\nThis will be deleted after a system reboot! If you want to keep it, copy the folder to some other location.' + Style.RESET_ALL + '\n\n')
             time.sleep(0.1)
 
-            execute('mv ' + self.output_folder + ' ' + backup_folder, verbose=True)
-            os.makedirs(self.output_folder, exist_ok=False)  # Create the folder empty
+            execute('mv ' + self.output_folder +
+                    ' ' + backup_folder, verbose=True)
+            # Create the folder empty
+            os.makedirs(self.output_folder, exist_ok=False)
 
         elif not os.path.exists(self.output_folder):
-            os.makedirs(self.output_folder, exist_ok=False)  # Create the folder
+            # Create the folder
+            os.makedirs(self.output_folder, exist_ok=False)
 
         self.listener = TransformListener()
         self.tf_buffer = tf2_ros.Buffer()
@@ -98,11 +103,13 @@ class DataCollector:
         self.world_link = self.config['world_link']
 
         # Create a colormap so that we have one color per sensor
-        self.cm_sensors = cm.Pastel2(np.linspace(0, 1, len(self.config['sensors'].keys())))
+        self.cm_sensors = cm.Pastel2(np.linspace(
+            0, 1, len(self.config['sensors'].keys())))
 
         # Reading the xacro
         self.dataset_name = self.output_folder.split('/')[-1]
-        description_file, _, _ = atom_core.config_io.uriReader(self.config['description_file'])
+        description_file, _, _ = atom_core.config_io.uriReader(
+            self.config['description_file'])
 
         # Must first convert to urdf, if it is a xacro
         urdf_file = '/tmp/description.urdf'
@@ -110,7 +117,8 @@ class DataCollector:
             # print('Deleting temporary file ' + urdf_file)
             os.remove(urdf_file)
 
-        print('Parsing description file ' + Fore.BLUE + description_file + Style.RESET_ALL)
+        print('Parsing description file ' + Fore.BLUE +
+              description_file + Style.RESET_ALL)
         xacro_cmd = 'xacro ' + description_file + ' -o ' + urdf_file
         execute(xacro_cmd, verbose=True)  # create tmp urdf file
 
@@ -118,7 +126,8 @@ class DataCollector:
             atomError('Could not parse description file ' + Fore.BLUE + description_file + Style.RESET_ALL + '\nYou must manually run command:\n' +
                       Fore.BLUE + xacro_cmd + Style.RESET_ALL + '\nand fix the problem before configuring your calibration package.')
 
-        self.urdf_description = URDF.from_xml_file(urdf_file)  # read the urdf file
+        self.urdf_description = URDF.from_xml_file(
+            urdf_file)  # read the urdf file
 
         # Setup joint_state message subscriber
         self.subscriber_joint_states = rospy.Subscriber(
@@ -131,7 +140,8 @@ class DataCollector:
 
         # load the transforms_graph.json
         rospack = rospkg.RosPack()
-        package_path = rospack.get_path(self.config['package_name'])  # full path to the package, including its name.
+        # full path to the package, including its name.
+        package_path = rospack.get_path(self.config['package_name'])
         transforms_graph_file = package_path + '/calibration/transforms_graph.json'
 
         if not os.path.exists(transforms_graph_file):  # file does not exist, abort
@@ -149,7 +159,8 @@ class DataCollector:
             # remove keys source and target from edge before saving
             del edge['source']
             del edge['target']
-            self.transforms[transform_key] = edge  # only the edges of the graph are needed
+            # only the edges of the graph are needed
+            self.transforms[transform_key] = edge
 
         # Add sensors
         print(Fore.BLUE + 'Sensors:' + Style.RESET_ALL)
@@ -159,6 +170,7 @@ class DataCollector:
         label_data = {}
         for sensor_key, value in self.config['sensors'].items():
 
+            print('Configuring sensor ' + sensor_key)
             # Create a dictionary that describes this sensor
             sensor_dict = {'_name': sensor_key, 'modality': value['modality'], 'parent': value['link'],
                            'calibration_parent': value['parent_link'],
@@ -178,13 +190,17 @@ class DataCollector:
 
             # If topic contains a message type then get a camera_info message to store along with the sensor data
             if modality == 'rgb' or modality == 'depth':  # if it is an image must get camera_info
-                sensor_dict['camera_info_topic'] = os.path.dirname(sensor_dict['topic']) + '/camera_info'
+                sensor_dict['camera_info_topic'] = os.path.dirname(
+                    sensor_dict['topic']) + '/camera_info'
                 from sensor_msgs.msg import CameraInfo
-                print('Waiting for camera_info message on topic ' + sensor_dict['camera_info_topic'] + ' ...')
-                camera_info_msg = rospy.wait_for_message(sensor_dict['camera_info_topic'], CameraInfo)
+                print('Waiting for camera_info message on topic ' +
+                      sensor_dict['camera_info_topic'] + ' ...')
+                camera_info_msg = rospy.wait_for_message(
+                    sensor_dict['camera_info_topic'], CameraInfo)
                 print('... received!')
                 from rospy_message_converter import message_converter
-                sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(camera_info_msg)
+                sensor_dict['camera_info'] = message_converter.convert_ros_message_to_dictionary(
+                    camera_info_msg)
                 # sensor_dict['camera_info_msg'] = camera_info_msg
                 # print(camera_info_msg)
 
@@ -192,24 +208,29 @@ class DataCollector:
             now = rospy.Time()
             print('Waiting for transformation from ' + Fore.BLUE +
                   value['link'] + Style.RESET_ALL + ' to ' + Fore.BLUE + self.world_link + Style.RESET_ALL)
-            self.listener.waitForTransform(value['link'], self.world_link, now, rospy.Duration(5))
+            self.listener.waitForTransform(
+                value['link'], self.world_link, now, rospy.Duration(5))
             print('... received!')
-            chain = self.listener.chain(value['link'], now, self.world_link, now, self.world_link)
+            chain = self.listener.chain(
+                value['link'], now, self.world_link, now, self.world_link)
 
             chain_list = []
             for parent, child in zip(chain[0::], chain[1::]):
                 key = generateKey(parent, child)
-                chain_list.append({'key': key, 'parent': parent, 'child': child})
+                chain_list.append(
+                    {'key': key, 'parent': parent, 'child': child})
 
             sensor_dict['chain'] = chain_list  # Add to sensor dictionary
             self.sensors[sensor_key] = sensor_dict
 
             label_data[sensor_key] = True
             if not args['skip_sensor_labeling'] is None:
-                if args['skip_sensor_labeling'](sensor_key):  # use the lambda expression csf
+                # use the lambda expression csf
+                if args['skip_sensor_labeling'](sensor_key):
                     label_data[sensor_key] = False
 
-            print('Configuration for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' is complete.')
+            print('Configuration for sensor ' + Fore.BLUE +
+                  sensor_key + Style.RESET_ALL + ' is complete.')
 
         # Defining metadata
         self.metadata = {"timestamp": str(time.time()), "date": time.ctime(time.time()), "user": getpass.getuser(),
@@ -245,8 +266,10 @@ class DataCollector:
 
             labels_topic = sensor_key + '/labels'
 
-            print("Waiting for first message on topic " + labels_topic + ' ... ', end='')
-            self.label_msgs[sensor_key] = rospy.wait_for_message(labels_topic, label_msg_type)
+            print("Waiting for first message on topic " +
+                  labels_topic + ' ... ', end='')
+            self.label_msgs[sensor_key] = rospy.wait_for_message(
+                labels_topic, label_msg_type)
             print('received!')
 
         # Create an additional_data dictionary
@@ -317,12 +340,14 @@ class DataCollector:
         except ValueError as verr:  # do job to handle: s does not contain anything convertible to int
             response = atom_msgs.srv.DeleteCollectionResponse()
             response.success = False
-            response.message = 'Failure. Cannot convert collection ' + request.collection_name + ' to string.'
+            response.message = 'Failure. Cannot convert collection ' + \
+                request.collection_name + ' to string.'
             return response
         except Exception as ex:  # do job to handle: Exception occurred while converting to int
             response = atom_msgs.srv.DeleteCollectionResponse()
             response.success = False
-            response.message = 'Failure. Cannot convert collection ' + request.collection_name + ' to string.'
+            response.message = 'Failure. Cannot convert collection ' + \
+                request.collection_name + ' to string.'
 
         response = atom_msgs.srv.DeleteCollectionResponse()
         if collection_name_int in self.collections.keys():
@@ -336,11 +361,14 @@ class DataCollector:
             output_file = self.output_folder + '/dataset.json'
             atom_core.dataset_io.saveAtomDataset(output_file, D)
 
-            print(Fore.YELLOW + 'Deleted collection ' + request.collection_name + Style.RESET_ALL)
+            print(Fore.YELLOW + 'Deleted collection ' +
+                  request.collection_name + Style.RESET_ALL)
         else:
-            print('Failure. Collection ' + request.collection_name + ' does not exist.')
+            print('Failure. Collection ' +
+                  request.collection_name + ' does not exist.')
             response.success = False
-            response.message = 'Failure. Collection ' + request.collection_name + ' does not exist.'
+            response.message = 'Failure. Collection ' + \
+                request.collection_name + ' does not exist.'
 
         return response
 
@@ -373,7 +401,8 @@ class DataCollector:
         return response
 
     def getTransforms(self, abstract_transforms, buffer, time=None):
-        transforms_dict = {}  # Initialize an empty dictionary that will store all the transforms for this data-stamp
+        # Initialize an empty dictionary that will store all the transforms for this data-stamp
+        transforms_dict = {}
 
         if time is None:
             time = rospy.Time.now()
@@ -381,14 +410,16 @@ class DataCollector:
         for ab in abstract_transforms:  # Update all transformations
 
             transf = buffer.lookup_transform(ab['parent'], ab['child'], time)
-            trans = [transf.transform.translation.x, transf.transform.translation.y, transf.transform.translation.z]
+            trans = [transf.transform.translation.x,
+                     transf.transform.translation.y, transf.transform.translation.z]
             quat = [transf.transform.rotation.x,
                     transf.transform.rotation.y,
                     transf.transform.rotation.z,
                     transf.transform.rotation.w]
 
             key = generateKey(ab['parent'], ab['child'])
-            transforms_dict[key] = {'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
+            transforms_dict[key] = {
+                'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
 
         return transforms_dict
 
@@ -400,7 +431,8 @@ class DataCollector:
 
         max_delta = getMaxTimeDelta(stamps)
         # TODO : this is because of Andre's bag file problem. We should go back to the getAverageTime
-        average_time = getAverageTime(stamps)  # For looking up transforms use average time of all sensor msgs
+        # For looking up transforms use average time of all sensor msgs
+        average_time = getAverageTime(stamps)
         # average_time = getMaxTime(stamps)  # For looking up transforms use average time of all sensor msgs
 
         print('Times:')
@@ -420,13 +452,16 @@ class DataCollector:
         # --------------------------------------
         stamps, average_time, max_delta = self.getLabelersTimeStatistics()
 
-        if max_delta is not None:  # if max_delta is None (only one sensor), continue
-            if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):  # times are close enough?
+        # if max_delta is None (only one sensor), continue
+        if max_delta is not None:
+            # times are close enough?
+            if max_delta.to_sec() > float(self.config['max_duration_between_msgs']):
                 rospy.logwarn('Max duration between msgs in collection is ' + str(max_delta.to_sec()) +
                               '. Not saving collection.')
                 return None
             else:  # test passed
-                rospy.loginfo('Max duration between msgs in collection is ' + str(max_delta.to_sec()))
+                rospy.loginfo(
+                    'Max duration between msgs in collection is ' + str(max_delta.to_sec()))
 
         # collect all the transforms
         print('average_time=' + str(average_time))
@@ -514,11 +549,13 @@ class DataCollector:
                 if pattern_label is None:
                     print(Fore.YELLOW + 'Could not find pattern ' + pattern_key +
                           ' in label_msg of sensor ' + sensor_key + Style.RESET_ALL)
-                    labels_dict = {'detected': False, 'idxs': [], 'idxs_limit_points': []}
+                    labels_dict = {'detected': False,
+                                   'idxs': [], 'idxs_limit_points': []}
                     all_sensor_labels_dict[pattern_key][sensor_key] = labels_dict
 
                 elif sensor['modality'] in ['rgb']:
-                    labels_dict = {'detected': pattern_label.detected, 'idxs': []}
+                    labels_dict = {
+                        'detected': pattern_label.detected, 'idxs': []}
 
                     for detection_2d in pattern_label.idxs:
                         labels_dict['idxs'].append({'id': detection_2d.id,
@@ -529,7 +566,8 @@ class DataCollector:
 
                 elif sensor['modality'] in ['lidar3d', 'depth']:
 
-                    labels_dict = {'detected': pattern_label.detected, 'idxs': [], 'idxs_limit_points': []}
+                    labels_dict = {'detected': pattern_label.detected,
+                                   'idxs': [], 'idxs_limit_points': []}
 
                     for idx in pattern_label.idxs:
                         labels_dict['idxs'].append(idx)
@@ -555,7 +593,8 @@ class DataCollector:
             elif sensor['modality'] in ['depth']:
                 msg = self.label_msgs[sensor_key].image
 
-            all_sensor_data_dict[sensor['_name']] = message_converter.convert_ros_message_to_dictionary(msg)
+            all_sensor_data_dict[sensor['_name']
+                                 ] = message_converter.convert_ros_message_to_dictionary(msg)
 
         # --------------------------------------
         # Create all_additional_data_dict
@@ -563,7 +602,8 @@ class DataCollector:
         all_additional_data_dict = {}
         for additional_data_key, _ in self.additional_data.items():
             msg = self.additional_data_msgs[additional_data_key]
-            all_additional_data_dict[additional_data_key] = message_converter.convert_ros_message_to_dictionary(msg)
+            all_additional_data_dict[additional_data_key] = message_converter.convert_ros_message_to_dictionary(
+                msg)
 
         # --------------------------------------
         # Create collection_dict
@@ -572,7 +612,8 @@ class DataCollector:
                            'transforms': transforms,
                            'additional_data': all_additional_data_dict, 'joints': joints_dict}
 
-        collection_key = str(self.data_stamp).zfill(3)  # collection names are 000, 001, etc
+        collection_key = str(self.data_stamp).zfill(
+            3)  # collection names are 000, 001, etc
         self.collections[collection_key] = collection_dict
 
         # Update pattern dict with transform_initial of this collection
@@ -608,24 +649,30 @@ class DataCollector:
         # Using solution from
         # https://answers.ros.org/question/347857/how-to-get-list-of-all-tf-frames-programatically/
         # all_frames = self.listener.getFrameStrings()
-        frames_dict = yaml.safe_load(self.listener._buffer.all_frames_as_yaml())
+        frames_dict = yaml.safe_load(
+            self.listener._buffer.all_frames_as_yaml())
         all_frames = list(frames_dict.keys())
 
         for frame in all_frames:
             print('Waiting for transformation from ' + Fore.BLUE + frame + Style.RESET_ALL +
                   ' to ' + Fore.BLUE + self.world_link + Style.RESET_ALL + ' (max 3 secs)')
             try:
-                self.listener.waitForTransform(frame, self.world_link, now, rospy.Duration(3))
-                chain = self.listener.chain(frame, now, self.world_link, now, self.world_link)
+                self.listener.waitForTransform(
+                    frame, self.world_link, now, rospy.Duration(3))
+                chain = self.listener.chain(
+                    frame, now, self.world_link, now, self.world_link)
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                rospy.logerr('Could not get transform from ' + frame + ' to ' + self.world_link + '(max 3 secs)')
+                rospy.logerr('Could not get transform from ' +
+                             frame + ' to ' + self.world_link + '(max 3 secs)')
                 continue
 
             for idx in range(0, len(chain) - 1):
                 parent = chain[idx]
                 child = chain[idx + 1]
-                transforms_list.append({'parent': parent, 'child': child, 'key': generateKey(parent, child)})
+                transforms_list.append(
+                    {'parent': parent, 'child': child, 'key': generateKey(parent, child)})
 
         # https://stackoverflow.com/questions/31792680/how-to-make-values-in-list-of-dictionary-unique
-        uniq_l = list(map(dict, frozenset(frozenset(i.items()) for i in transforms_list)))
+        uniq_l = list(map(dict, frozenset(frozenset(i.items())
+                      for i in transforms_list)))
         return uniq_l  # get unique values
