@@ -27,6 +27,7 @@ from atom_calibration.calibration.visualization import setupVisualization, visua
 from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   addBiasToJointParameters,
                                   addNoiseToTF,
+                                  addNoiseFromNoisyTFLinks,
                                   checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset,
                                   filterSensorsFromDataset,
@@ -40,7 +41,7 @@ from atom_core.naming import generateName, generateKey
 from atom_core.utilities import (atomError, createLambdaExpressionsForArgs,
                                  waitForKeyPress2,
                                  atomStartupPrint,
-                                 verifyAnchoredSensor,
+                              verifyAnchoredSensor,
                                  printComparisonToGroundTruth, saveCommandLineArgsYml)
 from atom_core.xacro_io import saveResultsXacro
 from atom_core.results_yml_io import saveResultsYml
@@ -53,6 +54,7 @@ from atom_core.config_io import parse_list_of_transformations, mutually_inclusiv
 def signal_handler(sig, frame):
     print("Stopping optimization (Ctrl+C pressed)")
     sys.exit(0)
+    
 
 
 # -------------------------------------------------------------------------------
@@ -111,9 +113,9 @@ def main():
     ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
                     help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
 
-    # TODO make note in help that this overrides nig flag.
-    ap.add_argument("-ntfl", "--noisy_tf_links", type=parse_list_of_transformations, help='''Pairs of links defining the transformations to which noise will be added, in the format link1:link2,linkA:linkB (links defining a transformation separated by
-                    : and different pairs separeted by ,)''')
+    ap.add_argument("-ntfl", "--noisy_tf_links", type=parse_list_of_transformations, help='''Pairs of links defining the transformations to which noise will be added, in the format linkParent1:linkChild2,linkParentA:linkChildB (links defining a transformation separated by
+                    : and different pairs separeted by ,)
+                    Note : This flag overrides the -nig flag''')
     ap.add_argument("-ntfv", "--noisy_tf_values", nargs=2, type=float, metavar=("translation", "rotation"),
                     help="Translation(m) and Rotation(rad)(respectively) noise values to add to the transformations specified by-ntfl")
 
@@ -195,6 +197,7 @@ def main():
     # make a copy before filtering out collections and sensors
     dataset_original = copy.deepcopy(dataset)
 
+
     # ---------------------------------------
     # --- Filter some collections, sensors, joints and additional tfs from the dataset
     # ---------------------------------------
@@ -238,20 +241,9 @@ def main():
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
 
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
-    # addBiasToJointParameters(dataset, args)
+    addBiasToJointParameters(dataset, args)
+    addNoiseFromNoisyTFLinks(dataset,args,selected_collection_key)
 
-    # TODO Put this encapsulated in a single function
-    # Verify both arguments were provided
-    # Unfortunately, mutually inclusive arguments are not built into argparse
-    # https://github.com/python/cpython/issues/55797
-
-    if mutually_inclusive_conditions(args['noisy_tf_links'], args['noisy_tf_values']):
-        # Iterate through pairs of tf's and apply noise
-        translation_tf_noise = args['noisy_tf_values'][0]
-        rotation_tf_noise = args['noisy_tf_values'][1]
-
-        # for tf_pair in args['noisy_tf_links']:
-        # addNoiseToTF(dataset,selected_collection_key,tf_pair[0],tf_pair[1],translation_tf_noise,rotation_tf_noise)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models

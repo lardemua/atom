@@ -24,7 +24,7 @@ from cv_bridge import CvBridge
 from colorama import Fore, Style
 from rospy_message_converter import message_converter
 from std_msgs.msg import Header
-from atom_core.config_io import uriReader
+from atom_core.config_io import uriReader,mutually_inclusive_conditions
 from atom_core.naming import generateName, generateKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)
@@ -782,6 +782,24 @@ def addBiasToJointParameters(dataset, args):
 
 # TODO Create a new function called addNoiseFromNoisyTFLinks
 
+def addNoiseFromNoisyTFLinks(dataset,args,selected_collection_key):
+
+    # Verify both arguments were provided
+    # Unfortunately, mutually inclusive arguments are not built into argparse
+    # https://github.com/python/cpython/issues/55797
+
+    if not mutually_inclusive_conditions(args['noisy_tf_links'], args['noisy_tf_values']):
+        return
+
+    # Iterate through pairs of tf's and apply noise
+    translation_tf_noise = args['noisy_tf_values'][0]
+    rotation_tf_noise = args['noisy_tf_values'][1]
+
+    for tf_pair in args['noisy_tf_links']:
+        
+        calibration_parent,calibration_child = tf_pair[0],tf_pair[1]
+        addNoiseToTF(dataset,selected_collection_key,calibration_parent,calibration_child,translation_tf_noise,rotation_tf_noise)
+
 
 def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     """
@@ -801,14 +819,26 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
     nig_trans = args['noisy_initial_guess'][0]
     nig_rot = args['noisy_initial_guess'][1]
 
-    # TODO if the transform to get get is also in the args noisy_tf_links, then we should not add noise to it.
-    # skip it. with a warn
+
+    # Checking if tf to add noise is also defined in -ntfl, in which case the noise shouldn't be added here
+    # Determining membership in sets is much faster than lists
+    ntfl_tfs = set()
+    if args['noisy_tf_links']:
+        for tf_pair in args['noisy_tf_links']:
+            ntfl_tfs.add(generateKey(tf_pair[0],tf_pair[1]))
 
     # add noise to additional tfs for simulation
     if dataset['calibration_config']['additional_tfs'] is not None:
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
+
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']
+
+            tf_to_add_noise = generateKey(calibration_parent,calibration_child)
+            if tf_to_add_noise in ntfl_tfs:
+                atomWarn(f'Not adding initial guess noise to {tf_to_add_noise} because its defined in -ntfl')
+                continue
+
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
 
     # add noise to sensors tfs for simulation
@@ -819,8 +849,12 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         if sensor_key != dataset['calibration_config']['anchored_sensor']:
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
-            print(calibration_child)
-            print(calibration_parent)
+
+            tf_to_add_noise = generateKey(calibration_parent,calibration_child)
+            if tf_to_add_noise in ntfl_tfs:
+                atomWarn(f'Not adding initial guess noise to {tf_to_add_noise} because its defined in -ntfl')
+                continue
+
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
 
 # TODO make a basic function called by fixed and multiple
@@ -852,6 +886,8 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
     print(Fore.RED + 'Transformation parent ' + calibration_parent + ' child ' + calibration_child + Style.RESET_ALL)
     transform_key = generateKey(calibration_parent, calibration_child, suffix='')
+
+    atomWarn(f'Adding noise bigger than 1.0m/rad right now is bugged and might yield unexpected results. Check issue #929 for more information')
 
     # because of #900, and for retrocompatibility with old datasets, we will assume that if the transforms field does
     # not exist in the dataset, then the transformation is fixed

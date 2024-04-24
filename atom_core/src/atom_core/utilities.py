@@ -66,6 +66,7 @@ def compareAtomTransforms(transform_1, transform_2):
 
     rotation_delta = t_delta[0:3, 0:3]
     # roll, pitch, yaw = euler_from_matrix(rotation_delta)
+    translation_delta = t_delta[0:3, 3]
 
     import tf
     euler_angles_init = tf.transformations.euler_from_quaternion(transform_1['quat'])
@@ -73,9 +74,9 @@ def compareAtomTransforms(transform_1, transform_2):
 
 
     deuler = np.subtract(euler_angles_final,euler_angles_init)
+    rotation_error = np.linalg.norm(deuler)
 
 
-    translation_delta = t_delta[0:3, 3]
     # print('translation_delta = ' + str(translation_delta))
     # nor = np.linalg.norm(translation_delta)
     # print('nor = ' + str(nor))
@@ -84,7 +85,6 @@ def compareAtomTransforms(transform_1, transform_2):
     # translation_error = float(abs(np.average(translation_delta)))
     translation_error = np.linalg.norm(translation_delta)
     # rotation_error = np.linalg.norm([roll, pitch, yaw])
-    rotation_error = np.linalg.norm(deuler)
 
     # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
     # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
