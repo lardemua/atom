@@ -55,6 +55,8 @@ def main():
                     required=True, type=str)
     ap.add_argument("-rs", "--run_suffix", help="Suffix used to signal multiple runs of the same experiment.",
                     required=False, default='_run', type=str)
+    ap.add_argument("-fs", "--fold_suffix", help="Suffix used to signal multiple folds of the same run.",
+                    required=False, default='_fold', type=str)
 
     args = vars(ap.parse_args())
 
@@ -72,8 +74,10 @@ def main():
     # Create a list of experiments
     files_and_folders = os.listdir(args['results_folder'])
     folders = [x for x in files_and_folders if os.path.isdir(args['results_folder'] + '/' + x)]
-    suffix_size = len(args['run_suffix']) + 3  # because the suffix is complemented by the run number as in 001
-    experiments = list(set([x[:-suffix_size] for x in folders]))  # Remove the "_runXX" suffix
+    fold_suffix_size = len(args['fold_suffix']) + 3  # because the suffix is complemented by the run number as in 001
+    run_suffix_size = len(args['run_suffix']) + 3  # because the suffix is complemented by the run number as in 001
+    suffix_size = fold_suffix_size + run_suffix_size
+    experiments = list(set([x[:-suffix_size] for x in folders]))  # Remove the "_foldXX" suffix
 
     # files_to_process = ['comparison_to_ground_truth_transforms.csv', 'comparison_to_ground_truth_joints.csv']
     # files_to_process = ['single_rgb_evaluation.csv']
