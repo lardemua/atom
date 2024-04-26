@@ -226,6 +226,8 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
         # NOTE: cannot test with a single collection. We need at least three. Check
         # https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#ga41b1a8dd70eae371eba707d101729c36
 
+        print('Calculating transform from the base to the gripper for collection ' + collection_key)
+
         base_T_gripper = getTransform('base_link', 'flange', collection['transforms'])
 
         # Split into R and t matrices for the calibration function
@@ -258,12 +260,33 @@ def getPatternConfig(dataset, pattern):
 
     return nx, ny, square, inner_square, objp
 
-def getWantedTransformsFromOpenCVHandEyeCalib(dataset, calib_tf_base2pattern, calib_tf_gripper2cam):
+def getWantedTransformsFromOpenCVHandEyeCalib(dataset, calib_tf_base2pattern, calib_tf_gripper2opticalframe, base_link_name, optical_frame_name, sensor_link_name):
 
     world_link = dataset['calibration_config']['world_link']
 
     for collection_key, collection in dataset['collections'].items():
-        pass
+        print("Getting wanted transforms for collection " + collection_key + "...") 
+
+        tfs = collection['transforms'] # Dict of tfs from a given collection
+        # Getting the world to base transform (bTw)
+        
+        print("Getting world to base transform...")
+        tf_world2base = getTransform(world_link, base_link_name, tfs)
+
+        tf_world2pattern = np.dot(calib_tf_base2pattern, tf_world2base) # First wanted calib
+
+        # Get the second transform (gripper to cam)
+        print("Getting gripper to cam transform...")
+
+        tf_opticalframe2cam = getTransform("rgb_hand_optical_frame", "rgb_hand_link", tfs)
+        # print(tf_opticalframe2cam) # DEBUG
+
+        tf_gripper2cam = np.dot(tf_opticalframe2cam, calib_tf_gripper2opticalframe)
+        # print(tf_gripper2cam)
+
+        return tf_world2pattern, tf_gripper2cam
+
+        
 
 def main():
     ap = argparse.ArgumentParser()
@@ -338,10 +361,18 @@ def main():
 
     # print(calib_tf_base2pattern)
         
-    calib_tf_gripper2cam = np.zeros((4,4))
-    calib_tf_gripper2cam[0:3, 0:3] = R_gripper2cam
-    calib_tf_gripper2cam[0:3, 3] = t_gripper2cam.T    
-    calib_tf_gripper2cam[3, 3] = 1
+    calib_tf_gripper2opticalframe = np.zeros((4,4))
+    calib_tf_gripper2opticalframe[0:3, 0:3] = R_gripper2cam
+    calib_tf_gripper2opticalframe[0:3, 3] = t_gripper2cam.T    
+    calib_tf_gripper2opticalframe[3, 3] = 1
+
+    calib_tf_world2pattern, calib_tf_gripper2cam = getWantedTransformsFromOpenCVHandEyeCalib(
+        dataset = dataset,
+        calib_tf_base2pattern = calib_tf_base2pattern,
+        calib_tf_gripper2opticalframe = calib_tf_gripper2opticalframe,
+        base_link_name = "base_link",
+        optical_frame_name = camera + "_optical_frame",
+        sensor_link_name = camera + "_link")
 
     # print(calib_tf_gripper2cam)
 
