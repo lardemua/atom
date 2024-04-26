@@ -81,7 +81,10 @@ def main():
 
     # Generate classes and collection keys
     classes, collection_keys = generateClasses(dataset)
-    print(classes)
+
+    # Safeguard to guarantee backwards compatibility
+    if 'cross_validation' not in data:
+        data['cross_validation'] = {'type': None, 'n_splits': None}
 
     # Process cross validation data
     if data['cross_validation']['type'] == 'stratified-k-fold':
@@ -109,8 +112,9 @@ def main():
         folds = cross_validator.split(collection_keys, classes)
 
     else:
-        # Print an error message if the cross validation type is not supported
-        atomError(f'Cross validation type {data["cross_validation_type"]} not supported')
+        # Print error message if the cross validation type is not supported
+        folds  = [(collection_keys, collection_keys)]
+        bprint('Running without any cross validation.')
 
     # Dataset is no longer needed
     del dataset

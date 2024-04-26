@@ -76,7 +76,11 @@ def main():
     folders = [x for x in files_and_folders if os.path.isdir(args['results_folder'] + '/' + x)]
     fold_suffix_size = len(args['fold_suffix']) + 3  # because the suffix is complemented by the run number as in 001
     run_suffix_size = len(args['run_suffix']) + 3  # because the suffix is complemented by the run number as in 001
-    suffix_size = fold_suffix_size + run_suffix_size
+    suffix_size = 0
+    if args['fold_suffix'] in folders[0]:
+        suffix_size += fold_suffix_size
+    if args['run_suffix'] in folders[0]:
+        suffix_size += run_suffix_size
     experiments = list(set([x[:-suffix_size] for x in folders]))  # Remove the "_foldXX" suffix
 
     # files_to_process = ['comparison_to_ground_truth_transforms.csv', 'comparison_to_ground_truth_joints.csv']
@@ -107,6 +111,8 @@ def main():
             filenames = [run + '/' + file_to_process for run in files_and_folders]
 
             average_df = averageCsvFiles(filenames)
+
+            average_df = average_df.drop(columns=['Collection #'])
 
             output_file = args['output_folder'] + '/' + experiment + '/' + file_to_process
             print('Saving average to ' + Fore.BLUE + output_file + Style.RESET_ALL)
