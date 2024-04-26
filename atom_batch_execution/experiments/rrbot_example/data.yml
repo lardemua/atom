@@ -14,12 +14,16 @@
 # this yml file contains variables to be used in conjunction with batch.yml
 
 # Auxiliary variables, to be used to render other fields in the template.yml.j2 file
-package_path: "package://softbot_calibration"
-dataset_path: '$ATOM_DATASETS/softbot/train'
-collections_to_remove: []
+package_path: "package://rrbot_calibration"
+dataset_path: '$ATOM_DATASETS/rrbot/train'
 
 # Runs are repetitions of the experiments for gathering statistically significant results
 runs: [1,2]
+
+cross_validation:
+  type: "stratified-k-fold" 
+  n_splits: 3 # Number of folds
+  train_size: # Percentage of the dataset used for training, only used in StratifiedShuffleSplit
 
 # Experiments are executions with a set of input parameters
 experiments:

@@ -48,6 +48,7 @@ from atom_core.results_yml_io import saveResultsYml
 from atom_core.config_io import parse_list_of_transformations, mutually_inclusive_conditions
 
 
+
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------

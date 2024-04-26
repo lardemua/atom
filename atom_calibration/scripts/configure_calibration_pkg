@@ -573,7 +573,6 @@ if __name__ == "__main__":
     if config['additional_tfs'] is not None:
         for additional_tf_key, additional_tf in config['additional_tfs'].items():
             transform_key = generateKey(additional_tf["parent_link"], additional_tf["child_link"])
-            print("Additional tf's are " + transform_key)
             transforms_list.append(transform_key)
 
     print('List of transformations to optimize is: ' + Fore.BLUE + str(transforms_list) + Style.RESET_ALL)

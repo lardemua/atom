@@ -118,6 +118,7 @@ venv.bak/
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+pyrightconfig.json
 
 # Generated files
 .idea/**/contentModel.xml

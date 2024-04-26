@@ -11,11 +11,13 @@ import yaml
 import jinja2
 from jinja2 import Template, Undefined
 from jinja2 import Environment, FileSystemLoader
+from sklearn.model_selection import StratifiedKFold, KFold, LeaveOneOut, StratifiedShuffleSplit
 
 from colorama import Fore, Back, Style
 from pytictoc import TicToc
 
 from atom_core.config_io import atomError, uriReader
+from atom_core.dataset_io import loadJSONFile
 from atom_core.system import resolvePath
 from atom_core.utilities import atomWarn, removeColorsFromText
 
@@ -23,6 +25,33 @@ from atom_core.utilities import atomWarn, removeColorsFromText
 def bprint(text):
     """bprint (batch print) will always print in blue color with yellow background """
     print(Fore.BLUE + Back.YELLOW + text + Style.RESET_ALL)
+
+
+def generateClasses(dataset):
+    """
+    Generate classes based on an ATOM dataset.
+    Classes follow the format detected_pattern--detected_sensor1-detected_sensor2-[...]---[...]
+
+    Args:
+        dataset (dict): ATOM dataset.
+
+    Returns:
+        tuple: A tuple containing the classes and collection keys.
+
+    """
+    classes = []
+    collection_keys = list(dataset['collections'].keys())
+    for collection_key in collection_keys:
+        detected_sensors = []
+        class_name = ''
+        for pattern_key in dataset['patterns'].keys():
+            for sensor_key in dataset['sensors'].keys():
+                if dataset['collections'][collection_key]['labels'][pattern_key][sensor_key]['detected']:
+                    detected_sensors.append(sensor_key)
+            detected_pattern_and_sensors = pattern_key + '--' + '-'.join(detected_sensors)
+            class_name += detected_pattern_and_sensors + '---'
+        classes.append(class_name.rstrip('---'))
+    return classes, collection_keys
 
 
 def main():
@@ -46,6 +75,55 @@ def main():
     with open(args['data_filename']) as f:
         file_content = f.read()
         data = yaml.safe_load(file_content)
+
+    # Load dataset
+    dataset = loadJSONFile(data['dataset_path'] + '/dataset.json')
+
+    # Generate classes and collection keys
+    classes, collection_keys = generateClasses(dataset)
+
+    # Safeguard to guarantee backwards compatibility
+    if 'cross_validation' not in data:
+        data['cross_validation'] = {'type': None, 'n_splits': None}
+
+    # Process cross validation data
+    if data['cross_validation']['type'] == 'stratified-k-fold':
+        # Use StratifiedKFold for cross validation
+        cross_validator = StratifiedKFold(n_splits=data['cross_validation']['n_splits'], shuffle=True)
+        # Split the data into folds
+        folds = cross_validator.split(collection_keys, classes)
+
+    elif data['cross_validation']['type'] == 'k-fold':
+        # Use KFold for cross validation
+        cross_validator = KFold(n_splits=data['cross_validation']['n_splits'], shuffle=True)
+        # Split the data into folds
+        folds = cross_validator.split(collection_keys)
+
+    elif data['cross_validation']['type'] == 'leave-one-out':
+        # Use LeaveOneOut for cross validation
+        cross_validator = LeaveOneOut()
+        # Split the data into folds
+        folds = cross_validator.split(collection_keys)    
+
+    elif data['cross_validation']['type'] == 'stratified-shuffle-split' and data['cross_validation']['train_size']:
+        # Use StratifiedShuffleSplit for cross validation
+        cross_validator = StratifiedShuffleSplit(n_splits=data['cross_validation']['n_splits'], train_size=data['cross_validation']['train_size']) 
+        # Split the data into folds
+        folds = cross_validator.split(collection_keys, classes)
+
+    else:
+        # Print error message if the cross validation type is not supported
+        folds  = [(collection_keys, collection_keys)]
+        bprint('Running without any cross validation.')
+
+    # Dataset is no longer needed
+    del dataset
+
+    # Generate a list of folds
+    fold_list = [[list(train), list(test)] for (train, test) in folds]
+
+    # Add folds to data
+    data['folds'] = fold_list
 
     # Template engine1 setup
     file_loader = FileSystemLoader(os.path.dirname(args['template_filename']))
@@ -99,9 +177,9 @@ def main():
     # Run experiments
     num_experiments = len(config['experiments'].keys())
     for idx, (experiment_key, experiment) in enumerate(config['experiments'].items()):
-        print('\n')
         bprint(Style.BRIGHT + 'Experiment ' + str(idx) + ' of ' + str(num_experiments-1) + ': ' + experiment_key)
         bprint('Executing command:\n' + experiment['cmd'])
+
 
         if args['dry_run']:
             bprint('Running in dry run mode...')
