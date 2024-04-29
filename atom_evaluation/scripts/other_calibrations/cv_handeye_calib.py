@@ -207,17 +207,6 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
         # print(imgpoints_camera)
 
         # ---------------------------------------
-        # Undistort detection points
-        # ---------------------------------------
-
-        print(f'Calculating undistorted corner detection coordinates...')
-        undistorted_imgpoints_camera = []  # Init matrix with points for every collection
-
-        for i in range(0, len(imgpoints_camera)):  # Iterate through the collections
-            tmp_undistorted_imgpoints_camera = cv2.undistortPoints(imgpoints_camera[i], K, D)
-            undistorted_imgpoints_camera.append(tmp_undistorted_imgpoints_camera)
-
-        # ---------------------------------------
         # Get transform from target to cam
         # ---------------------------------------
         # NOTE: The documentation calls this the transform from world to cam because in their example (which is eye-in-hand), their pattern's frame is their world frame. This is not the case in ours. So when the documentation mentions the world to cam tf, it corresponds to our pattern/target to camera tf. (I think.)
@@ -227,7 +216,7 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
 
         print('Calculating transform from camera to pattern for collection ' + collection_key)
 
-        _, rvec, tvec = cv2.solvePnP(objp, undistorted_imgpoints_camera[0], K, D)
+        _, rvec, tvec = cv2.solvePnP(objp, imgpoints_camera[0], K, D)
 
         # print(f'rvec = {rvec}')
         # print(f'tvec = {tvec}')
@@ -400,6 +389,8 @@ def main():
     calib_tf_base2pattern[0:3, 3] = t_base2pattern.T
     calib_tf_base2pattern[3, 3] = 1
 
+    print(calib_tf_base2pattern)
+
     # print(calib_tf_base2pattern)
         
     calib_tf_gripper2opticalframe = np.zeros((4,4))
@@ -461,7 +452,7 @@ def main():
 
                 pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 
-                print(pts_in_image)
+                # print(pts_in_image)
 
                 # Get the detected points to use as ground truth--------------------------------------------------------
                 pts_detected_in_image = getPointsDetectedInImageAsNPArray(
