@@ -37,13 +37,19 @@ from atom_core.vision import projectToCamera
 # -------------------------------------------------------------------------------
 
 
-def rangeToImage(collection, json_file, ss, ts, tf):
+def rangeToImage(collection, json_file, ss, ts, tf,pattern_key):
+    '''
+    ss -> range sensor key
+    ts -> rgb sensor key
+    tf -> tf from camera to pattern (?)
+    pattern-key -> ...
+    '''
     filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
     msg = read_pcd(filename)
     collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
 
     cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
-    idxs = collection['labels'][ss]['idxs_limit_points']
+    idxs = collection['labels'][pattern_key][ss]['idxs_limit_points']
 
     pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points_in_vel = np.zeros((4, pc.shape[0]))
@@ -165,8 +171,11 @@ if __name__ == "__main__":
             # ---------------------------------------
             vel2cam = getTransform(from_frame, to_frame,
                                 mixed_dataset['collections'][collection_key]['transforms'])
-            pts_in_image = rangeToImage(collection, args['test_json_file'], pattern_key,
-                                        args['range_sensor'], args['camera_sensor'], vel2cam)
+            # pts_in_image = rangeToImage(collection, args['test_json_file'], pattern_key,
+            #                             args['range_sensor'], args['camera_sensor'], vel2cam)
+
+            pts_in_image = rangeToImage(collection, args['test_json_file'],
+                                        args['range_sensor'], args['camera_sensor'],vel2cam,pattern_key)
 
             # ---------------------------------------
             # --- Get evaluation data for current collection

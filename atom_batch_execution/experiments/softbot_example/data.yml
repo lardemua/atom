@@ -15,15 +15,70 @@
 
 # Auxiliary variables, to be used to render other fields in the template.yml.j2 file
 package_path: "package://softbot_calibration"
-dataset_path: '$ATOM_DATASETS/softbot/train'
-collections_to_remove: []
+dataset_path: '$ATOM_DATASETS/softbot/long_train_dataset1'
+collections_to_remove: [27,36,37]
 
 # Runs are repetitions of the experiments for gathering statistically significant results
-runs: [1,2]
+# runs: [1,2,3,4,5,6,7,8,9,10]
+  
+cross_validation:
+  type: "stratified-k-fold" 
+  n_splits: 5 # Number of folds
+  train_size:  # Percentage of the dataset used for training, only used in StratifiedShuffleSplit
 
 # Experiments are executions with a set of input parameters
 experiments:
 
-  # One pattern
-  - {name: nig_0.1, nig_value: 0.1}
-  - {name: nig_0.2, nig_value: 0.2}
+# Varying noise from 0 to 0.5m/rad
+
+  # Perfect Simulation
+  - {name: perfect_sim, nig_value: 0.0, ntfv:0.0}
+
+  # Varying nig only
+  - {name: nig_0.1, nig_value: 0.1, ntfv:0.0}
+  - {name: nig_0.2, nig_value: 0.2, ntfv:0.0}
+  - {name: nig_0.3, nig_value: 0.3, ntfv:0.0}
+  - {name: nig_0.4, nig_value: 0.4, ntfv:0.0}
+  - {name: nig_0.5, nig_value: 0.5, ntfv:0.0}
+
+    #Varying ntfv with fixed nig = 0.1
+  - {name: nig_0.1-ntfv_0.1, nig_value: 0.1, ntfv:0.1}
+  - {name: nig_0.1-ntfv_0.2, nig_value: 0.1, ntfv:0.2}
+  - {name: nig_0.1-ntfv_0.3, nig_value: 0.1, ntfv:0.3}
+  - {name: nig_0.1-ntfv_0.4, nig_value: 0.1, ntfv:0.4}
+  - {name: nig_0.1-ntfv_0.5, nig_value: 0.1, ntfv:0.5} 
+
+    #Varying ntfv with fixed nig = 0.2
+  - {name: nig_0.2-ntfv_0.1, nig_value: 0.2, ntfv:0.1}
+  - {name: nig_0.2-ntfv_0.2, nig_value: 0.2, ntfv:0.2}
+  - {name: nig_0.2-ntfv_0.3, nig_value: 0.2, ntfv:0.3}
+  - {name: nig_0.2-ntfv_0.4, nig_value: 0.2, ntfv:0.4}
+  - {name: nig_0.2-ntfv_0.5, nig_value: 0.2, ntfv:0.5} 
+
+    #Varying ntfv with fixed nig = 0.3
+  - {name: nig_0.3-ntfv_0.1, nig_value: 0.3, ntfv:0.1}
+  - {name: nig_0.3-ntfv_0.2, nig_value: 0.3, ntfv:0.2}
+  - {name: nig_0.3-ntfv_0.3, nig_value: 0.3, ntfv:0.3}
+  - {name: nig_0.3-ntfv_0.4, nig_value: 0.3, ntfv:0.4}
+  - {name: nig_0.3-ntfv_0.5, nig_value: 0.3, ntfv:0.5} 
+
+    #Varying ntfv with fixed nig = 0.4 
+  - {name: nig_0.4-ntfv_0.1, nig_value: 0.4, ntfv:0.1}
+  - {name: nig_0.4-ntfv_0.2, nig_value: 0.4, ntfv:0.2}
+  - {name: nig_0.4-ntfv_0.3, nig_value: 0.4, ntfv:0.3}
+  - {name: nig_0.4-ntfv_0.4, nig_value: 0.4, ntfv:0.4}
+  - {name: nig_0.4-ntfv_0.5, nig_value: 0.4, ntfv:0.5} 
+
+    #Varying ntfv with fixed nig = 0.5 
+  - {name: nig_0.5-ntfv_0.1, nig_value: 0.5, ntfv:0.1}
+  - {name: nig_0.5-ntfv_0.2, nig_value: 0.5, ntfv:0.2}
+  - {name: nig_0.5-ntfv_0.3, nig_value: 0.5, ntfv:0.3}
+  - {name: nig_0.5-ntfv_0.4, nig_value: 0.5, ntfv:0.4}
+  - {name: nig_0.5-ntfv_0.5, nig_value: 0.5, ntfv:0.5} 
+
+
+
+
+
+
+
