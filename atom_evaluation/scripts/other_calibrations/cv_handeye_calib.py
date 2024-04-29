@@ -17,10 +17,15 @@ import tf
 
 from colorama import Style, Fore
 from collections import OrderedDict
+from matplotlib import cm
+
 from atom_evaluation.utilities import atomicTfFromCalibration
 from atom_core.atom import getTransform
 from atom_core.dataset_io import saveAtomDataset
 from atom_core.geometry import traslationRodriguesToTransform
+from atom_core.vision import projectToCamera
+from atom_core.drawing import drawCross2D, drawSquare2D
+# from atom_evaluation.single_rgb_evaluation import getPointsDetectedInImageAsNPArray, getPointsInPatternAsNPArray
 
 
 # def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
@@ -131,6 +136,30 @@ from atom_core.geometry import traslationRodriguesToTransform
 #     #                                base_t_gripper)  # THIS IS PRODUCING AN ERROR, SEE ISSUE #912
 #
 #     exit(0)
+
+
+# -------------------------------------------------------------------------------
+#  FUNCTIONS COPIED FROM SINGLE_RGB_EVALUATION
+# -------------------------------------------------------------------------------
+def getPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key, _dataset):
+    pts_in_pattern_list = []  # collect the points
+    for pt_detected in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']:
+        id_detected = pt_detected['id']
+        point = [item for item in _dataset['patterns'][_pattern_key]['corners'] if item['id'] == id_detected][0]
+        pts_in_pattern_list.append(point)
+
+    return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
+                     [item['y'] for item in pts_in_pattern_list],
+                     [0 for _ in pts_in_pattern_list],
+                     [1 for _ in pts_in_pattern_list]], float)
+
+
+def getPointsDetectedInImageAsNPArray(_collection_key, _pattern_key, _sensor_key, _dataset):
+    return np.array(
+        [[item['x'] for item in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']],
+         [item['y'] for item in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']]],
+        dtype=float)
+
 
 
 def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
@@ -286,6 +315,17 @@ def getWantedTransformsFromOpenCVHandEyeCalib(dataset, calib_tf_base2pattern, ca
 
         return tf_world2pattern, tf_gripper2cam
 
+def calc_tf_opticalframe2pattern(collection_tfs, calib_tf_base2pattern, calib_tf_gripper2opticalframe, base_link_name, gripper_link_name):
+
+    tf_gripper2base = getTransform(gripper_link_name, base_link_name, collection_tfs)
+
+    calib_tf_opticalframe2gripper = np.linalg.inv(calib_tf_gripper2opticalframe)
+
+    calib_tf_opticalframe2pattern = np.dot(np.dot(calib_tf_base2pattern, tf_gripper2base), calib_tf_opticalframe2gripper)
+
+    # print(calib_tf_opticalframe2pattern) # DEBUG
+
+    return calib_tf_opticalframe2pattern
         
 
 def main():
@@ -295,6 +335,7 @@ def main():
     ap.add_argument("-c", "--camera", help="Camera sensor name.", type=str, required=True)
     ap.add_argument("-si", "--show_images", help="If true the script shows images.", action='store_true', default=False)
     ap.add_argument("-p", "--pattern", help="Pattern to be used for calibration.", type=str, required=True)
+    ap.add_argument("-ctgt", "--compare_to_ground_truth", help="If the system being calibrated is simulated, directly compare the TFs to the ground truth.", action="store_true")
 
     # Save args
     args = vars(ap.parse_args())
@@ -366,6 +407,7 @@ def main():
     calib_tf_gripper2opticalframe[0:3, 3] = t_gripper2cam.T    
     calib_tf_gripper2opticalframe[3, 3] = 1
 
+    # After this script is done, check if this is still needed
     calib_tf_world2pattern, calib_tf_gripper2cam = getWantedTransformsFromOpenCVHandEyeCalib(
         dataset = dataset,
         calib_tf_base2pattern = calib_tf_base2pattern,
@@ -374,9 +416,90 @@ def main():
         optical_frame_name = camera + "_optical_frame",
         sensor_link_name = camera + "_link")
 
-    # print(calib_tf_gripper2cam)
 
-    # res_gripper2cam = atomicTfFromCalibration(dataset, camera, pattern, calib_tf_gripper2cam)
+    # Now that we have the tfs, we just need to compare these to the GT (if simulated)    
+
+    if args['compare_to_ground_truth']:
+        
+        # Initialize errors dict
+        e = {}
+        for collection_key, collection in dataset['collections'].items():
+            # Usually this is where collections with incomplete detections would be filtered, but I don't believe it is needed since these are deleted from the dataset object previously
+            
+            e[collection_key] = {}
+
+            for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                # Initialize an error dict for each pattern
+                e[collection_key][pattern_key] = {}
+
+                # This is similar to what happens in single_rgb_evaluation, but we don't iterate through the list of sensors, since the sensor we aim to calibrate is given as an argument
+            
+                # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
+                # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
+                pts_in_pattern = getPointsInPatternAsNPArray(collection_key, pattern_key, camera, dataset)
+
+                # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------   
+
+                # Calc tf_camera2pattern
+                calib_tf_opticalframe2pattern = calc_tf_opticalframe2pattern(
+                    collection_tfs = collection['transforms'],
+                    calib_tf_base2pattern = calib_tf_base2pattern,
+                    calib_tf_gripper2opticalframe = calib_tf_gripper2opticalframe,
+                    base_link_name = "base_link",
+                    gripper_link_name = "flange"
+                )
+
+                pts_in_sensor = np.dot(calib_tf_opticalframe2pattern, pts_in_pattern)
+
+                # print(pts_in_sensor)
+
+                # Project points to the image of the sensor
+                
+                w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
+                K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
+                D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
+
+                pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+
+                print(pts_in_image)
+
+                # Get the detected points to use as ground truth--------------------------------------------------------
+                pts_detected_in_image = getPointsDetectedInImageAsNPArray(
+                    collection_key, pattern_key, sensor_key, dataset)
+
+                if args['show_images']:
+                    print('showing image for collection ' + collection_key +
+                          ' pattern ' + pattern_key + ' sensor ' + sensor_key)
+
+                    image_path = collection['data'][sensor_key]['data_file']
+                    dataset_path = os.path.dirname(json_file)
+                    full_image_path = dataset_path + '/' + image_path
+                    print(full_image_path)
+                    image = cv2.imread(full_image_path)
+
+                    # Draw labels on target image (squares)
+                    print(pts_in_image)
+                    print(pts_in_image.shape)
+
+                    lst_pts = pts_in_image.tolist()
+                    print(lst_pts)
+                    xs = lst_pts[0]
+                    ys = lst_pts[1]
+                    print(xs)
+
+                    cmap = cm.gist_rainbow(np.linspace(0, 1, nx * ny))
+                    for x, y in zip(xs, ys):
+
+                        drawCross2D(image, x, y, 15, color=(255, 0, 0), thickness=1)
+
+                        # drawSquare2D(image, x_t, y_t, 6, color=color, thickness=1)
+
+                    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+                    cv2.imshow('image', image)
+                    cv2.waitKey(0)
+
+
+   
 
 
 if __name__ == '__main__':
