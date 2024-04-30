@@ -31,14 +31,17 @@ def averageCsvFiles(filenames):
     for filename_idx, filename in enumerate(filenames):
         df = pd.read_csv(filename)
 
+        # Filter all cells for averages
+        df = df[df['Collection #'].isin(['Averages'])]
+
         df = df.apply(pd.to_numeric, errors="coerce")
         pandas_dfs.append(df)
 
     # Concatenate and average all numeric cells
-    g = pd.concat(pandas_dfs).groupby(level=0).mean()
+    g = pd.concat(pandas_dfs).mean()
 
     # replace the text cells with
-    g.fillna(pandas_text_df, inplace=True)
+    g.fillna('Averages', inplace=True)
 
     return g
 
