@@ -160,7 +160,21 @@ def getPointsDetectedInImageAsNPArray(_collection_key, _pattern_key, _sensor_key
          [item['y'] for item in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']]],
         dtype=float)
 
+def splitTFMatrix(matrix):
+    #TODO: write a verification of matrix size
+    
+    R = matrix[0:3, 0:3]
+    t = (matrix[0:3, 3]).T
 
+    return R,t
+
+def joinTFMatrix(R,t):
+    matrix = np.zeros((4,4))
+    matrix[0:3, 0:3] = R
+    matrix[0:3, 3] = t.T
+    matrix[3, 3] = 1
+
+    return matrix
 
 def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
 
@@ -197,12 +211,15 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
 
         tmp_imgpoints_camera = np.ones((number_of_corners, 2), np.float32)  # temporary var
 
+
+        #NOTE: Check labels id (this works because detections are complete)
         for idx, point in enumerate(collection['labels'][pattern][camera]['idxs']):
             tmp_imgpoints_camera[idx, 0] = point['x']
             tmp_imgpoints_camera[idx, 1] = point['y']
 
         imgpoints_camera.append(tmp_imgpoints_camera)
         objpoints.append(objp)  # Use the points defined in local pattern ref frame
+        # print('objp=\n'+str(objp))
 
         # print(imgpoints_camera)
 
@@ -216,55 +233,72 @@ def cvHandEyeCalibrate(objp, dataset, camera, pattern, number_of_corners):
 
         print('Calculating transform from camera to pattern for collection ' + collection_key)
 
-        _, rvec, tvec = cv2.solvePnP(objp, imgpoints_camera[0], K, D)
+        print('K = ' + str(K))
+
+        print('D = ' + str(D))
+        
+        retval, rvec, tvec = cv2.solvePnP(objp, imgpoints_camera[0], K, D)
+
+        print('SolvePnP retval = ' + str(retval))
 
         # print(f'rvec = {rvec}')
         # print(f'tvec = {tvec}')
 
         # Convert it into an homogenous transform
         cam_optical_frame_T_pattern = traslationRodriguesToTransform(tvec, rvec)
+        # cam_optical_frame_T_pattern = np.linalg.inv(cam_optical_frame_T_pattern)
+        
 
-        # NOTE fstrings are forbidden in atom :-)
-        # print(f'cam_optical_frame_T_pattern = {cam_optical_frame_T_pattern}')
-
-        # NOTE: you do not need to compute the transform from camera to camera_optical_frame
+        print('Optical frame to pattern (from solvePnP) (Collection ' + collection_key + ')')
+        print(cam_optical_frame_T_pattern)
 
         # Split into R and t matrices for the calibration function
-        cam_optical_frame_T_pattern_R = cam_optical_frame_T_pattern[0:3, 0:3]
-        cam_optical_frame_T_pattern_t = (cam_optical_frame_T_pattern[0:3, 3]).T
-
-        list_cam_optical_frame_T_pattern_R.append(cam_optical_frame_T_pattern_R)
-        list_cam_optical_frame_T_pattern_t.append(cam_optical_frame_T_pattern_t)
+        R, t = splitTFMatrix(cam_optical_frame_T_pattern)
+        list_cam_optical_frame_T_pattern_R.append(R)
+        list_cam_optical_frame_T_pattern_t.append(t)
 
         # ---------------------------------------
         # Get transform from base to gripper
         # ---------------------------------------
 
-        # Hard coded for now, testin w/ one collection before iterating through all collections
         # NOTE: cannot test with a single collection. We need at least three. Check
         # https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#ga41b1a8dd70eae371eba707d101729c36
 
         print('Calculating transform from the base to the gripper for collection ' + collection_key)
 
-        base_T_gripper = getTransform('base_link', 'flange', collection['transforms'])
+        base_T_gripper = getTransform(
+            from_frame='base_link',
+            to_frame='flange',
+            transforms=collection['transforms']
+            )
+
+        # base_T_gripper = np.linalg.inv(base_T_gripper)
+        print('Base to gripper (from dataset) (Collection ' + collection_key + ')')
+        print(base_T_gripper)
 
         # Split into R and t matrices for the calibration function
-        base_T_gripper_R = base_T_gripper[0:3, 0:3]
-        base_T_gripper_t = (base_T_gripper[0:3, 3]).T
-
-        list_base_T_gripper_R.append(base_T_gripper_R)
-        list_base_T_gripper_t.append(base_T_gripper_t)
+        R,t = splitTFMatrix(base_T_gripper)
+        list_base_T_gripper_R.append(R)
+        list_base_T_gripper_t.append(t)
 
     # ---------------------------------------
     # Calibrate
     # ---------------------------------------
 
-    # Running with lists of np.arrays
-    o = cv2.calibrateRobotWorldHandEye( list_cam_optical_frame_T_pattern_R,
-                                        list_cam_optical_frame_T_pattern_t,
-                                        list_base_T_gripper_R, list_base_T_gripper_t)
+    # print('list_cam_optical_frame_T_pattern_R = \n' + str(list_cam_optical_frame_T_pattern_R))
 
-    return o
+    print('list_cam_optical_frame_T_pattern_t = \n' + str(list_cam_optical_frame_T_pattern_t))
+
+    # Running with lists of np.arrays
+    R_base2pattern, t_base2pattern, R_gripper2opticalframe, t_gripper2opticalframe = cv2.calibrateRobotWorldHandEye(list_cam_optical_frame_T_pattern_R,
+                                       list_cam_optical_frame_T_pattern_t,
+                                       list_base_T_gripper_R, list_base_T_gripper_t
+                                       )
+
+    # print('Testing...') 
+    # print( R_base2pattern, t_base2pattern, R_gripper2cam, t_gripper2cam)
+
+    return R_base2pattern, t_base2pattern, R_gripper2opticalframe, t_gripper2opticalframe 
 
 def getPatternConfig(dataset, pattern):
     # Pattern configs
@@ -306,11 +340,13 @@ def getWantedTransformsFromOpenCVHandEyeCalib(dataset, calib_tf_base2pattern, ca
 
 def calc_tf_opticalframe2pattern(collection_tfs, calib_tf_base2pattern, calib_tf_gripper2opticalframe, base_link_name, gripper_link_name):
 
-    tf_gripper2base = getTransform(gripper_link_name, base_link_name, collection_tfs)
+    tf_gripper2base = getTransform(from_frame=gripper_link_name,
+                                    to_frame=base_link_name, 
+                                    transforms=collection_tfs)
 
     calib_tf_opticalframe2gripper = np.linalg.inv(calib_tf_gripper2opticalframe)
 
-    calib_tf_opticalframe2pattern = np.dot(np.dot(calib_tf_base2pattern, tf_gripper2base), calib_tf_opticalframe2gripper)
+    calib_tf_opticalframe2pattern = calib_tf_base2pattern @ tf_gripper2base @ calib_tf_opticalframe2gripper
 
     # print(calib_tf_opticalframe2pattern) # DEBUG
 
@@ -337,6 +373,7 @@ def main():
     f = open(json_file, 'r')
     dataset = json.load(f)
 
+
     #########################################
     # DATASET PREPROCESSING
     #########################################
@@ -351,7 +388,7 @@ def main():
         for sensor_key, sensor in dataset['sensors'].items():
             if sensor_key != camera:
                 continue
-
+            
             if sensor['msg_type'] == 'Image' and collection['labels'][pattern][sensor_key]['detected']:
                 if not len(collection['labels'][pattern][sensor_key]['idxs']) == number_of_corners:
                     print(
@@ -364,7 +401,7 @@ def main():
     for collection_key in collections_to_delete:
         del dataset['collections'][collection_key]
 
-    # remove collections which do not have a pattern detection
+    # Remove collections which do not have a pattern detection
     collections_to_delete = []
     for collection_key, collection in dataset['collections'].items():
         if not collection['labels'][pattern][args['camera']]['detected']:
@@ -376,27 +413,47 @@ def main():
 
     print('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
 
+    # ---------------------------------------
+    # --- Define selected collection key.
+    # ---------------------------------------
+    # For the getters we only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
+    selected_collection_key = list(dataset["collections"].keys())[0]
+    print("Selected collection key is " + str(selected_collection_key))
+    
+    
     # Compute OpenCV stereo calibration
     # Now does not crash!!!
-    R_base2pattern, t_base2pattern, R_gripper2cam, t_gripper2cam = cvHandEyeCalibrate(objp=objp, dataset=dataset, camera=camera, pattern=pattern, number_of_corners=number_of_corners)
+    R_base2pattern, t_base2pattern, R_gripper2opticalframe, t_gripper2opticalframe = cvHandEyeCalibrate(
+        objp=objp,
+        dataset=dataset,
+        camera=camera,
+        pattern=pattern,
+        number_of_corners=number_of_corners
+        )
 
     ########################################
     # Get calibrated homogenous tfs
     ########################################
 
-    calib_tf_base2pattern = np.zeros((4,4))
-    calib_tf_base2pattern[0:3, 0:3] = R_base2pattern
-    calib_tf_base2pattern[0:3, 3] = t_base2pattern.T
-    calib_tf_base2pattern[3, 3] = 1
+    calib_tf_base2pattern = joinTFMatrix(R_base2pattern, t_base2pattern)
 
+    print('Calibrated TF from the base to the pattern:')
     print(calib_tf_base2pattern)
+    
+    calib_tf_gripper2opticalframe = joinTFMatrix(R_gripper2opticalframe, t_gripper2opticalframe)
 
-    # print(calib_tf_base2pattern)
-        
-    calib_tf_gripper2opticalframe = np.zeros((4,4))
-    calib_tf_gripper2opticalframe[0:3, 0:3] = R_gripper2cam
-    calib_tf_gripper2opticalframe[0:3, 3] = t_gripper2cam.T    
-    calib_tf_gripper2opticalframe[3, 3] = 1
+    print('Gripper to OF:')
+    print(calib_tf_gripper2opticalframe)
+    
+    dataset_tf_gripper2opticalframe=getTransform(
+        from_frame="flange",
+        to_frame="rgb_hand_optical_frame",
+        transforms=dataset['collections'][selected_collection_key]['transforms'] 
+        )
+
+    print('Gripper to OF (from dataset):')
+    print(dataset_tf_gripper2opticalframe)
+    exit(0)
 
     # After this script is done, check if this is still needed
     calib_tf_world2pattern, calib_tf_gripper2cam = getWantedTransformsFromOpenCVHandEyeCalib(
