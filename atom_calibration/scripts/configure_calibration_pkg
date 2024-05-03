@@ -397,7 +397,7 @@ if __name__ == "__main__":
     for sensor_key, sensor in config['sensors'].items():
         edge_in_config = (config['sensors'][sensor_key]['parent_link'], config['sensors'][sensor_key]['child_link'])
         if not edge_in_config in nx_graph.edges():
-            atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Fore.BLACK + ' and ' + Fore.YELLOW + edge_in_config[1] + Fore.BLACK +
+            atomError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' parent and child links are ' + Fore.YELLOW + edge_in_config[0] + Style.RESET_ALL + ' and ' + Fore.YELLOW + edge_in_config[1] + Style.RESET_ALL +
                       ' but there is no such atomic transformation in the tf tree.' + Style.RESET_ALL)
     atomPrintOK()
 
