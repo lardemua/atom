@@ -15,9 +15,11 @@ Z is the transformation from the gripper/flange/end-effector to the camera
 
 import argparse
 import numpy as np
+import cv2
 
 from atom_core.dataset_io import loadResultsJSON
 from atom_core.atom import getTransform
+from atom_core.geometry import traslationRodriguesToTransform
 
 def getPatternConfig(dataset, pattern):
     # Pattern configs
@@ -163,6 +165,15 @@ def main():
 
         imgpoints_camera.append(tmp_imgpoints_camera)
 
+        retval, rvec, tvec = cv2.solvePnP(objp, imgpoints_camera[0], K, D)
+
+        tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
+
+        # B is the inverse of pattern2opticalframe
+
+        B = np.linalg.inv(tf_pattern2opticalframe)
+        
+        BB.append(B)
 
 
 if __name__ == '__main__':
