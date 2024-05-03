@@ -5,7 +5,7 @@ Implementation of an ATOM-compatible alternative calibration method described by
 
 This method solves the Robot-World/Hand-Eye calibration problem, with the formulation: AX = ZB, where:
 
-A is the transformation from the camera/sensor to the base;
+A is the transformation from the gripper/flange/end-effector to the base;
 B is the transformation from the camera to the pattern/target (in the paper, this is called "world". However, to be coherent with ATOM, we call it "pattern");
 
 X is the transformation from the base of the robot to the pattern;
@@ -41,7 +41,7 @@ def main():
     # GET A and B matrices to solve AX=ZB #
     ########################################
 
-        
+    # A is the transform from the
 
 
 if __name__ == '__main__':
