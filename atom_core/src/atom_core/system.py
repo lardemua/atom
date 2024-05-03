@@ -4,6 +4,7 @@ import os
 import pty
 import re
 import subprocess
+import sys
 
 from colorama import Fore, Style, Back
 from pytictoc import TicToc
@@ -46,7 +47,7 @@ def execute(cmd, blocking=True, verbose=True, save_path=None, save_filename_addi
             if output:
                 if verbose:
                     print(output, end='')
-                # sys.stdout.flush()
+                sys.stdout.flush()
                 stdout_data += output
 
         # Write the stdout data to the file if stdout_file is provided
