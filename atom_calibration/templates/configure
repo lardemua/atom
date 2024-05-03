@@ -18,36 +18,8 @@ Only modify this file if you know what you are doing!
 """
 
 import argparse
-import subprocess
 
-from colorama import Fore, Back, Style
-from pytictoc import TicToc
-
-
-def run_command(command, tictoc):
-    print('\n\n' + Style.BRIGHT + Fore.BLUE + 'Executing command:' +
-        Style.RESET_ALL + '\n' + Fore.BLUE + command + Style.RESET_ALL)
-    # Start executing command.
-    tictoc.tic()
-    proc = subprocess.Popen(command, shell=True, universal_newlines=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    
-    while True:
-        line = proc.stdout.readline()
-        print(line)
-        if not line: break
-
-    stdout_data, stderr_data = proc.communicate()  # wait for command to finish
-    toc = str(round(tictoc.tocvalue(), 5))
-
-    if not proc.returncode == 0:  # Check stdout_data of command.
-        print(Fore.RED + Back.YELLOW + 'Error running command. stderr is:' + Style.RESET_ALL)
-        print(stderr_data)
-        exit(0)
-
-    print(Fore.BLUE + 'Command executed in ' + toc + ' secs.' + Style.RESET_ALL)
-
-
+from atom_core.system import execute
 
 def main():
 
@@ -79,9 +51,7 @@ def main():
     # ---------------------------------------------------
     # Execute command
     # ---------------------------------------------------
-    # To measure time
-    tictoc = TicToc()
-    run_command(command, tictoc)
+    execute(command)
 
 
 if __name__ == '__main__':
