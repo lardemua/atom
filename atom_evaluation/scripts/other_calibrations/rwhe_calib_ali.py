@@ -16,6 +16,7 @@ Z is the transformation from the gripper/flange/end-effector to the camera
 import argparse
 
 from atom_core.dataset_io import loadResultsJSON
+from atom_core.atom import getTransform
 
 def main():
     
@@ -28,21 +29,42 @@ def main():
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument("-bln", "--base_link_name", type=str, required=False, default="base_link", help="Name of the robot base link frame.")
+    ap.add_argument("-eeln", "--end_effector_link_name", type=str, required=False, default="flange", help="Name of the end-effector link frame.")
     
     args = vars(ap.parse_args())
 
     json_file = args['json_file']
     collection_selection_function = args['collection_selection_function']
+    base_link_name = args['base_link_name']
+    end_effector_link_name = args['end_effector_link_name']
 
     # Read dataset file
     dataset, json_file = loadResultsJSON(json_file, collection_selection_function)
+
 
     ########################################
     # GET A and B matrices to solve AX=ZB #
     ########################################
 
-    # A is the transform from the
+    # Initialize list of A and B matrices (one for each collection)
+    AA = [] 
+    BB = []
+    
+    for collection_key, collection in dataset['collections'].items():
+        
+        print("Calculating A and B matrices for collection " + collection_key + "...")
+        
+        # A is the transform from the gripper to the robot's base. We can get it from the dataset
+        transform_pool = collection['transforms']
+        A = getTransform(
+            from_frame=end_effector_link_name,
+            to_frame=base_link_name,
+            transforms=transform_pool
+        )
 
+        AA.append(A)
+        
 
 if __name__ == '__main__':
     main()
