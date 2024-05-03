@@ -19,6 +19,17 @@ import numpy as np
 from atom_core.dataset_io import loadResultsJSON
 from atom_core.atom import getTransform
 
+def getPatternConfig(dataset, pattern):
+    # Pattern configs
+    nx = dataset['calibration_config']['calibration_patterns'][pattern]['dimension']['x']
+    ny = dataset['calibration_config']['calibration_patterns'][pattern]['dimension']['y']
+    square = dataset['calibration_config']['calibration_patterns'][pattern]['size']
+    inner_square = dataset['calibration_config']['calibration_patterns'][pattern]['inner_size']
+    objp = np.zeros((nx * ny, 3), np.float32)
+    # set of coordinates (w.r.t. the pattern frame) of the corners
+    objp[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+
+    return nx, ny, square, inner_square, objp
 
 def getCameraIntrinsicsFromDataset(dataset, camera):
     # Camera intrinsics (from the dataset) needed to calculate B
@@ -37,6 +48,10 @@ def getCameraIntrinsicsFromDataset(dataset, camera):
 
 def main():
     
+    ########################################
+    # ARGUMENT PARSER #
+    ########################################
+
     # Parse command line arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file", type=str, required=True,
@@ -49,6 +64,7 @@ def main():
     ap.add_argument("-bln", "--base_link_name", type=str, required=False, default="base_link", help="Name of the robot base link frame.")
     ap.add_argument("-eeln", "--end_effector_link_name", type=str, required=False, default="flange", help="Name of the end-effector link frame.")
     ap.add_argument("-c", "--camera", help="Camera sensor name.", type=str, required=True)
+    ap.add_argument("-p", "--pattern", help="Pattern to be used for calibration.", type=str, required=True)
     
     args = vars(ap.parse_args())
 
@@ -57,20 +73,63 @@ def main():
     base_link_name = args['base_link_name']
     end_effector_link_name = args['end_effector_link_name']
     camera = args['camera']
+    pattern = args['pattern']
 
     # Read dataset file
     dataset, json_file = loadResultsJSON(json_file, collection_selection_function)
 
 
     ########################################
-    # GET A and B matrices to solve AX=ZB #
+    # DATASET PREPROCESSING #
     ########################################
 
-    # Get camera intrinsics from dataset
+    # Get camera intrinsics from the dataset, needed to calculate B
     K, D, image_size = getCameraIntrinsicsFromDataset(
         dataset=dataset,
         camera=camera
         )
+
+    # Get pattern configuration from the dataset, also needed to calulate B
+    
+    nx, ny, square, inner_square, objp = getPatternConfig(dataset=dataset, pattern=pattern)
+   
+    # Remove partial detections (OpenCV does not support them)
+    collections_to_delete = []
+
+    number_of_corners = int(nx) * int(ny)
+    for collection_key, collection in dataset['collections'].items():
+        for sensor_key, sensor in dataset['sensors'].items():
+            if sensor_key != camera:
+                continue
+            
+            if sensor['msg_type'] == 'Image' and collection['labels'][pattern][sensor_key]['detected']:
+                if not len(collection['labels'][pattern][sensor_key]['idxs']) == number_of_corners:
+                    print(
+                        Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
+                        collection_key + ', sensor ' + sensor_key)
+
+                    collections_to_delete.append(collection_key)
+                    break
+
+    for collection_key in collections_to_delete:
+        del dataset['collections'][collection_key]
+
+    # Remove collections which do not have a pattern detection
+    collections_to_delete = []
+    for collection_key, collection in dataset['collections'].items():
+        if not collection['labels'][pattern][args['camera']]['detected']:
+            print('Collection ' + collection_key + ' pattern not detected on camera. Removing...')
+            collections_to_delete.append(collection_key)
+
+    for collection_key in collections_to_delete:
+        del dataset['collections'][collection_key]
+
+    print('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
+
+
+    ########################################
+    # GET A and B matrices to solve AX=ZB #
+    ########################################
 
     # Initialize list of A and B matrices (one for each collection)
     AA = [] 
@@ -92,6 +151,18 @@ def main():
         AA.append(A)
 
         # B is the transform from the camera to the calibration pattern. We can get it from the solvePnP() method, using the detections in the dataset
+
+        imgpoints_camera = [] #initialize list of 2d points in the image plane
+
+        tmp_imgpoints_camera = np.ones((number_of_corners, 2), np.float32) # temporary var
+        
+        #NOTE: Check labels id (this works because detections are complete)
+        for idx, point in enumerate(collection['labels'][pattern][camera]['idxs']):
+            tmp_imgpoints_camera[idx, 0] = point['x']
+            tmp_imgpoints_camera[idx, 1] = point['y']
+
+        imgpoints_camera.append(tmp_imgpoints_camera)
+
 
 
 if __name__ == '__main__':
