@@ -20,6 +20,34 @@ Only modify this file if you know what you are doing!
 import argparse
 import subprocess
 
+from colorama import Fore, Back, Style
+from pytictoc import TicToc
+
+
+def run_command(command, tictoc):
+    print('\n\n' + Style.BRIGHT + Fore.BLUE + 'Executing command:' +
+        Style.RESET_ALL + '\n' + Fore.BLUE + command + Style.RESET_ALL)
+    # Start executing command.
+    tictoc.tic()
+    proc = subprocess.Popen(command, shell=True, universal_newlines=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    
+    while True:
+        line = proc.stdout.readline()
+        print(line)
+        if not line: break
+
+    stdout_data, stderr_data = proc.communicate()  # wait for command to finish
+    toc = str(round(tictoc.tocvalue(), 5))
+
+    if not proc.returncode == 0:  # Check stdout_data of command.
+        print(Fore.RED + Back.YELLOW + 'Error running command. stderr is:' + Style.RESET_ALL)
+        print(stderr_data)
+        exit(0)
+
+    print(Fore.BLUE + 'Command executed in ' + toc + ' secs.' + Style.RESET_ALL)
+
+
 
 def main():
 
@@ -28,7 +56,7 @@ def main():
     # ---------------------------------------------------
     parser = argparse.ArgumentParser(
         description='Configure {{ c.package_name }} calibration package. See  https://lardemua.github.io/atom_documentation/procedures/#configure-a-calibration-package for more info.')
-
+    
     parser.add_argument("-cgt", "--collect_ground_truth", action="store_true",
                         help='Assume transformations (\\tf and \\tf_static) in the bag file to be perfect, and collect them as ground truth for ATOM datasets. Useful for evaluating the calibration against ground truth.')
 
@@ -51,19 +79,9 @@ def main():
     # ---------------------------------------------------
     # Execute command
     # ---------------------------------------------------
-    result = subprocess.run(command.split(), capture_output=True, text=True)
-
-    # ---------------------------------------------------
-    # Capture output and print
-    # ---------------------------------------------------
-    stdout_output = result.stdout
-    print(stdout_output)
-
-    stderr_output = result.stderr
-    print(stderr_output)
-
-    if result.returncode != 0:
-        print('exit status:', result.returncode)
+    # To measure time
+    tictoc = TicToc()
+    run_command(command, tictoc)
 
 
 if __name__ == '__main__':
