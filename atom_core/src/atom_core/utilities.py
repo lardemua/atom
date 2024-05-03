@@ -28,7 +28,7 @@ import yaml
 from tf.transformations import quaternion_matrix, euler_from_matrix
 
 from atom_core.naming import generateKey
-from atom_core.system import execute
+from atom_core.system import execute, removeColorsFromText
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
@@ -93,14 +93,6 @@ def getNumberQualifier(n, unit='meters'):
             return Fore.MAGENTA + '{:.5f}'.format(n) + Style.RESET_ALL
         else:
             return Fore.RED + '{:.5f}'.format(n) + Style.RESET_ALL
-
-
-def removeColorsFromText(text):
-    # Must remove ansi escape characters so that its possible to convert to float
-    # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    text_without_color_codes = ansi_escape.sub('', text)
-    return text_without_color_codes
 
 
 def addAveragesBottomRowToTable(table, header):
