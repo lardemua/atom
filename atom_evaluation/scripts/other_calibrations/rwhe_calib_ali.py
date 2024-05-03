@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 
+"""
+Implementation of an ATOM-compatible alternative calibration method described by Li et. al originally written in MATLAB. Original repo: https://github.com/ihtishamaliktk/RWHE-Calib
+
+This method solves the Robot-World/Hand-Eye calibration problem, with the formulation: AX = ZB, where:
+
+A is the transformation from the camera/sensor to the base;
+B is the transformation from the camera to the pattern/target (in the paper, this is called "world". However, to be coherent with ATOM, we call it "pattern");
+
+X is the transformation from the base of the robot to the pattern;
+Z is the transformation from the gripper/flange/end-effector to the camera
+
+"""
+
 import argparse
 
 from atom_core.dataset_io import loadResultsJSON
@@ -24,7 +37,11 @@ def main():
     # Read dataset file
     dataset, json_file = loadResultsJSON(json_file, collection_selection_function)
 
-    
+    ########################################
+    # GET A and B matrices to solve AX=ZB #
+    ########################################
+
+        
 
 
 if __name__ == '__main__':
