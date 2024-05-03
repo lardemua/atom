@@ -22,7 +22,7 @@ from atom_core.utilities import atomWarn, removeColorsFromText
 import pandas as pd
 
 
-def averageCsvFiles(filenames):
+def averageCsvFiles(filenames, average_row):
 
     # Get a list of the pandas representation of the csvs
     pandas_text_df = pd.read_csv(filenames[0])
@@ -32,7 +32,7 @@ def averageCsvFiles(filenames):
         df = pd.read_csv(filename)
 
         # Filter all cells for averages
-        df = df[df['Collection #'].isin(['Averages'])]
+        df = df[df['Collection #'].isin([average_row])]
 
         df = df.apply(pd.to_numeric, errors="coerce")
         pandas_dfs.append(df)
@@ -60,6 +60,8 @@ def main():
                     required=False, default='_run', type=str)
     ap.add_argument("-fs", "--fold_suffix", help="Suffix used to signal multiple folds of the same run.",
                     required=False, default='_fold', type=str)
+    ap.add_argument("-ar", "--average_row", help="Name of the row to average. Default is 'Averages'",
+                    required=False, default='Averages', type=str)
 
     args = vars(ap.parse_args())
 
@@ -71,6 +73,8 @@ def main():
         # bprint('Overwriting output folder: ' + config['output_folder'])
         shutil.rmtree(args['output_folder'])  # Create the new folder
         os.mkdir(args['output_folder'])  # Create the new folder
+    
+    print('Average row: ' + args['average_row'])
 
     # We need to get the experiments from the set of folders (runs) in the results_folder. An experiment is a set of one or more runs, with filenames <experiment_name>_r1
 
@@ -113,7 +117,7 @@ def main():
 
             filenames = [run + '/' + file_to_process for run in files_and_folders]
 
-            average_df = averageCsvFiles(filenames)
+            average_df = averageCsvFiles(filenames, args['average_row'])
 
             average_df = average_df.drop(columns=['Collection #'])
 
