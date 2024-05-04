@@ -47,7 +47,7 @@ def compareTransforms(t1, t2):
         exit(0)
 
     # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation the amount of rotation and translation in the resulting matrix.
-    # print('Comparing \nt1= ' + str(t1) + ' \n\nt2=' + str(t2))
+    # print('Comparing \nt1=\n' + str(t1) + '\n\nt2=\n' + str(t2))
 
     t_delta = np.dot(np.linalg.inv(t1), t2)
     # print('t_delta = ' + str(t_delta))
@@ -57,10 +57,9 @@ def compareTransforms(t1, t2):
 
     translation_delta = t_delta[0:3, 3]
     # print('translation_delta = ' + str(translation_delta))
-    x, y, z = translation_delta
 
     # global metrics
-    translation_error = np.sqrt(x**2 + y**2 + z**2)
+    translation_error = float(abs(np.average(translation_delta)))
 
     rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
     # TODO How to compute aggregate rotation error? For now we use the average
