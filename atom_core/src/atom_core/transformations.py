@@ -57,6 +57,7 @@ def compareTransforms(t1, t2):
 
     translation_delta = t_delta[0:3, 3]
     # print('translation_delta = ' + str(translation_delta))
+    x, y, z = translation_delta
 
     # global metrics
     translation_error = float(abs(np.average(translation_delta)))
