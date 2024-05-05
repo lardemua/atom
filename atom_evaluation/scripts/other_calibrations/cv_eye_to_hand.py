@@ -111,11 +111,9 @@ def main():
     elif args['method_name'] == 'daniilidis':
         method = cv2.CALIB_HAND_EYE_DANIILIDIS
 
-    # Check if the hand link is in the chain from the base to the pattern
-
-    # TODO: try/except here because the pattern might not be in this chain and an atomError message is clearer than the networkX exception error message
+    # Check if the hand link is in the chain from the base to the pattern (since transforms involving the pattern aren't included in the transformation pool in the collections, it uses the pattern's parent link for the check)
     chain = getChain(from_frame=args['base_link'],
-                     to_frame=dataset['calibration_config']['calibration_patterns'][args['pattern']]['link'],
+                     to_frame=dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link'],
                      transform_pool=dataset['collections'][selected_collection_key]['transforms'])
 
     hand_frame_in_chain = False
