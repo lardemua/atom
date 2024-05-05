@@ -116,6 +116,10 @@ def main():
                      to_frame=dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link'],
                      transform_pool=dataset['collections'][selected_collection_key]['transforms'])
 
+    # chain is a list of dictionaries like this:
+    # [{'parent': 'forearm_link', 'child': 'wrist_1_link', 'key': 'forearm_link-wrist_1_link'},
+    #  {'parent': 'wrist_1_link', 'child': 'wrist_2_link', 'key': 'wrist_1_link-wrist_2_link'}, ... ]
+    
     hand_frame_in_chain = False
     for transform in chain: 
         if args['hand_link'] == transform['parent'] or args['hand_link'] == transform['child']:
@@ -126,18 +130,12 @@ def main():
                   ' does not belong to the chain from base ' + Fore.BLUE + args['base_link'] +
                   Style.RESET_ALL + ' to the camera ' +
                   dataset['calibration_config']['sensors'][args['camera']]['link'])
-    
-    exit(0)
-
 
     # Check if the given hand link is not in the chain from base to camera (if it is, we're in an eye-in-hand configuration)
     chain = getChain(from_frame=args['base_link'],
                      to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                      transform_pool=dataset['collections'][selected_collection_key]['transforms'])
 
-    # chain is a list of dictionaries like this:
-    # [{'parent': 'forearm_link', 'child': 'wrist_1_link', 'key': 'forearm_link-wrist_1_link'},
-    #  {'parent': 'wrist_1_link', 'child': 'wrist_2_link', 'key': 'wrist_1_link-wrist_2_link'}, ... ]
 
     hand_frame_in_chain = False
     for transform in chain:
@@ -151,18 +149,24 @@ def main():
                   Style.RESET_ALL + ' to the camera ' +
                   dataset['calibration_config']['sensors'][args['camera']]['link'] + ', which indicates this system is not in an eye-to-hand configuration.')
 
-    # Check the hand to camera chain is composed only of fixed transforms
-    chain = getChain(from_frame=args['hand_link'],
-                     to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
-                     transform_pool=dataset['collections'][selected_collection_key]['transforms'])
+    # Check the hand to pattern chain is composed only of fixed transforms
+    # Since the transformation pool from a collection doesn't include the tf from the pattern link's parent to the pattern link, we must work with the parent. However, it might be the case that the hand link is the same as the pattern's parent link. In that case, it is known that the transform is fixed.
+    
+    if args['hand_link'] != dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link']:
+        
+        chain = getChain(from_frame=args['hand_link'],
+                        to_frame=dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link'],
+                        transform_pool=dataset['collections'][selected_collection_key]['transforms'])
 
-    for transform in chain:
-        if not dataset['transforms'][transform['key']]['type'] == 'fixed':
-            atomError('Chain from hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
-                      ' to camera link ' + Fore.BLUE +
-                      dataset['calibration_config']['sensors'][args['camera']]['link'] +
-                      Style.RESET_ALL + ' contains non fixed transform ' + Fore.RED +
-                      transform['key'] + Style.RESET_ALL + '. Cannot calibrate.')
+        for transform in chain:
+            if not dataset['transforms'][transform['key']]['type'] == 'fixed':
+                atomError('Chain from hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
+                        ' to pattern link ' + Fore.BLUE +
+                        dataset['calibration_config']['calibration_patterns'][args['pattern']]['link'] +
+                        Style.RESET_ALL + ' contains non fixed transform ' + Fore.RED +
+                        transform['key'] + Style.RESET_ALL + '. Cannot calibrate.')
+
+    exit(0)
 
     # ---------------------------------------
     # Pattern configuration
