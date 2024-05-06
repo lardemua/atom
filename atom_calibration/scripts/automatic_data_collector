@@ -12,11 +12,20 @@ import atom_msgs.srv
 from tf.listener import TransformListener
 
 # local packages
-from atom_core.ros_utils import filterLaunchArguments
 from atom_core.config_io import loadConfig
+from atom_core.ros_utils import filterLaunchArguments
+from atom_core.transformations import compareTransforms
 
 
-def compareTransforms(t1, t2, translation_threshold, rotation_threshold):
+def convertToMatrix(t):
+    matrix = np.zeros((4, 4))
+    matrix[:3, :3] = R.from_quat(t[1]).as_matrix()
+    matrix[:3, 3] = t[0]
+    matrix[3, 3] = 1
+    return matrix
+
+
+def compareTransformsWithThresholds(t1, t2, translation_threshold, rotation_threshold):
     """
     Compare two 3D transforms composed of translation and rotation components.
 
@@ -24,33 +33,26 @@ def compareTransforms(t1, t2, translation_threshold, rotation_threshold):
     - t1 (list): First transform list containing a 3-element translation vector and a 4-element quaternion.
     - t2 (list): Second transform list with the same structure as t1.
     - translation_threshold (float): Maximum allowable Euclidean distance between translation vectors.
-    - rotation_threshold (float): Maximum allowable difference between rotation matrices, measured using Frobenius norm.
+    - rotation_threshold (float): Maximum allowable difference between rotation matrices.
 
     Returns:
     - bool: True if the translation and rotation differences are below the specified thresholds, False otherwise.
     """
 
-    # Extract translation and rotation from the first transform
-    trans1 = np.array(t1[0])
-    rot1 = R.from_quat(t1[1]).as_matrix()
+    # Converting the transformation to the 4x4 matrix
+    t1_matrix = convertToMatrix(t1)
+    t2_matrix = convertToMatrix(t2)
 
-    # Extract translation and rotation from the second transform
-    trans2 = np.array(t2[0])
-    rot2 = R.from_quat(t2[1]).as_matrix()
-
-    # Calculate translation and rotation differences
-    translation_difference = np.linalg.norm(trans1 - trans2)
-    
-    # Use a more appropriate rotation matrix distance metric, e.g., Frobenius norm
-    rotation_difference = np.linalg.norm(rot1 - rot2)
+    # Extract translation and rotation components
+    translation_error, rotation_error, _, _, _, _, _, _  = compareTransforms(t1_matrix, t2_matrix)
 
     # Check if differences are below the specified thresholds
-    return translation_difference < translation_threshold and rotation_difference < rotation_threshold
+    return translation_error < translation_threshold and rotation_error < rotation_threshold
 
 
 class AutomaticDataCollector:
 
-    def __init__(self, config, rate=10, time_threshold=2, translation_threshold=0.1, rotation_threshold=0.1):
+    def __init__(self, config, rate=10, time_threshold=4.0, translation_threshold=0.1, rotation_threshold=0.1):
         """
         Initialize the AutomaticDataCollector.
 
@@ -121,7 +123,7 @@ class AutomaticDataCollector:
                     self.frame_times[frame]['values'].append([trans, quat])
 
                     while self.frame_times[frame]['times'][-1] - self.frame_times[frame]['times'][0] > self.time_threshold:
-                        self.frame_times[frame]['static'] = compareTransforms(self.frame_times[frame]['values'][0], \
+                        self.frame_times[frame]['static'] = compareTransformsWithThresholds(self.frame_times[frame]['values'][0], \
                             self.frame_times[frame]['values'][-1], self.translation_threshold, self.rotation_threshold)
                             
                         
