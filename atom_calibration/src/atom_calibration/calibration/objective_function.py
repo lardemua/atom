@@ -17,7 +17,6 @@ from atom_core.joint_models import getTransformationFromJoint
 import atom_core.ros_numpy
 from colorama import Fore, Style
 from scipy.spatial import distance
-from atom_core.utilities import removeColorsFromText
 
 # ROS imports
 from geometry_msgs.msg import Point
@@ -31,6 +30,7 @@ from atom_core.vision import projectToCamera
 from atom_core.dataset_io import getPointCloudMessageFromDictionary
 from atom_core.geometry import distance_two_3D_points, isect_line_plane_v3
 from atom_core.cache import Cache
+from atom_core.system import removeColorsFromText
 from atom_calibration.collect.label_messages import pixToWorld, worldToPix
 
 

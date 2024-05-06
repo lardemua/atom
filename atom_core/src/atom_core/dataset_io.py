@@ -414,6 +414,8 @@ def loadJSONFile(json_file):
     f = open(json_file, 'r')
     dataset = json.load(f)
 
+    f.close() # Close the file to prevent memory leaks
+
     return dataset
 
 

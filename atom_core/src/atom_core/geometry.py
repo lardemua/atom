@@ -98,6 +98,40 @@ def rodriguesToMatrix(r):
     return matrix[0]
 
 
+def matrixToTranslationRotation(matrix):
+
+    R = matrix[0:3, 0:3]
+
+    tvec = np.zeros((3, 1), dtype=float)
+    tvec[0, 0] = matrix[0, 3]
+    tvec[1, 0] = matrix[1, 3]
+    tvec[2, 0] = matrix[2, 3]
+
+    return tvec, R
+
+
+def matrixToTranslationRodrigues(matrix):
+
+    rvec = matrixToRodrigues(matrix[0:3, 0:3])
+
+    tvec = np.zeros((1, 3), dtype=float)
+    tvec[0, 0] = matrix[0, 3]
+    tvec[0, 1] = matrix[1, 3]
+    tvec[0, 2] = matrix[2, 3]
+
+    return tvec, rvec
+
+
+def translationRotationToTransform(translation, rotation):
+    T = np.zeros((4, 4), dtype=float)
+    T[0:3, 0:3] = rotation
+    T[0, 3] = translation[0, 0]
+    T[1, 3] = translation[1, 0]
+    T[2, 3] = translation[2, 0]
+    T[3, 3] = 1
+    return T
+
+
 def traslationRodriguesToTransform(translation, rodrigues):
     R = rodriguesToMatrix(rodrigues)
     T = np.zeros((4, 4), dtype=float)
