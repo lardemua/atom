@@ -166,7 +166,6 @@ def main():
                         Style.RESET_ALL + ' contains non fixed transform ' + Fore.RED +
                         transform['key'] + Style.RESET_ALL + '. Cannot calibrate.')
 
-    exit(0)
 
     # ---------------------------------------
     # Pattern configuration
@@ -308,26 +307,29 @@ def main():
     # ---------------------------------------
     # Run hand eye calibration using calibrateHandEye
     # ---------------------------------------
-    h_T_c_R, h_T_c_t = cv2.calibrateHandEye(b_T_h_Rs,
+
+    # In an eye-to-hand configuration, it returns b_T_c instead of h_T_c
+    b_T_c_R, b_T_c_t = cv2.calibrateHandEye(b_T_h_Rs,
                                             b_T_h_ts,
                                             c_T_p_Rs,
                                             c_T_p_ts,
                                             method=method)
 
     # Rotations out of calibrateRobotWorldHandEye are 3x3
-    h_T_c = translationRotationToTransform(h_T_c_t, h_T_c_R)
+    b_T_c = translationRotationToTransform(b_T_c_t, b_T_c_R)
+    
 
     # Extract the transformation marked for calibration which is the
     # cp_T_cc, where cp (calibration parent) and cc (calibration child).
     # So we need to get cp_T_cc from the estimated h_T_c.
     # We use the following:
-    # h_T_c = h_T_cp * cp_T_cc * cc_T_c
-    # <=> cp_T_cc =  (h_T_cp)-1 * h_T_c * (cc_T_c)-1
+    # b_T_c = b_T_cp * cp_T_cc * cc_T_c
+    # <=> cp_T_cc =  (b_T_cp)-1 * b_T_c * (cc_T_c)-1
 
     calibration_parent = dataset['calibration_config']['sensors'][args['camera']]['parent_link']
     calibration_child = dataset['calibration_config']['sensors'][args['camera']]['child_link']
 
-    h_T_cp = getTransform(from_frame=args['hand_link'],
+    b_T_cp = getTransform(from_frame=args['base_link'],
                           to_frame=calibration_parent,
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
@@ -335,7 +337,7 @@ def main():
                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
-    cp_T_cc = inv(h_T_cp) @ h_T_c @ inv(cc_T_c)
+    cp_T_cc = inv(b_T_cp) @ b_T_c @ inv(cc_T_c)
 
     # Save to dataset
     # Since the transformation cp_T_cc is static we will save the same transform to all collections
@@ -350,17 +352,17 @@ def main():
     if args['compare_to_ground_truth']:
 
         # --------------------------------------------------
-        # Compare h_T_c hand to camera transform to ground truth
+        # Compare b_T_c base to camera transform to ground truth
         # --------------------------------------------------
-        h_T_c_ground_truth = getTransform(from_frame=args['hand_link'],
+        b_T_c_ground_truth = getTransform(from_frame=args['base_link'],
                                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                                           transforms=dataset['collections'][selected_collection_key]['transforms'])
-        print(Fore.GREEN + 'Ground Truth h_T_c=\n' + str(h_T_c_ground_truth))
+        print(Fore.GREEN + 'Ground Truth b_T_c=\n' + str(b_T_c_ground_truth))
 
-        print('estimated h_T_c=\n' + str(h_T_c))
+        print('estimated b_T_c=\n' + str(b_T_c))
 
         translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
-            h_T_c, h_T_c_ground_truth)
+            b_T_c, b_T_c_ground_truth)
         print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (m)')
         print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
 
