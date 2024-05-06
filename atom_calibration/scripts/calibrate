@@ -185,6 +185,7 @@ def main():
     args['dataset_folder'] = os.path.dirname(args['json_file'])
     output_folder = os.path.dirname(args['json_file'])
 
+    # -sce wasn't working because args previously had this key
     args['output_folder'] = output_folder
 
     # ---------------------------------------

@@ -1,0 +1,1393 @@
+_______________________________________________________
+
+           █████╗ ████████╗ ██████╗ ███╗   ███╗ 
+          ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║ 
+          ███████║   ██║   ██║   ██║██╔████╔██║ 
+          ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║ 
+   __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _  
+ / _|     ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝  | |    
+ | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __ 
+ |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ / 
+ | | | | | (_| | | | | | |  __/\ V  V / (_) | |  |   <  
+ |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\ 
+ https://github.com/lardemua/atom
+
+Starting calibration
+_______________________________________________________
+
+Creating lambda expression for arg collection_selection_function
+Skipped loading images and point clouds for collections: ['001', '002', '006', '011', '018', '020', '036', '042', '043'].
+Deleted collections: ['001', '002', '006', '011', '018', '020', '036', '042', '043'] because of the -csf flag.
+Deleted collections: ['027', '004'] because these are incomplete. If you want to use them set the use_incomplete_collections flag.
+After filtering, will use 33 collections: ['000', '003', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041']
+Loaded dataset containing 3 sensors and 33 collections.
+Selected collection key is 000
+ATOM Warn: Not adding initial guess noise to world-base_footprint because its defined in -ntfl
+Transformation parent front_right_camera_link child front_right_camera_rgb_frame
+ATOM Warn: Adding noise bigger than 1.0m/rad right now is bugged and might yield unexpected results. Check issue #929 for more information
+Transformation parent lidar3d_plate_link child lidar3d_base_link
+ATOM Warn: Adding noise bigger than 1.0m/rad right now is bugged and might yield unexpected results. Check issue #929 for more information
+No joints are being optimized
+Transformation parent world child base_footprint
+ATOM Warn: Adding noise bigger than 1.0m/rad right now is bugged and might yield unexpected results. Check issue #929 for more information
+
+Initializing optimizer...
+Anchored sensor is front_left_camera
+Checking if anchored sensor front_left_camera is valid ... These transform_keys are anchored: ['front_left_camera_link-front_left_camera_rgb_frame']
+Creating sensor transformation parameters ...
+Creating additional_tfs parameters ...
+Creating residuals ... 
+Computing sparse matrix ... 
+Normalizer for lidar3d: 0.1516198784110806
+Normalizer for rgb: 238.04643011646007
+Optimization setup with 222 parameters: ['front_right_camera_link-front_right_camera_rgb_frame_x', 'front_right_camera_link-front_right_camera_rgb_frame_y', 'front_right_camera_link-front_right_camera_rgb_frame_z', 'front_right_camera_link-front_right_camera_rgb_frame_r1', 'front_right_camera_link-front_right_camera_rgb_frame_r2', 'front_right_camera_link-front_right_camera_rgb_frame_r3', 'front_left_camera_link-front_left_camera_rgb_frame_x', 'front_left_camera_link-front_left_camera_rgb_frame_y', 'front_left_camera_link-front_left_camera_rgb_frame_z', 'front_left_camera_link-front_left_camera_rgb_frame_r1', 'front_left_camera_link-front_left_camera_rgb_frame_r2', 'front_left_camera_link-front_left_camera_rgb_frame_r3', 'lidar3d_plate_link-lidar3d_base_link_x', 'lidar3d_plate_link-lidar3d_base_link_y', 'lidar3d_plate_link-lidar3d_base_link_z', 'lidar3d_plate_link-lidar3d_base_link_r1', 'lidar3d_plate_link-lidar3d_base_link_r2', 'lidar3d_plate_link-lidar3d_base_link_r3', 'c000_world-base_footprint_x', 'c000_world-base_footprint_y', 'c000_world-base_footprint_z', 'c000_world-base_footprint_r1', 'c000_world-base_footprint_r2', 'c000_world-base_footprint_r3', 'c003_world-base_footprint_x', 'c003_world-base_footprint_y', 'c003_world-base_footprint_z', 'c003_world-base_footprint_r1', 'c003_world-base_footprint_r2', 'c003_world-base_footprint_r3', 'c005_world-base_footprint_x', 'c005_world-base_footprint_y', 'c005_world-base_footprint_z', 'c005_world-base_footprint_r1', 'c005_world-base_footprint_r2', 'c005_world-base_footprint_r3', 'c007_world-base_footprint_x', 'c007_world-base_footprint_y', 'c007_world-base_footprint_z', 'c007_world-base_footprint_r1', 'c007_world-base_footprint_r2', 'c007_world-base_footprint_r3', 'c008_world-base_footprint_x', 'c008_world-base_footprint_y', 'c008_world-base_footprint_z', 'c008_world-base_footprint_r1', 'c008_world-base_footprint_r2', 'c008_world-base_footprint_r3', 'c009_world-base_footprint_x', 'c009_world-base_footprint_y', 'c009_world-base_footprint_z', 'c009_world-base_footprint_r1', 'c009_world-base_footprint_r2', 'c009_world-base_footprint_r3', 'c010_world-base_footprint_x', 'c010_world-base_footprint_y', 'c010_world-base_footprint_z', 'c010_world-base_footprint_r1', 'c010_world-base_footprint_r2', 'c010_world-base_footprint_r3', 'c012_world-base_footprint_x', 'c012_world-base_footprint_y', 'c012_world-base_footprint_z', 'c012_world-base_footprint_r1', 'c012_world-base_footprint_r2', 'c012_world-base_footprint_r3', 'c013_world-base_footprint_x', 'c013_world-base_footprint_y', 'c013_world-base_footprint_z', 'c013_world-base_footprint_r1', 'c013_world-base_footprint_r2', 'c013_world-base_footprint_r3', 'c014_world-base_footprint_x', 'c014_world-base_footprint_y', 'c014_world-base_footprint_z', 'c014_world-base_footprint_r1', 'c014_world-base_footprint_r2', 'c014_world-base_footprint_r3', 'c015_world-base_footprint_x', 'c015_world-base_footprint_y', 'c015_world-base_footprint_z', 'c015_world-base_footprint_r1', 'c015_world-base_footprint_r2', 'c015_world-base_footprint_r3', 'c016_world-base_footprint_x', 'c016_world-base_footprint_y', 'c016_world-base_footprint_z', 'c016_world-base_footprint_r1', 'c016_world-base_footprint_r2', 'c016_world-base_footprint_r3', 'c017_world-base_footprint_x', 'c017_world-base_footprint_y', 'c017_world-base_footprint_z', 'c017_world-base_footprint_r1', 'c017_world-base_footprint_r2', 'c017_world-base_footprint_r3', 'c019_world-base_footprint_x', 'c019_world-base_footprint_y', 'c019_world-base_footprint_z', 'c019_world-base_footprint_r1', 'c019_world-base_footprint_r2', 'c019_world-base_footprint_r3', 'c021_world-base_footprint_x', 'c021_world-base_footprint_y', 'c021_world-base_footprint_z', 'c021_world-base_footprint_r1', 'c021_world-base_footprint_r2', 'c021_world-base_footprint_r3', 'c022_world-base_footprint_x', 'c022_world-base_footprint_y', 'c022_world-base_footprint_z', 'c022_world-base_footprint_r1', 'c022_world-base_footprint_r2', 'c022_world-base_footprint_r3', 'c023_world-base_footprint_x', 'c023_world-base_footprint_y', 'c023_world-base_footprint_z', 'c023_world-base_footprint_r1', 'c023_world-base_footprint_r2', 'c023_world-base_footprint_r3', 'c024_world-base_footprint_x', 'c024_world-base_footprint_y', 'c024_world-base_footprint_z', 'c024_world-base_footprint_r1', 'c024_world-base_footprint_r2', 'c024_world-base_footprint_r3', 'c025_world-base_footprint_x', 'c025_world-base_footprint_y', 'c025_world-base_footprint_z', 'c025_world-base_footprint_r1', 'c025_world-base_footprint_r2', 'c025_world-base_footprint_r3', 'c026_world-base_footprint_x', 'c026_world-base_footprint_y', 'c026_world-base_footprint_z', 'c026_world-base_footprint_r1', 'c026_world-base_footprint_r2', 'c026_world-base_footprint_r3', 'c028_world-base_footprint_x', 'c028_world-base_footprint_y', 'c028_world-base_footprint_z', 'c028_world-base_footprint_r1', 'c028_world-base_footprint_r2', 'c028_world-base_footprint_r3', 'c029_world-base_footprint_x', 'c029_world-base_footprint_y', 'c029_world-base_footprint_z', 'c029_world-base_footprint_r1', 'c029_world-base_footprint_r2', 'c029_world-base_footprint_r3', 'c030_world-base_footprint_x', 'c030_world-base_footprint_y', 'c030_world-base_footprint_z', 'c030_world-base_footprint_r1', 'c030_world-base_footprint_r2', 'c030_world-base_footprint_r3', 'c031_world-base_footprint_x', 'c031_world-base_footprint_y', 'c031_world-base_footprint_z', 'c031_world-base_footprint_r1', 'c031_world-base_footprint_r2', 'c031_world-base_footprint_r3', 'c032_world-base_footprint_x', 'c032_world-base_footprint_y', 'c032_world-base_footprint_z', 'c032_world-base_footprint_r1', 'c032_world-base_footprint_r2', 'c032_world-base_footprint_r3', 'c033_world-base_footprint_x', 'c033_world-base_footprint_y', 'c033_world-base_footprint_z', 'c033_world-base_footprint_r1', 'c033_world-base_footprint_r2', 'c033_world-base_footprint_r3', 'c034_world-base_footprint_x', 'c034_world-base_footprint_y', 'c034_world-base_footprint_z', 'c034_world-base_footprint_r1', 'c034_world-base_footprint_r2', 'c034_world-base_footprint_r3', 'c035_world-base_footprint_x', 'c035_world-base_footprint_y', 'c035_world-base_footprint_z', 'c035_world-base_footprint_r1', 'c035_world-base_footprint_r2', 'c035_world-base_footprint_r3', 'c037_world-base_footprint_x', 'c037_world-base_footprint_y', 'c037_world-base_footprint_z', 'c037_world-base_footprint_r1', 'c037_world-base_footprint_r2', 'c037_world-base_footprint_r3', 'c038_world-base_footprint_x', 'c038_world-base_footprint_y', 'c038_world-base_footprint_z', 'c038_world-base_footprint_r1', 'c038_world-base_footprint_r2', 'c038_world-base_footprint_r3', 'c039_world-base_footprint_x', 'c039_world-base_footprint_y', 'c039_world-base_footprint_z', 'c039_world-base_footprint_r1', 'c039_world-base_footprint_r2', 'c039_world-base_footprint_r3', 'c040_world-base_footprint_x', 'c040_world-base_footprint_y', 'c040_world-base_footprint_z', 'c040_world-base_footprint_r1', 'c040_world-base_footprint_r2', 'c040_world-base_footprint_r3', 'c041_world-base_footprint_x', 'c041_world-base_footprint_y', 'c041_world-base_footprint_z', 'c041_world-base_footprint_r1', 'c041_world-base_footprint_r2', 'c041_world-base_footprint_r3', 'world-pattern_link_x', 'world-pattern_link_y', 'world-pattern_link_z', 'world-pattern_link_r1', 'world-pattern_link_r2', 'world-pattern_link_r3']
+Initializing optimization ...
+One optimizer iteration has 19 function calls.
+Starting optimization ...
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        305.6951        |         187.4359        |    0.1666   |
+|    003     |        317.8810        |         281.6302        |    0.2707   |
+|    005     |        506.7343        |         677.4905        |    0.1133   |
+|    007     |        223.1619        |         60.9776         |    0.0703   |
+|    008     |        111.2411        |         277.3970        |    0.0277   |
+|    009     |        262.5433        |         213.4682        |    0.1768   |
+|    010     |        173.5763        |         199.4002        |    0.1726   |
+|    012     |        26.0693         |         172.9612        |    0.0525   |
+|    013     |        138.5808        |         206.5816        |    0.2150   |
+|    014     |        148.9511        |         319.2492        |    0.2223   |
+|    015     |        188.0578        |         38.5814         |    0.0714   |
+|    016     |        159.0072        |         251.8018        |    0.3427   |
+|    017     |        200.4498        |         349.2783        |    0.0441   |
+|    019     |        131.1704        |         270.3429        |    0.0527   |
+|    021     |        181.4414        |         112.5815        |    0.0760   |
+|    022     |        288.1187        |         203.0111        |    0.0261   |
+|    023     |        216.8164        |         196.1279        |    0.1992   |
+|    024     |        39.1190         |         207.5842        |    0.0559   |
+|    025     |        409.4693        |         371.9299        |    0.3863   |
+|    026     |        167.1000        |         224.6229        |    0.1548   |
+|    028     |        335.8837        |         459.1184        |    0.2002   |
+|    029     |        233.4891        |         184.1939        |    0.0965   |
+|    030     |        123.7782        |         185.4186        |    0.0560   |
+|    031     |        142.2260        |         322.1976        |    0.0573   |
+|    032     |        293.4932        |         431.4941        |    0.2489   |
+|    033     |        291.4339        |         351.3265        |    0.0982   |
+|    034     |        328.1671        |         209.3970        |    0.3503   |
+|    035     |        266.0827        |         299.1763        |    0.2004   |
+|    037     |        310.9615        |         677.2494        |    0.1136   |
+|    038     |        248.2550        |         132.4384        |    0.1698   |
+|    039     |        154.7887        |         104.3190        |    0.1345   |
+|    040     |        175.9028        |         285.1850        |    0.0412   |
+|    041     |        240.6548        |         259.4227        |    0.2944   |
+|  Averages  |        222.4334        |         264.3452        |    0.1503   |
++------------+------------------------+-------------------------+-------------+
+   Iteration     Total nfev        Cost      Cost reduction    Step norm     Optimality   
+       0              1         2.6978e+04                                    1.38e+05    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        279.8148        |         184.5626        |    0.1314   |
+|    003     |        266.9916        |         245.2028        |    0.2301   |
+|    005     |        430.8399        |         580.8336        |    0.0856   |
+|    007     |        211.7185        |         55.1882         |    0.0822   |
+|    008     |        92.6076         |         240.2720        |    0.0312   |
+|    009     |        264.4587        |         215.0594        |    0.1462   |
+|    010     |        177.0810        |         188.2216        |    0.1439   |
+|    012     |        38.8646         |         141.6847        |    0.0337   |
+|    013     |        115.9426        |         132.6086        |    0.1742   |
+|    014     |        101.0627        |         259.0821        |    0.1804   |
+|    015     |        176.8622        |         38.2570         |    0.0831   |
+|    016     |        107.3360        |         192.2042        |    0.2812   |
+|    017     |        179.6783        |         310.8545        |    0.0533   |
+|    019     |        113.6529        |         242.0086        |    0.0412   |
+|    021     |        174.8098        |         93.3095         |    0.0465   |
+|    022     |        272.7120        |         189.8270        |    0.0237   |
+|    023     |        184.4757        |         157.6989        |    0.1940   |
+|    024     |        33.9621         |         172.5218        |    0.0425   |
+|    025     |        337.8371        |         308.4727        |    0.3138   |
+|    026     |        138.5156        |         190.5042        |    0.1116   |
+|    028     |        297.5218        |         413.0738        |    0.1612   |
+|    029     |        222.0788        |         173.9002        |    0.0711   |
+|    030     |        113.2483        |         166.8642        |    0.0433   |
+|    031     |        125.9747        |         289.7918        |    0.0541   |
+|    032     |        254.5836        |         380.5495        |    0.2302   |
+|    033     |        274.3038        |         324.5939        |    0.0752   |
+|    034     |        298.4529        |         192.8463        |    0.3013   |
+|    035     |        239.5832        |         260.8891        |    0.1706   |
+|    037     |        259.6706        |         553.1683        |    0.1140   |
+|    038     |        255.0893        |         147.2485        |    0.1386   |
+|    039     |        132.8826        |         87.2273         |    0.1399   |
+|    040     |        167.1553        |         258.2579        |    0.0479   |
+|    041     |        218.4394        |         243.1418        |    0.2523   |
+|  Averages  |        198.7336        |         231.2099        |    0.1282   |
++------------+------------------------+-------------------------+-------------+
+       1              2         1.9626e+04      7.35e+03       2.05e-01       1.01e+05    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        26.3620         |         41.8833         |    0.0516   |
+|    003     |        78.7137         |         68.2933         |    0.0305   |
+|    005     |        62.5267         |         65.2140         |    0.0063   |
+|    007     |        40.9735         |         41.0598         |    0.0486   |
+|    008     |        29.9617         |         18.8762         |    0.0175   |
+|    009     |        143.2479        |         106.9388        |    0.0747   |
+|    010     |        30.7048         |         13.8322         |    0.0473   |
+|    012     |        20.3751         |         25.2763         |    0.0382   |
+|    013     |        23.7870         |         24.3894         |    0.0213   |
+|    014     |        19.4325         |         20.5179         |    0.0274   |
+|    015     |        34.4509         |         55.3887         |    0.0269   |
+|    016     |        19.6234         |          7.3745         |    0.0170   |
+|    017     |        34.7492         |         50.4702         |    0.0443   |
+|    019     |        25.0423         |         26.1535         |    0.0403   |
+|    021     |        31.0892         |         47.1533         |    0.0123   |
+|    022     |        71.9212         |         68.5400         |    0.0175   |
+|    023     |        38.3433         |         46.0561         |    0.0291   |
+|    024     |        31.2718         |         34.0671         |    0.0402   |
+|    025     |        97.2601         |         115.2786        |    0.0186   |
+|    026     |        30.0132         |         38.7870         |    0.0326   |
+|    028     |        53.7240         |         62.9552         |    0.0286   |
+|    029     |        43.8019         |         42.3770         |    0.0568   |
+|    030     |        32.4177         |         38.6815         |    0.0541   |
+|    031     |        23.1322         |         69.0519         |    0.0697   |
+|    032     |        36.8808         |         34.9742         |    0.0370   |
+|    033     |        49.5858         |         29.9389         |    0.0626   |
+|    034     |        66.8397         |         98.5217         |    0.0322   |
+|    035     |        39.5226         |         20.8786         |    0.0147   |
+|    037     |        91.7605         |         112.6946        |    0.0245   |
+|    038     |        47.4961         |         41.2367         |    0.0547   |
+|    039     |        37.7473         |         24.8220         |    0.0513   |
+|    040     |        40.1234         |         28.8880         |    0.0316   |
+|    041     |        45.1475         |         21.4684         |    0.0761   |
+|  Averages  |        45.3948         |         46.7285         |    0.0375   |
++------------+------------------------+-------------------------+-------------+
+       2              3         1.2735e+03      1.84e+04       1.90e+00       4.68e+04    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        35.6739         |         34.2276         |    0.0179   |
+|    003     |        75.8549         |         75.0114         |    0.0068   |
+|    005     |        46.8115         |         59.2887         |    0.0216   |
+|    007     |        47.7578         |         59.0775         |    0.0080   |
+|    008     |        14.9566         |          9.8488         |    0.0126   |
+|    009     |        149.6451        |         122.6697        |    0.0209   |
+|    010     |        32.6029         |         24.4428         |    0.0111   |
+|    012     |        17.2193         |         29.5440         |    0.0069   |
+|    013     |        26.5171         |         53.5421         |    0.0127   |
+|    014     |        27.6166         |         49.7113         |    0.0108   |
+|    015     |        35.8689         |         55.8376         |    0.0097   |
+|    016     |        20.6215         |         10.8627         |    0.0148   |
+|    017     |        11.3650         |         29.8457         |    0.0078   |
+|    019     |        14.9375         |         14.8649         |    0.0070   |
+|    021     |        31.3421         |         45.8886         |    0.0191   |
+|    022     |        53.9772         |         50.9221         |    0.0178   |
+|    023     |        41.6704         |         63.3934         |    0.0116   |
+|    024     |        14.1215         |         28.0201         |    0.0090   |
+|    025     |        76.0222         |         91.6775         |    0.0178   |
+|    026     |        22.3470         |         32.7932         |    0.0101   |
+|    028     |        33.4086         |         37.3762         |    0.0094   |
+|    029     |        49.2147         |         51.8987         |    0.0191   |
+|    030     |        27.1301         |         20.2737         |    0.0231   |
+|    031     |        19.4933         |         45.3024         |    0.0304   |
+|    032     |        43.8263         |         34.4047         |    0.0113   |
+|    033     |        54.4159         |         35.2585         |    0.0267   |
+|    034     |        52.3233         |         81.2765         |    0.0101   |
+|    035     |        43.7435         |         29.9396         |    0.0056   |
+|    037     |        53.3849         |         99.3862         |    0.0121   |
+|    038     |        76.8121         |         82.3153         |    0.0085   |
+|    039     |        50.0502         |         44.4606         |    0.0112   |
+|    040     |        37.0590         |         21.4778         |    0.0077   |
+|    041     |        49.7949         |         27.7906         |    0.0372   |
+|  Averages  |        42.0481         |         47.0494         |    0.0141   |
++------------+------------------------+-------------------------+-------------+
+       3              4         3.4949e+02      9.24e+02       1.66e-01       7.31e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        34.1407         |         45.4892         |    0.0105   |
+|    003     |        55.7218         |         53.0734         |    0.0070   |
+|    005     |        57.6839         |         64.1818         |    0.0076   |
+|    007     |        25.9657         |         28.7381         |    0.0102   |
+|    008     |        29.7623         |         31.5794         |    0.0065   |
+|    009     |        121.5920        |         88.1640         |    0.0206   |
+|    010     |        19.2691         |         12.8278         |    0.0128   |
+|    012     |        10.5303         |         16.0363         |    0.0077   |
+|    013     |        28.9715         |         34.2457         |    0.0077   |
+|    014     |        19.1494         |         16.9249         |    0.0079   |
+|    015     |        18.1825         |         29.2788         |    0.0087   |
+|    016     |        28.8946         |         30.4224         |    0.0067   |
+|    017     |        10.9260         |         29.7604         |    0.0090   |
+|    019     |        16.7156         |         22.8632         |    0.0084   |
+|    021     |        15.5246         |         23.1949         |    0.0083   |
+|    022     |        51.0109         |         54.4638         |    0.0085   |
+|    023     |        27.0428         |         30.8940         |    0.0103   |
+|    024     |        19.3780         |         28.2450         |    0.0097   |
+|    025     |        52.3558         |         67.6007         |    0.0101   |
+|    026     |        21.4749         |         30.4079         |    0.0099   |
+|    028     |        35.8822         |         49.4394         |    0.0063   |
+|    029     |        21.9690         |         21.9151         |    0.0197   |
+|    030     |        30.2733         |         31.9019         |    0.0161   |
+|    031     |        19.1984         |         46.6128         |    0.0157   |
+|    032     |        42.8815         |         48.0465         |    0.0084   |
+|    033     |        48.6481         |         39.4402         |    0.0128   |
+|    034     |        40.8124         |         71.3667         |    0.0087   |
+|    035     |        36.9203         |         39.0997         |    0.0069   |
+|    037     |        40.3659         |         66.4023         |    0.0119   |
+|    038     |        45.8141         |         36.2347         |    0.0124   |
+|    039     |        45.7317         |         27.7382         |    0.0132   |
+|    040     |        31.9825         |         30.2877         |    0.0075   |
+|    041     |        44.9685         |         30.8978         |    0.0247   |
+|  Averages  |        34.8406         |         38.7204         |    0.0107   |
++------------+------------------------+-------------------------+-------------+
+       4              5         2.0981e+02      1.40e+02       1.38e-01       8.41e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        23.8831         |         23.7129         |    0.0075   |
+|    003     |        46.1668         |         43.8349         |    0.0070   |
+|    005     |        42.5419         |         36.7424         |    0.0104   |
+|    007     |        26.8598         |         36.2735         |    0.0071   |
+|    008     |        17.9060         |          8.6286         |    0.0086   |
+|    009     |        111.4597        |         83.4113         |    0.0111   |
+|    010     |        18.5970         |         16.5660         |    0.0084   |
+|    012     |        12.1835         |         16.6304         |    0.0068   |
+|    013     |        19.4847         |         23.0851         |    0.0081   |
+|    014     |        16.5420         |         20.1937         |    0.0072   |
+|    015     |        17.7635         |         28.2121         |    0.0071   |
+|    016     |        20.5869         |          9.5830         |    0.0085   |
+|    017     |         7.2824         |         21.2003         |    0.0077   |
+|    019     |        14.0999         |         13.8898         |    0.0070   |
+|    021     |        14.7768         |         19.2190         |    0.0070   |
+|    022     |        39.4632         |         28.8094         |    0.0087   |
+|    023     |        28.0016         |         36.9097         |    0.0055   |
+|    024     |        14.1517         |         14.0572         |    0.0063   |
+|    025     |        38.4334         |         52.0299         |    0.0076   |
+|    026     |        16.9666         |         24.6218         |    0.0072   |
+|    028     |        27.6548         |         32.3619         |    0.0087   |
+|    029     |        21.0131         |         29.3211         |    0.0135   |
+|    030     |        26.3450         |         15.6509         |    0.0116   |
+|    031     |         9.9101         |         35.0289         |    0.0125   |
+|    032     |        36.8648         |         29.8574         |    0.0082   |
+|    033     |        42.7088         |         27.0925         |    0.0089   |
+|    034     |        33.7487         |         63.9401         |    0.0090   |
+|    035     |        31.6755         |         20.6023         |    0.0060   |
+|    037     |        25.4072         |         53.5466         |    0.0110   |
+|    038     |        46.8764         |         47.9923         |    0.0069   |
+|    039     |        43.1077         |         32.1861         |    0.0087   |
+|    040     |        25.5470         |         14.9567         |    0.0072   |
+|    041     |        40.5222         |         21.8199         |    0.0147   |
+|  Averages  |        29.0464         |         29.7566         |    0.0085   |
++------------+------------------------+-------------------------+-------------+
+       5              6         1.5280e+02      5.70e+01       6.69e-02       2.73e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        22.0115         |         22.1813         |    0.0075   |
+|    003     |        37.7115         |         35.5938         |    0.0067   |
+|    005     |        46.2042         |         40.4441         |    0.0069   |
+|    007     |        19.9162         |         23.9817         |    0.0078   |
+|    008     |        23.2926         |         17.5495         |    0.0064   |
+|    009     |        91.3428         |         62.3197         |    0.0135   |
+|    010     |        15.5925         |         11.4774         |    0.0092   |
+|    012     |        11.1132         |         11.4855         |    0.0065   |
+|    013     |        23.2533         |         21.8628         |    0.0072   |
+|    014     |        17.1472         |         13.2525         |    0.0069   |
+|    015     |        16.8027         |         21.3934         |    0.0072   |
+|    016     |        24.0377         |         19.2720         |    0.0066   |
+|    017     |        10.9721         |         18.9298         |    0.0074   |
+|    019     |        14.9269         |         15.0555         |    0.0065   |
+|    021     |        16.2711         |         17.0013         |    0.0066   |
+|    022     |        40.6764         |         34.6565         |    0.0065   |
+|    023     |        26.5173         |         29.6418         |    0.0065   |
+|    024     |        19.4096         |         17.7954         |    0.0060   |
+|    025     |        30.8940         |         41.2758         |    0.0070   |
+|    026     |        19.1118         |         22.8725         |    0.0075   |
+|    028     |        29.1981         |         34.5403         |    0.0061   |
+|    029     |        12.9570         |         20.2429         |    0.0143   |
+|    030     |        26.8896         |         20.8258         |    0.0113   |
+|    031     |         6.9274         |         32.2407         |    0.0113   |
+|    032     |        35.1480         |         31.9503         |    0.0079   |
+|    033     |        36.8281         |         25.8769         |    0.0084   |
+|    034     |        29.1025         |         58.9197         |    0.0086   |
+|    035     |        28.4455         |         21.9286         |    0.0057   |
+|    037     |        29.4958         |         43.3430         |    0.0112   |
+|    038     |        28.6482         |         26.3407         |    0.0086   |
+|    039     |        36.5117         |         24.8545         |    0.0103   |
+|    040     |        25.6569         |         18.8888         |    0.0068   |
+|    041     |        35.0541         |         22.0639         |    0.0132   |
+|  Averages  |        26.9111         |         26.6684         |    0.0082   |
++------------+------------------------+-------------------------+-------------+
+       6              7         1.2468e+02      2.81e+01       6.74e-02       4.37e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        19.3635         |         14.7813         |    0.0071   |
+|    003     |        34.2191         |         35.4500         |    0.0068   |
+|    005     |        35.9988         |         26.8573         |    0.0079   |
+|    007     |        19.2695         |         26.2776         |    0.0069   |
+|    008     |        16.8838         |          8.1112         |    0.0073   |
+|    009     |        81.6891         |         57.0364         |    0.0093   |
+|    010     |        15.0865         |         11.7499         |    0.0075   |
+|    012     |        11.7178         |         12.8621         |    0.0063   |
+|    013     |        19.0768         |         21.5555         |    0.0075   |
+|    014     |        15.2993         |         16.6826         |    0.0067   |
+|    015     |        15.7319         |         19.3383         |    0.0067   |
+|    016     |        19.9816         |          9.1045         |    0.0073   |
+|    017     |         9.1319         |         15.1869         |    0.0073   |
+|    019     |        14.6391         |         12.1343         |    0.0064   |
+|    021     |        15.0714         |         15.8085         |    0.0063   |
+|    022     |        33.6440         |         23.3589         |    0.0076   |
+|    023     |        26.3517         |         34.3679         |    0.0050   |
+|    024     |        16.5455         |         12.8480         |    0.0054   |
+|    025     |        22.0674         |         30.7765         |    0.0066   |
+|    026     |        16.3938         |         19.9225         |    0.0067   |
+|    028     |        25.0023         |         25.4610         |    0.0074   |
+|    029     |        12.9332         |         22.3508         |    0.0119   |
+|    030     |        25.0815         |         13.5076         |    0.0102   |
+|    031     |         6.1711         |         31.5262         |    0.0102   |
+|    032     |        32.7250         |         23.3979         |    0.0081   |
+|    033     |        33.3481         |         23.2335         |    0.0077   |
+|    034     |        22.3888         |         51.2062         |    0.0083   |
+|    035     |        26.8459         |         15.1869         |    0.0057   |
+|    037     |        26.3088         |         43.3079         |    0.0107   |
+|    038     |        27.7142         |         31.7731         |    0.0066   |
+|    039     |        33.7652         |         24.7674         |    0.0078   |
+|    040     |        23.1881         |         15.0094         |    0.0070   |
+|    041     |        31.7099         |         19.4475         |    0.0097   |
+|  Averages  |        23.7983         |         23.1632         |    0.0076   |
++------------+------------------------+-------------------------+-------------+
+       7              8         1.0682e+02      1.79e+01       4.29e-02       1.93e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |        19.7371         |         15.0450         |    0.0071   |
+|    003     |        31.6389         |         32.0145         |    0.0067   |
+|    005     |        37.0442         |         28.4069         |    0.0067   |
+|    007     |        18.2268         |         20.6882         |    0.0072   |
+|    008     |        19.4250         |         11.3677         |    0.0064   |
+|    009     |        68.9171         |         43.5849         |    0.0103   |
+|    010     |        14.0272         |         11.5014         |    0.0078   |
+|    012     |        12.3670         |          9.9155         |    0.0063   |
+|    013     |        21.5139         |         19.3785         |    0.0071   |
+|    014     |        17.0173         |         12.9881         |    0.0066   |
+|    015     |        17.5783         |         17.7804         |    0.0068   |
+|    016     |        22.1186         |         14.6028         |    0.0066   |
+|    017     |        11.4352         |         14.5771         |    0.0070   |
+|    019     |        16.4783         |         12.3471         |    0.0062   |
+|    021     |        16.5538         |         15.0992         |    0.0060   |
+|    022     |        35.0300         |         27.5432         |    0.0062   |
+|    023     |        26.3392         |         29.6805         |    0.0055   |
+|    024     |        20.0843         |         15.8609         |    0.0052   |
+|    025     |        21.8913         |         26.5618         |    0.0061   |
+|    026     |        18.7952         |         19.2760         |    0.0069   |
+|    028     |        25.4711         |         27.1641         |    0.0063   |
+|    029     |        13.5379         |         19.3019         |    0.0120   |
+|    030     |        25.2634         |         17.3733         |    0.0101   |
+|    031     |         6.4906         |         31.3295         |    0.0100   |
+|    032     |        31.9997         |         25.7666         |    0.0079   |
+|    033     |        30.6983         |         23.4508         |    0.0077   |
+|    034     |        18.3141         |         44.9219         |    0.0077   |
+|    035     |        24.2122         |         14.8606         |    0.0057   |
+|    037     |        30.3429         |         36.7745         |    0.0109   |
+|    038     |        18.4617         |         19.0508         |    0.0072   |
+|    039     |        31.3470         |         22.4236         |    0.0084   |
+|    040     |        23.3762         |         17.2267         |    0.0067   |
+|    041     |        28.2211         |         20.3755         |    0.0096   |
+|  Averages  |        23.4532         |         21.7648         |    0.0074   |
++------------+------------------------+-------------------------+-------------+
+       8              9         9.5920e+01      1.09e+01       4.09e-02       2.72e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         6.1546         |          8.6901         |    0.0066   |
+|    003     |         6.3617         |         11.2528         |    0.0066   |
+|    005     |        14.6541         |         17.6788         |    0.0069   |
+|    007     |         8.4241         |          5.2320         |    0.0064   |
+|    008     |         5.3438         |          5.3500         |    0.0065   |
+|    009     |        37.1863         |         34.7173         |    0.0078   |
+|    010     |        10.8590         |          8.3036         |    0.0064   |
+|    012     |         9.6408         |          7.8563         |    0.0060   |
+|    013     |         5.8533         |          6.8394         |    0.0064   |
+|    014     |         4.1237         |          4.6426         |    0.0059   |
+|    015     |        23.9753         |         23.5199         |    0.0064   |
+|    016     |         5.4070         |          3.5916         |    0.0058   |
+|    017     |        10.2578         |          4.6901         |    0.0066   |
+|    019     |         8.0117         |          8.5962         |    0.0062   |
+|    021     |         6.0440         |          4.8091         |    0.0056   |
+|    022     |        18.7186         |         15.5624         |    0.0058   |
+|    023     |        11.6985         |         12.5388         |    0.0051   |
+|    024     |         3.9702         |          3.3529         |    0.0037   |
+|    025     |         6.6545         |          1.7069         |    0.0061   |
+|    026     |        13.2370         |          4.4524         |    0.0065   |
+|    028     |        11.4730         |          3.9220         |    0.0063   |
+|    029     |        15.7656         |          5.7533         |    0.0065   |
+|    030     |         6.3327         |          4.7277         |    0.0064   |
+|    031     |        45.5046         |         59.3135         |    0.0077   |
+|    032     |         8.3534         |          6.0519         |    0.0063   |
+|    033     |        14.3646         |         12.0228         |    0.0072   |
+|    034     |         5.6633         |          7.2341         |    0.0058   |
+|    035     |        10.2310         |         11.3179         |    0.0050   |
+|    037     |        24.4355         |         25.7350         |    0.0139   |
+|    038     |         9.1161         |          8.6098         |    0.0062   |
+|    039     |         8.6854         |         12.2096         |    0.0062   |
+|    040     |        10.1415         |         10.1077         |    0.0062   |
+|    041     |        10.1414         |          9.1482         |    0.0069   |
+|  Averages  |        12.0238         |         11.1981         |    0.0065   |
++------------+------------------------+-------------------------+-------------+
+       9             10         5.6627e+01      3.93e+01       6.77e-01       3.05e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         4.3538         |          8.7205         |    0.0065   |
+|    003     |         6.9831         |          6.3698         |    0.0062   |
+|    005     |        11.1695         |         11.9470         |    0.0059   |
+|    007     |         6.2901         |          3.8074         |    0.0065   |
+|    008     |         3.8328         |          3.1566         |    0.0064   |
+|    009     |        33.1413         |         31.4801         |    0.0069   |
+|    010     |         9.8766         |          7.7911         |    0.0065   |
+|    012     |         8.0917         |          7.0989         |    0.0059   |
+|    013     |         6.0687         |          3.0688         |    0.0057   |
+|    014     |         4.5503         |          2.7507         |    0.0056   |
+|    015     |        22.2257         |         20.9898         |    0.0064   |
+|    016     |         4.0223         |          3.9747         |    0.0057   |
+|    017     |         6.8669         |          3.2422         |    0.0063   |
+|    019     |         6.4994         |          7.9273         |    0.0059   |
+|    021     |         5.5053         |          2.0483         |    0.0047   |
+|    022     |        16.3439         |         12.4330         |    0.0039   |
+|    023     |         9.1452         |          5.7316         |    0.0037   |
+|    024     |         3.8780         |          4.0203         |    0.0040   |
+|    025     |         5.8056         |          2.7259         |    0.0052   |
+|    026     |        11.9912         |          4.5081         |    0.0059   |
+|    028     |         8.8446         |          3.2522         |    0.0061   |
+|    029     |        14.7200         |          4.7081         |    0.0067   |
+|    030     |         5.3996         |          6.6972         |    0.0065   |
+|    031     |        40.3038         |         52.0793         |    0.0076   |
+|    032     |         7.3392         |          8.4515         |    0.0062   |
+|    033     |        13.8662         |         11.9033         |    0.0067   |
+|    034     |         5.9265         |          6.4891         |    0.0057   |
+|    035     |         9.0529         |         12.0352         |    0.0049   |
+|    037     |        19.9684         |         19.9387         |    0.0078   |
+|    038     |         7.0410         |          5.6189         |    0.0064   |
+|    039     |         6.9427         |         12.4083         |    0.0064   |
+|    040     |         9.8027         |         10.8171         |    0.0063   |
+|    041     |         7.8933         |          8.8914         |    0.0069   |
+|  Averages  |        10.4164         |          9.6086         |    0.0060   |
++------------+------------------------+-------------------------+-------------+
+      10             11         4.8668e+01      7.96e+00       2.29e-02       1.07e+03    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         5.7957         |          4.5711         |    0.0065   |
+|    003     |         9.4904         |         10.0277         |    0.0062   |
+|    005     |         7.3490         |          9.1833         |    0.0059   |
+|    007     |         2.8806         |          4.0080         |    0.0063   |
+|    008     |         4.0580         |          4.4072         |    0.0063   |
+|    009     |        12.1265         |         10.1105         |    0.0063   |
+|    010     |         5.4252         |          5.8080         |    0.0062   |
+|    012     |         5.3431         |          5.0884         |    0.0058   |
+|    013     |         7.2429         |          7.4424         |    0.0057   |
+|    014     |         6.2488         |          5.6759         |    0.0055   |
+|    015     |        16.2694         |         17.3092         |    0.0060   |
+|    016     |         4.7978         |          5.6051         |    0.0058   |
+|    017     |         5.8194         |          5.4234         |    0.0060   |
+|    019     |         6.1109         |          4.9038         |    0.0054   |
+|    021     |         4.8454         |          5.7510         |    0.0046   |
+|    022     |         7.5550         |          8.3046         |    0.0038   |
+|    023     |         7.3978         |          8.0412         |    0.0036   |
+|    024     |         7.9428         |          8.5079         |    0.0036   |
+|    025     |         5.3226         |          4.1848         |    0.0050   |
+|    026     |         8.7971         |          5.4477         |    0.0056   |
+|    028     |         8.8744         |          8.3457         |    0.0061   |
+|    029     |         9.4371         |          5.8333         |    0.0064   |
+|    030     |        10.3146         |          6.5747         |    0.0062   |
+|    031     |        28.1410         |         41.1682         |    0.0074   |
+|    032     |        11.0440         |          8.6813         |    0.0062   |
+|    033     |         7.5518         |          4.8539         |    0.0059   |
+|    034     |         3.7600         |          3.9327         |    0.0053   |
+|    035     |        11.2828         |         10.9848         |    0.0049   |
+|    037     |        10.2504         |         10.9219         |    0.0059   |
+|    038     |         4.3872         |          5.4453         |    0.0062   |
+|    039     |         8.8293         |          6.8154         |    0.0062   |
+|    040     |         4.8263         |          4.7908         |    0.0061   |
+|    041     |         7.6486         |          6.4755         |    0.0068   |
+|  Averages  |         8.0959         |          8.0189         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      11             12         4.1406e+01      7.26e+00       3.54e-01       4.61e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         4.8186         |          4.0965         |    0.0065   |
+|    003     |         8.4740         |         10.0680         |    0.0062   |
+|    005     |         6.5458         |          8.9517         |    0.0059   |
+|    007     |         2.8576         |          5.9261         |    0.0063   |
+|    008     |         4.0837         |          6.3548         |    0.0063   |
+|    009     |        11.1677         |         10.4162         |    0.0062   |
+|    010     |         5.2509         |          5.3295         |    0.0060   |
+|    012     |         4.6830         |          5.8846         |    0.0058   |
+|    013     |         6.9735         |          7.9332         |    0.0056   |
+|    014     |         5.6381         |          6.1869         |    0.0055   |
+|    015     |        12.8224         |         11.7368         |    0.0060   |
+|    016     |         4.8130         |          3.0832         |    0.0057   |
+|    017     |         4.0009         |          2.8408         |    0.0060   |
+|    019     |         5.2557         |          3.2495         |    0.0055   |
+|    021     |         4.5884         |          4.9281         |    0.0047   |
+|    022     |         7.1918         |          8.5259         |    0.0037   |
+|    023     |         6.6640         |          6.4549         |    0.0036   |
+|    024     |         6.1595         |          4.8447         |    0.0037   |
+|    025     |         4.0233         |          2.9041         |    0.0051   |
+|    026     |         7.0178         |          3.3309         |    0.0056   |
+|    028     |         7.3630         |          3.6556         |    0.0061   |
+|    029     |         6.6761         |          2.3439         |    0.0064   |
+|    030     |         8.3834         |          2.4733         |    0.0063   |
+|    031     |        28.3134         |         42.9332         |    0.0072   |
+|    032     |        11.1882         |          6.5704         |    0.0062   |
+|    033     |         6.2568         |          4.5877         |    0.0058   |
+|    034     |         3.1608         |          5.0058         |    0.0053   |
+|    035     |         9.6582         |          7.4079         |    0.0048   |
+|    037     |         8.6441         |         10.0864         |    0.0059   |
+|    038     |         4.3869         |          7.0345         |    0.0062   |
+|    039     |         8.8294         |          7.2576         |    0.0063   |
+|    040     |         4.7050         |          2.9821         |    0.0061   |
+|    041     |         5.9797         |          2.3901         |    0.0068   |
+|  Averages  |         7.1689         |          6.9023         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      12             13         4.0676e+01      7.30e-01       1.40e-02       5.54e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         5.0453         |          3.2816         |    0.0065   |
+|    003     |         8.1921         |          8.4914         |    0.0062   |
+|    005     |         6.7746         |          8.2181         |    0.0059   |
+|    007     |         2.8483         |          3.9460         |    0.0063   |
+|    008     |         4.0714         |          4.4895         |    0.0063   |
+|    009     |        10.8792         |          9.9497         |    0.0061   |
+|    010     |         5.2582         |          4.4909         |    0.0060   |
+|    012     |         4.3745         |          4.6801         |    0.0058   |
+|    013     |         6.9934         |          6.6702         |    0.0057   |
+|    014     |         5.7844         |          5.0924         |    0.0055   |
+|    015     |        13.0689         |         12.5918         |    0.0060   |
+|    016     |         5.4292         |          3.7069         |    0.0057   |
+|    017     |         4.3423         |          3.2400         |    0.0060   |
+|    019     |         5.5890         |          3.6300         |    0.0054   |
+|    021     |         4.7255         |          4.7238         |    0.0046   |
+|    022     |         7.2521         |          7.6718         |    0.0037   |
+|    023     |         6.8541         |          6.2495         |    0.0036   |
+|    024     |         6.5836         |          5.6680         |    0.0036   |
+|    025     |         4.4530         |          3.0596         |    0.0050   |
+|    026     |         7.6275         |          3.8033         |    0.0056   |
+|    028     |         7.5171         |          5.0760         |    0.0061   |
+|    029     |         7.4525         |          3.4804         |    0.0064   |
+|    030     |         8.5747         |          3.8325         |    0.0063   |
+|    031     |        28.2379         |         41.6452         |    0.0073   |
+|    032     |        11.3528         |          8.0714         |    0.0061   |
+|    033     |         6.1182         |          4.4509         |    0.0058   |
+|    034     |         2.8712         |          4.2231         |    0.0053   |
+|    035     |         9.1315         |          7.1920         |    0.0047   |
+|    037     |         8.6111         |          8.9374         |    0.0059   |
+|    038     |         4.0959         |          5.1173         |    0.0062   |
+|    039     |         9.1453         |          7.2900         |    0.0062   |
+|    040     |         5.3223         |          3.8016         |    0.0061   |
+|    041     |         6.4114         |          3.8291         |    0.0068   |
+|  Averages  |         7.3027         |          6.6849         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      13             14         4.0320e+01      3.56e-01       5.01e-03       2.96e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         3.2013         |          3.0193         |    0.0065   |
+|    003     |         6.5532         |          5.9737         |    0.0062   |
+|    005     |         5.6044         |          5.1413         |    0.0058   |
+|    007     |         2.2739         |          2.3368         |    0.0063   |
+|    008     |         2.9455         |          3.1856         |    0.0063   |
+|    009     |         7.8317         |          7.7322         |    0.0061   |
+|    010     |         3.9677         |          3.1809         |    0.0060   |
+|    012     |         3.1587         |          3.1814         |    0.0058   |
+|    013     |         5.4586         |          4.3102         |    0.0056   |
+|    014     |         4.4942         |          3.1659         |    0.0055   |
+|    015     |         9.2778         |          8.1759         |    0.0058   |
+|    016     |         3.6320         |          3.0463         |    0.0057   |
+|    017     |         3.3947         |          2.0904         |    0.0060   |
+|    019     |         3.8330         |          2.8334         |    0.0054   |
+|    021     |         3.6562         |          3.2158         |    0.0046   |
+|    022     |         5.5300         |          4.9138         |    0.0037   |
+|    023     |         5.2721         |          4.0760         |    0.0036   |
+|    024     |         4.9252         |          3.7328         |    0.0036   |
+|    025     |         3.5088         |          2.4250         |    0.0050   |
+|    026     |         6.3278         |          2.9758         |    0.0056   |
+|    028     |         6.0922         |          3.9007         |    0.0061   |
+|    029     |         6.4916         |          3.0087         |    0.0063   |
+|    030     |         5.8100         |          3.9812         |    0.0062   |
+|    031     |        31.3404         |         42.9552         |    0.0073   |
+|    032     |         9.2723         |          7.4781         |    0.0061   |
+|    033     |         3.8528         |          3.7402         |    0.0059   |
+|    034     |         1.7814         |          3.0764         |    0.0053   |
+|    035     |         5.7328         |          5.8202         |    0.0047   |
+|    037     |         6.1093         |          6.0124         |    0.0059   |
+|    038     |         3.0066         |          3.0952         |    0.0062   |
+|    039     |         7.6046         |          7.8396         |    0.0062   |
+|    040     |         4.0465         |          3.0327         |    0.0061   |
+|    041     |         5.2030         |          3.3740         |    0.0067   |
+|  Averages  |         5.7936         |          5.3342         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      14             15         3.9294e+01      1.03e+00       7.74e-02       1.98e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         3.2849         |          2.3685         |    0.0064   |
+|    003     |         6.2650         |          5.5653         |    0.0062   |
+|    005     |         5.5573         |          5.1192         |    0.0058   |
+|    007     |         2.3184         |          2.4602         |    0.0063   |
+|    008     |         3.0106         |          3.0316         |    0.0063   |
+|    009     |         7.4309         |          7.4081         |    0.0061   |
+|    010     |         3.9453         |          3.1865         |    0.0060   |
+|    012     |         3.1153         |          2.9303         |    0.0058   |
+|    013     |         5.4005         |          4.4191         |    0.0056   |
+|    014     |         4.4270         |          3.2279         |    0.0055   |
+|    015     |         7.7936         |          6.7813         |    0.0058   |
+|    016     |         3.3184         |          2.6291         |    0.0057   |
+|    017     |         2.8812         |          1.9358         |    0.0060   |
+|    019     |         3.3053         |          2.1328         |    0.0054   |
+|    021     |         3.6145         |          3.1340         |    0.0046   |
+|    022     |         5.4433         |          4.8801         |    0.0037   |
+|    023     |         5.1810         |          4.2673         |    0.0036   |
+|    024     |         4.6559         |          3.2326         |    0.0036   |
+|    025     |         3.1096         |          2.3517         |    0.0050   |
+|    026     |         5.7939         |          2.7343         |    0.0056   |
+|    028     |         5.2617         |          3.1184         |    0.0061   |
+|    029     |         5.8899         |          2.7548         |    0.0063   |
+|    030     |         5.8881         |          3.8497         |    0.0062   |
+|    031     |        31.3492         |         43.1541         |    0.0073   |
+|    032     |         8.9501         |          7.0932         |    0.0061   |
+|    033     |         3.9383         |          3.7431         |    0.0058   |
+|    034     |         1.7554         |          3.1888         |    0.0053   |
+|    035     |         5.6394         |          5.1208         |    0.0047   |
+|    037     |         5.7433         |          5.3790         |    0.0059   |
+|    038     |         2.9645         |          2.9326         |    0.0062   |
+|    039     |         5.6668         |          5.4655         |    0.0061   |
+|    040     |         3.5525         |          2.6300         |    0.0061   |
+|    041     |         4.6750         |          2.7682         |    0.0067   |
+|  Averages  |         5.4887         |          4.9998         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      15             16         3.9154e+01      1.40e-01       7.67e-03       3.48e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         2.9949         |          2.2012         |    0.0064   |
+|    003     |         5.9118         |          4.9374         |    0.0062   |
+|    005     |         5.1042         |          4.6785         |    0.0058   |
+|    007     |         2.1555         |          2.1997         |    0.0063   |
+|    008     |         2.8840         |          2.6908         |    0.0063   |
+|    009     |         7.2662         |          6.9730         |    0.0061   |
+|    010     |         3.6602         |          3.1065         |    0.0060   |
+|    012     |         2.8754         |          2.6696         |    0.0058   |
+|    013     |         4.9856         |          4.0424         |    0.0056   |
+|    014     |         4.0813         |          2.9009         |    0.0055   |
+|    015     |         6.7523         |          6.0145         |    0.0058   |
+|    016     |         3.1637         |          2.5313         |    0.0057   |
+|    017     |         2.5137         |          1.8185         |    0.0060   |
+|    019     |         3.1069         |          2.1058         |    0.0054   |
+|    021     |         3.3458         |          2.8948         |    0.0046   |
+|    022     |         4.8616         |          4.3185         |    0.0037   |
+|    023     |         4.7677         |          3.9039         |    0.0036   |
+|    024     |         4.3264         |          3.0263         |    0.0036   |
+|    025     |         2.9272         |          2.1901         |    0.0050   |
+|    026     |         5.5865         |          2.8198         |    0.0056   |
+|    028     |         4.9117         |          3.0882         |    0.0061   |
+|    029     |         5.5828         |          2.7624         |    0.0063   |
+|    030     |         5.5871         |          3.8298         |    0.0062   |
+|    031     |        31.7752         |         43.3745         |    0.0073   |
+|    032     |         8.5832         |          6.9972         |    0.0061   |
+|    033     |         3.9667         |          3.6531         |    0.0058   |
+|    034     |         1.6291         |          2.9037         |    0.0053   |
+|    035     |         5.5612         |          4.8724         |    0.0047   |
+|    037     |         5.3177         |          4.8601         |    0.0059   |
+|    038     |         2.6942         |          2.5553         |    0.0062   |
+|    039     |         5.2420         |          4.9210         |    0.0061   |
+|    040     |         3.3455         |          2.5687         |    0.0061   |
+|    041     |         4.4071         |          2.6921         |    0.0067   |
+|  Averages  |         5.2083         |          4.7607         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      16             17         3.8982e+01      1.72e-01       1.64e-02       2.87e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         2.7035         |          2.0526         |    0.0064   |
+|    003     |         5.5523         |          4.3894         |    0.0062   |
+|    005     |         4.7088         |          4.2517         |    0.0058   |
+|    007     |         1.9905         |          1.9508         |    0.0063   |
+|    008     |         2.7462         |          2.3980         |    0.0063   |
+|    009     |         7.1238         |          6.6221         |    0.0061   |
+|    010     |         3.4255         |          3.0249         |    0.0060   |
+|    012     |         2.6630         |          2.4349         |    0.0058   |
+|    013     |         4.5827         |          3.6532         |    0.0056   |
+|    014     |         3.7427         |          2.5838         |    0.0055   |
+|    015     |         5.8996         |          5.3610         |    0.0057   |
+|    016     |         2.9793         |          2.4289         |    0.0057   |
+|    017     |         2.2830         |          1.7751         |    0.0060   |
+|    019     |         2.8882         |          2.0534         |    0.0054   |
+|    021     |         3.0821         |          2.6516         |    0.0046   |
+|    022     |         4.2863         |          3.7480         |    0.0037   |
+|    023     |         4.3636         |          3.5490         |    0.0036   |
+|    024     |         3.9876         |          2.7926         |    0.0036   |
+|    025     |         2.7486         |          2.0625         |    0.0050   |
+|    026     |         5.3352         |          2.8726         |    0.0055   |
+|    028     |         4.5726         |          3.0159         |    0.0061   |
+|    029     |         5.2804         |          2.7659         |    0.0063   |
+|    030     |         5.2901         |          3.7988         |    0.0062   |
+|    031     |        32.3049         |         43.7464         |    0.0073   |
+|    032     |         8.2039         |          6.8675         |    0.0061   |
+|    033     |         3.9369         |          3.5876         |    0.0058   |
+|    034     |         1.6212         |          2.6508         |    0.0053   |
+|    035     |         5.3713         |          4.5858         |    0.0047   |
+|    037     |         4.9229         |          4.3233         |    0.0059   |
+|    038     |         2.4273         |          2.1896         |    0.0062   |
+|    039     |         4.9532         |          4.6347         |    0.0061   |
+|    040     |         3.1464         |          2.4785         |    0.0061   |
+|    041     |         4.1143         |          2.6173         |    0.0067   |
+|  Averages  |         4.9466         |          4.5430         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      17             18         3.8869e+01      1.13e-01       1.61e-02       2.29e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         2.5046         |          1.7681         |    0.0064   |
+|    003     |         5.3396         |          4.0945         |    0.0062   |
+|    005     |         4.4441         |          3.9374         |    0.0058   |
+|    007     |         1.8802         |          1.7995         |    0.0063   |
+|    008     |         2.6834         |          2.2741         |    0.0063   |
+|    009     |         7.0755         |          6.4822         |    0.0061   |
+|    010     |         3.2882         |          2.9554         |    0.0060   |
+|    012     |         2.5395         |          2.2877         |    0.0058   |
+|    013     |         4.3545         |          3.4276         |    0.0056   |
+|    014     |         3.5419         |          2.3991         |    0.0055   |
+|    015     |         5.6110         |          5.1443         |    0.0057   |
+|    016     |         2.8825         |          2.3809         |    0.0057   |
+|    017     |         2.1346         |          1.7101         |    0.0060   |
+|    019     |         2.7348         |          1.9854         |    0.0054   |
+|    021     |         2.9277         |          2.5084         |    0.0046   |
+|    022     |         3.9841         |          3.4439         |    0.0037   |
+|    023     |         4.1260         |          3.3450         |    0.0036   |
+|    024     |         3.7869         |          2.6477         |    0.0036   |
+|    025     |         2.6482         |          1.9991         |    0.0050   |
+|    026     |         5.1844         |          2.8741         |    0.0055   |
+|    028     |         4.3739         |          2.9464         |    0.0061   |
+|    029     |         5.1098         |          2.7531         |    0.0063   |
+|    030     |         5.1357         |          3.7789         |    0.0062   |
+|    031     |        32.6901         |         44.0519         |    0.0074   |
+|    032     |         8.0041         |          6.7904         |    0.0061   |
+|    033     |         3.9495         |          3.5850         |    0.0058   |
+|    034     |         1.6262         |          2.5411         |    0.0053   |
+|    035     |         5.2586         |          4.4306         |    0.0047   |
+|    037     |         4.7110         |          4.0027         |    0.0059   |
+|    038     |         2.2843         |          2.0019         |    0.0062   |
+|    039     |         4.8590         |          4.6136         |    0.0061   |
+|    040     |         3.0421         |          2.4347         |    0.0061   |
+|    041     |         3.9541         |          2.5753         |    0.0067   |
+|  Averages  |         4.8082         |          4.4233         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      18             19         3.8822e+01      4.71e-02       7.80e-03       1.97e+02    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         2.0974         |          1.3813         |    0.0064   |
+|    003     |         4.0675         |          2.4157         |    0.0062   |
+|    005     |         2.7346         |          1.9902         |    0.0058   |
+|    007     |         1.3562         |          1.0559         |    0.0063   |
+|    008     |         2.2799         |          1.8062         |    0.0063   |
+|    009     |         6.5341         |          5.5062         |    0.0061   |
+|    010     |         2.5524         |          2.4652         |    0.0060   |
+|    012     |         1.8609         |          1.5026         |    0.0058   |
+|    013     |         2.9981         |          2.1199         |    0.0056   |
+|    014     |         2.4356         |          1.4238         |    0.0055   |
+|    015     |         4.4478         |          4.2662         |    0.0058   |
+|    016     |         2.2862         |          2.1845         |    0.0056   |
+|    017     |         1.5106         |          1.3340         |    0.0060   |
+|    019     |         1.8840         |          1.5902         |    0.0054   |
+|    021     |         2.0665         |          1.7683         |    0.0046   |
+|    022     |         2.5525         |          1.9651         |    0.0037   |
+|    023     |         2.8216         |          2.2245         |    0.0036   |
+|    024     |         2.6441         |          1.8800         |    0.0036   |
+|    025     |         2.0798         |          1.8100         |    0.0050   |
+|    026     |         4.3864         |          2.8777         |    0.0055   |
+|    028     |         3.2191         |          2.4766         |    0.0061   |
+|    029     |         4.2205         |          2.7029         |    0.0063   |
+|    030     |         4.2064         |          3.5868         |    0.0062   |
+|    031     |        34.8856         |         45.7391         |    0.0074   |
+|    032     |         6.8070         |          6.2711         |    0.0060   |
+|    033     |         3.8893         |          3.5655         |    0.0058   |
+|    034     |         1.5497         |          2.0673         |    0.0053   |
+|    035     |         4.9439         |          4.3859         |    0.0047   |
+|    037     |         3.4944         |          2.3901         |    0.0059   |
+|    038     |         1.4247         |          1.0747         |    0.0062   |
+|    039     |         5.2797         |          5.6201         |    0.0061   |
+|    040     |         2.4230         |          2.2276         |    0.0061   |
+|    041     |         3.0805         |          2.3663         |    0.0066   |
+|  Averages  |         4.0915         |          3.8800         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      19             20         3.8697e+01      1.24e-01       4.63e-02       9.70e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         0.9849         |          0.7255         |    0.0064   |
+|    003     |         3.5134         |          2.1432         |    0.0062   |
+|    005     |         2.5517         |          1.8719         |    0.0058   |
+|    007     |         1.3068         |          1.0357         |    0.0063   |
+|    008     |         1.7689         |          1.4902         |    0.0063   |
+|    009     |         6.1686         |          5.3247         |    0.0061   |
+|    010     |         2.6378         |          2.3512         |    0.0060   |
+|    012     |         1.8453         |          1.6010         |    0.0058   |
+|    013     |         2.9899         |          2.1026         |    0.0056   |
+|    014     |         2.4773         |          1.5145         |    0.0055   |
+|    015     |         4.5362         |          4.3606         |    0.0058   |
+|    016     |         2.1828         |          2.1228         |    0.0056   |
+|    017     |         1.6700         |          1.4528         |    0.0060   |
+|    019     |         1.9894         |          1.6163         |    0.0054   |
+|    021     |         2.0869         |          1.9424         |    0.0046   |
+|    022     |         2.6488         |          2.1637         |    0.0037   |
+|    023     |         2.8704         |          2.1866         |    0.0036   |
+|    024     |         3.1099         |          2.7460         |    0.0036   |
+|    025     |         1.9854         |          1.7221         |    0.0050   |
+|    026     |         4.2906         |          2.8394         |    0.0055   |
+|    028     |         3.1861         |          2.3544         |    0.0061   |
+|    029     |         3.9777         |          2.5536         |    0.0063   |
+|    030     |         3.8734         |          3.2125         |    0.0062   |
+|    031     |        34.8662         |         45.6885         |    0.0074   |
+|    032     |         6.8816         |          6.2574         |    0.0060   |
+|    033     |         3.8373         |          3.5237         |    0.0058   |
+|    034     |         1.5356         |          2.1295         |    0.0053   |
+|    035     |         5.1725         |          4.5311         |    0.0047   |
+|    037     |         3.1237         |          2.1241         |    0.0059   |
+|    038     |         1.5384         |          1.1429         |    0.0062   |
+|    039     |         4.8468         |          5.1344         |    0.0061   |
+|    040     |         2.5668         |          2.4194         |    0.0061   |
+|    041     |         3.3324         |          2.6366         |    0.0066   |
+|  Averages  |         4.0107         |          3.8491         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      20             22         3.8670e+01      2.70e-02       1.28e-02       1.43e+01    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.3749         |          0.5710         |    0.0064   |
+|    003     |         4.0822         |          2.8232         |    0.0062   |
+|    005     |         2.6770         |          1.9913         |    0.0058   |
+|    007     |         1.3700         |          1.2233         |    0.0063   |
+|    008     |         1.6415         |          1.3423         |    0.0063   |
+|    009     |         6.0661         |          5.1999         |    0.0061   |
+|    010     |         2.6894         |          2.6165         |    0.0060   |
+|    012     |         1.8672         |          1.6243         |    0.0058   |
+|    013     |         3.0298         |          2.3885         |    0.0056   |
+|    014     |         2.5144         |          1.6686         |    0.0055   |
+|    015     |         4.4938         |          4.1988         |    0.0057   |
+|    016     |         2.2058         |          2.0108         |    0.0056   |
+|    017     |         1.6428         |          1.5661         |    0.0060   |
+|    019     |         1.9840         |          1.6024         |    0.0054   |
+|    021     |         2.0825         |          1.8546         |    0.0046   |
+|    022     |         2.6716         |          2.3137         |    0.0037   |
+|    023     |         2.9752         |          2.5271         |    0.0036   |
+|    024     |         2.8806         |          2.1233         |    0.0036   |
+|    025     |         2.0237         |          1.6997         |    0.0050   |
+|    026     |         4.2678         |          2.6563         |    0.0055   |
+|    028     |         3.3483         |          2.4423         |    0.0060   |
+|    029     |         4.1343         |          2.5364         |    0.0063   |
+|    030     |         3.9206         |          3.1580         |    0.0062   |
+|    031     |        34.9095         |         45.8997         |    0.0074   |
+|    032     |         6.6785         |          5.9904         |    0.0060   |
+|    033     |         3.8265         |          3.4813         |    0.0058   |
+|    034     |         1.5518         |          2.1845         |    0.0053   |
+|    035     |         4.9482         |          4.2516         |    0.0047   |
+|    037     |         3.4420         |          2.7490         |    0.0059   |
+|    038     |         1.4090         |          1.0812         |    0.0062   |
+|    039     |         4.7007         |          4.7649         |    0.0061   |
+|    040     |         2.3833         |          2.1080         |    0.0061   |
+|    041     |         3.1690         |          2.3205         |    0.0066   |
+|  Averages  |         4.0292         |          3.8476         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      21             24         3.8659e+01      1.09e-02       4.78e-03       2.35e+01    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.3176         |          0.6322         |    0.0064   |
+|    003     |         3.8059         |          2.3394         |    0.0062   |
+|    005     |         2.6093         |          1.8765         |    0.0058   |
+|    007     |         1.3048         |          1.0538         |    0.0063   |
+|    008     |         1.6536         |          1.3618         |    0.0063   |
+|    009     |         6.1350         |          5.2316         |    0.0061   |
+|    010     |         2.6198         |          2.4215         |    0.0060   |
+|    012     |         1.8335         |          1.5759         |    0.0058   |
+|    013     |         2.9881         |          2.1269         |    0.0056   |
+|    014     |         2.4983         |          1.5105         |    0.0055   |
+|    015     |         4.4835         |          4.1967         |    0.0057   |
+|    016     |         2.2583         |          2.1839         |    0.0056   |
+|    017     |         1.6174         |          1.3833         |    0.0060   |
+|    019     |         2.0030         |          1.6264         |    0.0054   |
+|    021     |         2.0791         |          1.9012         |    0.0046   |
+|    022     |         2.6687         |          2.1764         |    0.0037   |
+|    023     |         2.9018         |          2.2164         |    0.0036   |
+|    024     |         2.9515         |          2.3574         |    0.0036   |
+|    025     |         2.0513         |          1.7554         |    0.0050   |
+|    026     |         4.3137         |          2.8008         |    0.0055   |
+|    028     |         3.3894         |          2.5377         |    0.0060   |
+|    029     |         4.1320         |          2.6223         |    0.0063   |
+|    030     |         3.9533         |          3.2985         |    0.0062   |
+|    031     |        34.8482         |         45.6582         |    0.0074   |
+|    032     |         6.8008         |          6.2240         |    0.0060   |
+|    033     |         3.8513         |          3.5522         |    0.0058   |
+|    034     |         1.5264         |          2.0849         |    0.0053   |
+|    035     |         5.0019         |          4.3394         |    0.0047   |
+|    037     |         3.2621         |          2.3420         |    0.0059   |
+|    038     |         1.3981         |          1.0733         |    0.0062   |
+|    039     |         4.8145         |          5.1034         |    0.0061   |
+|    040     |         2.4766         |          2.3082         |    0.0061   |
+|    041     |         3.3117         |          2.5690         |    0.0066   |
+|  Averages  |         4.0261         |          3.8315         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      22             26         3.8653e+01      6.93e-03       1.08e-03       9.24e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2252         |          0.5184         |    0.0064   |
+|    003     |         3.7899         |          2.3861         |    0.0062   |
+|    005     |         2.6532         |          1.9226         |    0.0058   |
+|    007     |         1.3277         |          1.0981         |    0.0063   |
+|    008     |         1.6037         |          1.3061         |    0.0063   |
+|    009     |         6.1077         |          5.1995         |    0.0061   |
+|    010     |         2.6006         |          2.4324         |    0.0060   |
+|    012     |         1.8425         |          1.5755         |    0.0058   |
+|    013     |         2.9998         |          2.2027         |    0.0056   |
+|    014     |         2.5032         |          1.5535         |    0.0055   |
+|    015     |         4.5207         |          4.2658         |    0.0057   |
+|    016     |         2.2392         |          2.1222         |    0.0056   |
+|    017     |         1.6439         |          1.4694         |    0.0060   |
+|    019     |         1.9875         |          1.6086         |    0.0054   |
+|    021     |         2.0826         |          1.8751         |    0.0046   |
+|    022     |         2.6727         |          2.2011         |    0.0037   |
+|    023     |         2.9214         |          2.2905         |    0.0036   |
+|    024     |         2.9476         |          2.2949         |    0.0036   |
+|    025     |         2.0329         |          1.7371         |    0.0050   |
+|    026     |         4.3060         |          2.7681         |    0.0055   |
+|    028     |         3.3884         |          2.5149         |    0.0060   |
+|    029     |         4.1082         |          2.5839         |    0.0063   |
+|    030     |         3.9235         |          3.2389         |    0.0062   |
+|    031     |        34.8471         |         45.7214         |    0.0074   |
+|    032     |         6.8232         |          6.1894         |    0.0060   |
+|    033     |         3.8380         |          3.5151         |    0.0058   |
+|    034     |         1.5331         |          2.1277         |    0.0053   |
+|    035     |         4.9984         |          4.3060         |    0.0047   |
+|    037     |         3.2846         |          2.4286         |    0.0059   |
+|    038     |         1.4110         |          1.0587         |    0.0062   |
+|    039     |         4.7903         |          4.9958         |    0.0061   |
+|    040     |         2.4628         |          2.2570         |    0.0061   |
+|    041     |         3.3388         |          2.5313         |    0.0066   |
+|  Averages  |         4.0229         |          3.8272         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      23             27         3.8650e+01      2.37e-03       1.28e-03       3.12e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2417         |          0.5300         |    0.0064   |
+|    003     |         3.7831         |          2.3175         |    0.0062   |
+|    005     |         2.6991         |          1.9889         |    0.0058   |
+|    007     |         1.3129         |          1.0547         |    0.0063   |
+|    008     |         1.5834         |          1.2926         |    0.0063   |
+|    009     |         6.1059         |          5.2043         |    0.0061   |
+|    010     |         2.5935         |          2.3940         |    0.0060   |
+|    012     |         1.8406         |          1.5751         |    0.0058   |
+|    013     |         2.9941         |          2.1410         |    0.0056   |
+|    014     |         2.4988         |          1.5115         |    0.0055   |
+|    015     |         4.5123         |          4.2098         |    0.0057   |
+|    016     |         2.2364         |          2.1396         |    0.0056   |
+|    017     |         1.6363         |          1.4006         |    0.0060   |
+|    019     |         1.9978         |          1.6011         |    0.0054   |
+|    021     |         2.0865         |          1.8881         |    0.0046   |
+|    022     |         2.6755         |          2.1883         |    0.0037   |
+|    023     |         2.9010         |          2.2123         |    0.0036   |
+|    024     |         2.9607         |          2.3375         |    0.0036   |
+|    025     |         2.0397         |          1.7300         |    0.0050   |
+|    026     |         4.3103         |          2.7855         |    0.0055   |
+|    028     |         3.4125         |          2.5274         |    0.0060   |
+|    029     |         4.1118         |          2.5939         |    0.0063   |
+|    030     |         3.9391         |          3.2765         |    0.0062   |
+|    031     |        34.8619         |         45.7179         |    0.0074   |
+|    032     |         6.7960         |          6.1960         |    0.0060   |
+|    033     |         3.8419         |          3.5518         |    0.0058   |
+|    034     |         1.5264         |          2.0957         |    0.0053   |
+|    035     |         4.9901         |          4.3258         |    0.0047   |
+|    037     |         3.2565         |          2.3297         |    0.0059   |
+|    038     |         1.4075         |          1.0565         |    0.0062   |
+|    039     |         4.7849         |          5.0600         |    0.0061   |
+|    040     |         2.4658         |          2.2745         |    0.0061   |
+|    041     |         3.3410         |          2.5490         |    0.0066   |
+|  Averages  |         4.0226         |          3.8199         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      24             28         3.8648e+01      1.73e-03       1.23e-03       4.34e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2274         |          0.5072         |    0.0064   |
+|    003     |         3.7902         |          2.3809         |    0.0062   |
+|    005     |         2.7284         |          1.9448         |    0.0058   |
+|    007     |         1.3246         |          1.0878         |    0.0063   |
+|    008     |         1.5463         |          1.2414         |    0.0063   |
+|    009     |         6.0738         |          5.1674         |    0.0061   |
+|    010     |         2.5921         |          2.4215         |    0.0060   |
+|    012     |         1.8409         |          1.5676         |    0.0058   |
+|    013     |         2.9989         |          2.2004         |    0.0056   |
+|    014     |         2.5070         |          1.5504         |    0.0055   |
+|    015     |         4.5305         |          4.2768         |    0.0057   |
+|    016     |         2.2463         |          2.1247         |    0.0056   |
+|    017     |         1.6578         |          1.4764         |    0.0060   |
+|    019     |         1.9980         |          1.6102         |    0.0054   |
+|    021     |         2.0866         |          1.8718         |    0.0046   |
+|    022     |         2.6712         |          2.1780         |    0.0037   |
+|    023     |         2.9250         |          2.2859         |    0.0036   |
+|    024     |         2.9621         |          2.2995         |    0.0036   |
+|    025     |         2.0434         |          1.7476         |    0.0050   |
+|    026     |         4.3154         |          2.7681         |    0.0055   |
+|    028     |         3.4085         |          2.5184         |    0.0060   |
+|    029     |         4.1230         |          2.5860         |    0.0063   |
+|    030     |         3.9364         |          3.2522         |    0.0062   |
+|    031     |        34.8327         |         45.7259         |    0.0074   |
+|    032     |         6.8356         |          6.1923         |    0.0060   |
+|    033     |         3.8305         |          3.5114         |    0.0058   |
+|    034     |         1.5276         |          2.1358         |    0.0053   |
+|    035     |         4.9657         |          4.2706         |    0.0047   |
+|    037     |         3.2878         |          2.4361         |    0.0059   |
+|    038     |         1.4035         |          1.0448         |    0.0062   |
+|    039     |         4.7785         |          4.9826         |    0.0061   |
+|    040     |         2.4682         |          2.2559         |    0.0061   |
+|    041     |         3.3581         |          2.5367         |    0.0066   |
+|  Averages  |         4.0249         |          3.8229         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      25             29         3.8647e+01      1.19e-03       1.15e-03       5.14e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2397         |          0.5217         |    0.0064   |
+|    003     |         3.7830         |          2.2920         |    0.0062   |
+|    005     |         2.7282         |          1.9544         |    0.0058   |
+|    007     |         1.3118         |          1.0435         |    0.0063   |
+|    008     |         1.5362         |          1.2457         |    0.0063   |
+|    009     |         6.0885         |          5.1876         |    0.0061   |
+|    010     |         2.5845         |          2.3738         |    0.0060   |
+|    012     |         1.8384         |          1.5731         |    0.0058   |
+|    013     |         2.9928         |          2.1195         |    0.0056   |
+|    014     |         2.4984         |          1.4950         |    0.0055   |
+|    015     |         4.5048         |          4.1762         |    0.0057   |
+|    016     |         2.2369         |          2.1382         |    0.0056   |
+|    017     |         1.6382         |          1.3688         |    0.0060   |
+|    019     |         1.9994         |          1.5859         |    0.0054   |
+|    021     |         2.0931         |          1.9020         |    0.0046   |
+|    022     |         2.6749         |          2.1733         |    0.0037   |
+|    023     |         2.8964         |          2.1862         |    0.0036   |
+|    024     |         2.9752         |          2.3458         |    0.0036   |
+|    025     |         2.0456         |          1.7198         |    0.0050   |
+|    026     |         4.3180         |          2.7894         |    0.0055   |
+|    028     |         3.4321         |          2.5232         |    0.0060   |
+|    029     |         4.1155         |          2.5906         |    0.0063   |
+|    030     |         3.9343         |          3.2794         |    0.0062   |
+|    031     |        34.8739         |         45.7456         |    0.0074   |
+|    032     |         6.7854         |          6.1906         |    0.0060   |
+|    033     |         3.8403         |          3.5738         |    0.0058   |
+|    034     |         1.5204         |          2.0742         |    0.0053   |
+|    035     |         4.9695         |          4.3135         |    0.0047   |
+|    037     |         3.2510         |          2.3006         |    0.0059   |
+|    038     |         1.4063         |          1.0498         |    0.0062   |
+|    039     |         4.7811         |          5.0832         |    0.0061   |
+|    040     |         2.4692         |          2.2726         |    0.0061   |
+|    041     |         3.3554         |          2.5505         |    0.0066   |
+|  Averages  |         4.0218         |          3.8103         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      26             30         3.8646e+01      9.40e-04       1.15e-03       7.17e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2252         |          0.5120         |    0.0064   |
+|    003     |         3.7860         |          2.3861         |    0.0062   |
+|    005     |         2.7365         |          1.9019         |    0.0058   |
+|    007     |         1.3278         |          1.0959         |    0.0063   |
+|    008     |         1.6207         |          1.2192         |    0.0063   |
+|    009     |         6.0534         |          5.1360         |    0.0061   |
+|    010     |         2.5854         |          2.4214         |    0.0060   |
+|    012     |         1.8384         |          1.5599         |    0.0058   |
+|    013     |         2.9982         |          2.2127         |    0.0056   |
+|    014     |         2.5092         |          1.5613         |    0.0055   |
+|    015     |         4.4731         |          4.2224         |    0.0057   |
+|    016     |         2.2590         |          2.1318         |    0.0056   |
+|    017     |         1.6644         |          1.4955         |    0.0060   |
+|    019     |         2.0015         |          1.6177         |    0.0054   |
+|    021     |         2.0905         |          1.8747         |    0.0046   |
+|    022     |         2.6696         |          2.1602         |    0.0037   |
+|    023     |         2.9306         |          2.3074         |    0.0036   |
+|    024     |         2.9749         |          2.3014         |    0.0036   |
+|    025     |         2.0496         |          1.7633         |    0.0050   |
+|    026     |         4.3221         |          2.7712         |    0.0055   |
+|    028     |         3.4158         |          2.5242         |    0.0060   |
+|    029     |         4.1309         |          2.5917         |    0.0063   |
+|    030     |         3.9607         |          3.2712         |    0.0062   |
+|    031     |        34.7973         |         45.7072         |    0.0074   |
+|    032     |         6.8623         |          6.2055         |    0.0060   |
+|    033     |         3.8293         |          3.4997         |    0.0058   |
+|    034     |         1.5260         |          2.1386         |    0.0053   |
+|    035     |         4.9481         |          4.2315         |    0.0047   |
+|    037     |         3.2932         |          2.4679         |    0.0059   |
+|    038     |         1.4010         |          1.0338         |    0.0062   |
+|    039     |         4.7852         |          4.9697         |    0.0061   |
+|    040     |         2.4775         |          2.2610         |    0.0061   |
+|    041     |         3.3745         |          2.5459         |    0.0066   |
+|  Averages  |         4.0278         |          3.8212         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      27             31         3.8646e+01      7.78e-04       1.19e-03       9.29e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2288         |          0.5003         |    0.0064   |
+|    003     |         3.7776         |          2.3302         |    0.0062   |
+|    005     |         2.7371         |          1.9096         |    0.0058   |
+|    007     |         1.3193         |          1.0664         |    0.0063   |
+|    008     |         1.6236         |          1.2474         |    0.0063   |
+|    009     |         6.0672         |          5.1546         |    0.0061   |
+|    010     |         2.5815         |          2.3955         |    0.0060   |
+|    012     |         1.8355         |          1.5550         |    0.0058   |
+|    013     |         2.9935         |          2.1595         |    0.0056   |
+|    014     |         2.5033         |          1.5208         |    0.0055   |
+|    015     |         4.4622         |          4.1773         |    0.0057   |
+|    016     |         2.2572         |          2.1355         |    0.0056   |
+|    017     |         1.6509         |          1.4335         |    0.0060   |
+|    019     |         1.9993         |          1.5984         |    0.0054   |
+|    021     |         2.0925         |          1.8828         |    0.0046   |
+|    022     |         2.6716         |          2.1545         |    0.0037   |
+|    023     |         2.9144         |          2.2410         |    0.0036   |
+|    024     |         2.9795         |          2.3170         |    0.0036   |
+|    025     |         2.0479         |          1.7401         |    0.0050   |
+|    026     |         4.3194         |          2.7720         |    0.0055   |
+|    028     |         3.4169         |          2.5057         |    0.0060   |
+|    029     |         4.1237         |          2.5872         |    0.0063   |
+|    030     |         3.9519         |          3.2755         |    0.0062   |
+|    031     |        34.8124         |         45.7120         |    0.0074   |
+|    032     |         6.8377         |          6.2002         |    0.0060   |
+|    033     |         3.8363         |          3.5344         |    0.0058   |
+|    034     |         1.5261         |          2.1067         |    0.0053   |
+|    035     |         4.9577         |          4.2640         |    0.0047   |
+|    037     |         3.2674         |          2.3803         |    0.0059   |
+|    038     |         1.4023         |          1.0310         |    0.0062   |
+|    039     |         4.7926         |          5.0251         |    0.0061   |
+|    040     |         2.4750         |          2.2575         |    0.0061   |
+|    041     |         3.3691         |          2.5429         |    0.0066   |
+|  Averages  |         4.0252         |          3.8095         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      28             32         3.8645e+01      9.42e-04       2.58e-04       1.66e+00    
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2320         |          0.5017         |    0.0064   |
+|    003     |         3.7801         |          2.3127         |    0.0062   |
+|    005     |         2.7378         |          1.9085         |    0.0058   |
+|    007     |         1.3177         |          1.0557         |    0.0063   |
+|    008     |         1.6025         |          1.2408         |    0.0063   |
+|    009     |         6.0680         |          5.1600         |    0.0061   |
+|    010     |         2.5821         |          2.3871         |    0.0060   |
+|    012     |         1.8355         |          1.5557         |    0.0058   |
+|    013     |         2.9935         |          2.1440         |    0.0056   |
+|    014     |         2.5028         |          1.5103         |    0.0055   |
+|    015     |         4.4580         |          4.1573         |    0.0057   |
+|    016     |         2.2517         |          2.1348         |    0.0056   |
+|    017     |         1.6496         |          1.4135         |    0.0060   |
+|    019     |         2.0003         |          1.5923         |    0.0054   |
+|    021     |         2.0936         |          1.8877         |    0.0046   |
+|    022     |         2.6721         |          2.1522         |    0.0037   |
+|    023     |         2.9099         |          2.2188         |    0.0036   |
+|    024     |         2.9803         |          2.3228         |    0.0036   |
+|    025     |         2.0482         |          1.7339         |    0.0050   |
+|    026     |         4.3216         |          2.7779         |    0.0055   |
+|    028     |         3.4231         |          2.5074         |    0.0060   |
+|    029     |         4.1263         |          2.5892         |    0.0063   |
+|    030     |         3.9468         |          3.2764         |    0.0062   |
+|    031     |        34.8348         |         45.7311         |    0.0074   |
+|    032     |         6.8185         |          6.1935         |    0.0060   |
+|    033     |         3.8346         |          3.5445         |    0.0058   |
+|    034     |         1.5217         |          2.1003         |    0.0053   |
+|    035     |         4.9550         |          4.2733         |    0.0047   |
+|    037     |         3.2634         |          2.3520         |    0.0059   |
+|    038     |         1.4030         |          1.0310         |    0.0062   |
+|    039     |         4.7862         |          5.0394         |    0.0061   |
+|    040     |         2.4726         |          2.2588         |    0.0061   |
+|    041     |         3.3669         |          2.5428         |    0.0066   |
+|  Averages  |         4.0239         |          3.8063         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+      29             33         3.8644e+01      3.54e-04       3.04e-04       2.53e+00    
+`ftol` termination condition is satisfied.
+Function evaluations 33, initial cost 2.6978e+04, final cost 3.8644e+01, first-order optimality 2.53e+00.
+
+-----------------------------
+Optimization finished in 134.94755 secs: `ftol` termination condition is satisfied.
+Errors per collection (anchored sensor,  max error per sensor, not detected as "---")
++------------+------------------------+-------------------------+-------------+
+| Collection | front_left_camera [px] | front_right_camera [px] | lidar3d [m] |
++------------+------------------------+-------------------------+-------------+
+|    000     |         1.2320         |          0.5017         |    0.0064   |
+|    003     |         3.7801         |          2.3127         |    0.0062   |
+|    005     |         2.7378         |          1.9084         |    0.0058   |
+|    007     |         1.3177         |          1.0557         |    0.0063   |
+|    008     |         1.6025         |          1.2408         |    0.0063   |
+|    009     |         6.0680         |          5.1600         |    0.0061   |
+|    010     |         2.5821         |          2.3871         |    0.0060   |
+|    012     |         1.8355         |          1.5557         |    0.0058   |
+|    013     |         2.9935         |          2.1440         |    0.0056   |
+|    014     |         2.5028         |          1.5103         |    0.0055   |
+|    015     |         4.4580         |          4.1573         |    0.0057   |
+|    016     |         2.2517         |          2.1348         |    0.0056   |
+|    017     |         1.6496         |          1.4135         |    0.0060   |
+|    019     |         2.0003         |          1.5923         |    0.0054   |
+|    021     |         2.0936         |          1.8877         |    0.0046   |
+|    022     |         2.6721         |          2.1522         |    0.0037   |
+|    023     |         2.9099         |          2.2188         |    0.0036   |
+|    024     |         2.9803         |          2.3228         |    0.0036   |
+|    025     |         2.0482         |          1.7339         |    0.0050   |
+|    026     |         4.3216         |          2.7779         |    0.0055   |
+|    028     |         3.4231         |          2.5074         |    0.0060   |
+|    029     |         4.1263         |          2.5893         |    0.0063   |
+|    030     |         3.9468         |          3.2764         |    0.0062   |
+|    031     |        34.8348         |         45.7311         |    0.0074   |
+|    032     |         6.8185         |          6.1935         |    0.0060   |
+|    033     |         3.8346         |          3.5445         |    0.0058   |
+|    034     |         1.5217         |          2.1003         |    0.0053   |
+|    035     |         4.9550         |          4.2733         |    0.0047   |
+|    037     |         3.2634         |          2.3520         |    0.0059   |
+|    038     |         1.4030         |          1.0310         |    0.0062   |
+|    039     |         4.7862         |          5.0394         |    0.0061   |
+|    040     |         2.4726         |          2.2588         |    0.0061   |
+|    041     |         3.3669         |          2.5428         |    0.0066   |
+|  Averages  |         4.0239         |          3.8063         |    0.0057   |
++------------+------------------------+-------------------------+-------------+
+Saved json output file to /home/bruno/datasets/softbot/long_train_dataset1/atom_calibration.json.
+Optimized xacro saved to /home/bruno/atom_ws/src/atom/atom_examples/softbot/softbot_calibration/urdf/optimized.urdf.xacro . You can use it as a ROS robot_description.
+You can use it as a ROS robot_description by launching:
+roslaunch softbot_calibration playbag.launch optimized:=true
+Saved calibrated parameters to yaml file /home/bruno/datasets/softbot/long_train_dataset1/atom_calibration_params.yml
+Saved calibrated parameters to yaml file /home/bruno/datasets/softbot/long_train_dataset1/original_calibration_params.yml
+Deleted collections: ['036', '027', '004'] because these are incomplete. If you want to use them set the use_incomplete_collections flag.
+After filtering, will use 41 collections: ['000', '001', '002', '003', '005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019', '020', '021', '022', '023', '024', '025', '026', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041', '042', '043']
+Errors per collection
++--------------+-----------+-------------+-------------+------------+-----------+
+| Collection # | RMS (pix) | X err (pix) | Y err (pix) | Trans (mm) | Rot (deg) |
++--------------+-----------+-------------+-------------+------------+-----------+
+|     000      |   1.2164  |    1.1580   |    0.2160   |   4.6947   |   0.0693  |
+|     001      |   0.8351  |    0.6874   |    0.2354   |   4.6176   |   0.1226  |
+|     002      |   0.6881  |    0.4209   |    0.3561   |   4.6112   |   0.1259  |
+|     003      |   0.9370  |    0.5273   |    0.5880   |   4.2428   |   0.1088  |
+|     005      |   0.9518  |    0.5863   |    0.5398   |   4.1293   |   0.1345  |
+|     006      |   0.6077  |    0.4069   |    0.3014   |   4.0228   |   0.1425  |
+|     007      |   0.4694  |    0.2764   |    0.2404   |   3.8257   |   0.1536  |
+|     008      |   0.4600  |    0.2727   |    0.2346   |   3.9272   |   0.1637  |
+|     009      |   0.4807  |    0.4046   |    0.1317   |   3.7248   |   0.1418  |
+|     010      |   0.7169  |    0.6743   |    0.1107   |   4.2593   |   0.1733  |
+|     011      |   0.7291  |    0.6479   |    0.1549   |   4.2388   |   0.1509  |
+|     012      |   0.8204  |    0.6378   |    0.2369   |   4.3304   |   0.1419  |
+|     013      |   0.8679  |    0.5241   |    0.5048   |   4.4449   |   0.1242  |
+|     014      |   0.9384  |    0.7079   |    0.3975   |   4.6189   |   0.1207  |
+|     015      |   0.9945  |    0.8428   |    0.2405   |   4.5411   |   0.1524  |
+|     016      |   0.9037  |    0.8144   |    0.1773   |   4.4249   |   0.1439  |
+|     017      |   0.8524  |    0.7965   |    0.1380   |   4.5150   |   0.1303  |
+|     018      |   1.2215  |    1.1738   |    0.1895   |   4.7657   |   0.1784  |
+|     019      |   0.9803  |    0.9241   |    0.1485   |   4.4954   |   0.1245  |
+|     020      |   1.2436  |    1.0839   |    0.4502   |   4.7995   |   0.1382  |
+|     021      |   0.7836  |    0.6023   |    0.2612   |   3.9419   |   0.1204  |
+|     022      |   1.0598  |    0.7748   |    0.5075   |   4.2438   |   0.1192  |
+|     023      |   1.0191  |    0.7177   |    0.4976   |   4.2865   |   0.1182  |
+|     024      |   1.3002  |    1.1761   |    0.4094   |   4.2240   |   0.1604  |
+|     025      |   0.7263  |    0.5204   |    0.1971   |   3.7211   |   0.1641  |
+|     026      |   0.6022  |    0.5712   |    0.1042   |   3.5936   |   0.1058  |
+|     028      |   1.0477  |    1.0154   |    0.1541   |   4.7848   |   0.1322  |
+|     029      |   0.6911  |    0.6781   |    0.0705   |   3.5927   |   0.1805  |
+|     030      |   0.8357  |    0.8171   |    0.1010   |   4.1763   |   0.1110  |
+|     031      |   1.8215  |    1.7506   |    0.4455   |   5.9327   |   0.1906  |
+|     032      |   1.0874  |    1.0642   |    0.1316   |   4.0620   |   0.0302  |
+|     033      |   0.7049  |    0.6810   |    0.0999   |   3.6581   |   0.0716  |
+|     034      |   0.3780  |    0.2784   |    0.1998   |   2.9981   |   0.1023  |
+|     035      |   1.2507  |    1.1772   |    0.2713   |   4.6008   |   0.0819  |
+|     037      |   1.0951  |    0.6503   |    0.6223   |   4.0573   |   0.1240  |
+|     038      |   0.5634  |    0.3634   |    0.2915   |   3.9538   |   0.1319  |
+|     039      |   0.5397  |    0.4101   |    0.1643   |   4.0254   |   0.1304  |
+|     040      |   0.9198  |    0.8456   |    0.1672   |   4.8326   |   0.1126  |
+|     041      |   1.2233  |    1.1866   |    0.2000   |   6.5687   |   0.2603  |
+|     042      |   1.5864  |    1.4293   |    0.4776   |  23.1088   |   1.0144  |
+|     043      |   0.5824  |    0.3833   |    0.2406   |   3.9941   |   0.0742  |
+|   Averages   |   0.8959  |    0.7478   |    0.2733   |   4.7704   |   0.1531  |
++--------------+-----------+-------------+-------------+------------+-----------+
+Ending script...
+Skipped loading images and point clouds for collections: ['000', '003', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041'].
+Skipped loading images and point clouds for collections: ['000', '003', '004', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '027', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041'].
+Deleted collections: ['000', '003', '004', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '027', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041'] because of the -csf flag.
+Deleted collections: ['036'] because these are incomplete. If you want to use them set the use_incomplete_collections flag.
+After filtering, will use 8 collections: ['001', '002', '006', '011', '018', '020', '042', '043']
+Loading annotation file /home/bruno/datasets/softbot/long_train_dataset1/annotation_front_left_camera.json
+
+Starting evalutation...
+Errors per collection
++--------------+-----------+-------------+-------------+
+| Collection # | RMS (pix) | X err (pix) | Y err (pix) |
++--------------+-----------+-------------+-------------+
+|     001      |   3.3541  |    1.9897   |    1.6729   |
+|     002      |  16.4118  |   11.4247   |    7.6425   |
+|     006      |   1.9351  |    0.8801   |    1.0494   |
+|     011      |   3.1663  |    1.7673   |    1.9320   |
+|     018      |   7.1294  |    5.8741   |    3.1598   |
+|     020      |   7.6029  |    6.4285   |    2.6766   |
+|     042      |   8.2739  |    5.6583   |    4.9480   |
+|     043      |   3.0454  |    2.2595   |    1.7990   |
+|   Averages   |   6.3649  |    4.5353   |    3.1100   |
++--------------+-----------+-------------+-------------+
+Ending script...
+Skipped loading images and point clouds for collections: ['000', '003', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041'].
+Skipped loading images and point clouds for collections: ['000', '003', '004', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '027', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041'].
+Deleted collections: ['000', '003', '004', '005', '007', '008', '009', '010', '012', '013', '014', '015', '016', '017', '019', '021', '022', '023', '024', '025', '026', '027', '028', '029', '030', '031', '032', '033', '034', '035', '037', '038', '039', '040', '041'] because of the -csf flag.
+Deleted collections: ['036'] because these are incomplete. If you want to use them set the use_incomplete_collections flag.
+After filtering, will use 8 collections: ['001', '002', '006', '011', '018', '020', '042', '043']
+Loading annotation file /home/bruno/datasets/softbot/long_train_dataset1/annotation_front_right_camera.json
+
+Starting evalutation...
+Errors per collection
++--------------+-----------+-------------+-------------+
+| Collection # | RMS (pix) | X err (pix) | Y err (pix) |
++--------------+-----------+-------------+-------------+
+|     001      |   5.2586  |    1.9606   |    3.0305   |
+|     002      |   4.0502  |    1.5588   |    2.9982   |
+|     006      |   2.9413  |    1.0894   |    0.7139   |
+|     011      |   4.7376  |    2.6861   |    2.9299   |
+|     018      |   8.8885  |    7.6577   |    2.4303   |
+|     020      |   6.1902  |    4.0015   |    1.8554   |
+|     042      |   7.1666  |    5.3774   |    3.9955   |
+|     043      |   2.2738  |    1.8299   |    0.5341   |
+|   Averages   |   5.1884  |    3.2702   |    2.3110   |
++--------------+-----------+-------------+-------------+
+Ending script...

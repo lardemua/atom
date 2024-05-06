@@ -19,7 +19,7 @@ dataset_path: '$ATOM_DATASETS/softbot/long_train_dataset1'
 collections_to_remove: [27,36,37]
 
 # Runs are repetitions of the experiments for gathering statistically significant results
-# runs: [1,2,3,4,5,6,7,8,9,10]
+runs: [1,2,3]
   
 cross_validation:
   type: "stratified-k-fold" 
@@ -28,59 +28,49 @@ cross_validation:
 
 # Experiments are executions with a set of input parameters
 experiments:
-
 # Varying noise from 0 to 0.3m/rad
 
   # Perfect Simulation
-  - {name: perfect_sim, nig_value: 0.0, ntfv:0.0}
+  - {name: perfect_sim, nig_value: 0.0, ntfv_value: 0.0}
 
   # Varying nig only
-  - {name: nig_0.1, nig_value: 0.1, ntfv:0.0}
-  - {name: nig_0.15, nig_value: 0.15, ntfv:0.0}
-  - {name: nig_0.2, nig_value: 0.2, ntfv:0.0}
-  - {name: nig_0.25, nig_value: 0.25, ntfv:0.0}
-  - {name: nig_0.3, nig_value: 0.3, ntfv:0.0}
+  - {name: nig_0.1,  nig_value: 0.1, ntfv_value: 0.0}
+  - {name: nig_0.15, nig_value: 0.15, ntfv_value: 0.0}
+  - {name: nig_0.2,  nig_value: 0.2, ntfv_value: 0.0}
+  - {name: nig_0.25, nig_value: 0.25, ntfv_value: 0.0}
+  - {name: nig_0.3,  nig_value: 0.3, ntfv_value: 0.0}
 
     #Varying ntfv with fixed nig = 0.1
-  - {name: nig_0.1-ntfv_0.1, nig_value: 0.1, ntfv:0.1}
-  - {name: nig_0.1-ntfv_0.15, nig_value: 0.1, ntfv:0.15}
-  - {name: nig_0.1-ntfv_0.2, nig_value: 0.1, ntfv:0.2}
-  - {name: nig_0.1-ntfv_0.25, nig_value: 0.1, ntfv:0.25}
-  - {name: nig_0.1-ntfv_0.3, nig_value: 0.1, ntfv:0.3}
-
-    #Varying ntfv with fixed nig = 0.15 
-  - {name: nig_0.15-ntfv_0.1, nig_value: 0.15, ntfv:0.1}
-  - {name: nig_0.15-ntfv_0.15, nig_value: 0.15, ntfv:0.15}
-  - {name: nig_0.15-ntfv_0.2, nig_value: 0.15, ntfv:0.2}
-  - {name: nig_0.15-ntfv_0.25, nig_value: 0.15, ntfv:0.25}
-  - {name: nig_0.15-ntfv_0.3, nig_value: 0.15, ntfv:0.3}
-
-    #Varying ntfv with fixed nig = 0.2
-  - {name: nig_0.2-ntfv_0.1, nig_value: 0.2, ntfv:0.1}
-  - {name: nig_0.2-ntfv_0.15, nig_value: 0.2, ntfv:0.15}
-  - {name: nig_0.2-ntfv_0.2, nig_value: 0.2, ntfv:0.2}
-  - {name: nig_0.2-ntfv_0.25, nig_value: 0.2, ntfv:0.25}
-  - {name: nig_0.2-ntfv_0.3, nig_value: 0.2, ntfv:0.3}
-
-    #Varying ntfv with fixed nig = 0.25 
-  - {name: nig_0.25-ntfv_0.1, nig_value: 0.25, ntfv:0.1}
-  - {name: nig_0.25-ntfv_0.15, nig_value: 0.25, ntfv:0.15}
-  - {name: nig_0.25-ntfv_0.2, nig_value: 0.25, ntfv:0.2}
-  - {name: nig_0.25-ntfv_0.25, nig_value: 0.25, ntfv:0.25}
-  - {name: nig_0.25-ntfv_0.3, nig_value: 0.25, ntfv:0.3}
-
-    #Varying ntfv with fixed nig = 0.3
-  - {name: nig_0.3-ntfv_0.1, nig_value: 0.3, ntfv:0.1}
-  - {name: nig_0.3-ntfv_0.15, nig_value: 0.3, ntfv:0.15}
-  - {name: nig_0.3-ntfv_0.2, nig_value: 0.3, ntfv:0.2}
-  - {name: nig_0.3-ntfv_0.25, nig_value: 0.3, ntfv:0.25}
-  - {name: nig_0.3-ntfv_0.3, nig_value: 0.3, ntfv:0.3}
-
-
-
-
-
-
-
-
-
+  - {name: nig_0.1-ntfv_0.1, nig_value: 0.1, ntfv_value: 0.1}
+  - {name: nig_0.1-ntfv_0.15, nig_value: 0.1, ntfv_value: 0.15}
+  - {name: nig_0.1-ntfv_0.2, nig_value: 0.1, ntfv_value: 0.2}
+  - {name: nig_0.1-ntfv_0.25, nig_value: 0.1, ntfv_value: 0.25}
+  - {name: nig_0.1-ntfv_0.3, nig_value: 0.1, ntfv_value: 0.3}
+  
+  #   #Varying ntfv with fixed nig = 0.15 
+  - {name: nig_0.15-ntfv_0.1, nig_value: 0.15, ntfv_value: 0.1}
+  - {name: nig_0.15-ntfv_0.15, nig_value: 0.15, ntfv_value: 0.15}
+  - {name: nig_0.15-ntfv_0.2, nig_value: 0.15, ntfv_value: 0.2}
+  - {name: nig_0.15-ntfv_0.25, nig_value: 0.15, ntfv_value: 0.25}
+  - {name: nig_0.15-ntfv_0.3, nig_value: 0.15, ntfv_value: 0.3}
+  
+  #   #Varying ntfv with fixed nig = 0.2
+  - {name: nig_0.2-ntfv_0.1, nig_value: 0.2, ntfv_value: 0.1}
+  - {name: nig_0.2-ntfv_0.15, nig_value: 0.2, ntfv_value: 0.15}
+  - {name: nig_0.2-ntfv_0.2, nig_value: 0.2, ntfv_value: 0.2}
+  - {name: nig_0.2-ntfv_0.25, nig_value: 0.2, ntfv_value: 0.25}
+  - {name: nig_0.2-ntfv_0.3, nig_value: 0.2, ntfv_value: 0.3}
+  
+  #   #Varying ntfv with fixed nig = 0.25 
+  - {name: nig_0.25-ntfv_0.1, nig_value: 0.25, ntfv_value: 0.1}
+  - {name: nig_0.25-ntfv_0.15, nig_value: 0.25, ntfv_value: 0.15}
+  - {name: nig_0.25-ntfv_0.2, nig_value: 0.25, ntfv_value: 0.2}
+  - {name: nig_0.25-ntfv_0.25, nig_value: 0.25, ntfv_value: 0.25}
+  - {name: nig_0.25-ntfv_0.3, nig_value: 0.25, ntfv_value: 0.3}
+  
+  #   #Varying ntfv with fixed nig = 0.3
+  - {name: nig_0.3-ntfv_0.1, nig_value: 0.3, ntfv_value: 0.1}
+  - {name: nig_0.3-ntfv_0.15, nig_value: 0.3, ntfv_value: 0.15}
+  - {name: nig_0.3-ntfv_0.2, nig_value: 0.3, ntfv_value: 0.2}
+  - {name: nig_0.3-ntfv_0.25, nig_value: 0.3, ntfv_value: 0.25}
+  - {name: nig_0.3-ntfv_0.3, nig_value: 0.3, ntfv_value: 0.3}

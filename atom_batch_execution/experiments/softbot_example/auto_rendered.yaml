@@ -1,0 +1,661 @@
+#
+#           █████╗ ████████╗ ██████╗ ███╗   ███╗
+#          ██╔══██╗╚══██╔══╝██╔═══██╗████╗ ████║
+#          ███████║   ██║   ██║   ██║██╔████╔██║
+#          ██╔══██║   ██║   ██║   ██║██║╚██╔╝██║
+#   __     ██║  ██║   ██║   ╚██████╔╝██║ ╚═╝ ██║    _
+#  / _|    ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝   | |
+#  | |_ _ __ __ _ _ __ ___   _____      _____  _ __| | __
+#  |  _| '__/ _` | '_ ` _ \ / _ \ \ /\ / / _ \| '__| |/ /
+#  | | | | | (_| | | | | | |  __/\ v  v / (_) | |  |   <
+#  |_| |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\
+#  https://github.com/lardemua/atom
+
+# this yml file contains a set of commands to be run in batch.
+# use jinja2 syntax for referencing variables
+
+# Preprocessing will run only once before all experiments.
+preprocessing:
+  cmd: |
+    ls /tmp
+
+# Define batches to run
+experiments:
+  
+    
+    
+      nig_0.1-ntfv_0.2_run001_fold001:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 1 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 16, 18, 19, 20, 21, 24, 25, 26, 27, 28, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [7, 15, 17, 22, 23, 29, 30, 34, 35]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [7, 15, 17, 22, 23, 29, 30, 34, 35]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run001_fold002:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 1 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 27, 28, 29, 30, 32, 34, 35, 36, 37, 38, 39, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [4, 5, 13, 14, 24, 26, 31, 33, 40]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [4, 5, 13, 14, 24, 26, 31, 33, 40]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run001_fold003:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 1 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 26, 29, 30, 31, 33, 34, 35, 36, 39, 40, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [3, 9, 16, 25, 27, 28, 32, 37, 38]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [3, 9, 16, 25, 27, 28, 32, 37, 38]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run001_fold004:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 1 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [1, 2, 6, 11, 18, 20, 36, 42, 43]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [1, 2, 6, 11, 18, 20, 36, 42, 43]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run001_fold005:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 1 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [0, 8, 10, 12, 19, 21, 39, 41]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [0, 8, 10, 12, 19, 21, 39, 41]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+    
+    
+      nig_0.1-ntfv_0.2_run002_fold001:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 2 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 16, 18, 19, 20, 21, 24, 25, 26, 27, 28, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [7, 15, 17, 22, 23, 29, 30, 34, 35]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [7, 15, 17, 22, 23, 29, 30, 34, 35]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run002_fold002:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 2 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 27, 28, 29, 30, 32, 34, 35, 36, 37, 38, 39, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [4, 5, 13, 14, 24, 26, 31, 33, 40]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [4, 5, 13, 14, 24, 26, 31, 33, 40]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run002_fold003:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 2 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 26, 29, 30, 31, 33, 34, 35, 36, 39, 40, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [3, 9, 16, 25, 27, 28, 32, 37, 38]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [3, 9, 16, 25, 27, 28, 32, 37, 38]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run002_fold004:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 2 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [1, 2, 6, 11, 18, 20, 36, 42, 43]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [1, 2, 6, 11, 18, 20, 36, 42, 43]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run002_fold005:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 2 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [0, 8, 10, 12, 19, 21, 39, 41]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [0, 8, 10, 12, 19, 21, 39, 41]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+    
+    
+      nig_0.1-ntfv_0.2_run003_fold001:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 3 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 16, 18, 19, 20, 21, 24, 25, 26, 27, 28, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [7, 15, 17, 22, 23, 29, 30, 34, 35]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [7, 15, 17, 22, 23, 29, 30, 34, 35]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run003_fold002:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 3 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 27, 28, 29, 30, 32, 34, 35, 36, 37, 38, 39, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [4, 5, 13, 14, 24, 26, 31, 33, 40]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [4, 5, 13, 14, 24, 26, 31, 33, 40]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run003_fold003:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 3 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 26, 29, 30, 31, 33, 34, 35, 36, 39, 40, 41, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [3, 9, 16, 25, 27, 28, 32, 37, 38]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [3, 9, 16, 25, 27, 28, 32, 37, 38]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run003_fold004:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 3 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [0, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [1, 2, 6, 11, 18, 20, 36, 42, 43]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [1, 2, 6, 11, 18, 20, 36, 42, 43]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+      nig_0.1-ntfv_0.2_run003_fold005:
+        cmd: |
+          rosrun atom_calibration calibrate -json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -v  -ss 3 \
+          -nig 0.1 0.1 \
+          -csf 'lambda x: int(x) in [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 42, 43]' \
+          -ntfv 0.2 0.2 \
+          -ntfl "world:base_footprint" \
+          -sce \
+          && \
+
+          # front_left_camera to front_right_camera evaluation
+          rosrun atom_evaluation rgb_to_rgb_evaluation \
+          -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+          -test_json $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+          -ss front_left_camera -st front_right_camera \
+          -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          && \
+
+          # front_left_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [0, 8, 10, 12, 19, 21, 39, 41]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
+           && \
+
+          # front_right_camera to lidar3d evaluation
+          rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
+           -train_json $ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json \
+           -test_json  $ATOM_DATASETS/softbot/long_train_dataset1/dataset_corrected.json \
+           -csf 'lambda x: int(x) in [0, 8, 10, 12, 19, 21, 39, 41]' \
+           -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
+
+        files_to_collect:    
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration.json'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/atom_calibration_params.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/command_line_args.yml'
+          - '$ATOM_DATASETS/softbot/long_train_dataset1/calibration_errors.csv'
+          - '/tmp/rgb_rgb_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_left_evaluation.csv'
+          - '/tmp/lidar3d_rgb_front_right_evaluation.csv'
+# End the loop
