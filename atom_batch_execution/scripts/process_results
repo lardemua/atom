@@ -103,7 +103,9 @@ def main():
 
             average_df = averageCsvFiles(filenames)
 
-            average_df = average_df.drop(columns=['Collection #'])
+            # Not all files have this header
+            if 'Collection #' in average_df.columns:
+                average_df = average_df.drop(columns=['Collection #'])
 
             output_file = args['output_folder'] + '/' + experiment + '/' + file_to_process
             print('Saving average to ' + Fore.BLUE + output_file + Style.RESET_ALL)
