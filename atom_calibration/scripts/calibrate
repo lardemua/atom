@@ -185,6 +185,8 @@ def main():
     args['dataset_folder'] = os.path.dirname(args['json_file'])
     output_folder = os.path.dirname(args['json_file'])
 
+    args['output_folder'] = output_folder
+
     # ---------------------------------------
     # --- Read data from file
     # ---------------------------------------
