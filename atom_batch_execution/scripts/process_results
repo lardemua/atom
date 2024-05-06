@@ -22,8 +22,9 @@ def averageCsvFiles(filenames, average_row):
     for filename_idx, filename in enumerate(filenames):
         df = pd.read_csv(filename)
 
-        # Filter all cells for averages
-        df = df[df['Collection #'].isin([average_row])]
+        if 'Collection #' in df.columns:
+            # df = df[df['Collection #'].isin([average_row])]
+            df = df[df[df.columns[0]].isin([average_row])]
 
         df = df.apply(pd.to_numeric, errors="coerce")
         pandas_dfs.append(df)
@@ -110,9 +111,8 @@ def main():
 
             average_df = averageCsvFiles(filenames, args['average_row'])
 
-            # Not all files have this header
-            if 'Collection #' in average_df.columns:
-                average_df = average_df.drop(columns=['Collection #'])
+            # average_df = average_df.drop(columns=['Collection #'])
+            average_df = average_df.iloc[1:]
 
             output_file = args['output_folder'] + '/' + experiment + '/' + file_to_process
             print('Saving average to ' + Fore.BLUE + output_file + Style.RESET_ALL)
