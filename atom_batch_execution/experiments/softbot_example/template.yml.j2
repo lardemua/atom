@@ -60,7 +60,7 @@ experiments:
           rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
            -train_json {{ dataset_path }}/atom_calibration.json \
            -test_json  {{ dataset_path }}/dataset_corrected.json \
-          -csf 'lambda x: (int(x) in {{ fold[1] }}) and (int(x) not in {{ collections_to_remove }})' \
+           -csf 'lambda x: int(x) in {{ fold[1] }})' \
            -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
 
         files_to_collect:    

@@ -18,4 +18,3 @@ systemd-private-65596125cc6f4e8596247a198e6c55af-power-profiles-daemon.service-4
 systemd-private-65596125cc6f4e8596247a198e6c55af-systemd-logind.service-yGQwo4
 systemd-private-65596125cc6f4e8596247a198e6c55af-upower.service-PFLRgb
 Temp-21557c27-8ecb-482c-9175-a1d329f183a7
-wl-copy-buffer-AFRIqs
