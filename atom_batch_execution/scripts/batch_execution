@@ -128,7 +128,7 @@ def main():
 
     else:
         # Print error message if the cross validation type is not supported
-        folds  = [(collection_keys, collection_keys)]
+        folds  = [(range(len(collection_keys)), range(len(collection_keys)))]
         bprint('Running without any cross validation.')
 
     # Converting folds to a list, in order to iterate over it various times
