@@ -34,8 +34,8 @@ experiments:
           -ntfv {{ e.ntfv_value }} {{ e.ntfv_value }} \
           -ntfl "world:base_footprint" \
           -sce \
-          {% if not e.calibrate_odom -%}
-            -atsf 'lambda name : name in []' \
+          {%- if not e.calibrate_odom -%}
+             -atsf 'lambda name : name in []' \
           {%- endif %}
           && \
 
