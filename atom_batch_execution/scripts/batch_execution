@@ -3,6 +3,7 @@
 Runs several calibration executions in batch_execution. A yml file is used to config the batch executions.
 """
 import argparse
+from copy import deepcopy
 import os
 import shutil
 import subprocess
@@ -17,6 +18,7 @@ from atom_core.config_io import uriReader
 from atom_core.dataset_io import loadJSONFile,deleteCollectionFromDataset
 from atom_core.system import resolvePath, execute
 from atom_core.utilities import atomWarn
+from atom_core.naming import generateCollectionKey
 
 
 def bprint(text):
@@ -82,8 +84,15 @@ def main():
 
     # We don't want it generating folds based on collections we don't want to use
     # Using same methodology from filterCollectionsFromDataset from dataset_io.py
-    for collection_key in collections_to_remove:
-        deleteCollectionFromDataset(dataset,collection_key)
+
+    # print(dataset['collections'].keys())
+    # print(collections_to_remove)
+
+    for collection_number in collections_to_remove:
+        deleteCollectionFromDataset(dataset,collection_number)
+
+    # print(dataset['collections'].keys())
+    # exit()
 
     # Generate classes and collection keys
     classes, collection_keys = generateClasses(dataset)
@@ -122,11 +131,27 @@ def main():
         folds  = [(collection_keys, collection_keys)]
         bprint('Running without any cross validation.')
 
+    # Generate a list of folds
+    fold_list_idxs = [[list(train), list(test)] for (train, test) in folds]
+
+    # Converting idx to collection key
+    fold_list = deepcopy(fold_list_idxs)
+    for i,fold in enumerate(fold_list):
+        for j,split in enumerate(fold):
+            for k,element in enumerate(split):
+                collection_list = list(dataset['collections'].keys())
+                prev_idx = element
+                collection_number = int(collection_list[element])
+                print(f'Idx {prev_idx} has now key {collection_number}')
+
+                fold_list[i][j][k] = collection_number
+
+    # print(fold_list_idxs)
+    # print('\n')
+    # print(fold_list)
+
     # Dataset is no longer needed
     del dataset
-
-    # Generate a list of folds
-    fold_list = [[list(train), list(test)] for (train, test) in folds]
 
     # Add folds to data
     data['folds'] = fold_list

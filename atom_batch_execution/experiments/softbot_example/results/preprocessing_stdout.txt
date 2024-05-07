@@ -1,9 +1,11 @@
 description.urdf
+hsperfdata_bruno
+lazygit-1076467509
 lazygit-1227925762
 lidar3d_rgb_front_left_evaluation.csv
 lidar3d_rgb_front_right_evaluation.csv
 plasma-csd-generator.LRmnzA
-pyright-719624-5WWxE8xiuobh
+pyright-1712213-nLMQ1eM6bC1V
 rgb_rgb_evaluation.csv
 scoped_direO3omD
 sddm-:0-WjGrTU
@@ -16,3 +18,4 @@ systemd-private-65596125cc6f4e8596247a198e6c55af-power-profiles-daemon.service-4
 systemd-private-65596125cc6f4e8596247a198e6c55af-systemd-logind.service-yGQwo4
 systemd-private-65596125cc6f4e8596247a198e6c55af-upower.service-PFLRgb
 Temp-21557c27-8ecb-482c-9175-a1d329f183a7
+wl-copy-buffer-AFRIqs

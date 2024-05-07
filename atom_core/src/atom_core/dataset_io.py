@@ -25,7 +25,7 @@ from colorama import Fore, Style
 from rospy_message_converter import message_converter
 from std_msgs.msg import Header
 from atom_core.config_io import uriReader,mutually_inclusive_conditions
-from atom_core.naming import generateName, generateKey
+from atom_core.naming import generateName, generateKey,generateCollectionKey
 from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
                                                      numpyFromPointCloudMsg)
 
@@ -560,8 +560,10 @@ def filterSensorsFromDataset(dataset, args):
 def deleteCollectionFromDataset(dataset,collection_number):
 
     # Converting int 90 to '090'
-    collection_key = f"{collection_number:03d}"
+    collection_key = generateCollectionKey(collection_number)
+    print(f'Deleting {collection_key}')
     del dataset['collections'][collection_key]
+
 
 
 def filterCollectionsFromDataset(dataset, args):
