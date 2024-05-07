@@ -557,6 +557,12 @@ def filterSensorsFromDataset(dataset, args):
 
     return dataset
 
+def deleteCollectionFromDataset(dataset,collection_number):
+
+    # Converting int 90 to '090'
+    collection_key = f"{collection_number:03d}"
+    del dataset['collections'][collection_key]
+
 
 def filterCollectionsFromDataset(dataset, args):
     """
@@ -565,6 +571,7 @@ def filterCollectionsFromDataset(dataset, args):
     :param args: Makes use of 'collection_selection_function', 'use_incomplete_collections' and
                 'remove_partial_detections'
     """
+    # TODO This function doesn't provide a way to delete the collection number n, should it?
 
     if not args['collection_selection_function'] is None:
         deleted = []
