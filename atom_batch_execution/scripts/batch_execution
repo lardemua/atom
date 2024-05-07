@@ -74,7 +74,16 @@ def main():
         data = yaml.safe_load(file_content)
 
     # Load dataset
-    dataset = loadJSONFile(data['dataset_path'] + '/dataset.json')
+    # dataset = loadJSONFile(data['dataset_path'] + '/dataset.json')
+    # TODO Shouldn't it be like this??
+    dataset = loadJSONFile(data['dataset_path'] + '/dataset_corrected.json')
+
+    collections_to_remove = data['collections_to_remove']
+
+    # We don't want it generating folds based on collections we don't want to use
+    # Using same methodology from filterCollectionsFromDataset from dataset_io.py
+    for collection_key in collections_to_remove:
+        del dataset['collections'][collection_key]
 
     # Generate classes and collection keys
     classes, collection_keys = generateClasses(dataset)

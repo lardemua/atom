@@ -30,10 +30,13 @@ experiments:
           rosrun atom_calibration calibrate -json {{ dataset_path }}/dataset_corrected.json \
           -v  -ss {{ run }} \
           -nig {{ e.nig_value }} {{ e.nig_value }} \
-          -csf 'lambda x: int(x) in {{ fold[0] }}' \
+          -csf 'lambda x: (int(x) in {{ fold[0] }}) and (int(x) in {{ collections_to_remove }})' \
           -ntfv {{ e.ntfv_value }} {{ e.ntfv_value }} \
           -ntfl "world:base_footprint" \
           -sce \
+          {% if not e.calibrate_odom -%}
+            -atsf 'lambda name : name in []' \
+          {%- endif %}
           && \
 
           # front_left_camera to front_right_camera evaluation
@@ -42,13 +45,14 @@ experiments:
           -test_json {{ dataset_path }}/dataset_corrected.json \
           -ss front_left_camera -st front_right_camera \
           -sfr -sfrn /tmp/rgb_rgb_evaluation.csv \
+          -csf 'lambda x: (int(x) in {{ fold[1] }}) and (int(x) in {{ collections_to_remove }})' \
           && \
 
           # front_left_camera to lidar3d evaluation
           rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_left_camera \
            -train_json {{ dataset_path }}/atom_calibration.json \
            -test_json  {{ dataset_path }}/dataset_corrected.json \
-           -csf 'lambda x: int(x) in {{ fold[1] }}' \
+          -csf 'lambda x: (int(x) in {{ fold[1] }}) and (int(x) in {{ collections_to_remove }})' \
            -sfr -sfrn /tmp/lidar3d_rgb_front_left_evaluation.csv \
            && \
 
@@ -56,7 +60,7 @@ experiments:
           rosrun atom_evaluation lidar_to_rgb_evaluation -rs lidar3d -cs front_right_camera \
            -train_json {{ dataset_path }}/atom_calibration.json \
            -test_json  {{ dataset_path }}/dataset_corrected.json \
-           -csf 'lambda x: int(x) in {{ fold[1] }}' \
+          -csf 'lambda x: (int(x) in {{ fold[1] }}) and (int(x) in {{ collections_to_remove }})' \
            -sfr -sfrn /tmp/lidar3d_rgb_front_right_evaluation.csv
 
         files_to_collect:    
