@@ -86,12 +86,11 @@ def main():
 
     collections_to_remove = data['collections_to_remove']
 
-    args["collection_selection_function"] = lambda x : int(x) in collections_to_remove
+    args["collection_selection_function"] = lambda x : int(x) not in collections_to_remove
     args['use_incomplete_collections'] = None
     args['remove_partial_detections'] = None
 
-    for collection_number in collections_to_remove:
-        filterCollectionsFromDataset(dataset,args)
+    filterCollectionsFromDataset(dataset,args)
 
     # Generate classes and collection keys
     classes, collection_keys = generateClasses(dataset)
