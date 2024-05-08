@@ -93,7 +93,10 @@ class RGBLabeler:
         print('received!')
 
         self.K = np.ndarray((3, 3), dtype=float, buffer=np.array(self.camera_info_msg.K))
-        self.D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
+        if self.camera_info_msg.distortion_model == 'plumb_bob':
+            self.D = np.ndarray((5, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
+        elif self.camera_info_msg.distortion_model == 'equidistant':
+            self.D = np.ndarray((4, 1), dtype=float, buffer=np.array(self.camera_info_msg.D))
 
         # Subscribe to the message topic containing sensor data
         self.subscriber = rospy.Subscriber(self.sensor_config['topic_name'], self.msg_type,
