@@ -127,27 +127,14 @@ def main():
 
     else:
         # Print error message if the cross validation type is not supported
-        folds  = [(collection_keys, collection_keys)]
+        folds  = [(range(len(collection_keys)), range(len(collection_keys)))]
         bprint('Running without any cross validation.')
 
-    # Generate a list of folds
-    fold_list_idxs = [[list(train), list(test)] for (train, test) in folds]
+    # Converting folds to a list, in order to iterate over it various times
+    folds = list(folds)
 
-    # Converting idx to collection key
-    fold_list = deepcopy(fold_list_idxs)
-    for i,fold in enumerate(fold_list):
-        for j,split in enumerate(fold):
-            for k,element in enumerate(split):
-                collection_list = list(dataset['collections'].keys())
-                prev_idx = element
-                collection_number = int(collection_list[element])
-                print(f'Idx {prev_idx} has now key {collection_number}')
-
-                fold_list[i][j][k] = collection_number
-
-    # print(fold_list_idxs)
-    # print('\n')
-    # print(fold_list)
+    # Transforming indexes of collections into collection keys
+    fold_list = [[[collection_keys[element] for element in split] for split in fold] for fold in folds]
 
     # Dataset is no longer needed
     del dataset
