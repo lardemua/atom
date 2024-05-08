@@ -76,13 +76,7 @@ def main():
         file_content = f.read()
         data = yaml.safe_load(file_content)
 
-    # Load dataset
-    # If the corrected exists, the cross validator class divider will work slightly better.
-    expanded_dataset_file_path = os.path.expandvars(data['dataset_path'] + '/dataset_corrected.json')
-    if os.path.isfile(expanded_dataset_file_path):
-        dataset = loadJSONFile(data['dataset_path'] + '/dataset_corrected.json')
-    else:
-        dataset = loadJSONFile(data['dataset_path'] + '/dataset.json')
+    dataset = loadJSONFile(data['dataset_path'])
 
     collections_to_remove = data['collections_to_remove']
 

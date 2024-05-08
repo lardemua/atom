@@ -558,7 +558,9 @@ def filterSensorsFromDataset(dataset, args):
     return dataset
 
 def deleteCollectionFromDataset(dataset,collection_number):
-
+    # Use the filterCollectionsFromDataset instead. Check #948.
+    # Leaving this function here for potential future use only.
+ 
     # Converting int 90 to '090'
     collection_key = generateCollectionKey(collection_number)
     print(f'Deleting {collection_key}')
