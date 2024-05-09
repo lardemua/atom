@@ -11,7 +11,7 @@
     <selfCollide>false</selfCollide>
   </gazebo>
   <joint name="rgb_left_joint" type="fixed">
-    <origin xyz="0.01499999999999957 -3.2057426077360894e-16 0.012000000000000375" rpy="-3.0805097672264623e-16 4.385950745910349e-16 2.603825111285602e-17"/>
+    <origin xyz="0.015000000000000102 1.0529035217929657e-18 0.01199999999999993" rpy="0.0 -0.0 0.0"/>
     <parent link="tripod_left_support"/>
     <child link="rgb_left_link"/>
   </joint>
@@ -79,7 +79,7 @@
     </sensor>
   </gazebo>
   <joint name="rgb_right_joint" type="fixed">
-    <origin xyz="0.014896101514833615 -0.00010643945277278731 0.011919487541689396" rpy="-9.733722284792457e-05 -8.500523015444027e-05 7.164825060903521e-05"/>
+    <origin xyz="0.014934704018840839 1.4987356524735855e-05 0.012006008392206915" rpy="-2.935288573546465e-05 -4.82107800907422e-06 9.485646754006965e-06"/>
     <parent link="tripod_right_support"/>
     <child link="rgb_right_link"/>
   </joint>

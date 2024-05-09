@@ -37,7 +37,8 @@ description_file: "package://softbot_description/urdf/softbot.urdf.xacro"
 # The calibration framework requires a bagfile to extract the necessary data for the calibration.
 # bag_file: "$ROS_BAGS/softbot/train.bag"
 # bag_file: "$ROS_BAGS/softbot/example/train.bag"
-bag_file: "$ROS_BAGS/softbot/long_bag/long_bag1.bag"
+# bag_file: "$ROS_BAGS/softbot/long_bag/long_bag1.bag"
+bag_file: "$ROS_BAGS/softbot/issue950/issue950.bag"
 
 # You must define a frame of reference for the optimization process.
 # It must exist in the transformation chains of all the sensors which are being calibrated.
