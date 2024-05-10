@@ -9,10 +9,11 @@ import shutil
 
 from colorama import Fore, Style
 
-from atom_core.system import resolvePath
+from atom_core.system import resolvePath,execute
 import pandas as pd
 
 from atom_batch_execution.folder_io import stripAutomaticSuffixes
+from atom_core.config_io import uriReader
 
 def averageCsvFiles(filenames, average_row):
 
@@ -76,8 +77,6 @@ def main():
     folders = [x for x in files_and_folders if os.path.isdir(args['results_folder'] + '/' + x)]
     experiments = stripAutomaticSuffixes(folders,args)
 
-    # files_to_process = ['comparison_to_ground_truth_transforms.csv', 'comparison_to_ground_truth_joints.csv']
-    # files_to_process = ['single_rgb_evaluation.csv']
     abspath = os.listdir(os.path.abspath(args['results_folder']) + '/' + folders[0])
     filenames = abspath
     files_to_process = [filename for filename in filenames if filename.endswith('.csv')]
@@ -99,11 +98,13 @@ def main():
         files_and_folders = glob.glob(args['results_folder'] + '/' + experiment + "_" + '*')
         files_and_folders.sort()
 
+        experiment_first_dir = files_and_folders[0]
+
         for file_to_process in files_to_process:
 
-            filenames = [run + '/' + file_to_process for run in files_and_folders]
+            filenames_to_process = [run + '/' + file_to_process for run in files_and_folders]
 
-            average_df = averageCsvFiles(filenames, args['average_row'])
+            average_df = averageCsvFiles(filenames_to_process, args['average_row'])
 
             # average_df = average_df.drop(columns=['Collection #'])
             average_df = average_df.iloc[1:]
@@ -111,6 +112,17 @@ def main():
             output_file = args['output_folder'] + '/' + experiment + '/' + file_to_process
             print('Saving average to ' + Fore.BLUE + output_file + Style.RESET_ALL)
             average_df.to_csv(output_file)
+
+        # Saving first occurence of settings yml
+        settings_file_name = f'{experiment}_settings.yml'
+        settings_file_path_from = f'{experiment_first_dir}/{settings_file_name}'
+        settings_file_path_to = f'{args["output_folder"]}/{experiment}/{settings_file_name}'
+
+        resolved_file, _, _ = uriReader(settings_file_path_from)
+        print('Saving settings to ' + Fore.BLUE + resolved_file + Style.RESET_ALL)
+        execute('cp ' + resolved_file + ' ' + settings_file_path_to , verbose=False)
+
+
 
 
 if __name__ == "__main__":
