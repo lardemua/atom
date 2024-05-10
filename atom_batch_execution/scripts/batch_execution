@@ -21,6 +21,8 @@ from atom_core.system import resolvePath, execute
 from atom_core.utilities import atomWarn
 from atom_core.naming import generateCollectionKey
 
+from atom_batch_execution.folder_io import stripAutomaticSuffixes
+
 
 def bprint(text):
     """bprint (batch print) will always print in blue color with yellow background """
@@ -68,6 +70,10 @@ def main():
                     required=False, action='store_true')
     ap.add_argument("-dr", "--dry_run", help="Run without actually executing the processes.",
                     required=False, action='store_true')
+    ap.add_argument("-rs", "--run_suffix", help="Suffix used to signal multiple runs of the same experiment.",
+                    required=False, default='_run', type=str)
+    ap.add_argument("-fs", "--fold_suffix", help="Suffix used to signal multiple folds of the same run.",
+                    required=False, default='_fold', type=str)
 
     args = vars(ap.parse_args())
 
@@ -169,6 +175,7 @@ def main():
         bprint('Executing command:\n' + experiment['cmd'])
 
 
+
         if args['dry_run']:
             bprint('Running in dry run mode...')
             continue
@@ -182,6 +189,14 @@ def main():
 
         # Start executing command.
         execute(experiment['cmd'], verbose=args['verbose'], save_path=experiment_folder)
+
+        # Save experiment settings
+        for experiment_type in data['experiments']:
+            if experiment_type["name"] == stripAutomaticSuffixes(experiment_key,args):
+                print("WRITING")
+
+                settings_file_path = f"{experiment_folder}/{experiment_type['name']}_settings.yml"
+                yaml.dump(experiment_type, open(settings_file_path, 'w'), sort_keys=False)
 
         # Collect stdout_data files
         for file in experiment['files_to_collect']:
@@ -197,6 +212,10 @@ def main():
             filename_out = experiment_folder + '/' + os.path.basename(resolved_file)
             print(Fore.BLUE + Back.YELLOW + 'Copying file ' + resolved_file + ' to ' + filename_out + Style.RESET_ALL)
             execute('cp ' + resolved_file + ' ' + filename_out, verbose=False)
+            
+    
+
+
 
 
 

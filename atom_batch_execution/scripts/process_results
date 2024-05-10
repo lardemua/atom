@@ -12,6 +12,7 @@ from colorama import Fore, Style
 from atom_core.system import resolvePath
 import pandas as pd
 
+from atom_batch_execution.folder_io import stripAutomaticSuffixes
 
 def averageCsvFiles(filenames, average_row):
 
@@ -73,14 +74,7 @@ def main():
     # Create a list of experiments
     files_and_folders = os.listdir(args['results_folder'])
     folders = [x for x in files_and_folders if os.path.isdir(args['results_folder'] + '/' + x)]
-    fold_suffix_size = len(args['fold_suffix']) + 3  # because the suffix is complemented by the run number as in 001
-    run_suffix_size = len(args['run_suffix']) + 3  # because the suffix is complemented by the run number as in 001
-    suffix_size = 0
-    if args['fold_suffix'] in folders[0]:
-        suffix_size += fold_suffix_size
-    if args['run_suffix'] in folders[0]:
-        suffix_size += run_suffix_size
-    experiments = list(set([x[:-suffix_size] for x in folders]))  # Remove the "_foldXX" suffix
+    experiments = stripAutomaticSuffixes(folders,args)
 
     # files_to_process = ['comparison_to_ground_truth_transforms.csv', 'comparison_to_ground_truth_joints.csv']
     # files_to_process = ['single_rgb_evaluation.csv']
