@@ -23,7 +23,7 @@ from colorama import init as colorama_init
 from atom_calibration.calibration.visualization import getCvImageFromCollectionSensor
 from atom_core.atom import getChain, getTransform
 from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, saveAtomDataset
-from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform
+from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform, translationQuaternionToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
 from atom_core.utilities import atomError, compareAtomTransforms
@@ -196,16 +196,16 @@ def main():
     # ---------------------------------------
     # Hand eye calibration (in a eye-in-hand configuration) has 4 different transformations.
     #
-    # robot-base to hand         b_T_h       (obtained from direct kinematics)
+    # hand to robot-base         h_T_b       (obtained from direct kinematics)
     # camera to pattern          c_T_p       (obtained through the detection of the known pattern)
     # hand to camera             h_T_c       (estimated by the calibration)
     # robot-base to pattern      b_T_p       (estimated by the calibration)
     # We will use this notation throughout the code.
 
     c_T_p_lst = []  # list of camera to pattern 4x4 transforms.
-    b_T_h_lst = []  # list of base to hand 4x4 transforms.
+    h_T_b_lst = []  # list of base to hand 4x4 transforms.
 
-    # Iterate all collections and create the lists of transforms c_T_p and b_T_h
+    # Iterate all collections and create the lists of transforms c_T_p and h_T_b
     # NOTE: cannot test with a single collection. We need at least three. Check
     # https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#ga41b1a8dd70eae371eba707d101729c36
     for collection_key, collection in dataset['collections'].items():
@@ -265,52 +265,52 @@ def main():
             cv2.destroyWindow(window_name)
 
         # ---------------------------------------
-        # Get b_T_h using direct kinematics
+        # Get h_T_b using direct kinematics
         # ---------------------------------------
         # We will use the atom builtin functions to get the transform directly
-        b_T_h = getTransform(from_frame=args['base_link'],
-                             to_frame=args['hand_link'],
+        h_T_b = getTransform(from_frame=args['hand_link'],
+                             to_frame=args['base_link'],
                              transforms=collection['transforms'])
-        b_T_h_lst.append(b_T_h)
+        h_T_b_lst.append(h_T_b)
 
     # ---------------------------------------
     # Run hand eye calibration
     # ---------------------------------------
     # We will use opencv's function calibrateHandEye()
     # https://docs.opencv.org/4.5.4/d9/d0c/group__calib3d.html#gaebfc1c9f7434196a374c382abf43439b
-    # It requires a list of c_T_p and b_T_h transformations.
+    # It requires a list of c_T_p and h_T_b transformations.
     # Transformations are represented by separate rotation (3x3) and translation (3x1) components, so we will have two lists per transformations.
 
     # NOTE instead of lists we could also use np arrays like this, same result.
     # n = len(c_T_p_lst)
     # c_T_p_Rs = np.zeros((n, 3, 3))
     # c_T_p_ts = np.zeros((n, 3, 1))
-    # b_T_h_Rs = np.zeros((n, 3, 3))
-    # b_T_h_ts = np.zeros((n, 3, 1))
+    # h_T_b_Rs = np.zeros((n, 3, 3))
+    # h_T_b_ts = np.zeros((n, 3, 1))
 
     c_T_p_Rs = []  # list of rotations for c_T_p.
     c_T_p_ts = []  # list of translations for c_T_p
-    b_T_h_Rs = []  # list of rotations for b_T_h
-    b_T_h_ts = []  # list of translations for b_T_h
+    h_T_b_Rs = []  # list of rotations for h_T_b
+    h_T_b_ts = []  # list of translations for h_T_handrobot-baseh_T_bh_T_bh_T_bh_T_b:
 
-    for c_T_p, b_T_h in zip(c_T_p_lst, b_T_h_lst):
+    for c_T_p, h_T_b in zip(c_T_p_lst, h_T_b_lst):
         # --- c_T_p    camera to pattern
         c_T_p_t, c_T_p_R = matrixToTranslationRotation(c_T_p)
         c_T_p_Rs.append(c_T_p_R)
         c_T_p_ts.append(c_T_p_t)
 
-        # --- b_T_h    base to hand
-        b_T_h_t, b_T_h_R = matrixToTranslationRotation(b_T_h)
-        b_T_h_Rs.append(b_T_h_R)
-        b_T_h_ts.append(b_T_h_t)
+        # --- h_T_b    base to hand
+        h_T_b_t, h_T_b_R = matrixToTranslationRotation(h_T_b)
+        h_T_b_Rs.append(h_T_b_R)
+        h_T_b_ts.append(h_T_b_t)
 
     # ---------------------------------------
     # Run hand eye calibration using calibrateHandEye
     # ---------------------------------------
 
     # In an eye-to-hand configuration, it returns b_T_c instead of h_T_c
-    b_T_c_R, b_T_c_t = cv2.calibrateHandEye(b_T_h_Rs,
-                                            b_T_h_ts,
+    b_T_c_R, b_T_c_t = cv2.calibrateHandEye(h_T_b_Rs,
+                                            h_T_b_ts,
                                             c_T_p_Rs,
                                             c_T_p_ts,
                                             method=method)
@@ -321,24 +321,27 @@ def main():
 
     # Extract the transformation marked for calibration which is the
     # cp_T_cc, where cp (calibration parent) and cc (calibration child).
-    # So we need to get cp_T_cc from the estimated h_T_c.
+    # So we need to get cp_T_cc from the estimated b_T_c.
     # We use the following:
     # b_T_c = b_T_cp * cp_T_cc * cc_T_c
-    # <=> cp_T_cc =  (b_T_cp)-1 * b_T_c * (cc_T_c)-1
+    # <=> cp_T_cc = (b_T_cp)-1 * b_T_c * (cc_T_c)-1
+    # <=> cp_T_cc = cp_T_b * b_T_c * c_T_cc
 
     calibration_parent = dataset['calibration_config']['sensors'][args['camera']]['parent_link']
     calibration_child = dataset['calibration_config']['sensors'][args['camera']]['child_link']
 
-    b_T_cp = getTransform(from_frame=args['base_link'],
-                          to_frame=calibration_parent,
+    cp_T_b = getTransform(from_frame=calibration_parent,
+                          to_frame=args['base_link'],
+                          transforms=dataset['collections'][selected_collection_key]['transforms'])
+    
+
+
+    c_T_cc = getTransform(from_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+                          to_frame=calibration_child,
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
-    cc_T_c = getTransform(from_frame=calibration_child,
-                          to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
-                          transforms=dataset['collections'][selected_collection_key]['transforms'])
-
-    cp_T_cc = inv(b_T_cp) @ b_T_c @ inv(cc_T_c)
-
+    cp_T_cc = cp_T_b @ b_T_c @ c_T_cc
+    
     # Save to dataset
     # Since the transformation cp_T_cc is static we will save the same transform to all collections
     frame_key = generateKey(calibration_parent, calibration_child)
@@ -356,14 +359,14 @@ def main():
         # --------------------------------------------------
         b_T_c_ground_truth = getTransform(from_frame=args['base_link'],
                                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
-                                          transforms=dataset['collections'][selected_collection_key]['transforms'])
+                                          transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
         print(Fore.GREEN + 'Ground Truth b_T_c=\n' + str(b_T_c_ground_truth))
 
         print('estimated b_T_c=\n' + str(b_T_c))
 
         translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
             b_T_c, b_T_c_ground_truth)
-        print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (m)')
+        print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
         print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
 
         # --------------------------------------------------

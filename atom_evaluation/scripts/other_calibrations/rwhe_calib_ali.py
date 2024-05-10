@@ -48,6 +48,62 @@ def getCameraIntrinsicsFromDataset(dataset, camera):
 
     return K, D, image_size
 
+def li_calib(AA,BB):
+    # From here on out, the code is a direct translation of the MATLAB code
+
+    n = len(AA) # n is the number of collections
+    
+    # Transform the 4x4xn AA 3-dimensional matrix to a 4x(4xn) 2-dimensional matrix like in the original script
+    AA_2d = np.zeros((4, 4*n))
+    for i in range(n):
+        AA_2d[:, 4*i:4*i+4] = AA[i]
+    # Do the same for BB
+    BB_2d = np.zeros((4, 4*n))
+    for i in range(n):
+        BB_2d[:, 4*i:4*i+4] = BB[i]
+    
+
+    A = np.zeros((12*n, 24))
+    b = np.zeros((12*n, 1))
+    for i in range(1,n+1):
+        Ra = AA_2d[0:3,4*i-4:4*i-1]
+        Rb = BB_2d[0:3,4*i-4:4*i-1]
+        ta = AA_2d[0:3,4*i-1:4*i]
+        tb = BB_2d[0:3,4*i-1:4*i]
+
+        A[12*i-12:12*i-3,0:9] = np.kron(Ra, np.eye(3))
+        A[12*i-12:12*i-3,9:18] = np.kron(-1*np.eye(3), Rb.T)
+        A[12*i-3:12*i,9:18] = np.kron(np.eye(3), tb.T)
+        A[12*i-3:12*i,18:21] = -1*Ra
+        A[12*i-3:12*i,21:24] = np.eye(3)
+        
+        b[12*i-3:12*i] = ta
+
+    # The equivalent of the \ operator in MATsingular value decomposition ofLAB is the numpy linalg.solve function
+    x = np.linalg.lstsq(A,b, rcond=None)
+    x = x[0] # x[0] is all we need, as it is the array returned by matlab's "\""
+    
+    # Get X
+    X = x[0:9].reshape((3,3)).T
+    [u,s,v] = np.linalg.svd(X)
+    X = u @ v.T
+    if (np.linalg.det(X) < 0):
+        X = u @ np.diag([1,1,-1]) @ v.T
+    X = np.append(X, x[21:24], axis=1)
+    X = np.append(X, np.array([[0,0,0,1]]), axis=0)
+
+    # Get Y
+    Y = x[9:18].reshape((3,3)).T
+    [u,s,v] = np.linalg.svd(Y)
+    Y = u @ v.T
+    if (np.linalg.det(Y) < 0):
+        Y = u @ np.diag([1,1,-1]) @ v.T
+    Y = np.append(Y, x[21:24], axis=1)
+    Y = np.append(Y, np.array([[0,0,0,1]]), axis=0)
+
+    return X,Y
+
+
 def main():
     
     ########################################
@@ -63,8 +119,8 @@ def main():
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
-    ap.add_argument("-bln", "--base_link_name", type=str, required=False, default="base_link", help="Name of the robot base link frame.")
-    ap.add_argument("-eeln", "--end_effector_link_name", type=str, required=False, default="flange", help="Name of the end-effector link frame.")
+    ap.add_argument("-bl", "--base_link", type=str, required=False, default="base_link", help="Name of the robot base link frame.")
+    ap.add_argument("-hl", "--hand_link", type=str, required=False, default="flange", help="Name of the hand link frame.")
     ap.add_argument("-c", "--camera", help="Camera sensor name.", type=str, required=True)
     ap.add_argument("-p", "--pattern", help="Pattern to be used for calibration.", type=str, required=True)
     
@@ -72,8 +128,8 @@ def main():
 
     json_file = args['json_file']
     collection_selection_function = args['collection_selection_function']
-    base_link_name = args['base_link_name']
-    end_effector_link_name = args['end_effector_link_name']
+    base_link = args['base_link']
+    hand_link = args['hand_link']
     camera = args['camera']
     pattern = args['pattern']
 
@@ -145,8 +201,8 @@ def main():
         # A is the transform from the gripper to the robot's base. We can get it from the dataset
         transform_pool = collection['transforms']
         A = getTransform(
-            from_frame=end_effector_link_name,
-            to_frame=base_link_name,
+            from_frame=hand_link,
+            to_frame=base_link,
             transforms=transform_pool
         )
 
@@ -174,6 +230,8 @@ def main():
         B = np.linalg.inv(tf_pattern2opticalframe)
         
         BB.append(B)
+
+    X,Y = li_calib(AA,BB)
 
 
 if __name__ == '__main__':
