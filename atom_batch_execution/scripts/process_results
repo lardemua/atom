@@ -96,7 +96,7 @@ def main():
             os.mkdir(experiment_folder)  # Create the new folder
 
         # get all runs in this experiment
-        files_and_folders = glob.glob(args['results_folder'] + '/' + experiment + '*')
+        files_and_folders = glob.glob(args['results_folder'] + '/' + experiment + "_" + '*')
         files_and_folders.sort()
 
         for file_to_process in files_to_process:
