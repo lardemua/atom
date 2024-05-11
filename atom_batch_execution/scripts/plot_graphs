@@ -14,7 +14,7 @@ import csv
 from colorama import Fore, Style
 import matplotlib.pyplot as plt
 
-from atom_core.utilities import atomWarn
+from atom_core.utilities import atomWarn,atomError
 
 
 
@@ -69,7 +69,7 @@ def computeLambdaConditions(line_dict,args):
 
     lambda_function = eval(lambda_expression)
 
-    return lambda_function
+    return lambda_function,lambda_expression
 
 
 
@@ -113,21 +113,30 @@ def main():
     print(f"Grabbing data from {Fore.BLUE}{args['results_folder']}{Style.RESET_ALL}")
     for plot_figure in plots_configs.keys():
 
-        x_data_files_names = []
-        x_data = []
-        y_data = []
 
         for plot_line in plots_configs[plot_figure]['data']:
-            filtering_function = computeLambdaConditions(plot_line,args)
-        
+            filtering_function,lambda_str = computeLambdaConditions(plot_line,args)
+
+            x_data_files_names = []
+            x_data = []
+            y_data = []
+            settings_files_used = []
             # Get x data
             for settings_file_path in settings_file_paths:
                 with open(settings_file_path, "r") as file:
                     settings = yaml.safe_load(file)
                 
                 if filtering_function(settings):
+                    settings_files_used.append(settings_file_path)
                     x_data_files_names.append(settings["name"])
                     x_data.append(settings[plot_line['xfield']])
+
+            if args["verbose"]:
+                print("Getting data from these files")
+                pprint(settings_files_used)
+
+            if not x_data_files_names:
+                atomError("No settings files matches were found for the given configuration, check if " + args["data_filename"] + " is well defined")
 
             # Get y data
 
@@ -154,9 +163,6 @@ def main():
                         y_data.append(round(float(line[1]),4))
 
             # Sorting data --> https://stackoverflow.com/questions/9764298/given-parallel-lists-how-can-i-sort-one-while-permuting-rearranging-the-other
-            print(x_data)
-            print(y_data)
-            exit()
             x_data_sorted,y_data_sorted = zip(*sorted(zip(x_data,y_data)))
 
             plot_line['x_values'] = x_data_sorted
