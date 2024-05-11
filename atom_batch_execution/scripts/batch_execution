@@ -193,10 +193,11 @@ def main():
         # Save experiment settings
         for experiment_type in data['experiments']:
             if experiment_type["name"] == stripAutomaticSuffixes(experiment_key,args):
-                print("WRITING")
+                print(f"Saving settings file for {Fore.BLUE}{experiment_type['name']}{Style.RESET_ALL}")
 
                 settings_file_path = f"{experiment_folder}/{experiment_type['name']}_settings.yml"
                 yaml.dump(experiment_type, open(settings_file_path, 'w'), sort_keys=False)
+
 
         # Collect stdout_data files
         for file in experiment['files_to_collect']:

@@ -43,15 +43,16 @@ def computeLambdaConditions(line_dict,args):
 
         # Lists determine a range of values to plot
         if isinstance(value,list):
-             lambda_expression = addConditionToLambda(lambda_expression,f"x['{key}'] >= {value[0]}","and")
-             lambda_expression = addConditionToLambda(lambda_expression,f"x['{key}'] <= {value[1]}","and")
+            lambda_expression = addConditionToLambda(lambda_expression,f"x['{key}'] >= {value[0]}","and")
+            lambda_expression = addConditionToLambda(lambda_expression,f"x['{key}'] <= {value[1]}","and")
 
-        elif isinstance(value,int) or isinstance(value,float):
-             lambda_expression = addConditionToLambda(lambda_expression,f"x['{key}'] == {value}","and")
+        elif type(value) in (int,float):
+            lambda_expression = addConditionToLambda(lambda_expression,f"x['{key}'] == {value}","and")
 
         # A bool determines whether to include all available values of a field or not
         # Being false is equal to not being declared
-        elif isinstance(value,bool):
+        # https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
+        elif type(value) == bool:
             # Retrieve the value, if the key doesn't exist .get() returns None
             if value : 
                 lambda_expression = addConditionToLambda(lambda_expression,f"x.get('{key}')","and")
@@ -153,6 +154,9 @@ def main():
                         y_data.append(round(float(line[1]),4))
 
             # Sorting data --> https://stackoverflow.com/questions/9764298/given-parallel-lists-how-can-i-sort-one-while-permuting-rearranging-the-other
+            print(x_data)
+            print(y_data)
+            exit()
             x_data_sorted,y_data_sorted = zip(*sorted(zip(x_data,y_data)))
 
             plot_line['x_values'] = x_data_sorted
