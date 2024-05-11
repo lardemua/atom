@@ -119,7 +119,7 @@ def main():
         settings_file_path_to = f'{args["output_folder"]}/{experiment}/{settings_file_name}'
 
         resolved_file, _, _ = uriReader(settings_file_path_from)
-        print('Saving settings to ' + Fore.BLUE + resolved_file + Style.RESET_ALL)
+        print('Saving settings to ' + Fore.BLUE + settings_file_path_to + Style.RESET_ALL)
         execute('cp ' + resolved_file + ' ' + settings_file_path_to , verbose=False)
 
 
