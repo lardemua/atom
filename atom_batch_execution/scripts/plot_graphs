@@ -204,6 +204,9 @@ def main():
         grid        = plot_options['grid']
         markersizes = plot_options['markersizes']
         markers     = plot_options['markers']
+        xscale      = plot_options['xscale']
+        yscale      = plot_options['yscale']
+
 
         # Normalizing options to allow them to be defined as lists or individual str/int
         #Strs
@@ -243,12 +246,19 @@ def main():
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             plt.grid(grid)
+            plt.xscale(xscale)  # Set x-scale
+            plt.yscale(yscale)  # Set y-scale
             if legend is not None:
-                plt.legend()
+                plt.legend(prop={'size': 6})
         
         # Save figure in output folder
 
-        image_file_name = f'{title.replace(" ", "_")}.png'
+        image_file_name = f'{title.replace(" ", "_")}'
+        image_file_name = f'{image_file_name.replace("/", "_")}'
+        # Some characters like / are problematic in filenames
+        # image_file_name = ''.join(filter(lambda x : str.isalnum(x) or x == "_",image_file_name))
+        image_file_name = ''.join(filter(lambda x : x != "," and x != "\n",image_file_name))
+        image_file_name = f'{image_file_name}.png'
 
         if os.path.isfile(image_file_name) and not args['overwrite']:
             atomWarn(f'Plot with name {Fore.YELLOW}{image_file_name}{Style.RESET_ALL} found in {Fore.YELLOW}{args["output_folder"]}{Style.RESET_ALL}, not saving')

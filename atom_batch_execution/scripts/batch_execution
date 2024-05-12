@@ -133,13 +133,17 @@ def main():
     folds = list(folds)
 
     # Transforming indexes of collections into collection keys
-    fold_list = [[[collection_keys[element] for element in split] for split in fold] for fold in folds]
+    fold_list = [[[int(collection_keys[element]) for element in split] for split in fold] for fold in folds]
 
     # Dataset is no longer needed
     del dataset
 
     # Add folds to data
     data['folds'] = fold_list
+
+    # Add dataset dirname to data
+    dataset_dirname = os.path.dirname(data["dataset_path"])
+    data["dataset_dirname"] = dataset_dirname
 
     # Template engine1 setup
     file_loader = FileSystemLoader(os.path.dirname(args['template_filename']))
