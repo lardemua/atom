@@ -14,12 +14,19 @@ Z is the transformation from the gripper/flange/end-effector to the camera
 """
 
 import argparse
+from copy import deepcopy
+from colorama import Fore
 import numpy as np
 import cv2
+from prettytable import PrettyTable
+import tf
 
-from atom_core.dataset_io import loadResultsJSON
+from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON
 from atom_core.atom import getTransform
 from atom_core.geometry import traslationRodriguesToTransform
+from atom_core.naming import generateKey
+from atom_core.transformations import compareTransforms
+from atom_core.utilities import compareAtomTransforms
 
 def getPatternConfig(dataset, pattern):
     # Pattern configs
@@ -123,6 +130,8 @@ def main():
     ap.add_argument("-hl", "--hand_link", type=str, required=False, default="flange", help="Name of the hand link frame.")
     ap.add_argument("-c", "--camera", help="Camera sensor name.", type=str, required=True)
     ap.add_argument("-p", "--pattern", help="Pattern to be used for calibration.", type=str, required=True)
+    ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False, help="Remove any collection which does not have a detection for all sensors.", )
+    ap.add_argument("-ctgt", "--compare_to_ground_truth", action="store_true", help="If the system being calibrated is simulated, directly compare the TFs to the ground truth.")
     
     args = vars(ap.parse_args())
 
@@ -135,6 +144,18 @@ def main():
 
     # Read dataset file
     dataset, json_file = loadResultsJSON(json_file, collection_selection_function)
+    args['remove_partial_detections'] = True
+    dataset = filterCollectionsFromDataset(dataset, args)
+    
+    dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
+    dataset_initial = deepcopy(dataset)  # store initial values
+
+    # ---------------------------------------
+    # --- Define selected collection key.
+    # ---------------------------------------
+    # We only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
+    selected_collection_key = list(dataset["collections"].keys())[0]
+    print("Selected collection key is " + str(selected_collection_key))
 
 
     ########################################
@@ -150,40 +171,7 @@ def main():
     # Get pattern configuration from the dataset, also needed to calulate B
     
     nx, ny, square, inner_square, objp = getPatternConfig(dataset=dataset, pattern=pattern)
-   
-    # Remove partial detections (OpenCV does not support them)
-    collections_to_delete = []
-
     number_of_corners = int(nx) * int(ny)
-    for collection_key, collection in dataset['collections'].items():
-        for sensor_key, sensor in dataset['sensors'].items():
-            if sensor_key != camera:
-                continue
-            
-            if sensor['msg_type'] == 'Image' and collection['labels'][pattern][sensor_key]['detected']:
-                if not len(collection['labels'][pattern][sensor_key]['idxs']) == number_of_corners:
-                    print(
-                        Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
-                        collection_key + ', sensor ' + sensor_key)
-
-                    collections_to_delete.append(collection_key)
-                    break
-
-    for collection_key in collections_to_delete:
-        del dataset['collections'][collection_key]
-
-    # Remove collections which do not have a pattern detection
-    collections_to_delete = []
-    for collection_key, collection in dataset['collections'].items():
-        if not collection['labels'][pattern][args['camera']]['detected']:
-            print('Collection ' + collection_key + ' pattern not detected on camera. Removing...')
-            collections_to_delete.append(collection_key)
-
-    for collection_key in collections_to_delete:
-        del dataset['collections'][collection_key]
-
-    print('\nUsing ' + str(len(dataset['collections'])) + ' collections.')
-
 
     ########################################
     # GET A and B matrices to solve AX=ZB #
@@ -226,12 +214,94 @@ def main():
         tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
 
         # B is the inverse of pattern2opticalframe
-
         B = np.linalg.inv(tf_pattern2opticalframe)
         
         BB.append(B)
+        # BB.append(tf_pattern2opticalframe)
 
-    X,Y = li_calib(AA,BB)
+    # X is the base to pattern tf (b_T_p) and Z is the hand to camera tf (h_T_c)
+    b_T_p, h_T_c = li_calib(AA,BB)
+
+    # Extract the transformation marked for calibration which is the
+    # cp_T_cc, where cp (calibration parent) and cc (calibration child).
+    # So we need to get cp_T_cc from the estimated b_T_c.
+    # We use the following:
+    # h_T_c = h_T_cp * cp_T_cc * cc_T_c
+    # <=> cp_T_cc =  cp_T_h * h_T_c * c_T_cc
+
+
+    calibration_parent = dataset['calibration_config']['sensors'][args['camera']]['parent_link']
+    calibration_child = dataset['calibration_config']['sensors'][args['camera']]['child_link']
+
+    cp_T_h = getTransform(from_frame=calibration_parent,
+                          to_frame=args['hand_link'],
+                          transforms=dataset['collections'][selected_collection_key]['transforms'])
+
+    c_T_cc = getTransform(from_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+                          to_frame=calibration_child,
+                          transforms=dataset['collections'][selected_collection_key]['transforms'])
+
+    cp_T_cc = cp_T_h @ h_T_c @ c_T_cc
+
+    print(cp_T_cc)
+
+    # Save to dataset
+    # Since the transformation cp_T_cc is static we will save the same transform to all collections
+    frame_key = generateKey(calibration_parent, calibration_child)
+
+    quat = tf.transformations.quaternion_from_matrix(cp_T_cc)
+    trans = cp_T_cc[0:3, 3].tolist()
+    for collection_key, collection in dataset['collections'].items():
+        dataset['collections'][collection_key]['transforms'][frame_key]['quat'] = quat
+        dataset['collections'][collection_key]['transforms'][frame_key]['trans'] = trans
+
+    if args['compare_to_ground_truth']:
+
+        # --------------------------------------------------
+        # Compare h_T_c hand to camera transform to ground truth
+        # --------------------------------------------------
+        h_T_c_ground_truth = getTransform(from_frame=args['hand_link'],
+                                          to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+                                          transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
+        print(Fore.GREEN + 'Ground Truth h_T_c=\n' + str(h_T_c_ground_truth))
+
+        print('estimated h_T_c=\n' + str(h_T_c))
+
+        translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
+            h_T_c, h_T_c_ground_truth)
+        print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
+        print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
+
+        # --------------------------------------------------
+        # Compare cp_T_cc calibration_parent_T_calibration_child to ground truth
+        # --------------------------------------------------
+        for sensor_key, sensor in dataset["sensors"].items():
+            header = ['Transform', 'Description', 'Et0 [m]',
+                      'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
+            table = PrettyTable(header)
+
+            transform_key = generateKey(
+                sensor["calibration_parent"], sensor["calibration_child"])
+            row = [transform_key, Fore.BLUE + sensor_key]
+
+            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+            transform_ground_truth = dataset_ground_truth['collections'][
+                selected_collection_key]['transforms'][transform_key]
+            transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+
+            translation_error_1, rotation_error_1 = compareAtomTransforms(
+                transform_initial, transform_ground_truth)
+            translation_error_2, rotation_error_2 = compareAtomTransforms(
+                transform_calibrated, transform_ground_truth)
+
+            row.append(round(translation_error_1, 6))
+            row.append(round(translation_error_2, 6))
+            row.append(round(rotation_error_1, 6))
+            row.append(round(rotation_error_2, 6))
+
+            table.add_row(row)
+            print(table)
+ 
 
 
 if __name__ == '__main__':
