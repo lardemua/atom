@@ -88,16 +88,20 @@ def li_calib(AA,BB):
     # The equivalent of the \ operator in MATsingular value decomposition ofLAB is the numpy linalg.solve function
     x = np.linalg.lstsq(A,b, rcond=None)
     x = x[0] # x[0] is all we need, as it is the array returned by matlab's "\""
-    print(x)
-        
+    
     # Get X
-    X = x[0:9].reshape((3,3)).T
+    X = x[0:9].reshape((3,3))
     [u,s,v] = np.linalg.svd(X)
+    s = np.array([[s[0], 0, 0],
+                  [0, s[1], 0],
+                  [0, 0, s[2]]])
+    v = v.T
     X = u @ v.T
     if (np.linalg.det(X) < 0):
         X = u @ np.diag([1,1,-1]) @ v.T
-    X = np.append(X, x[21:24], axis=1)
+    X = np.append(X, x[18:21], axis=1)
     X = np.append(X, np.array([[0,0,0,1]]), axis=0)
+    print(X)
 
     # Get Y
     Y = x[9:18].reshape((3,3)).T
