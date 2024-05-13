@@ -220,18 +220,8 @@ def main():
 
         tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
 
-        # TODO: Remove these comments once everything's working
-        ### Turns out we probably don't need to invert B (the translation in the TF looks "fixed" now)
-        # # B is the inverse of pattern2opticalframe
-        # B = np.linalg.inv(tf_pattern2opticalframe)
-        # print(B)
-
         BB.append(tf_pattern2opticalframe)
-        # BB.append(tf_pattern2opticalframe)
 
-    # # Check if this makes sense
-    # print('c_T_p (coll. 0) = ')
-    # print(B[0])
 
     # X is the base to pattern tf (b_T_p) and Z is the hand to camera tf (h_T_c)
     b_T_p, h_T_c = li_calib(AA,BB)
@@ -242,7 +232,6 @@ def main():
     # We use the following:
     # h_T_c = h_T_cp * cp_T_cc * cc_T_c
     # <=> cp_T_cc =  cp_T_h * h_T_c * c_T_cc
-
 
     calibration_parent = dataset['calibration_config']['sensors'][args['camera']]['parent_link']
     calibration_child = dataset['calibration_config']['sensors'][args['camera']]['child_link']
@@ -256,8 +245,6 @@ def main():
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
     cp_T_cc = cp_T_h @ h_T_c @ c_T_cc
-
-    print(cp_T_cc)
 
     # Save to dataset
     # Since the transformation cp_T_cc is static we will save the same transform to all collections
