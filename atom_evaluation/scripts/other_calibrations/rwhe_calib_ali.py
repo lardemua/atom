@@ -10,7 +10,6 @@ B is the transformation from the camera to the pattern/target (in the paper, thi
 
 X is the transformation from the base of the robot to the pattern;
 Z is the transformation from the gripper/flange/end-effector to the camera
-
 """
 
 import argparse
@@ -20,6 +19,7 @@ import numpy as np
 import cv2
 from prettytable import PrettyTable
 import tf
+import math
 
 from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON
 from atom_core.atom import getTransform
@@ -69,7 +69,6 @@ def li_calib(AA,BB):
     for i in range(n):
         BB_2d[:, 4*i:4*i+4] = BB[i]
     
-
     A = np.zeros((12*n, 24))
     b = np.zeros((12*n, 1))
     for i in range(1,n+1):
@@ -213,11 +212,16 @@ def main():
 
         tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
 
-        # B is the inverse of pattern2opticalframe
-        B = np.linalg.inv(tf_pattern2opticalframe)
-        
-        BB.append(B)
+        # # B is the inverse of pattern2opticalframe
+        # B = np.linalg.inv(tf_pattern2opticalframe)
+        # print(B)
+
+        BB.append(tf_pattern2opticalframe)
         # BB.append(tf_pattern2opticalframe)
+
+    # # Check if this makes sense
+    # print('c_T_p (coll. 0) = ')
+    # print(B[0])
 
     # X is the base to pattern tf (b_T_p) and Z is the hand to camera tf (h_T_c)
     b_T_p, h_T_c = li_calib(AA,BB)
