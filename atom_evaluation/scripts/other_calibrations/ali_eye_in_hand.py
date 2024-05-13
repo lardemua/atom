@@ -88,7 +88,8 @@ def li_calib(AA,BB):
     # The equivalent of the \ operator in MATsingular value decomposition ofLAB is the numpy linalg.solve function
     x = np.linalg.lstsq(A,b, rcond=None)
     x = x[0] # x[0] is all we need, as it is the array returned by matlab's "\""
-    
+    print(x)
+        
     # Get X
     X = x[0:9].reshape((3,3)).T
     [u,s,v] = np.linalg.svd(X)
@@ -212,6 +213,8 @@ def main():
 
         tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
 
+        # TODO: Remove these comments once everything's working
+        ### Turns out we probably don't need to invert B (the translation in the TF looks "fixed" now)
         # # B is the inverse of pattern2opticalframe
         # B = np.linalg.inv(tf_pattern2opticalframe)
         # print(B)
