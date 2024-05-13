@@ -101,11 +101,14 @@ def li_calib(AA,BB):
         X = u @ np.diag([1,1,-1]) @ v.T
     X = np.append(X, x[18:21], axis=1)
     X = np.append(X, np.array([[0,0,0,1]]), axis=0)
-    print(X)
 
     # Get Y
-    Y = x[9:18].reshape((3,3)).T
+    Y = x[9:18].reshape((3,3))
     [u,s,v] = np.linalg.svd(Y)
+    s = np.array([[s[0], 0, 0],
+                  [0, s[1], 0],
+                  [0, 0, s[2]]])
+    v = v.T
     Y = u @ v.T
     if (np.linalg.det(Y) < 0):
         Y = u @ np.diag([1,1,-1]) @ v.T
