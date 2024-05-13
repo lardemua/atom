@@ -22,7 +22,7 @@ import tf
 import math
 
 from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON
-from atom_core.atom import getTransform
+from atom_core.atom import getTransform, getChain
 from atom_core.geometry import traslationRodriguesToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
@@ -163,6 +163,44 @@ def main():
     # We only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
     selected_collection_key = list(dataset["collections"].keys())[0]
     print("Selected collection key is " + str(selected_collection_key))
+
+    # ---------------------------------------
+    # Verifications
+    # ---------------------------------------
+
+    # Check that the camera has rgb modality
+    if not dataset['sensors'][args['camera']]['modality'] == 'rgb':
+        atomError('Sensor ' + args['camera'] + ' is not of rgb modality.')
+
+    # Check the given hand link is in the chain from base to camera
+    chain = getChain(from_frame=args['base_link'],
+                     to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+                     transform_pool=dataset['collections'][selected_collection_key]['transforms'])
+
+    hand_frame_in_chain = False
+    for transform in chain:
+
+        if args['hand_link'] == transform['parent'] or args['hand_link'] == transform['child']:
+            hand_frame_in_chain = True
+
+    if not hand_frame_in_chain:
+        atomError('Selected hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
+                  ' does not belong to the chain from base ' + Fore.BLUE + args['base_link'] +
+                  Style.RESET_ALL + ' to the camera ' +
+                  dataset['calibration_config']['sensors'][args['camera']]['link'])
+
+    # Check the hand to camera chain is composed only of fixed transforms
+    chain = getChain(from_frame=args['hand_link'],
+                     to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+                     transform_pool=dataset['collections'][selected_collection_key]['transforms'])
+
+    for transform in chain:
+        if not dataset['transforms'][transform['key']]['type'] == 'fixed':
+            atomError('Chain from hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
+                      ' to camera link ' + Fore.BLUE +
+                      dataset['calibration_config']['sensors'][args['camera']]['link'] +
+                      Style.RESET_ALL + ' contains non fixed transform ' + Fore.RED +
+                      transform['key'] + Style.RESET_ALL + '. Cannot calibrate.')
 
 
     ########################################
