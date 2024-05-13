@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Implementation of an ATOM-compatible alternative calibration method described by Li et. al originally written in MATLAB. Original repo: https://github.com/ihtishamaliktk/RWHE-Calib
+Implementation of an ATOM-compatible alternative calibration method described by Li et. al and implemented in: https://github.com/ihtishamaliktk/RWHE-Calib
 
 This method solves the Robot-World/Hand-Eye calibration problem, with the formulation: AX = ZB, where:
 
