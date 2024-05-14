@@ -272,11 +272,12 @@ def main():
 
         tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
 
-        BB.append(tf_pattern2opticalframe)
+        B = np.linalg.inv(tf_pattern2opticalframe) # Need to invert in the case of eye-to-hand 
+        BB.append(B)
 
 
-    # X is the base to pattern tf (b_T_p) and Z is the hand to camera tf (h_T_c)
-    b_T_p, h_T_c = li_calib(AA,BB)
+    # Z is the base to camera tf (b_T_c)
+    b_T_c, h_T_p = li_calib(AA,BB)
 
     # Extract the transformation marked for calibration which is the
     # cp_T_cc, where cp (calibration parent) and cc (calibration child).
@@ -288,15 +289,15 @@ def main():
     calibration_parent = dataset['calibration_config']['sensors'][args['camera']]['parent_link']
     calibration_child = dataset['calibration_config']['sensors'][args['camera']]['child_link']
 
-    cp_T_h = getTransform(from_frame=calibration_parent,
-                          to_frame=args['hand_link'],
+    cp_T_b = getTransform(from_frame=calibration_parent,
+                          to_frame=args['base_link'],
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
     c_T_cc = getTransform(from_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                           to_frame=calibration_child,
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
-    cp_T_cc = cp_T_h @ h_T_c @ c_T_cc
+    cp_T_cc = cp_T_b @ b_T_c @ c_T_cc
 
     # Save to dataset
     # Since the transformation cp_T_cc is static we will save the same transform to all collections
@@ -313,15 +314,15 @@ def main():
         # --------------------------------------------------
         # Compare h_T_c hand to camera transform to ground truth
         # --------------------------------------------------
-        h_T_c_ground_truth = getTransform(from_frame=args['hand_link'],
+        b_T_c_ground_truth = getTransform(from_frame=args['base_link'],
                                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                                           transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
-        print(Fore.GREEN + 'Ground Truth h_T_c=\n' + str(h_T_c_ground_truth))
+        print(Fore.GREEN + 'Ground Truth b_T_c=\n' + str(b_T_c_ground_truth))
 
-        print('estimated h_T_c=\n' + str(h_T_c))
+        print('estimated b_T_c=\n' + str(b_T_c))
 
         translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
-            h_T_c, h_T_c_ground_truth)
+            b_T_c, b_T_c_ground_truth)
         print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
         print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
 
