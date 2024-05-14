@@ -96,8 +96,8 @@ def compareAtomTransforms(transform_1, transform_2):
     # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
     # rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
 
-    print('translation error = ' + str(translation_error))
-    print('rotation error = ' + str(rotation_error))
+    # print('translation error = ' + str(translation_error))
+    # print('rotation error = ' + str(rotation_error))
 
     return translation_error, rotation_error
 
@@ -165,9 +165,9 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
     # --------------------------------------------------
     # Evaluate sensor poses
     # --------------------------------------------------
+    header = ['Transform', 'Description', 'Et0 [m]', 'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
+    table = PrettyTable(header)
     for sensor_key, sensor in dataset["sensors"].items():
-        header = ['Transform', 'Description', 'Et0 [m]', 'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
-        table = PrettyTable(header)
 
         transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
         row = [transform_key, Fore.BLUE + sensor_key + Style.RESET_ALL]
