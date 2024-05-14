@@ -331,14 +331,14 @@ def main():
         # --------------------------------------------------
         h_T_c_ground_truth = getTransform(from_frame=args['hand_link'],
                                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
-                                          transforms=dataset['collections'][selected_collection_key]['transforms'])
+                                          transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
         print(Fore.GREEN + 'Ground Truth h_T_c=\n' + str(h_T_c_ground_truth))
 
         print('estimated h_T_c=\n' + str(h_T_c))
 
         translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
             h_T_c, h_T_c_ground_truth)
-        print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (m)')
+        print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
         print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
 
         # --------------------------------------------------
