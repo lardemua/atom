@@ -144,7 +144,11 @@ def main():
             # nightmare to work with
             # Get y data
             for name in x_data_files_names:
-                file_path_to_get_data_fom = glob.glob(f'{args["results_folder"]}/{name}/{plot_line["ydata"]["file"]}')[0]
+                try:
+                    file_path_to_get_data_fom = glob.glob(f'{args["results_folder"]}/{name}/{plot_line["ydata"]["file"]}')[0]
+                except:
+                    atomError(f"Experiment {x_data_files_names} doesn't have data file {plot_line['ydata']['file']}")
+                    exit()
                 # Method with pandas, not working
                 # df = df.T
                 # df.drop(0)
@@ -206,6 +210,8 @@ def main():
         markers     = plot_options['markers']
         xscale      = plot_options['xscale']
         yscale      = plot_options['yscale']
+        xlim        = plot_options.get('xlim')
+        ylim        = plot_options.get('ylim')
 
 
         # Normalizing options to allow them to be defined as lists or individual str/int
@@ -237,7 +243,7 @@ def main():
 
             x_values = plot_line['x_values']
             y_values = plot_line['y_values']
-            legend   = plot_line['legend'] if plot_line['legend'] else None
+            legend   = plot_line.get('legend')
 
             # Plotting
             plt.plot(x_values, y_values, color=colors[idx], linestyle=linestyles[idx], linewidth=linewidths[idx],
@@ -250,6 +256,12 @@ def main():
             plt.yscale(yscale)  # Set y-scale
             if legend is not None:
                 plt.legend(prop={'size': 6})
+
+            if xlim:
+                plt.xlim(xlim)
+
+            if ylim:
+                plt.ylim(ylim)
         
         # Save figure in output folder
 
@@ -268,6 +280,8 @@ def main():
 
         if args["show_plots"]:
             plt.show()
+
+        plt.close()
 
     # Getting back to cwd, to prevent confusion if this script is further modified
     os.chdir(cwd)

@@ -138,6 +138,10 @@ def main():
     # Dataset is no longer needed
     del dataset
 
+    # Add dataset dirname to data
+    dataset_dirname = os.path.dirname(data["dataset_path"])
+    data["dataset_dirname"] = dataset_dirname
+
     # Add folds to data
     data['folds'] = fold_list
 
