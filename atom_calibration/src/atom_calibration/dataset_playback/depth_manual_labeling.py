@@ -89,7 +89,8 @@ def clickedPointsCallback(point_msg, clicked_points, dataset, sensor_key, select
 
             idxs_to_remove.reverse()
             for idx in idxs_to_remove:
-                del dataset['collections'][collection_key]['labels'][sensor_key]['idxs_limit_points'][idx]
+                for pattern_key in dataset['calibration_config']['calibration_patterns'].keys():
+                    del dataset['collections'][collection_key]['labels'][pattern_key][sensor_key]['idxs_limit_points'][idx]
 
             clicked_points[collection_key][sensor_key]['valid_polygon'] = True
 
