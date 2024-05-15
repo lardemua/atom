@@ -573,7 +573,7 @@ class DataCollector:
                         labels_dict['idxs'].append(idx)
 
                     for idx_limit_point in pattern_label.idxs_limit_points:
-                        labels_dict['idxs_limit_points'].append(idx)
+                        labels_dict['idxs_limit_points'].append(idx_limit_point)
 
                     all_sensor_labels_dict[pattern_key][sensor_key] = labels_dict
 
