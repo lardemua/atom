@@ -1,0 +1,480 @@
+#!/usr/bin/env python3
+
+"""
+Handeye calibration from opencv. Eye in hand variant.
+"""
+
+# -------------------------------------------------------------------------------
+# --- IMPORTS
+# -------------------------------------------------------------------------------
+
+from functools import partial
+import getpass
+import json
+import math
+import os
+import stat
+import time
+from typing import OrderedDict
+import cv2
+from matplotlib import cm
+import numpy as np
+import argparse
+from atom_calibration.calibration.objective_function import getPointsInSensorAsNPArray
+from atom_core.atom import getTransform
+from atom_core.geometry import traslationRodriguesToTransform
+from atom_core.optimization_utils import Optimizer
+from copy import deepcopy
+from colorama import Fore, Style, init as colorama_init
+import open3d as o3d
+from scipy.spatial.transform import Rotation
+import pprint
+
+from atom_core.dataset_io import createJSONFile, filterCollectionsFromDataset, loadResultsJSON
+from atom_core.utilities import assertSensorModality, atomError, createLambdaExpressionsForArgs
+
+pp = pprint.PrettyPrinter(indent=2)
+colorama_init(autoreset=True)
+np.set_printoptions(precision=3, suppress=True)
+
+
+view = {
+    "class_name": "ViewTrajectory", "interval": 29, "is_loop": False,
+    "trajectory":
+    [{"boundingbox_max": [1.4881374835968018, 1.0, 1.0],
+      "boundingbox_min": [-0.059999999999999998, -0.83004301786422729, -0.40193906426429749],
+      "field_of_view": 60.0,
+      "front": [-0.95711769604701769, 0.0051956268381449571, 0.28965275999963758],
+      "lookat": [0.72128191884594961, -0.50680060371821634, 0.18311132966112323],
+      "up": [0.28882815786397104, -0.060368480020593036, 0.95547576727246641],
+      "zoom": 0.61999999999999988}],
+    "version_major": 1, "version_minor": 0}
+
+
+# -------------------------------------------------------------------------------
+#  FUNCTIONS
+# -------------------------------------------------------------------------------
+
+def fitLine(points):
+
+    # Perform principal component analysis (PCA) to get the direction of the line
+    covariance_matrix = np.cov(points.T)
+    eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+    line_direction = eigenvectors[:, np.argmax(eigenvalues)]
+
+    return line_direction
+
+
+def fitPlaneLTSQ(XYZ):
+    (rows, cols) = XYZ.shape
+    G = np.ones((rows, 3))
+    G[:, 0] = XYZ[:, 0]  # X
+    G[:, 1] = XYZ[:, 1]  # Y
+    Z = XYZ[:, 2]
+    (a, b, c), resid, rank, s = np.linalg.lstsq(G, Z, rcond=None)
+    normal = (a, b, -1)
+    nn = np.linalg.norm(normal)
+    normal = normal / nn
+    return (c, normal)
+
+
+def normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0:
+        return v
+    else:
+        return v / norm
+
+
+def projectPointToPlane(point, A, B, C, D):
+
+    # Normal vector of the plane
+    normal_vector = np.array([A, B, C])
+
+    # Projection of the point onto the plane
+    t = -(A * point[0] + B * point[1] + C * point[2] + D) / (A**2 + B**2 + C**2)
+    projected_point = point + t * normal_vector
+
+    return projected_point
+
+
+def intersectLines(point1, direction1, point2, direction2):
+    x1, y1, z1 = point1
+    a1, b1, c1 = direction1
+    x2, y2, z2 = point2
+    a2, b2, c2 = direction2
+
+    # Check if lines are parallel
+    if abs(a1 * b2 - a2 * b1) < 1e-10 and abs(a1 * c2 - a2 * c1) < 1e-10 and abs(b1 * c2 - b2 * c1) < 1e-10:
+        print("Lines are parallel, no intersection point exists.")
+        return None
+
+    # Solve for parameter t
+    t = ((x2 - x1) * b2 - (y2 - y1) * a2) / (a1 * b2 - a2 * b1)
+
+    # Compute intersection point
+    x = x1 + a1 * t
+    y = y1 + b1 * t
+    z = z1 + c1 * t
+
+    return (x, y, z)
+
+
+def estimatePlane(points):
+    """
+    Points is a 3xn numpy array
+    """
+
+    # Fit a plane to the points defined in the camera frame
+    C, nz = fitPlaneLTSQ(points.transpose())
+    nz = normalize(nz)
+
+    # compute centroid
+    x0, y0, z0 = np.mean(points, axis=1)
+
+    # Get plane equation
+    A, B, C = nz[0], nz[1], nz[2]
+    D = -A * x0 - B * y0 - C * z0
+
+    # Compute transform lidar_T_plane
+    #      nx   ny   nz   t
+    # T = [nx1  ny1  nz1  tx]
+    # T = [nx2  ny2  nz2  ty]
+    # T = [nx3  ny3  nz3  tz]
+    # T = [  0    0    0   1]
+
+    # nx vector is arbitrary. Lets use the center point and
+    # find another point that belongs to the plane
+    x1 = x0 + 1  # arbitrary
+    y1 = y0
+    z1 = -(A * x1 + B * y1 + D) / C  # compute
+    nx = np.asarray([x1 - x0, y1 - y0, z1 - z0])
+    nx = normalize(nx)
+
+    # ny vector is obtained from the cross product nz x nx
+    ny = np.cross(nz, nx)
+    ny = normalize(ny)
+
+    # Compute camera_T_plane transform
+    T = np.eye(4)
+    T[0:3, 0] = nx
+    T[0:3, 1] = ny
+    T[0:3, 2] = nz
+    T[0:3, 3] = [x0, y0, z0]  # translation
+    # print("T = \n" + str(lidar_T_plane))
+
+    return A, B, C, D, T
+
+
+def callbackNext(vis, status, annotation_file, annotations):
+    print('Saving annotations ...')
+    createJSONFile(annotation_file, annotations)
+
+    collection_key_idx = status['collection_keys'].index(status['collection_key'])
+    if collection_key_idx < len(status['collection_keys']) - 1:
+        collection_key_idx += 1
+        status['collection_key'] = status['collection_keys'][collection_key_idx]
+    else:
+        print(Fore.YELLOW + 'This is the last collection.' + Style.RESET_ALL)
+
+    print('Moved to collection ' + Fore.GREEN + status['collection_key'])
+    vis.close()
+
+
+def callbackPrevious(vis, status, annotation_file, annotations):
+    print('Saving annotations ...')
+    createJSONFile(annotation_file, annotations)
+
+    collection_key_idx = status['collection_keys'].index(status['collection_key'])
+    if collection_key_idx > 0:
+        collection_key_idx -= 1
+        status['collection_key'] = status['collection_keys'][collection_key_idx]
+    else:
+        print(Fore.YELLOW + 'This is the first collection.' + Style.RESET_ALL)
+
+    print('Moved to collection ' + Fore.GREEN + status['collection_key'])
+    vis.close()
+
+
+def callbackPickPoints(vis, status, side):
+    print('callbackPickPoints called')
+    print('callbackPickPoints setting side ' + side)
+    status['pick_pts_side'] = side
+    vis.close()
+
+
+def callbackQuit(vis):
+    print('You pressed q. Quitting')
+    exit(0)
+
+
+def callbackQuit(vis):
+    print('You pressed q. Quitting')
+    exit(0)
+
+
+def main():
+
+    # ---------------------------------------
+    # Command line arguments
+    # ---------------------------------------
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-d", "--dataset_file", type=str, required=True,
+                    help="Json file containing train input dataset.")
+    ap.add_argument("-s", "--sensor", type=str, required=True, help="Lidar sensor name.")
+    ap.add_argument("-p", "--pattern", type=str, required=True,
+                    help="Pattern to be used for calibration.")
+
+    # these args have the selection functions as strings
+    args_original = vars(ap.parse_args())
+    # selection functions are now lambdas
+
+    args = createLambdaExpressionsForArgs(args_original)
+
+    # ---------------------------------------
+    # Dataset loading and preprocessing
+    # ---------------------------------------
+    dataset, _ = loadResultsJSON(args["dataset_file"])
+
+    # ---------------------------------------
+    # Verifications
+    # ---------------------------------------
+    # Check that the sensor has lidar modality
+    assertSensorModality(dataset, args['sensor'], 'lidar3d')
+
+    # ----------------------------------------------------
+    # Load annotations
+    # ----------------------------------------------------
+    sides = ['top', 'right', 'bottom', 'left']
+    side_colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0)]
+
+    annotation_file = os.path.dirname(args['dataset_file']) + "/annotation_" + \
+        args['sensor'] + ".json"
+    if os.path.exists(annotation_file):
+        print('Found anotation file at ' + annotation_file + ' ... loading.')
+        f = open(annotation_file, 'r')
+        annotations = json.load(f)
+
+        if not annotations['_metadata']['version'] == '2.0':
+            print(Fore.RED +
+                  'This annotations file does not have the correct version. Exiting.' +
+                  Style.RESET_ALL)
+
+    else:
+        annotations = {}
+
+    # ----------------------------------------------------
+    # Verify annotations
+    # ----------------------------------------------------
+    if not '_metadata' in annotations:
+        annotations['_metadata'] = {"timestamp": str(time.time()),
+                                    "date": time.ctime(time.time()),
+                                    "user": getpass.getuser(),
+                                    'version': '2.0'}
+
+    for collection_key, collection in dataset["collections"].items():
+        if collection_key not in annotations:  # Create collection_key if they do not exist.
+            annotations[collection_key] = {'intersections': {}}
+
+    # ----------------------------------------------------
+    # Annotation loop
+    # ----------------------------------------------------
+    od = OrderedDict(sorted(dataset['collections'].items(), key=lambda t: int(t[0])))
+    collection_keys = list(od.keys())
+    collection_key = collection_keys[0]
+    status = {'collection_key': collection_key, 'collection_keys': collection_keys,
+              'redraw': False, 'pick_pts_side': None}
+
+    while True:  # loop to iterate collections
+
+        pp.pprint(status)
+        collection_key = status['collection_key']
+
+        # Get the 3D LiDAR labelled points for the given collection
+        points_in_lidar = getPointsInSensorAsNPArray(collection_key, args["pattern"],
+                                                     args["sensor"], "idxs", dataset)
+        points_in_lidar = points_in_lidar[0:3, :]  # remove homogeneous coordinate
+
+        if not 'plane' in annotations[collection_key].keys():
+            A, B, C, D, T = estimatePlane(points_in_lidar)
+            annotations[collection_key]['plane'] = {'A': A, 'B': B, 'C': C, 'D': D,
+                                                    'lidar_T_plane': T.tolist()}
+
+        # Project points to plane
+        points_in_lidar_proj = np.copy(points_in_lidar)
+        points_in_lidar_proj.fill(0)
+        for i in range(0, points_in_lidar.shape[1]):
+            pt = points_in_lidar[:, i]
+            pt_proj = projectPointToPlane(pt,
+                                          annotations[collection_key]['plane']['A'],
+                                          annotations[collection_key]['plane']['B'],
+                                          annotations[collection_key]['plane']['C'],
+                                          annotations[collection_key]['plane']['D'])
+            points_in_lidar_proj[:, i] = pt_proj
+
+        if status['pick_pts_side'] is not None:
+            # ----------------------------------------------------
+            # ATOM Lidar annotator Visualizer
+            # ----------------------------------------------------
+            side = status['pick_pts_side']
+            print('Annotating collection ' + collection_key + ', ' + side + ' side.')
+
+            annotations[collection_key][side] = {}
+
+            print('Please select at least two points from the ' + side + ' line.' +
+                  " [shift + left click]")
+            print("Press [shift + right click] to undo point picking")
+            print("After picking points, press 'Q' to close the window")
+
+            vis2 = o3d.visualization.VisualizerWithEditing()
+            vis2.create_window(window_name='ATOM Point picker', width=int(1920),
+                               height=700, left=0, top=0, visible=True)
+
+            vis2.clear_geometries()
+
+            pc_vis2 = o3d.geometry.PointCloud()
+            pc_vis2.points = o3d.utility.Vector3dVector(points_in_lidar.transpose())
+            # pc.paint_uniform_color((0.9, 0.9, 0.9))
+            vis2.add_geometry(pc_vis2)
+
+            vis2.run()  # user picks points
+
+            picked_pts_idxs = vis2.get_picked_points()
+
+            vis2.close()
+            status['pick_pts_side'] = None
+
+            picked_pts = points_in_lidar_proj[0:3, picked_pts_idxs]
+
+            # Get line from picked points
+            direction = fitLine(picked_pts.T)
+            direction = normalize(direction)
+
+            # Get one point in the line by computing the centroid
+            point = np.mean(picked_pts, axis=1)
+
+            # get two points for line segment
+            t = 0.75
+            start = point - t * direction
+            end = point + t * direction
+
+            # store information
+            annotations[collection_key][side] = {'picked_pts': picked_pts,
+                                                 'start': start.tolist(),
+                                                 'end': end.tolist(),
+                                                 'direction': direction.tolist()}
+
+        # Compute intersections
+        intersections = [('top', 'right'), ('right', 'bottom'), ('bottom', 'left'), ('left', 'top')]
+        for side1, side2 in intersections:
+            print('Computing intersection between ' + side1 + ' and ' + side2)
+
+            if not 'intersections' in annotations[collection_key]:
+                annotations[collection_key]['intersections'] = {}
+
+            if not side1 in annotations[collection_key] or not side2 in annotations[collection_key]:
+                print('Skipping')
+                continue
+
+            xi, yi, zi = intersectLines(annotations[collection_key][side1]['start'],
+                                        annotations[collection_key][side1]['direction'],
+                                        annotations[collection_key][side2]['start'],
+                                        annotations[collection_key][side2]['direction'])
+
+            key = side1 + '-' + side2
+
+            annotations[collection_key]['intersections'][key] = {'x': xi, 'y': yi, 'z': zi}
+
+        # ----------------------------------------------------
+        # ATOM Lidar annotator Visualizer
+        # ----------------------------------------------------
+
+        # Initialize visualizer
+        vis = o3d.visualization.VisualizerWithKeyCallback()
+        vis.create_window(window_name='ATOM Lidar Annotator', width=int(1920),
+                          height=700, left=0, top=0, visible=True)
+
+        # Check for pressed keys - Annotations
+        vis.register_key_callback(ord('.'), partial(callbackNext,  # dot
+                                                    status=status,
+                                                    annotation_file=annotation_file,
+                                                    annotations=annotations))
+
+        vis.register_key_callback(ord(','), partial(callbackPrevious,  # comma
+                                                    status=status,
+                                                    annotation_file=annotation_file,
+                                                    annotations=annotations))
+
+        vis.register_key_callback(ord("T"), partial(callbackPickPoints, status=status,
+                                                    side='top'))
+        vis.register_key_callback(ord("R"), partial(callbackPickPoints, status=status,
+                                                    side='right'))
+        vis.register_key_callback(ord("B"), partial(callbackPickPoints, status=status,
+                                                    side='bottom'))
+        vis.register_key_callback(ord("L"), partial(callbackPickPoints, status=status,
+                                                    side='left'))
+        vis.register_key_callback(ord("Q"), partial(callbackQuit))
+
+        vis.clear_geometries()
+
+        # Draw lidar points
+        pc = o3d.geometry.PointCloud()
+        pc.points = o3d.utility.Vector3dVector(points_in_lidar.transpose())
+        # pc.paint_uniform_color((0.9, 0.9, 0.9))
+        vis.add_geometry(pc)
+
+        # Draw projected lidar points
+        pc_proj = o3d.geometry.PointCloud()
+        pc_proj.points = o3d.utility.Vector3dVector(points_in_lidar_proj.transpose())
+        pc_proj.paint_uniform_color((0.4, 0.4, 0.4))
+        vis.add_geometry(pc_proj)
+
+        # Draw point cloud and local plane reference frame
+        lidar_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.2)
+        vis.add_geometry(lidar_frame)
+
+        plane_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+        plane_frame = plane_frame.transform(annotations[collection_key]['plane']['lidar_T_plane'])
+        vis.add_geometry(plane_frame)
+
+        for side, color in zip(sides, side_colors):
+            if not side in annotations[collection_key]:
+                continue
+
+            picked_pts = np.asarray(annotations[collection_key][side]['picked_pts'])
+            for i in range(0, picked_pts.shape[1]):
+                x, y, z = picked_pts[0:3, i]
+
+                sphere_mesh = o3d.geometry.TriangleMesh.create_sphere(radius=0.02)
+                sphere_mesh = sphere_mesh.translate((x, y, z))
+                sphere_mesh.paint_uniform_color(color)
+                vis.add_geometry(sphere_mesh)
+
+                line = o3d.geometry.LineSet(
+                    points=o3d.utility.Vector3dVector(
+                        [annotations[collection_key][side]['start'],
+                         annotations[collection_key][side]['end'],]),
+                    lines=o3d.utility.Vector2iVector([[0, 1]]))
+                vis.add_geometry(line)
+
+        # Draw intersections
+        for intersection_key, intersection in annotations[collection_key]['intersections'].items():
+            sphere_mesh = o3d.geometry.TriangleMesh.create_sphere(radius=0.04)
+            sphere_mesh = sphere_mesh.translate(
+                (intersection['x'], intersection['y'], intersection['z']))
+            sphere_mesh.paint_uniform_color((0.5, 0.5, 1))
+            vis.add_geometry(sphere_mesh)
+
+        pp.pprint(annotations)
+
+        print('Saving annotations ...')
+        createJSONFile(annotation_file, annotations)
+
+        vis.run()
+
+    pp.pprint(annotations)
+    createJSONFile(annotation_file, annotations)
+
+
+if __name__ == "__main__":
+    main()

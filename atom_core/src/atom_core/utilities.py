@@ -35,6 +35,17 @@ from atom_core.system import execute, removeColorsFromText
 # -------------------------------------------------------------------------------
 
 
+def assertSensorModality(dataset, sensor, modality):
+
+    if sensor not in dataset['sensors'].keys():
+        atomError('Sensor' + Fore.BLUE + sensor + Style.RESET_ALL + ' does not exist in the dataset')
+
+    if not dataset['sensors'][sensor]['modality'] == modality:
+        atomError('Sensor ' + Fore.BLUE + sensor + Style.RESET_ALL + ' has modality ' + Fore.GREEN +
+                  dataset['sensors'][sensor]['modality'] + Style.RESET_ALL + ' (it should be ' +
+                  Fore.GREEN + modality + Style.RESET_ALL + ')')
+
+
 def compareAtomTransforms(transform_1, transform_2):
     """Compares two different transformations and returns the following metrics:
     Args:
@@ -127,7 +138,8 @@ def addAveragesBottomRowToTable(table, header):
     return table
 
 
-def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth, selected_collection_key, output_folder):
+def printComparisonToGroundTruth(
+        dataset, dataset_initial, dataset_ground_truth, selected_collection_key, output_folder):
 
     # --------------------------------------------------
     # Evaluate sensor poses
@@ -139,12 +151,16 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
         transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
         row = [transform_key, Fore.BLUE + sensor_key + Style.RESET_ALL]
 
-        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
-        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
+            transform_key]
+        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key][
+            'transforms'][transform_key]
         transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
 
-        translation_error_1, rotation_error_1 = compareAtomTransforms(transform_initial, transform_ground_truth)
-        translation_error_2, rotation_error_2 = compareAtomTransforms(transform_calibrated, transform_ground_truth)
+        translation_error_1, rotation_error_1 = compareAtomTransforms(
+            transform_initial, transform_ground_truth)
+        translation_error_2, rotation_error_2 = compareAtomTransforms(
+            transform_calibrated, transform_ground_truth)
 
         row.append(getNumberQualifier(translation_error_1))
         row.append(getNumberQualifier(translation_error_2))
@@ -164,12 +180,17 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
             transform_key = generateKey(additional_tf["parent_link"], sensor["child_link"])
             row = [transform_key, Fore.LIGHTCYAN_EX + additional_tf_key + Style.RESET_ALL]
 
-            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
-            transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
-            transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
+                transform_key]
+            transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key][
+                'transforms'][transform_key]
+            transform_initial = dataset_initial['collections'][selected_collection_key][
+                'transforms'][transform_key]
 
-            translation_error_1, rotation_error_1 = compareAtomTransforms(transform_initial, transform_ground_truth)
-            translation_error_2, rotation_error_2 = compareAtomTransforms(transform_calibrated, transform_ground_truth)
+            translation_error_1, rotation_error_1 = compareAtomTransforms(
+                transform_initial, transform_ground_truth)
+            translation_error_2, rotation_error_2 = compareAtomTransforms(
+                transform_calibrated, transform_ground_truth)
 
             row.append(getNumberQualifier(translation_error_1))
             row.append(getNumberQualifier(translation_error_2))
@@ -188,18 +209,23 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
         transform_key = generateKey(pattern["parent_link"], pattern["link"])
         row = [transform_key, Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
 
-        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
+            transform_key]
 
-        if transform_key not in dataset_ground_truth['collections'][selected_collection_key]['transforms']:
+        if transform_key not in dataset_ground_truth['collections'][selected_collection_key][
+                'transforms']:
             atomWarn('Cannot print comparison to ground truth for pattern ' +
                      pattern_key + ' because there is no ground truth data.')
             continue
 
-        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['transforms'][transform_key]
+        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key][
+            'transforms'][transform_key]
         transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
 
-        translation_error_1, rotation_error_1 = compareAtomTransforms(transform_initial, transform_ground_truth)
-        translation_error_2, rotation_error_2 = compareAtomTransforms(transform_calibrated, transform_ground_truth)
+        translation_error_1, rotation_error_1 = compareAtomTransforms(
+            transform_initial, transform_ground_truth)
+        translation_error_2, rotation_error_2 = compareAtomTransforms(
+            transform_calibrated, transform_ground_truth)
 
         row.append(getNumberQualifier(translation_error_1))
         row.append(getNumberQualifier(translation_error_2))
@@ -211,11 +237,14 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
     table = addAveragesBottomRowToTable(table, header)
 
     print(Style.BRIGHT + '\nTransforms Calibration' + Style.RESET_ALL)
-    print('Et: average translation error (Et0 - initial) [m],  Erot: average rotation error (Erot0 - initial) [rad]')
-    print('Translation errors: ' + Fore.LIGHTGREEN_EX + '< 1 mm' + Fore.BLACK + ' | ' + Fore.GREEN + '< 1 cm' +
-          Fore.BLACK + ' | ' + Fore.YELLOW + '< 5 cm' + Fore.BLACK + ' | ' + Fore.RED + '>= 5 cm' + Style.RESET_ALL)
-    print('Rotation errors: ' + Fore.LIGHTGREEN_EX + '< 0.1 deg' + Fore.BLACK + ' | ' + Fore.GREEN + '< 0.5 deg' + Fore.BLACK + ' | ' +
-          Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
+    print(
+        'Et: average translation error (Et0 - initial) [m],  Erot: average rotation error (Erot0 - initial) [rad]')
+    print('Translation errors: ' + Fore.LIGHTGREEN_EX + '< 1 mm' + Fore.BLACK + ' | ' + Fore.GREEN +
+          '< 1 cm' + Fore.BLACK + ' | ' + Fore.YELLOW + '< 5 cm' + Fore.BLACK + ' | ' + Fore.RED +
+          '>= 5 cm' + Style.RESET_ALL)
+    print('Rotation errors: ' + Fore.LIGHTGREEN_EX + '< 0.1 deg' + Fore.BLACK + ' | ' + Fore.GREEN +
+          '< 0.5 deg' + Fore.BLACK + ' | ' + Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA +
+          '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
 
     print(table)
     filename = output_folder + '/comparison_to_ground_truth_transforms.csv'
@@ -235,14 +264,18 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
             for param in joint['params_to_calibrate']:
                 row = [joint_key, param]
 
-                value_calibrated = dataset['collections'][selected_collection_key]['joints'][joint_key][param]
-                value_ground_truth = dataset_ground_truth['collections'][selected_collection_key]['joints'][joint_key][param]
+                value_calibrated = dataset['collections'][selected_collection_key]['joints'][
+                    joint_key][param]
+                value_ground_truth = dataset_ground_truth['collections'][selected_collection_key][
+                    'joints'][joint_key][param]
                 value_initial = dataset_initial['collections'][selected_collection_key]['joints'][joint_key][param]
 
-                error_initial = getNumberQualifier(abs(value_ground_truth-value_initial), unit='rad')
+                error_initial = getNumberQualifier(
+                    abs(value_ground_truth-value_initial), unit='rad')
                 row.append(error_initial)
 
-                error_calibrated = getNumberQualifier(abs(value_ground_truth-value_calibrated), unit='rad')
+                error_calibrated = getNumberQualifier(
+                    abs(value_ground_truth-value_calibrated), unit='rad')
                 row.append(error_calibrated)
 
                 table.add_row(row)
@@ -251,10 +284,14 @@ def printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
         table = addAveragesBottomRowToTable(table, header)
 
         print(Style.BRIGHT + '\nJoints Calibration' + Style.RESET_ALL)
-        print('Translation errors: ' + Fore.LIGHTGREEN_EX + '< 1 mm' + Fore.BLACK + ' | ' + Fore.GREEN + '< 1 cm' +
-              Fore.BLACK + ' | ' + Fore.YELLOW + '< 5 cm' + Fore.BLACK + ' | ' + Fore.RED + '>= 5 cm' + Style.RESET_ALL)
-        print('Rotation errors: ' + Fore.LIGHTGREEN_EX + '< 0.1 deg' + Fore.BLACK + ' | ' + Fore.GREEN + '< 0.5 deg' + Fore.BLACK + ' | ' +
-              Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
+        print(
+            'Translation errors: ' + Fore.LIGHTGREEN_EX + '< 1 mm' + Fore.BLACK + ' | ' + Fore.GREEN +
+            '< 1 cm' + Fore.BLACK + ' | ' + Fore.YELLOW + '< 5 cm' + Fore.BLACK + ' | ' + Fore.RED +
+            '>= 5 cm' + Style.RESET_ALL)
+        print(
+            'Rotation errors: ' + Fore.LIGHTGREEN_EX + '< 0.1 deg' + Fore.BLACK + ' | ' + Fore.GREEN +
+            '< 0.5 deg' + Fore.BLACK + ' | ' + Fore.YELLOW + '< 1 deg' + Fore.BLACK + ' | ' + Fore.MAGENTA
+            + '< 3 deg' + Fore.BLACK + ' | ' + Fore.RED + '>= 3 deg' + Style.RESET_ALL)
 
         print(table)
 
@@ -354,11 +391,13 @@ def laser_scan_data_to_xy(data):
 
 
 def checkDirectoryExistence(directory, package_name, create_if_nonexistent=False):
-    package_path = rospkg.RosPack().get_path(package_name)  # full path to the package, including its name.
+    # full path to the package, including its name.
+    package_path = rospkg.RosPack().get_path(package_name)
 
     if not os.path.exists(package_path + '/' + directory):
         if create_if_nonexistent:
-            print(Fore.YELLOW + directory + Style.RESET_ALL + ' directory does not exist. Created a new one.')
+            print(Fore.YELLOW + directory + Style.RESET_ALL +
+                  ' directory does not exist. Created a new one.')
             execute('mkdir ' + package_path + '/' + directory)
             return True
         else:
@@ -428,7 +467,9 @@ def saveFileResults(train_json, test_json, results_name, table_to_save):
 
 
 def verifyFixedPattern(dataset, pattern_key):
-    print(f'Checking if calibration pattern {Fore.BLUE}{pattern_key}{Style.RESET_ALL} is fixed ...', end='')
+    print(
+        f'Checking if calibration pattern {Fore.BLUE}{pattern_key}{Style.RESET_ALL} is fixed ...',
+        end='')
 
     return dataset['calibration_config']['calibration_patterns'][pattern_key]['fixed']
 

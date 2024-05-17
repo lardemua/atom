@@ -26,7 +26,7 @@ from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, 
 from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
-from atom_core.utilities import atomError, compareAtomTransforms
+from atom_core.utilities import assertSensorModality, atomError, compareAtomTransforms
 
 colorama_init(autoreset=True)
 np.set_printoptions(precision=3, suppress=True)
@@ -42,8 +42,9 @@ def main():
     # Command line arguments
     # ---------------------------------------
     ap = argparse.ArgumentParser()
-    ap.add_argument("-json", "--json_file", help="Json file containing train input dataset.", type=str,
-                    required=True)
+    ap.add_argument(
+        "-json", "--json_file", help="Json file containing train input dataset.", type=str,
+        required=True)
     ap.add_argument("-c", "--camera", help="Camera sensor name.",
                     type=str, required=True)
     ap.add_argument("-p", "--pattern",
@@ -52,19 +53,23 @@ def main():
                     help="Name of coordinate frame of the hand.", type=str, required=True)
     ap.add_argument("-bl", "--base_link",
                     help="Name of coordinate frame of the robot's base.", type=str, required=True)
-    ap.add_argument("-ctgt", "--compare_to_ground_truth", action="store_true",
-                    help="If the system being calibrated is simulated, directly compare the TFs to the ground truth.")
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives a collection name as input and "
-                    "returns True or False to indicate if the collection should be loaded (and used in the "
-                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument(
+        "-ctgt", "--compare_to_ground_truth", action="store_true",
+        help="If the system being calibrated is simulated, directly compare the TFs to the ground truth.")
+    ap.add_argument(
+        "-csf", "--collection_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a collection name as input and "
+        "returns True or False to indicate if the collection should be loaded (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-si", "--show_images", action="store_true",
                     default=False, help="shows images for each camera")
-    ap.add_argument("-mn", "--method_name", required=False, default='tsai',
-                    help="Hand eye method. One of ['tsai', 'park', 'horaud', 'andreff', 'daniilidis'].", type=str)
+    ap.add_argument(
+        "-mn", "--method_name", required=False, default='tsai',
+        help="Hand eye method. One of ['tsai', 'park', 'horaud', 'andreff', 'daniilidis'].",
+        type=str)
 
     args = vars(ap.parse_args())
 
@@ -93,8 +98,7 @@ def main():
     # ---------------------------------------
 
     # Check that the camera has rgb modality
-    if not dataset['sensors'][args['camera']]['modality'] == 'rgb':
-        atomError('Sensor ' + args['camera'] + ' is not of rgb modality.')
+    assertSensorModality(dataset, args['camera'], 'rgb')
 
     available_methods = ['tsai', 'park', 'horaud', 'andreff', 'daniilidis']
     if args['method_name'] not in available_methods:
@@ -329,9 +333,11 @@ def main():
         # --------------------------------------------------
         # Compare h_T_c hand to camera transform to ground truth
         # --------------------------------------------------
-        h_T_c_ground_truth = getTransform(from_frame=args['hand_link'],
-                                          to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
-                                          transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
+        h_T_c_ground_truth = getTransform(
+            from_frame=args['hand_link'],
+            to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+            transforms=dataset_ground_truth['collections'][selected_collection_key]
+            ['transforms'])
         print(Fore.GREEN + 'Ground Truth h_T_c=\n' + str(h_T_c_ground_truth))
 
         print('estimated h_T_c=\n' + str(h_T_c))
@@ -353,10 +359,12 @@ def main():
                 sensor["calibration_parent"], sensor["calibration_child"])
             row = [transform_key, Fore.BLUE + sensor_key]
 
-            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][transform_key]
+            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
+                transform_key]
             transform_ground_truth = dataset_ground_truth['collections'][
                 selected_collection_key]['transforms'][transform_key]
-            transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+            transform_initial = dataset_initial['collections'][selected_collection_key][
+                'transforms'][transform_key]
 
             translation_error_1, rotation_error_1 = compareAtomTransforms(
                 transform_initial, transform_ground_truth)
