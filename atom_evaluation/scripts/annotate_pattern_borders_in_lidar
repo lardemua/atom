@@ -409,6 +409,7 @@ def runVisualizer(window_name, annotations, annotation_file,
         annotations[status['collection_key']]['plane']['lidar_T_plane'])
     vis.add_geometry(plane_frame)
 
+    # Draw annotations
     sides = ['top', 'right', 'bottom', 'left']
     side_colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0)]
     for side, color in zip(sides, side_colors):
