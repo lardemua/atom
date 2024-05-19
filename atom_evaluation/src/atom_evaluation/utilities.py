@@ -8,11 +8,14 @@ ATOM evaluation utilities
 
 import numpy as np
 import math
+from scipy.spatial.transform import Rotation as R
+
 from atom_core.atom import getTransform
 
 
-def atomicTfFromCalibration(dataset, anchored_sensor_key, other_sensor_key, calib_tf, anchored_additional_data=False,
-                            other_additional_data=False):
+def atomicTfFromCalibration(
+        dataset, anchored_sensor_key, other_sensor_key, calib_tf, anchored_additional_data=False,
+        other_additional_data=False):
     if anchored_additional_data:
         anchored_type = 'additional_data'
     else:
@@ -29,8 +32,10 @@ def atomicTfFromCalibration(dataset, anchored_sensor_key, other_sensor_key, cali
     world_link = dataset['calibration_config']['world_link']
     anchored_sensor_link = dataset['calibration_config'][anchored_type][anchored_sensor_key]['link']
     other_sensor_link = dataset['calibration_config'][other_type][other_sensor_key]['link']
-    other_sensor_child_link = dataset['calibration_config'][other_type][other_sensor_key]['child_link']
-    other_sensor_parent_link = dataset['calibration_config'][other_type][other_sensor_key]['parent_link']
+    other_sensor_child_link = dataset['calibration_config'][other_type][other_sensor_key][
+        'child_link']
+    other_sensor_parent_link = dataset['calibration_config'][other_type][other_sensor_key][
+        'parent_link']
 
     selected_collection_key = list(dataset['collections'].keys())[0]
     base2anchored = getTransform(world_link, anchored_sensor_link,
@@ -114,34 +119,89 @@ def random_quaternion(rand=None):
                      np.cos(t1) * r1, np.sin(t2) * r2])
 
 
-def averageTransforms(l_transforms):
-    N = len(l_transforms)
-    print("Computing the average of " + str(N) + " transforms")
+def averageTransforms(transforms):
+    """Averages a list of numpy 4x4 transfomrations.
+
+    Args:
+        transforms (list of np array 4x4): List of transformations.
+
+    Returns:
+        nparray 4x4: Averaged transform.
+    """
+
+    N = len(transforms)
+    # print("Computing the average of " + str(N) + " transforms")
+
+    # print('Transforms are:\n' + str(transforms))
 
     # Get a list of all the translations l_t
-    l_t = [i[0] for i in l_transforms]
+    translations = [i[0:3, 3] for i in transforms]
     # print(l_t)
 
     # compute the average translation
-    tmp1 = sum(v[0] for v in l_t) / N
-    tmp2 = sum(v[1] for v in l_t) / N
-    tmp3 = sum(v[2] for v in l_t) / N
-    avg_t = (tmp1, tmp2, tmp3)
+    tmp1 = sum(v[0] for v in translations) / N
+    tmp2 = sum(v[1] for v in translations) / N
+    tmp3 = sum(v[2] for v in translations) / N
+    average_translation = (tmp1, tmp2, tmp3)
 
     # Get a list of the rotation quaternions
-    l_q = [i[1] for i in l_transforms]
+    quaternions = []
+    for transform in transforms:
+        rot_np = transform[0:3, 0:3]
+        rot = R.from_matrix(rot_np.tolist())
+        quaternions.append(rot.as_quat())
 
     # Average the quaterions using an incremental slerp approach
     acc = 1.0  # accumulator, counts the number of observations inserted already
-    avg_q = random_quaternion()  # can be random for start, since it will not be used
-    for q in l_q:
+    average_quaternion = random_quaternion()  # can be random for start, since it will not be used
+    for q in quaternions:
         # How to deduce the ratio on each iteration
         # w_q = 1 / (acc + 1)
         # w_qavg = acc  / (acc + 1)
         # ratio = w_q / w_qavg <=> 1 / acc
-        avg_q = quaternion_slerp(avg_q, q, 1.0 / acc)  # run pairwise slerp
+        average_quaternion = quaternion_slerp(
+            average_quaternion, q, 1.0 / acc)  # run pairwise slerp
         acc = acc + 1  # increment acc
+    average_rot = R.from_quat(average_quaternion)
 
-    avg_q = tuple(avg_q)
+    # Compose the 4x4 average transform
+    average_transform = np.eye(4)
+    average_transform[0:3, 3] = average_translation
+    average_transform[0:3, 0:3] = average_rot.as_matrix()
 
-    return (avg_t, avg_q)
+    return average_transform
+
+
+# This function was already here but from my searches it is used nowhere in atom.
+# Changin to the format above which receives a list of np arrays
+# def averageTransforms(l_transforms):
+#     N = len(l_transforms)
+#     print("Computing the average of " + str(N) + " transforms")
+
+#     # Get a list of all the translations l_t
+#     l_t = [i[0] for i in l_transforms]
+#     # print(l_t)
+
+#     # compute the average translation
+#     tmp1 = sum(v[0] for v in l_t) / N
+#     tmp2 = sum(v[1] for v in l_t) / N
+#     tmp3 = sum(v[2] for v in l_t) / N
+#     avg_t = (tmp1, tmp2, tmp3)
+
+#     # Get a list of the rotation quaternions
+#     l_q = [i[1] for i in l_transforms]
+
+#     # Average the quaterions using an incremental slerp approach
+#     acc = 1.0  # accumulator, counts the number of observations inserted already
+#     avg_q = random_quaternion()  # can be random for start, since it will not be used
+#     for q in l_q:
+#         # How to deduce the ratio on each iteration
+#         # w_q = 1 / (acc + 1)
+#         # w_qavg = acc  / (acc + 1)
+#         # ratio = w_q / w_qavg <=> 1 / acc
+#         avg_q = quaternion_slerp(avg_q, q, 1.0 / acc)  # run pairwise slerp
+#         acc = acc + 1  # increment acc
+
+#     avg_q = tuple(avg_q)
+
+#     return (avg_t, avg_q)
