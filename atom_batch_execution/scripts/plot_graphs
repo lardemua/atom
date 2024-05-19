@@ -13,6 +13,7 @@ import csv
 
 from colorama import Fore, Style
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 from atom_core.utilities import atomWarn,atomError
 
@@ -200,6 +201,7 @@ def main():
         number_of_lines = len(plots_configs[plot_figure]['data'])
 
         title       = plot_options['title']
+        hide_title  = plot_options.get('hide_title',False)
         xlabel      = plot_options['xlabel']
         ylabel      = plot_options['ylabel']
         colors      = plot_options['colors']
@@ -212,7 +214,10 @@ def main():
         yscale      = plot_options['yscale']
         xlim        = plot_options.get('xlim')
         ylim        = plot_options.get('ylim')
+        custom_legend = plot_options.get('custom_legend',(None,None))
 
+        if all(custom_legend):
+            custom_legend = eval(plot_options.get('custom_legend'))
 
         # Normalizing options to allow them to be defined as lists or individual str/int
         #Strs
@@ -248,14 +253,21 @@ def main():
             # Plotting
             plt.plot(x_values, y_values, color=colors[idx], linestyle=linestyles[idx], linewidth=linewidths[idx],
                      markersize = linewidths[idx],marker = markers[idx],label = legend)
-            plt.title(title)
+            # Might want to be ommited to be replaced by a caption in papers
+            if not hide_title:
+                plt.title(title)
+
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             plt.grid(grid)
             plt.xscale(xscale)  # Set x-scale
             plt.yscale(yscale)  # Set y-scale
-            if legend is not None:
+            if legend is not None and all(custom_legend) is None:
                 plt.legend(prop={'size': 6})
+
+            if all(custom_legend):
+                plt.legend(custom_legend[0], custom_legend[1],prop={'size': 6})
+
 
             if xlim:
                 plt.xlim(xlim)
