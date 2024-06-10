@@ -225,3 +225,6 @@ atom.code-workspace
 /atom_calibration/scripts/calibrate_old
 /atom_calibration/src/atom_calibration/collect/interactive_data_labeler_old.py
 /atom_calibration/src/atom_calibration/collect/label_messages_old.py
+
+# LSP configs
+pyrightconfig.json
