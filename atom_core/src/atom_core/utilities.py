@@ -19,6 +19,7 @@ import readchar
 import rospkg
 from colorama import Fore, Style
 import numpy as np
+import tf
 
 # 3rd-party
 from rospy_message_converter import message_converter
@@ -68,7 +69,6 @@ def compareAtomTransforms(transform_1, transform_2):
     # roll, pitch, yaw = euler_from_matrix(rotation_delta)
     translation_delta = t_delta[0:3, 3]
 
-    import tf
     euler_angles_init = tf.transformations.euler_from_quaternion(transform_1['quat'])
     euler_angles_final = tf.transformations.euler_from_quaternion(transform_2['quat'])
 
@@ -86,15 +86,6 @@ def compareAtomTransforms(transform_1, transform_2):
     translation_error = np.linalg.norm(translation_delta)
     # rotation_error = np.linalg.norm([roll, pitch, yaw])
 
-    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
-    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
-    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
-    # print(Fore.GREEN + str(translation_error) + Style.RESET_ALL)
-    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
-    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
-    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
-    # print(Fore.BLUE + str(rotation_error) + Style.RESET_ALL)
-    # rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
 
     # print('translation error = ' + str(translation_error))
     # print('rotation error = ' + str(rotation_error))

@@ -252,7 +252,7 @@ def main():
 
             # Plotting
             plt.plot(x_values, y_values, color=colors[idx], linestyle=linestyles[idx], linewidth=linewidths[idx],
-                     markersize = linewidths[idx],marker = markers[idx],label = legend)
+                     markersize = markersizes[idx],marker = markers[idx],label = legend)
             # Might want to be ommited to be replaced by a caption in papers
             if not hide_title:
                 plt.title(title)
@@ -262,7 +262,16 @@ def main():
             plt.grid(grid)
             plt.xscale(xscale)  # Set x-scale
             plt.yscale(yscale)  # Set y-scale
-            if legend is not None and all(custom_legend) is None:
+
+            # from matplotlib.ticker import MaxNLocator, LogLocator,FormatStrFormatter,ScalarFormatter
+            # import numpy as np
+            # plt.gca().yaxis.set_major_locator(LogLocator(base=10, subs=np.arange(0.1, 1, 0.1), numticks=10))
+            # # plt.gca().yaxis.set_major_formatter(FormatStrFormatter(''))
+            # plt.gca().yaxis.set_major_formatter(ScalarFormatter())
+            # plt.gca().yaxis.set_minor_formatter(ScalarFormatter())
+            # plt.tick_params(axis='y', labelsize=8)  # Adjust the label size here (e.g., 8)
+
+            if legend is not None and not all(custom_legend):
                 plt.legend(prop={'size': 6})
 
             if all(custom_legend):
@@ -282,13 +291,15 @@ def main():
         # Some characters like / are problematic in filenames
         # image_file_name = ''.join(filter(lambda x : str.isalnum(x) or x == "_",image_file_name))
         image_file_name = ''.join(filter(lambda x : x != "," and x != "\n",image_file_name))
-        image_file_name = f'{image_file_name}.png'
+        # image_file_name = f'{image_file_name}.png'
+        image_file_name = f'{image_file_name}.pdf'
 
         if os.path.isfile(image_file_name) and not args['overwrite']:
             atomWarn(f'Plot with name {Fore.YELLOW}{image_file_name}{Style.RESET_ALL} found in {Fore.YELLOW}{args["output_folder"]}{Style.RESET_ALL}, not saving')
         else:
             print(f'Saving plot {Fore.BLUE}{title}{Style.RESET_ALL} as {Fore.BLUE}{image_file_name}{Style.RESET_ALL} in {Fore.BLUE}{args["output_folder"]}{Style.RESET_ALL}')
-            plt.savefig(image_file_name,dpi=600)
+            # plt.savefig(image_file_name,dpi=600)
+            plt.savefig(image_file_name,format="pdf")
 
         if args["show_plots"]:
             plt.show()
