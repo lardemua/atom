@@ -156,7 +156,7 @@ def main():
     
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
     dataset_initial = deepcopy(dataset)  # store initial values
-
+    
     # ---------------------------------------
     # --- Define selected collection key.
     # ---------------------------------------

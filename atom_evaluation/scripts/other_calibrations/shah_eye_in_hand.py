@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Eye-to-hand counterpart to ali_eye_in_hand.py
+Implementation of an ATOM-compatible alternative calibration method described by Shah et. al and implemented in: https://github.com/ihtishamaliktk/RWHE-Calib
+
+This method solves the Robot-World/Hand-Eye calibration problem, with the formulation: AX = ZB, where:
+
+A is the transformation from the gripper/flange/end-effector to the base;
+B is the transformation from the camera to the pattern/target (in the paper, this is called "world". However, to be coherent with ATOM, we call it "pattern");
+
+X is the transformation from the base of the robot to the pattern;
+Z is the transformation from the gripper/flange/end-effector to the camera
 """
 
 import argparse
@@ -18,7 +26,7 @@ from atom_core.atom import getTransform, getChain
 from atom_core.geometry import traslationRodriguesToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
-from atom_core.utilities import atomError, compareAtomTransforms
+from atom_core.utilities import compareAtomTransforms
 
 def getPatternConfig(dataset, pattern):
     # Pattern configs
@@ -47,10 +55,11 @@ def getCameraIntrinsicsFromDataset(dataset, camera):
 
     return K, D, image_size
 
-def li_calib(AA,BB):
+def shah_calib(AA,BB):
     # From here on out, the code is a direct translation of the MATLAB code
 
     n = len(AA) # n is the number of collections
+    print(n)
     
     # Transform the 4x4xn AA 3-dimensional matrix to a 4x(4xn) 2-dimensional matrix like in the original script
     AA_2d = np.zeros((4, 4*n))
@@ -60,53 +69,65 @@ def li_calib(AA,BB):
     BB_2d = np.zeros((4, 4*n))
     for i in range(n):
         BB_2d[:, 4*i:4*i+4] = BB[i]
-    
-    A = np.zeros((12*n, 24))
-    b = np.zeros((12*n, 1))
-    for i in range(1,n+1):
-        Ra = AA_2d[0:3,4*i-4:4*i-1]
-        Rb = BB_2d[0:3,4*i-4:4*i-1]
-        ta = AA_2d[0:3,4*i-1:4*i]
-        tb = BB_2d[0:3,4*i-1:4*i]
 
-        A[12*i-12:12*i-3,0:9] = np.kron(Ra, np.eye(3))
-        A[12*i-12:12*i-3,9:18] = np.kron(-1*np.eye(3), Rb.T)
-        A[12*i-3:12*i,9:18] = np.kron(np.eye(3), tb.T)
-        A[12*i-3:12*i,18:21] = -1*Ra
-        A[12*i-3:12*i,21:24] = np.eye(3)
-        
-        b[12*i-3:12*i] = ta
+    A = np.zeros((9*n,18))
+    T = np.zeros((9,9))
+    b = np.zeros((9*n,1))
 
-    # The equivalent of the \ operator in MATsingular value decomposition ofLAB is the numpy linalg.solve function
-    x = np.linalg.lstsq(A,b, rcond=None)
-    x = x[0] # x[0] is all we need, as it is the array returned by matlab's "\""
-    
-    # Get X
-    X = x[0:9].reshape((3,3))
+    for i in range(1, n+1):
+        # print(i)
+        Ra = AA_2d[0:3, 4*i-4:4*i-1]
+        Rb = BB_2d[0:3, 4*i-4:4*i-1]
+        T = T + np.kron(Rb,Ra)
+
+    [u,s,v] = np.linalg.svd(T)
+    new_s = np.zeros((len(s), len(s)))
+    for i in range(len(s)):
+        new_s[i,i] = s[i]
+    s = new_s    
+    v = v.T
+
+    x = v[:,0]
+    y = u[:,0]
+    X = x.reshape((3,3)).T
+    X = (np.sign(np.linalg.det(X))/(abs(np.linalg.det(X)))**(1/3)) * X
     [u,s,v] = np.linalg.svd(X)
-    s = np.array([[s[0], 0, 0],
-                  [0, s[1], 0],
-                  [0, 0, s[2]]])
+    new_s = np.zeros((len(s), len(s)))
+    for i in range(len(s)):
+        new_s[i,i] = s[i]
+    s = new_s
     v = v.T
     X = u @ v.T
-    if (np.linalg.det(X) < 0):
-        X = u @ np.diag([1,1,-1]) @ v.T
-    X = np.append(X, x[18:21], axis=1)
-    X = np.append(X, np.array([[0,0,0,1]]), axis=0)
 
-    # Get Y
-    Y = x[9:18].reshape((3,3))
+    Y = y.reshape((3,3)).T
+    Y = np.sign(np.linalg.det(Y)/(abs(np.linalg.det(Y)))**(1/3)) * Y
     [u,s,v] = np.linalg.svd(Y)
-    s = np.array([[s[0], 0, 0],
-                  [0, s[1], 0],
-                  [0, 0, s[2]]])
+    new_s = np.zeros((len(s), len(s)))
+    for i in range(len(s)):
+        new_s[i,i] = s[i]
+    s = new_s
     v = v.T
     Y = u @ v.T
-    if (np.linalg.det(Y) < 0):
-        Y = u @ np.diag([1,1,-1]) @ v.T
-    Y = np.append(Y, x[21:24], axis=1)
+
+    A = np.zeros((3*n,6))
+    b = np.zeros((3*n,1))
+
+    for i in range(1, n+1):
+        A[3*i-3:3*i,:] = np.append(-1*AA_2d[0:3,4*i-4:4*i-1], np.eye(3,3), axis=1)
+        b[3*i-3:3*i,:] = AA_2d[0:3,4*i-1:4*i] - (np.kron(BB_2d[0:3,4*i-1].T, np.eye(3,3)) @ Y.reshape(9,1))
+
+    print("A = \n" + str(A))
+    print("b = \n" + str(b))
+    
+    t = np.linalg.lstsq(A,b,rcond=None)
+
+    print("t[0] = \n" + str(t[0]))
+
+    X = np.append(X, t[0:3], axis=1)
+    X = np.append(X, np.array([[0,0,0,1]]), axis=0)
+
+    Y = np.append(Y, t[3:6], axis=1)
     Y = np.append(Y, np.array([[0,0,0,1]]), axis=0)
-    print(Y)
 
     return X,Y
 
@@ -165,27 +186,10 @@ def main():
     if not dataset['sensors'][args['camera']]['modality'] == 'rgb':
         atomError('Sensor ' + args['camera'] + ' is not of rgb modality.')
 
-    # Check if the hand link is in the chain from the base to the pattern (since transforms involving the pattern aren't included in the transformation pool in the collections, it uses the pattern's parent link for the check)
-    chain = getChain(from_frame=args['base_link'],
-                     to_frame=dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link'],
-                     transform_pool=dataset['collections'][selected_collection_key]['transforms'])
-
-    hand_frame_in_chain = False
-    for transform in chain: 
-        if args['hand_link'] == transform['parent'] or args['hand_link'] == transform['child']:
-            hand_frame_in_chain = True
-    
-    if not hand_frame_in_chain:
-        atomError('Selected hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
-                  ' does not belong to the chain from base ' + Fore.BLUE + args['base_link'] +
-                  Style.RESET_ALL + ' to the camera ' +
-                  dataset['calibration_config']['sensors'][args['camera']]['link'])
-
-    # Check if the given hand link is not in the chain from base to camera (if it is, we're in an eye-in-hand configuration)
+    # Check the given hand link is in the chain from base to camera
     chain = getChain(from_frame=args['base_link'],
                      to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                      transform_pool=dataset['collections'][selected_collection_key]['transforms'])
-
 
     hand_frame_in_chain = False
     for transform in chain:
@@ -193,29 +197,24 @@ def main():
         if args['hand_link'] == transform['parent'] or args['hand_link'] == transform['child']:
             hand_frame_in_chain = True
 
-    if hand_frame_in_chain:
+    if not hand_frame_in_chain:
         atomError('Selected hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
-                  ' belongs to the chain from base ' + Fore.BLUE + args['base_link'] +
+                  ' does not belong to the chain from base ' + Fore.BLUE + args['base_link'] +
                   Style.RESET_ALL + ' to the camera ' +
-                  dataset['calibration_config']['sensors'][args['camera']]['link'] + ', which indicates this system is not in an eye-to-hand configuration.')
+                  dataset['calibration_config']['sensors'][args['camera']]['link'])
 
-    # Check the hand to pattern chain is composed only of fixed transforms
-    # Since the transformation pool from a collection doesn't include the tf from the pattern link's parent to the pattern link, we must work with the parent. However, it might be the case that the hand link is the same as the pattern's parent link. In that case, it is known that the transform is fixed.
-    
-    if args['hand_link'] != dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link']:
-        
-        chain = getChain(from_frame=args['hand_link'],
-                        to_frame=dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link'],
-                        transform_pool=dataset['collections'][selected_collection_key]['transforms'])
+    # Check the hand to camera chain is composed only of fixed transforms
+    chain = getChain(from_frame=args['hand_link'],
+                     to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
+                     transform_pool=dataset['collections'][selected_collection_key]['transforms'])
 
-        for transform in chain:
-            if not dataset['transforms'][transform['key']]['type'] == 'fixed':
-                atomError('Chain from hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
-                        ' to pattern link ' + Fore.BLUE +
-                        dataset['calibration_config']['calibration_patterns'][args['pattern']]['link'] +
-                        Style.RESET_ALL + ' contains non fixed transform ' + Fore.RED +
-                        transform['key'] + Style.RESET_ALL + '. Cannot calibrate.')
-
+    for transform in chain:
+        if not dataset['transforms'][transform['key']]['type'] == 'fixed':
+            atomError('Chain from hand link ' + Fore.BLUE + args['hand_link'] + Style.RESET_ALL +
+                      ' to camera link ' + Fore.BLUE +
+                      dataset['calibration_config']['sensors'][args['camera']]['link'] +
+                      Style.RESET_ALL + ' contains non fixed transform ' + Fore.RED +
+                      transform['key'] + Style.RESET_ALL + '. Cannot calibrate.')
 
 
     ########################################
@@ -273,12 +272,11 @@ def main():
 
         tf_pattern2opticalframe = traslationRodriguesToTransform(tvec, rvec)
 
-        B = np.linalg.inv(tf_pattern2opticalframe) # Need to invert in the case of eye-to-hand 
-        BB.append(B)
+        BB.append(tf_pattern2opticalframe)
 
 
-    # Z is the base to camera tf (b_T_c)
-    b_T_c, h_T_p = li_calib(AA,BB)
+    # X is the base to pattern tf (b_T_p) and Z is the hand to camera tf (h_T_c)
+    b_T_p, h_T_c = shah_calib(AA,BB)
 
     # Extract the transformation marked for calibration which is the
     # cp_T_cc, where cp (calibration parent) and cc (calibration child).
@@ -290,15 +288,15 @@ def main():
     calibration_parent = dataset['calibration_config']['sensors'][args['camera']]['parent_link']
     calibration_child = dataset['calibration_config']['sensors'][args['camera']]['child_link']
 
-    cp_T_b = getTransform(from_frame=calibration_parent,
-                          to_frame=args['base_link'],
+    cp_T_h = getTransform(from_frame=calibration_parent,
+                          to_frame=args['hand_link'],
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
     c_T_cc = getTransform(from_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                           to_frame=calibration_child,
                           transforms=dataset['collections'][selected_collection_key]['transforms'])
 
-    cp_T_cc = cp_T_b @ b_T_c @ c_T_cc
+    cp_T_cc = cp_T_h @ h_T_c @ c_T_cc
 
     # Save to dataset
     # Since the transformation cp_T_cc is static we will save the same transform to all collections
@@ -315,15 +313,15 @@ def main():
         # --------------------------------------------------
         # Compare h_T_c hand to camera transform to ground truth
         # --------------------------------------------------
-        b_T_c_ground_truth = getTransform(from_frame=args['base_link'],
+        h_T_c_ground_truth = getTransform(from_frame=args['hand_link'],
                                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                                           transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
-        print(Fore.GREEN + 'Ground Truth b_T_c=\n' + str(b_T_c_ground_truth))
+        print(Fore.GREEN + 'Ground Truth h_T_c=\n' + str(h_T_c_ground_truth))
 
-        print('estimated b_T_c=\n' + str(b_T_c))
+        print('estimated h_T_c=\n' + str(h_T_c))
 
         translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
-            b_T_c, b_T_c_ground_truth)
+            h_T_c, h_T_c_ground_truth)
         print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
         print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
 
