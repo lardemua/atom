@@ -110,7 +110,7 @@ def main():
         method = cv2.CALIB_HAND_EYE_PARK
     elif args['method_name'] == 'horaud':
         method = cv2.CALIB_HAND_EYE_HORAUD
-    elif args['method_name'] == 'andreff ':
+    elif args['method_name'] == 'andreff':
         method = cv2.CALIB_HAND_EYE_ANDREFF
     elif args['method_name'] == 'daniilidis':
         method = cv2.CALIB_HAND_EYE_DANIILIDIS
