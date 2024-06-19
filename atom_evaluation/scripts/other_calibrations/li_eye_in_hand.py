@@ -14,7 +14,7 @@ Z is the transformation from the gripper/flange/end-effector to the camera
 
 import argparse
 from copy import deepcopy
-from colorama import Fore
+from colorama import Fore, Style
 import numpy as np
 import cv2
 from prettytable import PrettyTable
@@ -26,7 +26,7 @@ from atom_core.atom import getTransform, getChain
 from atom_core.geometry import traslationRodriguesToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
-from atom_core.utilities import compareAtomTransforms
+from atom_core.utilities import atomError, compareAtomTransforms
 
 def getPatternConfig(dataset, pattern):
     # Pattern configs

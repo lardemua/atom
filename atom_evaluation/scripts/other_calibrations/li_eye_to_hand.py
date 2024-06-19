@@ -6,7 +6,7 @@ Eye-to-hand counterpart to ali_eye_in_hand.py
 
 import argparse
 from copy import deepcopy
-from colorama import Fore
+from colorama import Fore, Style
 import numpy as np
 import cv2
 from prettytable import PrettyTable
@@ -61,6 +61,7 @@ def li_calib(AA,BB):
     for i in range(n):
         BB_2d[:, 4*i:4*i+4] = BB[i]
     
+    
     A = np.zeros((12*n, 24))
     b = np.zeros((12*n, 1))
     for i in range(1,n+1):
@@ -80,6 +81,7 @@ def li_calib(AA,BB):
     # The equivalent of the \ operator in MATsingular value decomposition ofLAB is the numpy linalg.solve function
     x = np.linalg.lstsq(A,b, rcond=None)
     x = x[0] # x[0] is all we need, as it is the array returned by matlab's "\""
+    print(x)
     
     # Get X
     X = x[0:9].reshape((3,3))
@@ -312,9 +314,9 @@ def main():
 
     if args['compare_to_ground_truth']:
 
-        # --------------------------------------------------
+        # -------------------------------------------------------
         # Compare h_T_c hand to camera transform to ground truth
-        # --------------------------------------------------
+        # -------------------------------------------------------
         b_T_c_ground_truth = getTransform(from_frame=args['base_link'],
                                           to_frame=dataset['calibration_config']['sensors'][args['camera']]['link'],
                                           transforms=dataset_ground_truth['collections'][selected_collection_key]['transforms'])
