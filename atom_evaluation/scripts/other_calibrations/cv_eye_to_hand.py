@@ -26,7 +26,7 @@ from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, 
 from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform, translationQuaternionToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
-from atom_core.utilities import assertSensorModality, atomError, compareAtomTransforms
+from atom_core.utilities import assertSensorModality, atomError, compareAtomTransforms, saveFileResults
 
 colorama_init(autoreset=True)
 np.set_printoptions(precision=3, suppress=True)
@@ -70,6 +70,12 @@ def main():
         "-mn", "--method_name", required=False, default='tsai',
         help="Hand eye method. One of ['tsai', 'park', 'horaud', 'andreff', 'daniilidis'].",
         type=str)
+    
+    # save results in a csv file
+    ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
+    ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
+                    "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+
 
     args = vars(ap.parse_args())
 
@@ -387,6 +393,9 @@ def main():
             header = ['Transform', 'Description', 'Et0 [m]',
                       'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
             table = PrettyTable(header)
+            
+            # table to save. This table was created, because the original has colors and the output csv save them as random characters
+            table_to_save = PrettyTable(header)
 
             transform_key = generateKey(
                 sensor["calibration_parent"], sensor["calibration_child"])
@@ -410,12 +419,23 @@ def main():
             row.append(round(rotation_error_2, 6))
 
             table.add_row(row)
+            table_to_save.add_row(row)
+
             print(table)
 
     # Save results to an atom dataset
     filename_results_json = os.path.dirname(
         args['json_file']) + '/hand_eye_' + args['method_name'] + '_' + args['camera'] + '.json'
     saveAtomDataset(filename_results_json, dataset)
+    
+    # save results in csv file
+    if args['save_file_results']:
+        if args['save_file_results_name'] is None:
+            results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+        else:
+            with open(args['save_file_results_name'], 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
 
 
 if __name__ == '__main__':
