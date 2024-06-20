@@ -13,7 +13,7 @@ from atom_core.system import resolvePath
 import pandas as pd
 
 
-def averageCsvFiles(filenames, average_row):
+def averageCsvFiles(filenames, average_row, column_to_check):
 
     # Get a list of the pandas representation of the csvs
     pandas_text_df = pd.read_csv(filenames[0])
@@ -23,7 +23,9 @@ def averageCsvFiles(filenames, average_row):
         df = pd.read_csv(filename)
 
         # Filter all cells for averages
-        df = df[df['Collection #'].isin([average_row])]
+        df = df[df[column_to_check].isin([average_row])]
+
+        print(df)
 
         df = df.apply(pd.to_numeric, errors="coerce")
         pandas_dfs.append(df)
@@ -53,6 +55,9 @@ def main():
                     required=False, default='_fold', type=str)
     ap.add_argument("-ar", "--average_row", help="Name of the row to average. Default is 'Averages'",
                     required=False, default='Averages', type=str)
+    ap.add_argument("-ctc", "--column_to_check", help="Name of the column to check for the average row. Default is 'Collection #', which is the case for ATOM result processing.",
+                    required=False, default='Collection #', type=str)
+
 
     args = vars(ap.parse_args())
 
@@ -108,9 +113,11 @@ def main():
 
             filenames = [run + '/' + file_to_process for run in files_and_folders]
 
-            average_df = averageCsvFiles(filenames, args['average_row'])
+            average_df = averageCsvFiles(filenames=filenames,
+                                         average_row=args['average_row'],
+                                         column_to_check=args['column_to_check'])
 
-            average_df = average_df.drop(columns=['Collection #'])
+            average_df = average_df.drop(columns=[args['column_to_check']])
 
             output_file = args['output_folder'] + '/' + experiment + '/' + file_to_process
             print('Saving average to ' + Fore.BLUE + output_file + Style.RESET_ALL)
