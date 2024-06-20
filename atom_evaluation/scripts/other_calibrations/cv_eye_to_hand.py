@@ -394,8 +394,9 @@ def main():
                       'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
             table = PrettyTable(header)
             
-            # table to save. This table was created, because the original has colors and the output csv save them as random characters
-            table_to_save = PrettyTable(header)
+            # This table needs to be different to the one printed because of its use during batch executions
+            header_table_to_save = ['Transform', 'Et [m]', 'Erot [rad]']
+            table_to_save = PrettyTable(header_table_to_save)
 
             transform_key = generateKey(
                 sensor["calibration_parent"], sensor["calibration_child"])
@@ -418,10 +419,15 @@ def main():
             row.append(round(rotation_error_1, 6))
             row.append(round(rotation_error_2, 6))
 
-            table.add_row(row)
-            table_to_save.add_row(row)
+            row_table_to_save = [transform_key]
 
-            print(table)
+            row_table_to_save.append(round(translation_error_2, 6))
+            row_table_to_save.append(round(rotation_error_2, 6))
+
+            table.add_row(row)
+            table_to_save.add_row(row_table_to_save)
+
+            print(table_to_save)
 
     # Save results to an atom dataset
     filename_results_json = os.path.dirname(
