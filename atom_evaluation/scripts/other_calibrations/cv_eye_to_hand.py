@@ -10,6 +10,7 @@ Handeye calibration from opencv. Eye to hand variant.
 
 import math
 import os
+import sys
 import numpy as np
 import argparse
 import cv2
@@ -26,7 +27,7 @@ from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, 
 from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform, translationQuaternionToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
-from atom_core.utilities import assertSensorModality, atomError, compareAtomTransforms, saveFileResults
+from atom_core.utilities import assertSensorModality, atomError, compareAtomTransforms, createLambdaExpressionsForArgs, saveFileResults
 
 colorama_init(autoreset=True)
 np.set_printoptions(precision=3, suppress=True)
@@ -76,8 +77,10 @@ def main():
     ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
                     "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
 
-
-    args = vars(ap.parse_args())
+    # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
+    arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
+    args_original = vars(ap.parse_args(args=arglist))  # these args have the selection functions as strings
+    args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
 
     # ---------------------------------------
     # Dataset loading and preprocessing
