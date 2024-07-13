@@ -25,6 +25,8 @@ from atom_calibration.odometry_inspector.visualization import setupVisualization
 from atom_core.dataset_io import (filterCollectionsFromDataset,
                                   filterSensorsFromDataset, loadResultsJSON, saveAtomDataset)
 
+from atom_calibration.odometry_inspector.interactive_first_guess import InteractiveFirstGuess
+
 # own packages
 
 
@@ -141,12 +143,16 @@ def main():
     ap.add_argument(
         "-rs", "--reference_sensor",
         help="", required=True)
-    ap.add_argument(
-        "-csf", "--collection_selection_function", default=None, type=str,
-        help="A string to be evaluated into a lambda function that receives a collection name as input and "
-        "returns True or False to indicate if the collection should be loaded (and used in the "
-        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-        "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument("-op", "--odometry_parent", help="", required=True)
+    ap.add_argument("-oc", "--odometry_child", help="", required=True)
+    ap.add_argument("-s", "--marker_scale", type=float, default=0.9,
+                    help='Scale of the interactive markers.')
+    # ap.add_argument(
+    #     "-csf", "--collection_selection_function", default=None, type=str,
+    #     help="A string to be evaluated into a lambda function that receives a collection name as input and "
+    #     "returns True or False to indicate if the collection should be loaded (and used in the "
+    #     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+    #     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -159,7 +165,7 @@ def main():
     args['show_images'] = True
     args['use_incomplete_collections'] = True
     args['remove_partial_detections'] = False
-    # args['collection_selection_function'] = None
+    args['collection_selection_function'] = None
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
@@ -181,9 +187,8 @@ def main():
 
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
 
-    print(
-        'Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' +
-        str(len(dataset['collections'].keys())) + ' collections.')
+    print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' +
+          str(len(dataset['collections'].keys())) + ' collections.')
 
     depth_mode = {'mode': 'detect'}
 
@@ -257,14 +262,26 @@ def main():
     listener.start()
 
     # ---------------------------------------
+    # Setting up interactive marker
+    # ---------------------------------------
+    first_guess = InteractiveFirstGuess(args, dataset, selection)
+    first_guess.init()
+
+    # ---------------------------------------
     # --- Loop while displaying selected collection
     # ---------------------------------------
     print('\nPress ' + Fore.BLUE + '"h"' + Style.RESET_ALL + ' for instructions.\n')
 
     rate = rospy.Rate(10)  # in hertz.
     tic = rospy.Time.now()
+    current_collection = 'this will not be a collection key'
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
+        if selection['collection_key'] != current_collection:
+            first_guess.additional_tf.updateAll()
+            first_guess.additional_tf.updateMarkers()
+            current_collection = selection['collection_key']
+
         visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
         rate.sleep()
 
