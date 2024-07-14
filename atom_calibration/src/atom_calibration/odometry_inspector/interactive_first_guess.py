@@ -1,27 +1,15 @@
 
 # stdlib
-import sys
-import argparse
-import time
 
-import numpy as np
 
 # 3rd-party
 import rospkg
-import rospy
-from colorama import Fore, Style
-from matplotlib import cm
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
-from urdf_parser_py.urdf import URDF
-from urdf_parser_py.urdf import Pose as URDFPose
 
 # local packages
-from atom_core.ros_utils import filterLaunchArguments
-from atom_core.config_io import loadConfig
 from atom_calibration.odometry_inspector.additional_tf import Additional_tf
-from tf.listener import TransformListener
 
 
 class InteractiveFirstGuess(object):
@@ -44,8 +32,6 @@ class InteractiveFirstGuess(object):
         self.createInteractiveMarker(self.dataset['calibration_config']['world_link'])
 
         # sensors and additional tfs to be calibrated
-        self.menu.insert("Save odometry transformations",
-                         callback=self.onSaveInitialEstimate)
         self.menu.insert("Reset to initial values",
                          callback=self.onResetAll)
 
@@ -66,29 +52,6 @@ class InteractiveFirstGuess(object):
         print('... done')
 
         self.server.applyChanges()
-
-    def onSaveInitialEstimate(self, feedback):
-        print('onSaveInitialEstimate')
-        return
-
-        if self.checkAdditionalTfs():
-            for additional_tfs in self.additional_tfs:
-                # find corresponding joint for this additional_tfs
-                for joint in self.urdf.joints:
-                    if additional_tfs.opt_child_link == joint.child and additional_tfs.opt_parent_link == joint.parent:
-                        trans = additional_tfs.optT.getTranslation()
-                        euler = additional_tfs.optT.getEulerAngles()
-                        joint.origin.xyz = list(trans)
-                        joint.origin.rpy = list(euler)
-
-            # Write the urdf file with atom_calibration's
-            # source path as base directory.
-            rospack = rospkg.RosPack()
-            # outfile = rospack.get_path('atom_calibration') + os.path.abspath('/' + self.args['filename'])
-            outfile = self.args['filename']
-            with open(outfile, 'w') as out:
-                print("Writing first guess urdf to '{}'".format(outfile))
-                out.write(self.urdf.to_xml_string())
 
     def onResetAll(self, feedback):
 
@@ -163,7 +126,7 @@ class InteractiveFirstGuess(object):
         control.orientation_mode = InteractiveMarkerControl.FIXED
         marker.controls.append(control)
 
-        self.server.insert(marker, self.onSaveInitialEstimate)
+        # self.server.insert(marker, self.onSaveInitialEstimate)
 
         self.menu.apply(self.server, marker.name)
 

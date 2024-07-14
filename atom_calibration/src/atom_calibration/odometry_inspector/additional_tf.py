@@ -2,22 +2,15 @@
 
 # stdlib
 import copy
-import os
 
 # 3rd-party
 from atom_core.naming import generateKey
 import atom_msgs.srv
 import colorama
-import numpy as np
-import cv2
-import std_srvs.srv
 import tf
-import image_geometry
-from atom_calibration.collect.label_messages import getFrustumMarkerArray
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import *
 from tf.listener import TransformListener
-from rospy_message_converter import message_converter
 
 # from transformation_t import TransformationT
 from atom_calibration.initial_estimate.transformation_t import TransformationT

@@ -143,6 +143,9 @@ def main():
     ap.add_argument(
         "-rs", "--reference_sensor",
         help="", required=True)
+    ap.add_argument(
+        "-2d", "--2d_mode", required=True,
+        help="Interactive marker only moves in 2D. Useful for odometry transformations",)
     ap.add_argument("-op", "--odometry_parent", help="", required=True)
     ap.add_argument("-oc", "--odometry_child", help="", required=True)
     ap.add_argument("-s", "--marker_scale", type=float, default=0.9,
