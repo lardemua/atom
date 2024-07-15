@@ -56,6 +56,123 @@ view = {
 # -------------------------------------------------------------------------------
 
 
+def ku(a, b):
+    true_points = a
+    mapping_points = b
+
+    mapped_centroid = np.average(mapping_points, axis=0)
+    true_centroid = np.average(true_points, axis=0)
+
+    h = mapping_points.T @ true_points
+    u, s, vt = np.linalg.svd(h)
+    v = vt.T
+
+    d = np.linalg.det(v @ u.T)
+    e = np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]])
+
+    r = v @ e @ u.T
+
+    tt = true_centroid - np.matmul(r, mapped_centroid)
+
+    transform = np.eye(4)
+    transform[0:3, 0:3] = r
+    transform[0:3, 3] = tt
+
+    return transform
+
+
+def kabsch_umeyama(A, B):
+    assert A.shape == B.shape
+    n, m = A.shape
+
+    EA = np.mean(A, axis=0)
+    EB = np.mean(B, axis=0)
+    VarA = np.mean(np.linalg.norm(A - EA, axis=1) ** 2)
+
+    H = ((A - EA).T @ (B - EB)) / n
+    U, D, VT = np.linalg.svd(H)
+    d = np.sign(np.linalg.det(U) * np.linalg.det(VT))
+    S = np.diag([1] * (m - 1) + [d])
+
+    R = U @ S @ VT
+    c = VarA / np.trace(np.diag(D) @ S)
+    t = EA - c * R @ EB
+
+    print(R)
+    print(t)
+
+    transform = np.eye(4)
+    transform[0:3, 0:3] = R
+
+    print(R)
+    print(t)
+    transform[0:3, 3] = t
+
+    return transform, c
+
+# Implements Kabsch algorithm - best fit.
+# Supports scaling (umeyama)
+# Compares well to SA results for the same data.
+# Input:
+#     Nominal  A Nx3 matrix of points
+#     Measured B Nx3 matrix of points
+# Returns s,R,t
+# s = scale B to A
+# R = 3x3 rotation matrix (B to A)
+# t = 3x1 translation vector (B to A)
+
+
+def rigid_transform_3D(A, B, scale=False):
+    # From https://gist.github.com/oshea00/dfb7d657feca009bf4d095d4cb8ea4be
+
+    assert len(A) == len(B)
+
+    N = A.shape[0]  # total points
+
+    centroid_A = np.mean(A, axis=0)
+    centroid_B = np.mean(B, axis=0)
+
+    # center the points
+    AA = A - np.tile(centroid_A, (N, 1))
+    BB = B - np.tile(centroid_B, (N, 1))
+
+    # dot is matrix multiplication for array
+    if scale:
+        H = np.transpose(BB) * AA / N
+    else:
+        # H = np.transpose(BB) * AA
+        # NOTE in
+        # they say the line above should be
+        H = np.transpose(AA) @ BB
+
+    U, S, Vt = np.linalg.svd(H)
+
+    R = Vt.T * U.T
+
+    # special reflection case
+    if np.linalg.det(R) < 0:
+        print("Reflection detected")
+        Vt[2, :] *= -1
+        R = Vt.T * U.T
+
+    if scale:
+        varA = np.var(A, axis=0).sum()
+        c = 1 / (1 / varA * np.sum(S))  # scale factor
+        t = -R * (centroid_B.T * c) + centroid_A.T
+    else:
+        c = 1
+        print(-R @ centroid_B.T)
+        t = -R @ centroid_B.T + centroid_A.T
+
+    transform = np.eye(4)
+    transform[0:3, 0:3] = R
+
+    print(R)
+    print(t)
+    transform[0:3, 3] = t
+    return c, transform
+
+
 def get4x4TransformFromXYZWPR(xyzwpr):
 
     T = np.zeros((4, 4), float)
@@ -316,29 +433,40 @@ def main():
     # ------------------------------------------
     # Run calibration
     # ------------------------------------------
-    # output should be estimated camera_T_lidar tranform
-    if args['method_name'] == 'icp_based':
 
-        # Estimate one transformation per collection
-        camera_T_lidar_lst = []
-        for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
+    # Estimate one transformation per collection
+    camera_T_lidar_lst = []
+    for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
+
+        # Camera corners to required format
+        corners_in_camera = corners_in_camera_lst[idx]
+        # print('corners_in_lidar=\n' + str(corners_in_lidar))
+
+        # Lidar corners to required format
+        corners_in_lidar = np.zeros((4, 4))
+        for idx, (intersection_key, intersection) in enumerate(
+                annotations[collection_key]['intersections'].items()):
+
+            corners_in_lidar[0, idx] = intersection['x']
+            corners_in_lidar[1, idx] = intersection['y']
+            corners_in_lidar[2, idx] = intersection['z']
+            corners_in_lidar[3, idx] = 1.0
+        # print('corners_in_camera=\n' + str(corners_in_camera))
+
+        # compute averages
+        average_corners_in_camera = np.reshape(np.mean(corners_in_camera, axis=1), (4, 1))
+        average_corners_in_lidar = np.reshape(np.mean(corners_in_lidar, axis=1), (4, 1))
+
+        # output should be estimated camera_T_lidar tranform
+        if args['method_name'] == 'icp_based':
 
             # prepare two open3d point clouds and then use open3d's icp
-            corners_in_camera = corners_in_camera_lst[idx]
             camera_corners = o3d.geometry.PointCloud()
             camera_corners.points = o3d.utility.Vector3dVector(
                 corners_in_camera[0: 3, :].transpose())
 
-            corners_in_camera = np.zeros((3, 4))
-            for idx, (intersection_key, intersection) in enumerate(
-                    annotations[collection_key]['intersections'].items()):
-
-                corners_in_camera[0, idx] = intersection['x']
-                corners_in_camera[1, idx] = intersection['y']
-                corners_in_camera[2, idx] = intersection['z']
-
             lidar_corners = o3d.geometry.PointCloud()
-            lidar_corners.points = o3d.utility.Vector3dVector(corners_in_camera.transpose())
+            lidar_corners.points = o3d.utility.Vector3dVector(corners_in_lidar.transpose())
 
             criteria = o3d.pipelines.registration.ICPConvergenceCriteria(
                 relative_fitness=1e-06, relative_rmse=1e-06, max_iteration=300)
@@ -355,34 +483,11 @@ def main():
                 'Collection ' + collection_key + ' estimated transform=\n' +
                 str(reg_p2p.transformation))
 
-        # Estimate final camera_T_lidar transformation using average as proposed in Dahll2017
-        print('gt transform=\n' + str(camera_T_lidar_gt))
-        camera_T_lidar = averageTransforms(camera_T_lidar_lst)
+            # Estimate final camera_T_lidar transformation using average as proposed in Dahll2017
+            print('gt transform=\n' + str(camera_T_lidar_gt))
+            camera_T_lidar = averageTransforms(camera_T_lidar_lst)
 
-    elif args['method_name'] == 'closed_form':
-
-        # Estimate one transformation per collection
-        camera_T_lidar_lst = []
-        for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
-
-            # Camera corners to required format
-            corners_in_camera = corners_in_camera_lst[idx]
-            # print('corners_in_lidar=\n' + str(corners_in_lidar))
-
-            # Lidar corners to required format
-            corners_in_lidar = np.zeros((4, 4))
-            for idx, (intersection_key, intersection) in enumerate(
-                    annotations[collection_key]['intersections'].items()):
-
-                corners_in_lidar[0, idx] = intersection['x']
-                corners_in_lidar[1, idx] = intersection['y']
-                corners_in_lidar[2, idx] = intersection['z']
-                corners_in_lidar[3, idx] = 1.0
-            # print('corners_in_camera=\n' + str(corners_in_camera))
-
-            # compute averages
-            average_corners_in_camera = np.reshape(np.mean(corners_in_camera, axis=1), (4, 1))
-            average_corners_in_lidar = np.reshape(np.mean(corners_in_lidar, axis=1), (4, 1))
+        elif args['method_name'] == 'closed_form':
 
             # align to zero
             zero_aligned_corners_in_camera = corners_in_camera - \
@@ -395,13 +500,21 @@ def main():
             # https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.align_vectors.html
             # we need N,3 lists for the input vectors a and b
             a = np.array((4, 3))
-            a = zero_aligned_corners_in_camera[0:3, :].T
+            a = corners_in_camera[0:3, :].T
+            # a = zero_aligned_corners_in_camera[0:3, :].T
             b = np.array((4, 3))
-            b = zero_aligned_corners_in_lidar[0:3, :].T
+            b = corners_in_lidar[0:3, :].T
+            # b = zero_aligned_corners_in_lidar[0:3, :].T
 
             rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
 
             rotation = rot.as_matrix()
+
+            # transform2, c = kabsch_umeyama(a, b)
+            transform2 = ku(a, b)
+
+            # c, transform2 = rigid_transform_3D(a, b, scale=False)
+            print('transform2 =\n' + str(transform2))
 
             # Compute the translation using eq 8 from the paper
             # https://arxiv.org/pdf/1705.09785
@@ -415,13 +528,13 @@ def main():
             transform[0:3, 0:3] = rotation
             transform[0:3, 3] = translation[0:3, 0]
 
-            camera_T_lidar_lst.append(transform)
+            camera_T_lidar_lst.append(transform2)
 
             print('Collection ' + collection_key + ' estimated transform=\n' + str(transform))
 
-        # Estimate final camera_T_lidar transformation using average as proposed in Dahll2017
-        print('gt transform=\n' + str(camera_T_lidar_gt))
-        camera_T_lidar = averageTransforms(camera_T_lidar_lst)
+    # Estimate final camera_T_lidar transformation using average as proposed in Dahll2017
+    print('gt transform=\n' + str(camera_T_lidar_gt))
+    camera_T_lidar = averageTransforms(camera_T_lidar_lst)
 
     # ------------------------------------------
     # Define visualization
@@ -432,11 +545,11 @@ def main():
     camera_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1)
     entities.append(camera_frame)
 
-    # Add pattern frames
-    for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
-        pattern_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.2)
-        pattern_frame = pattern_frame.transform(camera_T_pattern_lst[idx])
-        entities.append(pattern_frame)
+    # # Add pattern frames
+    # for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
+    #     pattern_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.2)
+    #     pattern_frame = pattern_frame.transform(camera_T_pattern_lst[idx])
+    #     entities.append(pattern_frame)
 
     # Draw lidar points (using estimated transform)
     for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
@@ -506,6 +619,25 @@ def main():
 
             color = colormap[idx, 0:3]*0.7  # use lidar cylinders less darker to distinguish
             draw_cylinder(entities, x, y, z, radius=0.01, height=0.15, color=color)
+
+    # Draw lidar coordinate frames per collection (should all be close to the same pose)
+    for idx, (collection_key, collection) in enumerate(dataset["collections"].items()):
+        collection_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1)
+        collection_frame = collection_frame.transform(camera_T_lidar_lst[idx])
+        color = colormap[idx, 0:3]
+        collection_frame.paint_uniform_color(color)
+        entities.append(collection_frame)
+
+    # Draw estimated joint lidar coordinate frame
+    estimated_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.2)
+    estimated_frame = estimated_frame.transform(camera_T_lidar)
+    entities.append(estimated_frame)
+
+    # Draw ground truth joint lidar coordinate frame
+    ground_truth_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.2)
+    ground_truth_frame = ground_truth_frame.transform(camera_T_lidar_gt)
+    ground_truth_frame.paint_uniform_color((0.1, 0.1, 0.1))
+    entities.append(ground_truth_frame)
 
     o3d.visualization.draw_geometries(entities,
                                       zoom=view['trajectory'][0]['zoom'],

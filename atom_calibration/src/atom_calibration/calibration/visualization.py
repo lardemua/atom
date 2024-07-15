@@ -63,14 +63,19 @@ def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset
     markers = MarkerArray()
 
     # Draw pattern frame lines_sampled (top, left, right, bottom)
-    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                    ns=ns + '-frame_sampled', id=0, frame_locked=True,
-                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                    pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                    scale=Vector3(x=0.01, y=0.01, z=0.01),
-                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                    g=graphics['collections'][collection_key]['color'][1],
-                                    b=graphics['collections'][collection_key]['color'][2], a=1.0))
+    marker = Marker(
+        header=Header(frame_id=frame_id, stamp=now),
+        ns=ns + '-frame_sampled', id=0, frame_locked=True, type=Marker.CUBE_LIST, action=Marker.ADD,
+        lifetime=rospy.Duration(0),
+        pose=Pose(
+            position=Point(x=0, y=0, z=0),
+            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+        scale=Vector3(x=0.01, y=0.01, z=0.01),
+        color=ColorRGBA(
+            r=graphics['collections'][collection_key]['color'][0],
+            g=graphics['collections'][collection_key]['color'][1],
+            b=graphics['collections'][collection_key]['color'][2],
+            a=1.0))
 
     pts = []
     pts.extend(dataset['patterns'][pattern_key]['frame']['lines_sampled']['left'])
@@ -83,20 +88,31 @@ def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset
     markers.markers.append(marker)
 
     # Draw corners
-    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                    ns=ns + '-corners', id=0, frame_locked=True,
-                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                    pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                    scale=Vector3(x=0.02, y=0.02, z=0.02),
-                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                    g=graphics['collections'][collection_key]['color'][1],
-                                    b=graphics['collections'][collection_key]['color'][2], a=1.0))
+    marker = Marker(
+        header=Header(frame_id=frame_id, stamp=now),
+        ns=ns + '-corners', id=0, frame_locked=True, type=Marker.CUBE_LIST, action=Marker.ADD,
+        lifetime=rospy.Duration(0),
+        pose=Pose(
+            position=Point(x=0, y=0, z=0),
+            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+        scale=Vector3(x=0.02, y=0.02, z=0.02),
+        color=ColorRGBA(
+            r=graphics['collections'][collection_key]['color'][0],
+            g=graphics['collections'][collection_key]['color'][1],
+            b=graphics['collections'][collection_key]['color'][2],
+            a=1.0))
 
     for idx_corner, pt in enumerate(dataset['patterns'][pattern_key]['corners']):
         marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
-        marker.colors.append(ColorRGBA(r=graphics['patterns'][pattern_key]['colormap'][idx_corner, 0],
-                                       g=graphics['patterns'][pattern_key]['colormap'][idx_corner, 1],
-                                       b=graphics['patterns'][pattern_key]['colormap'][idx_corner, 2], a=1))
+        marker.colors.append(
+            ColorRGBA(
+                r=graphics['patterns'][pattern_key]['colormap']
+                [idx_corner, 0],
+                g=graphics['patterns'][pattern_key]['colormap']
+                [idx_corner, 1],
+                b=graphics['patterns'][pattern_key]['colormap']
+                [idx_corner, 2],
+                a=1))
 
     markers.markers.append(marker)
 
@@ -127,7 +143,8 @@ def createPatternMarkers(frame_id, ns, collection_key, pattern_key, now, dataset
                scale=Vector3(x=1.0, y=1.0, z=1.0),
                color=ColorRGBA(r=1, g=1, b=1, a=1))
 
-    mesh_file, _, _ = uriReader(dataset['calibration_config']['calibration_patterns'][pattern_key]['mesh_file'])
+    mesh_file, _, _ = uriReader(dataset['calibration_config']
+                                ['calibration_patterns'][pattern_key]['mesh_file'])
     m.mesh_resource = 'file://' + mesh_file  # mesh_resource needs uri format
     m.mesh_use_embedded_materials = True
     markers.markers.append(m)
@@ -142,7 +159,8 @@ def setupVisualization(dataset, args, selected_collection_key):
     """
 
     # Create a python dictionary that will contain all the visualization related information
-    graphics = {'collections': {}, 'patterns': {}, 'ros': {'sensors': {}, 'patterns': {}}, 'args': args}
+    graphics = {'collections': {}, 'patterns': {}, 'ros': {
+        'sensors': {}, 'patterns': {}}, 'args': args}
 
     # Parse xacro description file
     description_file, _, _ = uriReader(dataset['calibration_config']['description_file'])
@@ -157,7 +175,8 @@ def setupVisualization(dataset, args, selected_collection_key):
     rospy.sleep(0.2)  # Sleep a little to make sure the time.now() returns a correct time.
     now = rospy.Time.now()
 
-    graphics['ros']['publisher_models'] = rospy.Publisher('~robot_meshes', MarkerArray, queue_size=0, latch=True)
+    graphics['ros']['publisher_models'] = rospy.Publisher(
+        '~robot_meshes', MarkerArray, queue_size=0, latch=True)
     # Analyse xacro and figure out which transforms are static (always the same over the optimization), and which are
     # not. For fixed we will use a static transform publisher.
     # for collection_key, collection in dataset['collections'].items():
@@ -189,10 +208,12 @@ def setupVisualization(dataset, args, selected_collection_key):
         graphics['patterns'][pattern_key]['colormap'] = cm.gist_rainbow(
             np.linspace(0, 1, pattern['dimension']['x'] * pattern['dimension']['y']))
 
-    graphics['collections']['colormap'] = cm.prism(np.linspace(0, 1, len(dataset['collections'].keys())))
+    graphics['collections']['colormap'] = cm.prism(
+        np.linspace(0, 1, len(dataset['collections'].keys())))
     # graphics['collections']['colormap'] = cm.Wistia(np.linspace(0, 1, len(dataset['collections'].keys())))
     for idx, collection_key in enumerate(sorted(dataset['collections'].keys())):
-        graphics['collections'][str(collection_key)] = {'color': graphics['collections']['colormap'][idx, :]}
+        graphics['collections'][str(collection_key)] = {
+            'color': graphics['collections']['colormap'][idx, :]}
 
     # color_map_sensors = cm.gist_rainbow(np.linspace(0, 1, len(dataset['sensors'].keys())))
     # for idx, sensor_key in enumerate(sorted(dataset['sensors'].keys())):
@@ -219,14 +240,18 @@ def setupVisualization(dataset, args, selected_collection_key):
                 graphics['collections'][collection_key][sensor_key] = {}
 
                 # Image msg setup.
-                labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
-                                                     collection_key=collection_key, type='2d')
+                labeled_topic = generateLabeledTopic(
+                    dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
+                    collection_key=collection_key, type='2d')
                 graphics['collections'][collection_key][sensor_key]['publisher'] = rospy.Publisher(
                     labeled_topic, sensor_msgs.msg.Image, queue_size=0, latch=True)
 
                 # Camera info msg setup.
-                labeled_topic = generateLabeledTopic(dataset['calibration_config']['sensors'][sensor_key]['topic_name'],
-                                                     collection_key=collection_key, type='2d', suffix='/camera_info')
+                labeled_topic = generateLabeledTopic(
+                    dataset['calibration_config']['sensors']
+                    [sensor_key]['topic_name'],
+                    collection_key=collection_key, type='2d',
+                    suffix='/camera_info')
                 # topic_name = '~c' + str(collection_key) + '/' + str(sensor_key) + '/camera_info'
                 graphics['collections'][collection_key][sensor_key]['publisher_camera_info'] = rospy.Publisher(
                     labeled_topic, sensor_msgs.msg.CameraInfo, queue_size=0, latch=True)
@@ -250,26 +275,36 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
                 if sensor['modality'] == 'lidar2d':
-                    frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                    ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                    type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                    pose=Pose(position=Point(x=0, y=0, z=0),
-                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                    scale=Vector3(x=0.03, y=0.03, z=0),
-                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                    g=graphics['collections'][collection_key]['color'][1],
-                                                    b=graphics['collections'][collection_key]['color'][2], a=1.0)
-                                    )
+                    frame_id = genCollectionPrefix(
+                        collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    marker = Marker(
+                        header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-' + str(sensor_key),
+                        id=0, frame_locked=True, type=Marker.POINTS, action=Marker.ADD,
+                        lifetime=rospy.Duration(0),
+                        pose=Pose(
+                            position=Point(x=0, y=0, z=0),
+                            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.03, y=0.03, z=0),
+                        color=ColorRGBA(
+                            r=graphics['collections'][collection_key]['color'][0],
+                            g=graphics['collections'][collection_key]['color'][1],
+                            b=graphics['collections'][collection_key]['color'][2],
+                            a=1.0))
 
                     # Get laser points that belong to the chessboard (labelled)
                     idxs = collection['labels'][sensor_key]['idxs']
                     rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
                     thetas = [collection['data'][sensor_key]['angle_min'] +
-                              collection['data'][sensor_key]['angle_increment'] * idx for idx in idxs]
+                              collection['data'][sensor_key]['angle_increment'] * idx
+                              for idx in idxs]
 
                     for idx, (rho, theta) in enumerate(zip(rhos, thetas)):
-                        marker.points.append(Point(x=rho * math.cos(theta), y=rho * math.sin(theta), z=0))
+                        marker.points.append(
+                            Point(
+                                x=rho * math.cos(theta),
+                                y=rho * math.sin(theta),
+                                z=0))
 
                     markers.markers.append(copy.deepcopy(marker))
 
@@ -306,82 +341,117 @@ def setupVisualization(dataset, args, selected_collection_key):
                 # if sensor['msg_type'] == 'PointCloud2':  # -------- Publish the velodyne data ----------------------------
                 elif sensor['modality'] == 'lidar3d':
                     # Add labelled points to the marker
-                    frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                    ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                    pose=Pose(position=Point(x=0, y=0, z=0),
-                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                    scale=Vector3(x=0.02, y=0.02, z=0.02),
-                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                    g=graphics['collections'][collection_key]['color'][1],
-                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                    )
+                    frame_id = genCollectionPrefix(
+                        collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    marker = Marker(
+                        header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-' + str(sensor_key),
+                        id=0, frame_locked=True, type=Marker.SPHERE_LIST, action=Marker.ADD,
+                        lifetime=rospy.Duration(0),
+                        pose=Pose(
+                            position=Point(x=0, y=0, z=0),
+                            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.02, y=0.02, z=0.02),
+                        color=ColorRGBA(
+                            r=graphics['collections'][collection_key]['color'][0],
+                            g=graphics['collections'][collection_key]['color'][1],
+                            b=graphics['collections'][collection_key]['color'][2],
+                            a=0.5))
 
-                    points = getPointsInSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
+                    points = getPointsInSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs', dataset)
                     for idx in range(0, points.shape[1]):
-                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                        marker.points.append(
+                            Point(
+                                x=points[0, idx],
+                                y=points[1, idx],
+                                z=points[2, idx]))
 
                     markers.markers.append(copy.deepcopy(marker))
 
                     # Add limit points to the marker, this time with larger spheres
-                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                    ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
-                                    frame_locked=True,
-                                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                    pose=Pose(position=Point(x=0, y=0, z=0),
-                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                    scale=Vector3(x=0.07, y=0.07, z=0.07),
-                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                    g=graphics['collections'][collection_key]['color'][1],
-                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                    )
+                    marker = Marker(
+                        header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
+                        frame_locked=True, type=Marker.SPHERE_LIST, action=Marker.ADD,
+                        lifetime=rospy.Duration(0),
+                        pose=Pose(
+                            position=Point(x=0, y=0, z=0),
+                            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.07, y=0.07, z=0.07),
+                        color=ColorRGBA(
+                            r=graphics['collections'][collection_key]['color'][0],
+                            g=graphics['collections'][collection_key]['color'][1],
+                            b=graphics['collections'][collection_key]['color'][2],
+                            a=0.5))
 
                     points = getPointsInSensorAsNPArray(collection_key, pattern_key,
                                                         sensor_key, 'idxs_limit_points', dataset)
                     for idx in range(0, points.shape[1]):
-                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                        marker.points.append(
+                            Point(
+                                x=points[0, idx],
+                                y=points[1, idx],
+                                z=points[2, idx]))
 
                     markers.markers.append(copy.deepcopy(marker))
 
                 # Setup visualization for depth
-                elif sensor['modality'] == 'depth':  # -------- Publish the depth  ----------------------------
+                # -------- Publish the depth  ----------------------------
+                elif sensor['modality'] == 'depth':
                     # Add labelled points to the marker
-                    frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                    ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                    type=Marker.SPHERE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                    pose=Pose(position=Point(x=0, y=0, z=0),
-                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                    scale=Vector3(x=0.01, y=0.01, z=0.01),
-                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                    g=graphics['collections'][collection_key]['color'][1],
-                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                    )
+                    frame_id = genCollectionPrefix(
+                        collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    marker = Marker(
+                        header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-' + str(sensor_key),
+                        id=0, frame_locked=True, type=Marker.SPHERE_LIST, action=Marker.ADD,
+                        lifetime=rospy.Duration(0),
+                        pose=Pose(
+                            position=Point(x=0, y=0, z=0),
+                            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.01, y=0.01, z=0.01),
+                        color=ColorRGBA(
+                            r=graphics['collections'][collection_key]['color'][0],
+                            g=graphics['collections'][collection_key]['color'][1],
+                            b=graphics['collections'][collection_key]['color'][2],
+                            a=0.5))
 
-                    points = getPointsInDepthSensorAsNPArray(collection_key, pattern_key, sensor_key, 'idxs', dataset)
+                    points = getPointsInDepthSensorAsNPArray(
+                        collection_key, pattern_key, sensor_key, 'idxs', dataset)
                     for idx in range(0, points.shape[1]):
-                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                        marker.points.append(
+                            Point(
+                                x=points[0, idx],
+                                y=points[1, idx],
+                                z=points[2, idx]))
 
                     markers.markers.append(copy.deepcopy(marker))
 
                     # Add limit points to the marker, this time with larger spheres
-                    marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-                                    ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
-                                    frame_locked=True,
-                                    type=Marker.CUBE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                    pose=Pose(position=Point(x=0, y=0, z=0),
-                                              orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                    scale=Vector3(x=0.05, y=0.05, z=0.05),
-                                    color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                    g=graphics['collections'][collection_key]['color'][1],
-                                                    b=graphics['collections'][collection_key]['color'][2], a=0.5)
-                                    )
+                    marker = Marker(
+                        header=Header(frame_id=frame_id, stamp=now),
+                        ns=str(collection_key) + '-' + str(sensor_key) + '-limit_points', id=0,
+                        frame_locked=True, type=Marker.CUBE_LIST, action=Marker.ADD,
+                        lifetime=rospy.Duration(0),
+                        pose=Pose(
+                            position=Point(x=0, y=0, z=0),
+                            orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                        scale=Vector3(x=0.05, y=0.05, z=0.05),
+                        color=ColorRGBA(
+                            r=graphics['collections'][collection_key]['color'][0],
+                            g=graphics['collections'][collection_key]['color'][1],
+                            b=graphics['collections'][collection_key]['color'][2],
+                            a=0.5))
 
                     points = getPointsInDepthSensorAsNPArray(
                         collection_key, pattern_key, sensor_key, 'idxs_limit_points', dataset)
                     for idx in range(0, points.shape[1]):
-                        marker.points.append(Point(x=points[0, idx], y=points[1, idx], z=points[2, idx]))
+                        marker.points.append(
+                            Point(
+                                x=points[0, idx],
+                                y=points[1, idx],
+                                z=points[2, idx]))
 
                     markers.markers.append(copy.deepcopy(marker))
 
@@ -430,7 +500,8 @@ def setupVisualization(dataset, args, selected_collection_key):
         all_joints_fixed = True
         for joint in xml_robot.joints:
             if not joint.type == 'fixed':
-                print('Robot has at least joint ' + joint.name + ' non fixed. Will render all collections')
+                print('Robot has at least joint ' + joint.name +
+                      ' non fixed. Will render all collections')
                 all_joints_fixed = False
                 break
 
@@ -438,17 +509,17 @@ def setupVisualization(dataset, args, selected_collection_key):
     if all_joints_fixed:  # render a single robot mesh
         print('Robot has all joints fixed. Will render only collection ' + selected_collection_key)
         rgba = [.5, .5, .5, 1]  # best color we could find
-        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
-                              namespace='immovable',
-                              rgba=rgba)
+        m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(
+            selected_collection_key, ''), namespace='immovable', rgba=rgba)
         markers.markers.extend(m.markers)
 
         if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
             rgba = [.1, .1, .8, 0.1]  # best color we could find
-            m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
-                                  frame_id_suffix=generateName('', suffix='ini'),
-                                  namespace=generateName('immovable', suffix='ini'),
-                                  rgba=rgba)
+            m = urdfToMarkerArray(
+                xml_robot, frame_id_prefix=genCollectionPrefix(selected_collection_key, ''),
+                frame_id_suffix=generateName('', suffix='ini'),
+                namespace=generateName('immovable', suffix='ini'),
+                rgba=rgba)
             markers.markers.extend(m.markers)
 
     else:  # render robot meshes for all collections
@@ -472,27 +543,30 @@ def setupVisualization(dataset, args, selected_collection_key):
             else:
                 rgba = None
 
-            m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                  namespace=collection_key,
-                                  rgba=rgba, skip_links=immovable_links,
-                                  verbose=False, alpha=args['draw_alpha'])
+            m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(
+                collection_key, ''),
+                namespace=collection_key, rgba=rgba, skip_links=immovable_links,
+                verbose=False, alpha=args['draw_alpha'])
             markers.markers.extend(m.markers)
 
-            if args['initial_pose_ghost']:  # add a ghost (low alpha) robot marker at the initial pose
+            # add a ghost (low alpha) robot marker at the initial pose
+            if args['initial_pose_ghost']:
                 rgba = [.1, .8, .1, 0.1]  # best color we could find
                 # Draw immovable links
-                m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                      frame_id_suffix=generateName('', suffix='ini'),
-                                      namespace=generateName('immovable', suffix='ini'),
-                                      rgba=rgba, skip_links=movable_links)
+                m = urdfToMarkerArray(
+                    xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
+                    frame_id_suffix=generateName('', suffix='ini'),
+                    namespace=generateName('immovable', suffix='ini'),
+                    rgba=rgba, skip_links=movable_links)
                 markers.markers.extend(m.markers)
 
                 # Draw movable links
                 for collection_key, collection in dataset['collections'].items():
-                    m = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
-                                          frame_id_suffix=generateName('', suffix='ini'),
-                                          namespace=generateName(collection_key, suffix='ini'),
-                                          rgba=rgba, skip_links=immovable_links)
+                    m = urdfToMarkerArray(
+                        xml_robot, frame_id_prefix=genCollectionPrefix(collection_key, ''),
+                        frame_id_suffix=generateName('', suffix='ini'),
+                        namespace=generateName(collection_key, suffix='ini'),
+                        rgba=rgba, skip_links=immovable_links)
                     markers.markers.extend(m.markers)
 
     graphics['ros']['RobotMeshMarkers'] = markers
@@ -507,8 +581,8 @@ def setupVisualization(dataset, args, selected_collection_key):
             # Draw single pattern for selected collection key
             frame_id = generateName(pattern['link'], prefix='c' + selected_collection_key)
             ns = selected_collection_key + '_' + pattern_key
-            pattern_markers = createPatternMarkers(frame_id, ns, selected_collection_key, pattern_key,
-                                                   now, dataset, graphics)
+            pattern_markers = createPatternMarkers(
+                frame_id, ns, selected_collection_key, pattern_key, now, dataset, graphics)
             markers.markers.extend(pattern_markers.markers)
         else:  # Draw a pattern per collection
             for idx, (collection_key, collection) in enumerate(dataset['collections'].items()):
@@ -542,20 +616,27 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
             if sensor['modality'] == 'lidar2d' or sensor['modality'] == 'lidar3d':
-                frame_id = genCollectionPrefix(collection_key, collection['data'][sensor_key]['header']['frame_id'])
-                marker = Marker(header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
-                                ns=str(collection_key) + '-' + str(sensor_key), id=0, frame_locked=True,
-                                type=Marker.LINE_LIST, action=Marker.ADD, lifetime=rospy.Duration(0),
-                                pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                                scale=Vector3(x=0.001, y=0, z=0),
-                                color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-                                                g=graphics['collections'][collection_key]['color'][1],
-                                                b=graphics['collections'][collection_key]['color'][2], a=1.0)
-                                )
+                frame_id = genCollectionPrefix(
+                    collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                marker = Marker(
+                    header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
+                    ns=str(collection_key) + '-' + str(sensor_key),
+                    id=0, frame_locked=True, type=Marker.LINE_LIST, action=Marker.ADD,
+                    lifetime=rospy.Duration(0),
+                    pose=Pose(
+                        position=Point(x=0, y=0, z=0),
+                        orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                    scale=Vector3(x=0.001, y=0, z=0),
+                    color=ColorRGBA(
+                        r=graphics['collections'][collection_key]['color'][0],
+                        g=graphics['collections'][collection_key]['color'][1],
+                        b=graphics['collections'][collection_key]['color'][2],
+                        a=1.0))
                 markers.markers.append(marker)
 
     graphics['ros']['MarkersLaserBeams'] = markers
-    graphics['ros']['PubLaserBeams'] = rospy.Publisher('~LaserBeams', MarkerArray, queue_size=0, latch=True)
+    graphics['ros']['PubLaserBeams'] = rospy.Publisher(
+        '~LaserBeams', MarkerArray, queue_size=0, latch=True)
 
     # Create Miscellaneous MarkerArray -----------------------------------------------------------
     markers = MarkerArray()
@@ -563,22 +644,30 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Text signaling the anchored sensor
     for _sensor_key, sensor in dataset['sensors'].items():
         if _sensor_key == dataset['calibration_config']['anchored_sensor']:
-            marker = Marker(header=Header(frame_id=str(_sensor_key), stamp=now),
-                            ns=str(_sensor_key), id=0, frame_locked=True,
-                            type=Marker.TEXT_VIEW_FACING, action=Marker.ADD, lifetime=rospy.Duration(0),
-                            pose=Pose(position=Point(x=0, y=0, z=0.2), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-                            scale=Vector3(x=0.0, y=0.0, z=0.1),
-                            color=ColorRGBA(r=0.6, g=0.6, b=0.6, a=1.0), text='Anchored')
+            marker = Marker(
+                header=Header(frame_id=str(_sensor_key),
+                              stamp=now),
+                ns=str(_sensor_key),
+                id=0, frame_locked=True, type=Marker.TEXT_VIEW_FACING, action=Marker.ADD,
+                lifetime=rospy.Duration(0),
+                pose=Pose(
+                    position=Point(x=0, y=0, z=0.2),
+                    orientation=Quaternion(x=0, y=0, z=0, w=1)),
+                scale=Vector3(x=0.0, y=0.0, z=0.1),
+                color=ColorRGBA(r=0.6, g=0.6, b=0.6, a=1.0),
+                text='Anchored')
 
             markers.markers.append(marker)
 
     graphics['ros']['MarkersMiscellaneous'] = markers
-    graphics['ros']['PubMiscellaneous'] = rospy.Publisher('~Miscellaneous', MarkerArray, queue_size=0, latch=True)
+    graphics['ros']['PubMiscellaneous'] = rospy.Publisher(
+        '~Miscellaneous', MarkerArray, queue_size=0, latch=True)
     # Publish only once in latched mode
     graphics['ros']['PubMiscellaneous'].publish(graphics['ros']['MarkersMiscellaneous'])
     graphics['ros']['Rate'] = rospy.Rate(10)
     graphics['ros']['Rate'] = rospy.Rate(10)
-    graphics['ros']['Counter'] = 0  # tfs need to be published at high frequencies. On the other hand, robot markers
+    # tfs need to be published at high frequencies. On the other hand, robot markers
+    graphics['ros']['Counter'] = 0
     # should be published at low frequencies. This counter will serve to control this mechanism.
 
     return graphics
@@ -617,10 +706,12 @@ def visualizationFunction(models):
         if args['initial_pose_ghost']:
             parent = config['world_link']
             child = generateName(config['world_link'], prefix='c' + collection_key, suffix='ini')
-            transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
-                                         child_frame_id=child,
-                                         transform=Transform(translation=Vector3(x=0, y=0, z=0),
-                                                             rotation=Quaternion(x=0, y=0, z=0, w=1)))
+            transform = TransformStamped(
+                header=Header(frame_id=parent, stamp=now),
+                child_frame_id=child,
+                transform=Transform(
+                    translation=Vector3(x=0, y=0, z=0),
+                    rotation=Quaternion(x=0, y=0, z=0, w=1)))
             transfoms.append(transform)
 
         # Publish all current transforms
@@ -629,10 +720,12 @@ def visualizationFunction(models):
             child = generateName(transform['child'], prefix='c' + collection_key)
             x, y, z = transform['trans']
             qx, qy, qz, qw = transform['quat']
-            transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
-                                         child_frame_id=child,
-                                         transform=Transform(translation=Vector3(x=x, y=y, z=z),
-                                                             rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
+            transform = TransformStamped(
+                header=Header(frame_id=parent, stamp=now),
+                child_frame_id=child,
+                transform=Transform(
+                    translation=Vector3(x=x, y=y, z=z),
+                    rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
             transfoms.append(transform)
 
         if args['initial_pose_ghost']:  # Publish robot meshes at initial pose.
@@ -641,10 +734,12 @@ def visualizationFunction(models):
                 child = generateName(transform['child'], prefix='c' + collection_key)
                 x, y, z = transform['trans']
                 qx, qy, qz, qw = transform['quat']
-                transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
-                                             child_frame_id=child,
-                                             transform=Transform(translation=Vector3(x=x, y=y, z=z),
-                                                                 rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
+                transform = TransformStamped(
+                    header=Header(frame_id=parent, stamp=now),
+                    child_frame_id=child,
+                    transform=Transform(
+                        translation=Vector3(x=x, y=y, z=z),
+                        rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
                 transfoms.append(transform)
 
     graphics['ros']['tf_broadcaster'].sendTransform(transfoms)
@@ -700,12 +795,14 @@ def visualizationFunction(models):
                     continue
 
                 if sensor['modality'] == 'rgb':
-                    image = copy.deepcopy(getCvImageFromCollectionSensor(collection_key, sensor_key, dataset))
+                    image = copy.deepcopy(getCvImageFromCollectionSensor(
+                        collection_key, sensor_key, dataset))
                     width = collection['data'][sensor_key]['width']
                     height = collection['data'][sensor_key]['height']
                     diagonal = math.sqrt(width ** 2 + height ** 2)
 
-                    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                    for pattern_key, pattern in dataset['calibration_config'][
+                            'calibration_patterns'].items():
 
                         # check if sensor detects pattern
                         if not collection['labels'][pattern_key][sensor_key]['detected']:
@@ -713,21 +810,29 @@ def visualizationFunction(models):
 
                         cm = graphics['patterns'][pattern_key]['colormap']
                         # Draw projected points (as dots)
-                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs_projected']):
+                        for idx, point in enumerate(
+                                collection['labels'][pattern_key]
+                                [sensor_key]['idxs_projected']):
                             x = int(round(point['x']))
                             y = int(round(point['y']))
                             color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
                             cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
 
                         # Draw ground truth points (as squares)
-                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs']):
+                        for idx, point in enumerate(
+                                collection['labels'][pattern_key]
+                                [sensor_key]['idxs']):
                             x = int(round(point['x']))
                             y = int(round(point['y']))
                             color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
-                            drawSquare2D(image, x, y, int(8E-3 * diagonal), color=color, thickness=2)
+                            drawSquare2D(
+                                image, x, y, int(8E-3 * diagonal),
+                                color=color, thickness=2)
 
                         # Draw initial projected points (as crosses)
-                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs_initial']):
+                        for idx, point in enumerate(
+                                collection['labels'][pattern_key]
+                                [sensor_key]['idxs_initial']):
                             x = int(round(point['x']))
                             y = int(round(point['y']))
                             color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
@@ -739,8 +844,8 @@ def visualizationFunction(models):
                     graphics['collections'][collection_key][sensor_key]['publisher'].publish(msg)
 
                     # Publish camera info message
-                    camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                                                          sensor['camera_info'])
+                    camera_info_msg = message_converter.convert_dictionary_to_ros_message(
+                        'sensor_msgs/CameraInfo', sensor['camera_info'])
                     camera_info_msg.header.frame_id = msg.header.frame_id
                     graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
@@ -748,22 +853,24 @@ def visualizationFunction(models):
                 elif sensor['modality'] == 'depth':
                     # Shortcut variables
                     collection = collections[collection_key]
-                    image = copy.deepcopy(
-                        getCvDepthImageFromCollectionSensor(collection_key, sensor_key, dataset, scale=10000.0))
+                    image = copy.deepcopy(getCvDepthImageFromCollectionSensor(
+                        collection_key, sensor_key, dataset, scale=10000.0))
 
                     width = collection['data'][sensor_key]['width']
                     height = collection['data'][sensor_key]['height']
                     diagonal = math.sqrt(width ** 2 + height ** 2)/2
                     # print(width, height)
 
-                    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+                    for pattern_key, pattern in dataset['calibration_config'][
+                            'calibration_patterns'].items():
 
                         # check if sensor detects pattern
                         if not collection['labels'][pattern_key][sensor_key]['detected']:
                             continue
 
                         idxs = collection['labels'][pattern_key][sensor_key]['idxs']
-                        idxs_limit_points = collection['labels'][pattern_key][sensor_key]['idxs_limit_points']
+                        idxs_limit_points = collection['labels'][pattern_key][sensor_key][
+                            'idxs_limit_points']
                         gui_image = np.zeros((height, width, 3), dtype=np.uint8)
                         max_value = 5
                         gui_image[:, :, 0] = image / max_value * 255
@@ -779,10 +886,15 @@ def visualizationFunction(models):
                             # convert from linear idx to x_pix and y_pix indices.
                             y = int(idx / width)
                             x = int(idx - y * width)
-                            drawSquare2D(gui_image, x, y, int(8E-3 * diagonal), (255, 0, 200), thickness=1)
+                            drawSquare2D(
+                                gui_image, x, y, int(8E-3 * diagonal),
+                                (255, 0, 200),
+                                thickness=1)
 
                         # Draw projected points (as dots)
-                        for idx, point in enumerate(collection['labels'][pattern_key][sensor_key]['idxs_projected']):
+                        for idx, point in enumerate(
+                                collection['labels'][pattern_key]
+                                [sensor_key]['idxs_projected']):
                             x = int(round(point['x']))
                             y = int(round(point['y']))
                             if x < width - 1 and y < height - 1:
@@ -794,8 +906,8 @@ def visualizationFunction(models):
                     graphics['collections'][collection_key][sensor_key]['publisher'].publish(msg)
 
                     # Publish camera info message
-                    camera_info_msg = message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                                                          sensor['camera_info'])
+                    camera_info_msg = message_converter.convert_dictionary_to_ros_message(
+                        'sensor_msgs/CameraInfo', sensor['camera_info'])
                     camera_info_msg.header.frame_id = msg.header.frame_id
                     graphics['collections'][collection_key][sensor_key]['publisher_camera_info'].publish(
                         camera_info_msg)
