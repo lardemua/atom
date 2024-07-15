@@ -433,7 +433,8 @@ def objectiveFunction(data):
                     K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
                     D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
 
-                    pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+                    pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :], 
+                                                         distortion_model=sensor['camera_info']['distortion_model'])
 
                     # Get the detected points to use as ground truth--------------------------------------------------------
                     pts_detected_in_image = getPointsDetectedInImageAsNPArray(

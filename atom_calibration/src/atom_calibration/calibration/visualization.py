@@ -815,6 +815,7 @@ def visualizationFunction(models):
                                 [sensor_key]['idxs_projected']):
                             x = int(round(point['x']))
                             y = int(round(point['y']))
+                            print('idx = ' + str(idx) + ' x = ' + str(x) + ' y = ' + str(y))
                             color = (cm[idx, 2] * 255, cm[idx, 1] * 255, cm[idx, 0] * 255)
                             cv2.line(image, (x, y), (x, y), color, int(6E-3 * diagonal))
 

@@ -18,19 +18,20 @@ import numpy as np
 from numpy.linalg import norm
 
 # ROS imports
+from atom_core.utilities import atomError
 from image_geometry import PinholeCameraModel
 from rospy_message_converter import message_converter
 
 # Atom imports
 from atom_calibration.collect.label_messages import convertDepthImage16UC1to32FC1
-from atom_core.dataset_io import  getPointCloudMessageFromDictionary, read_pcd
+from atom_core.dataset_io import getPointCloudMessageFromDictionary, read_pcd
 
 # -------------------------------------------------------------------------------
 # --- FUNCTIONS
 # -------------------------------------------------------------------------------
 
 
-def projectToCamera(intrinsic_matrix, distortion, width, height, pts):
+def projectToCamera(intrinsic_matrix, distortion, width, height, pts, distortion_model='plumb_bob'):
     """
     Projects a list of points to the camera defined transform, intrinsics and distortion
     :param intrinsic_matrix: 3x3 intrinsic camera matrix
@@ -48,13 +49,31 @@ def projectToCamera(intrinsic_matrix, distortion, width, height, pts):
     # print('pts.shape=' + str(pts.shape))
     _, n_pts = pts.shape
 
-    # Project the 3D points in the camera's frame to image pixels
+    # plumb_bob or rational_polynomial projection model
     # From https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
+    if distortion_model == 'plumb_bob':
+        if not len(distortion) == 5:
+            atomError('Plumb_bob distortion model requires 5 distortion parameters')
+
+        k1, k2, p1, p2, k3 = distortion
+        k4, k5, k6 = 0, 0, 0
+
+    elif distortion_model == 'rational_polynomial':
+        if not len(distortion) == 8:
+            atomError('Rational_polynomial distortion model requires 8 distortion parameters')
+
+        k1, k2, p1, p2, k3, k4, k5, k6 = distortion
+
+    elif distortion_model == 'equidistant':
+        atomError('Unsuported distortion model: ' + distortion_model)
+        # TODO include Fisheye model - https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
+    else:
+        atomError('Unknown distortion model: ' + distortion_model)
+
+    # Project the 3D points in the camera's frame to image pixels
+
     pixs = np.zeros((2, n_pts), dtype=float)
 
-    k1, k2, p1, p2, k3 = distortion
-    # fx, _, cx, _, fy, cy, _, _, _ = intrinsic_matrix
-    # print('intrinsic=\n' + str(intrinsic_matrix))
     fx = intrinsic_matrix[0, 0]
     fy = intrinsic_matrix[1, 1]
     cx = intrinsic_matrix[0, 2]
@@ -68,8 +87,11 @@ def projectToCamera(intrinsic_matrix, distortion, width, height, pts):
     xl = np.divide(x, z)  # compute homogeneous coordinates
     yl = np.divide(y, z)  # compute homogeneous coordinates
     r2 = xl ** 2 + yl ** 2  # r square (used multiple times bellow)
-    xll = xl * (1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3) + 2 * p1 * xl * yl + p2 * (r2 + 2 * xl ** 2)
-    yll = yl * (1 + k1 * r2 + k2 * r2 ** 2 + k3 * r2 ** 3) + p1 * (r2 + 2 * yl ** 2) + 2 * p2 * xl * yl
+
+    fraction = (1 + k1*r2 + k2*r2**2 + k3*r2**3) / (1 + k4*r2 + k5*r2**2 + k6*r2**3)
+
+    xll = xl * fraction + 2*p1*xl*yl + p2*(r2 + 2 * xl ** 2)
+    yll = yl * fraction + p1*(r2 + 2*yl**2) + 2*p2*xl*yl
     pixs[0, :] = fx * xll + cx
     pixs[1, :] = fy * yll + cy
 
@@ -122,6 +144,7 @@ def projectWithoutDistortion(intrinsic_matrix, width, height, pts):
     valid_pixs = np.logical_and(valid_z, np.logical_and(valid_xpix, valid_ypix))
     return pixs, valid_pixs, dists
 
+
 def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
     # From http://www.open3d.org/docs/0.7.0/python_api/open3d.geometry.create_point_cloud_from_depth_image.html
 
@@ -132,16 +155,17 @@ def convert_from_uvd(cx, cy, fx, fy, xpix, ypix, d):
     y = y_over_z * z
     return x, y, z
 
+
 def depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs):
     """
     Convert a depth image to numpy array
     """
-    
+
     filename = os.path.dirname(json_file) + '/' + \
-                dataset['collections'][selected_collection_key]['data'][ss]['data_file']
+        dataset['collections'][selected_collection_key]['data'][ss]['data_file']
 
     cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-    
+
     img = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
                                         scale=10000.0)
 
@@ -167,7 +191,7 @@ def depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs):
         # get distance value for this pixel coordinate
         distance = img[y_pix, x_pix]
 
-        if np.isnan(distance): # if the value of the pixel is nan, ignore it
+        if np.isnan(distance):  # if the value of the pixel is nan, ignore it
             continue
 
         # compute 3D point and add to list of coordinates xs, ys, zs
@@ -187,14 +211,15 @@ def depthToImage(dataset, selected_collection_key, json_file, pattern_key, ss, t
     Convert a depth image to points inside an rgb image
     """
 
-    idxs = dataset['collections'][selected_collection_key]['labels'][pattern_key][ss]['idxs_limit_points']
+    idxs = dataset['collections'][selected_collection_key]['labels'][pattern_key][ss][
+        'idxs_limit_points']
     points_in_depth = depthToNPArray(dataset, selected_collection_key, json_file, ss, idxs)
 
     points_in_cam = np.dot(tf, points_in_depth)
 
     # -- Project them to the image
-    w, h = dataset['collections'][selected_collection_key]['data'][ts]['width'],\
-            dataset['collections'][selected_collection_key]['data'][ts]['height']
+    w, h = dataset['collections'][selected_collection_key]['data'][ts]['width'], \
+        dataset['collections'][selected_collection_key]['data'][ts]['height']
     K = np.ndarray((3, 3), buffer=np.array(dataset['sensors'][ts]['camera_info']['K']), dtype=float)
     D = np.ndarray((5, 1), buffer=np.array(dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
@@ -212,15 +237,16 @@ def depthToPointCloud(dataset, selected_collection_key, json_file, ss, idxs):
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points_3)
 
-
     return point_cloud
+
 
 def depthInImage(dataset, selected_collection_key, pattern_key, ss):
     """
     Converts depth idxs_limit_points to points inside the depth image
     """
 
-    idxs = dataset['collections'][selected_collection_key]['labels'][pattern_key][ss]['idxs_limit_points']
+    idxs = dataset['collections'][selected_collection_key]['labels'][pattern_key][ss][
+        'idxs_limit_points']
     pinhole_camera_model = PinholeCameraModel()
     pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
         'sensor_msgs/CameraInfo', dataset['sensors'][ss]['camera_info']))
@@ -259,8 +285,10 @@ def rangeToImage(mixed_dataset, collection, json_file, pattern_key, ss, ts, tf):
 
     # -- Project them to the image
     w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(mixed_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
-    D = np.ndarray((5, 1), buffer=np.array(mixed_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
+    K = np.ndarray((3, 3), buffer=np.array(
+        mixed_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(
+        mixed_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
 
     lidar_pts_in_img, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
