@@ -103,8 +103,7 @@ if __name__ == '__main__':
             collection["transforms"][tf_name]["quat"] = selected_collection_quat
             collection["transforms"][tf_name]["trans"] = selected_collection_trans
 
-
-
     # Save results to a json file
-    filename_results_json = os.path.dirname(target_dataset_name) + '/' + 'dataset_tfs_copied.json'
+    base_file_name = target_dataset_name.split('/')[-1].split('.')[0]
+    filename_results_json = os.path.dirname(target_dataset_name) + '/' + base_file_name + '_tfs_copied.json'
     saveAtomDataset(filename_results_json, new_dataset, save_data_files=False)
