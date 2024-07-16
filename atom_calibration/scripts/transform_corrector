@@ -143,11 +143,14 @@ def main():
     ap.add_argument(
         "-rs", "--reference_sensor",
         help="", required=True)
+    ap.add_argument("-pll", "--parent_link_list", required=True, type=str,
+                    help="The names of the parent frames in the TF to copy", nargs='+')
+    ap.add_argument("-cll", "--child_link_list", required=True, type=str,
+                    help="The names of the child frames in the TF to copy", nargs='+')
+
     # ap.add_argument(
     # "-2d", "--2d_mode", required=True,
     # help="Interactive marker only moves in 2D. Useful for odometry transformations",)
-    ap.add_argument("-op", "--odometry_parent", help="", required=True)
-    ap.add_argument("-oc", "--odometry_child", help="", required=True)
     ap.add_argument("-s", "--marker_scale", type=float, default=0.9,
                     help='Scale of the interactive markers.')
     ap.add_argument(
@@ -168,7 +171,7 @@ def main():
     args['show_images'] = True
     args['use_incomplete_collections'] = True
     args['remove_partial_detections'] = False
-    args['collection_selection_function'] = None
+    # args['collection_selection_function'] = None
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
@@ -205,55 +208,6 @@ def main():
 
     print("Configuring visualization ... ")
     graphics = setupVisualization(dataset, args, selection['collection_key'])
-
-    # ---------------------------------------
-    # --- lidar3d modality subscribers
-    # ---------------------------------------
-
-    # Define subscriber to receive the selected points
-    rospy.Subscriber("/rviz/selected_points", PointCloud2,
-                     partial(selectedPointsCallback, selection=selection, dataset=dataset))
-
-    rospy.Subscriber("/rviz/selected_border_points", PointCloud2,
-                     partial(selectedPointsBorderCallback, selection=selection, dataset=dataset))
-
-    rospy.Subscriber("/rviz/selected_remove_points", PointCloud2,
-                     partial(selectedPointsRemoveCallback, selection=selection, dataset=dataset))
-
-    rospy.Subscriber("/rviz/selected_clear_all_points", PointCloud2,
-                     partial(selectedPointsClearAllCallback, selection=selection, dataset=dataset))
-
-    # ---------------------------------------
-    # --- Depth modality subscribers
-    # ---------------------------------------
-
-    # Subscriber for the image_click plugin
-    # this stores the pixel coordinates of clicked points per collection, and per sensor key
-    clicked_points = {collection_key: {} for collection_key in dataset['collections']}
-
-    # Initialize clicked points for all collections and sensors
-    for collection_key in dataset['collections']:
-        for sensor_key, sensor in dataset['sensors'].items():
-            if sensor['modality'] == 'depth':
-                clickedPointsReset(clicked_points, collection_key, sensor_key)
-
-    # Create a subscriber for each depth sensor
-    for sensor_key, sensor in dataset['sensors'].items():
-        if sensor['modality'] == 'depth':
-
-            points_topic = generateLabeledTopic(
-                dataset['sensors'][sensor_key]['topic'],
-                type='2d') + '/mouse_click'
-            rospy.Subscriber(points_topic, PointStamped,
-                             partial(
-                                 clickedPointsCallback, clicked_points=clicked_points,
-                                 dataset=dataset, sensor_key=sensor_key, selection=selection,
-                                 depth_mode=depth_mode, args=args))
-
-    # ---------------------------------------
-    # --- RGB modality subscribers
-    # ---------------------------------------
-    # TODO #394 To implement in the future.
 
     # ---------------------------------------
     # --- Define callback to navigate through collections
