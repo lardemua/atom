@@ -60,8 +60,7 @@ def createDepthMarkers3D(dataset, sensor_key, collection_key, pattern_key, color
     collection = dataset['collections'][collection_key]
 
     if frame_id is None:
-        frame_id = genCollectionPrefix(
-            collection_key, collection['data'][sensor_key]['header']['frame_id'])
+        frame_id = collection['data'][sensor_key]['header']['frame_id']
 
     if namespace is None:
         namespace = str(collection_key) + '-' + str(sensor_key)
@@ -185,24 +184,6 @@ def createPatternMarkers(frame_id, ns, collection_key, now, dataset, graphics):
                                        b=graphics['pattern']['colormap'][idx_corner, 2], a=1))
 
     markers.markers.append(marker)
-
-    # Draw transitions
-    # TODO we don't use this anymore, should we draw it? Perhaps it will be used for 2D Lidar ...
-    # marker = Marker(header=Header(frame_id=frame_id, stamp=now),
-    #                 ns=ns + '-transitions', id=0, frame_locked=True,
-    #                 type=Marker.POINTS, action=Marker.ADD, lifetime=rospy.Duration(0),
-    #                 pose=Pose(position=Point(x=0, y=0, z=0), orientation=Quaternion(x=0, y=0, z=0, w=1)),
-    #                 scale=Vector3(x=0.015, y=0.015, z=0),
-    #                 color=ColorRGBA(r=graphics['collections'][collection_key]['color'][0],
-    #                                 g=graphics['collections'][collection_key]['color'][1],
-    #                                 b=graphics['collections'][collection_key]['color'][2], a=1.0))
-    #
-    # pts = dataset['patterns']['transitions']['vertical']
-    # pts.extend(dataset['patterns']['transitions']['horizontal'])
-    # for pt in pts:
-    #     marker.points.append(Point(x=pt['x'], y=pt['y'], z=0))
-    #
-    # markers.markers.append(marker)
 
     # Draw the mesh, if one is provided
     if not dataset['calibration_config']['calibration_pattern']['mesh_file'] == "":
@@ -346,8 +327,8 @@ def setupVisualization(dataset, args, selected_collection_key):
             if sensor['modality'] == 'lidar3d':
                 # print('Entering modality 3d for sensor ' + sensor_key + ' collection ' + collection_key)
                 # Add labelled points to the marker
-                frame_id = genCollectionPrefix(
-                    collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                frame_id = generateName(collection['data'][sensor_key]['header']['frame_id'],
+                                        prefix='ref')
 
                 # Add 3D lidar data
                 original_pointcloud_msg = getPointCloudMessageFromDictionary(
@@ -401,8 +382,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
             # if sensor['msg_type'] == 'LaserScan':  # -------- Publish the laser scan data ------------------------------
             if sensor['modality'] == 'lidar2d':
-                frame_id = genCollectionPrefix(
-                    collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                frame_id = collection['data'][sensor_key]['header']['frame_id']
                 marker = Marker(
                     header=Header(frame_id=frame_id, stamp=now),
                     ns=str(collection_key) + '-' + str(sensor_key),
@@ -468,8 +448,7 @@ def setupVisualization(dataset, args, selected_collection_key):
 
                 # print('Entering modality 3d for sensor ' + sensor_key + ' collection ' + collection_key)
                 # Add labelled points to the marker
-                frame_id = genCollectionPrefix(
-                    collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                frame_id = collection['data'][sensor_key]['header']['frame_id']
 
                 # Add 3D lidar data
                 original_pointcloud_msg = getPointCloudMessageFromDictionary(
@@ -515,8 +494,8 @@ def setupVisualization(dataset, args, selected_collection_key):
     graphics['ros']['robot_mesh_markers'] = {'collections': {}}
     for collection_key, collection in dataset['collections'].items():
         rgba = [.5, .5, .5, 1]  # best color we could find
-        markers = urdfToMarkerArray(xml_robot, frame_id_prefix=genCollectionPrefix(
-            collection_key, ''), namespace='robot_mesh', rgba=rgba)
+        markers = urdfToMarkerArray(xml_robot, frame_id_prefix='',
+                                    namespace='robot_mesh', rgba=rgba)
         graphics['ros']['robot_mesh_markers']['collections'][collection_key] = markers
 
     # Create LaserBeams Publisher -----------------------------------------------------------
@@ -531,8 +510,7 @@ def setupVisualization(dataset, args, selected_collection_key):
                     continue
                 # if sensor['msg_type'] == 'LaserScan' or sensor['msg_type'] == 'PointCloud2':
                 if sensor['modality'] == 'lidar2d' or sensor['modality'] == 'lidar3d':
-                    frame_id = genCollectionPrefix(
-                        collection_key, collection['data'][sensor_key]['header']['frame_id'])
+                    frame_id = collection['data'][sensor_key]['header']['frame_id']
                     marker = Marker(
                         header=Header(frame_id=frame_id, stamp=rospy.Time.now()),
                         ns=str(collection_key) + '-' + str(sensor_key) + str(pattern_key),
@@ -589,7 +567,7 @@ def setupVisualization(dataset, args, selected_collection_key):
     return graphics
 
 
-def visualizationFunction(models, selection, clicked_points=None):
+def visualizationFunction(models, selection):
     # print(Fore.RED + 'Visualization function called.' + Style.RESET_ALL)
     # Get the data from the meshes
     dataset = models['dataset']
@@ -609,48 +587,106 @@ def visualizationFunction(models, selection, clicked_points=None):
 
     now = rospy.Time.now()  # time used to publish all visualization messages
 
+    # transfoms = []
+    # for collection_key, collection in collections.items():
+
+    #     # To have a fully connected tree, must connect the instances of the tf tree of every collection into a single
+    #     # tree. We do this by publishing an identity transform between the configured world link and hte world link
+    #     # of each collection.
+    #     parent = config['world_link']
+    #     child = generateName(config['world_link'], prefix='c' + collection_key)
+
+    #     transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
+    #                                  child_frame_id=child,
+    #                                  transform=Transform(translation=Vector3(x=0, y=0, z=0),
+    #                                                      rotation=Quaternion(x=0, y=0, z=0, w=1)))
+    #     transfoms.append(transform)
+
+    #     for transform_key, transform in collection['transforms'].items():
+    #         parent = generateName(
+    #             transform['parent'], prefix='c' + collection_key)
+    #         child = generateName(
+    #             transform['child'], prefix='c' + collection_key)
+    #         x, y, z = transform['trans']
+    #         qx, qy, qz, qw = transform['quat']
+    #         transform = TransformStamped(
+    #             header=Header(frame_id=parent, stamp=now),
+    #             child_frame_id=child,
+    #             transform=Transform(
+    #                 translation=Vector3(x=x, y=y, z=z),
+    #                 rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
+    #         transfoms.append(transform)
+
+    # for collection_key, collection in collections.items():
+
+    # To have a fully connected tree, must connect the instances of the tf tree of every collection into a single
+    # tree. We do this by publishing an identity transform between the configured world link and hte world link
+    # of each collection.
+    # parent = config['world_link']
+    # child = generateName(config['world_link'], prefix='c' + collection_key)
+
+    # transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
+    #                                 child_frame_id=child,
+    #                                 transform=Transform(translation=Vector3(x=0, y=0, z=0),
+    #                                                     rotation=Quaternion(x=0, y=0, z=0, w=1)))
+    # transfoms.append(transform)
+
     transfoms = []
-    for collection_key, collection in collections.items():
+    for transform_key, transform in collections[selected_collection_key]['transforms'].items():
+        x, y, z = transform['trans']
+        qx, qy, qz, qw = transform['quat']
 
-        # To have a fully connected tree, must connect the instances of the tf tree of every collection into a single
-        # tree. We do this by publishing an identity transform between the configured world link and hte world link
-        # of each collection.
-        parent = config['world_link']
-        child = generateName(config['world_link'], prefix='c' + collection_key)
+        h = Header(frame_id=transform['parent'], stamp=now)
+        t = Transform(translation=Vector3(x=x, y=y, z=z),
+                      rotation=Quaternion(x=qx, y=qy, z=qz, w=qw))
 
-        transform = TransformStamped(header=Header(frame_id=parent, stamp=now),
-                                     child_frame_id=child,
-                                     transform=Transform(translation=Vector3(x=0, y=0, z=0),
-                                                         rotation=Quaternion(x=0, y=0, z=0, w=1)))
-        transfoms.append(transform)
+        transform_stamped = TransformStamped(header=h,
+                                             child_frame_id=transform['child'],
+                                             transform=t)
+        transfoms.append(transform_stamped)
 
-        for transform_key, transform in collection['transforms'].items():
-            parent = generateName(
-                transform['parent'], prefix='c' + collection_key)
-            child = generateName(
-                transform['child'], prefix='c' + collection_key)
-            x, y, z = transform['trans']
-            qx, qy, qz, qw = transform['quat']
-            transform = TransformStamped(
-                header=Header(frame_id=parent, stamp=now),
-                child_frame_id=child,
-                transform=Transform(
-                    translation=Vector3(x=x, y=y, z=z),
-                    rotation=Quaternion(x=qx, y=qy, z=qz, w=qw)))
-            transfoms.append(transform)
+    # Add a branch for the reference collection. This is needed to show the reference sensor data.
+    for transform_key, transform in collections[reference_collection_key]['transforms'].items():
+        x, y, z = transform['trans']
+        qx, qy, qz, qw = transform['quat']
+
+        parent = generateName(transform['parent'], prefix='ref')
+        child = generateName(transform['child'], prefix='ref')
+
+        h = Header(frame_id=parent, stamp=now)
+        t = Transform(translation=Vector3(x=x, y=y, z=z),
+                      rotation=Quaternion(x=qx, y=qy, z=qz, w=qw))
+
+        transform_stamped = TransformStamped(header=h,
+                                             child_frame_id=child,
+                                             transform=t)
+        transfoms.append(transform_stamped)
+
+    # To have a fully connected tree, must connect the world to the ref_world.
+    # We do this by publishing an identity transform between these frames
+    parent = config['world_link']
+    child = generateName(parent, prefix='ref')
+#
+    transform_stamped = TransformStamped(
+        header=Header(frame_id=parent, stamp=now),
+        child_frame_id=child,
+        transform=Transform(
+            translation=Vector3(x=0, y=0, z=0),
+            rotation=Quaternion(x=0, y=0, z=0, w=1)))
+    transfoms.append(transform_stamped)
 
     graphics['ros']['tf_broadcaster'].sendTransform(transfoms)
 
     # print("graphics['ros']['Counter'] = " + str(graphics['ros']['Counter']))
-    if graphics['ros']['Counter'] < 5:
-        graphics['ros']['Counter'] += 1
-        return None
-    else:
-        graphics['ros']['Counter'] = 0
+    # if graphics['ros']['Counter'] < 5:
+    #     graphics['ros']['Counter'] += 1
+    #     return None
+    # else:
+    #     graphics['ros']['Counter'] = 0
 
     # Update markers stamp, so that rviz uses newer transforms to compute their poses.
     # for marker in graphics['ros']['robot_mesh_markers'].markers:
-        # marker.header.stamp = now
+    # marker.header.stamp = now
 
     # Publish the meshes
     markers = graphics['ros']['robot_mesh_markers']['collections'][selected_collection_key]
@@ -686,9 +722,9 @@ def visualizationFunction(models, selection, clicked_points=None):
             # if not collection['labels'][sensor_key]['detected']:  # not detected by sensor in collection
             #     continue
 
-            color = (graphics['colormap']['range'][collection_key]['color'][0],
-                     graphics['colormap']['range'][collection_key]['color'][1],
-                     graphics['colormap']['range'][collection_key]['color'][2], 0.5)
+            color = (graphics['colormap']['range'][selected_collection_key]['color'][0],
+                     graphics['colormap']['range'][selected_collection_key]['color'][1],
+                     graphics['colormap']['range'][selected_collection_key]['color'][2], 0.5)
             markers = MarkerArray()
             markers = createDepthMarkers3D(
                 dataset, sensor_key, selected_collection_key, pattern_key, color=color, stamp=None,
@@ -852,8 +888,6 @@ def visualizationFunction(models, selection, clicked_points=None):
 
                 # Shortcut variables
                 collection = collections[selected_collection_key]
-                clicked_sensor_points = clicked_points[selected_collection_key][sensor_key][
-                    'points']
 
                 # Create image to draw on top
                 image = getCvImageFromDictionaryDepth(collection['data'][sensor_key])
@@ -861,23 +895,6 @@ def visualizationFunction(models, selection, clicked_points=None):
                 for pattern_key in dataset['calibration_config']['calibration_patterns'].keys():
                     gui_image = drawLabelsOnImage(
                         collection['labels'][pattern_key][sensor_key], gui_image)
-
-                if not clicked_points[selected_collection_key][sensor_key]['valid_polygon']:
-                    # Draw a cross for each point
-                    for point in clicked_sensor_points:
-                        drawSquare2D(
-                            gui_image, point['x'],
-                            point['y'],
-                            size=7, color=(50, 190, 0),
-                            thickness=2)
-
-                    # Draw a line segment for each pair of consecutive points
-                    for point_start, point_end in zip(
-                            clicked_sensor_points[: -1],
-                            clicked_sensor_points[1:]):
-                        cv2.line(gui_image, pt1=(point_start['x'], point_start['y']),
-                                 pt2=(point_end['x'], point_end['y']),
-                                 color=(0, 0, 255), thickness=2)
 
                 msg = CvBridge().cv2_to_imgmsg(gui_image, "passthrough")
 
