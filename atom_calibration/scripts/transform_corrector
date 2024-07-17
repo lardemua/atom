@@ -157,7 +157,7 @@ def main():
     args['show_images'] = True
     args['use_incomplete_collections'] = True
     args['remove_partial_detections'] = False
-    # args['collection_selection_function'] = None
+    args['collection_selection_function'] = None
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
