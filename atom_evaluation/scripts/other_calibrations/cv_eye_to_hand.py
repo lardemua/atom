@@ -14,6 +14,7 @@ import sys
 import numpy as np
 import argparse
 import cv2
+from atom_calibration.collect import patterns
 import tf
 from colorama import Fore, Style
 from copy import deepcopy
@@ -88,9 +89,18 @@ def main():
     dataset, _ = loadResultsJSON(args["json_file"],
                                  args["collection_selection_function"])
 
-    # opencv can only process complete detections
-    args['remove_partial_detections'] = True
+    # opencv can only process detections with more than 4 corners detected
+    # args['remove_partial_detections'] = True
+    args["remove_partial_detections"] = False
     dataset = filterCollectionsFromDataset(dataset, args)
+
+    # deleted = []
+    # for collection_key, collection in dataset['collections'].items():
+    #         if len(collection["labels"][args["pattern"]][args["camera"]]["idxs"]) < 10:
+    #             deleted.append(collection_key)
+
+    # for collection_key in deleted:
+    #     del dataset['collections'][collection_key]
 
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
     dataset_initial = deepcopy(dataset)  # store initial values
@@ -196,6 +206,7 @@ def main():
     pts_3d = np.zeros((nx * ny, 3), np.float32)
     # set of coordinates (w.r.t. the pattern frame) of the corners
     pts_3d[:, :2] = square * np.mgrid[0:nx, 0:ny].T.reshape(-1, 2)
+    # print(pts_3d)
     number_of_corners = int(nx) * int(ny)
 
     # ---------------------------------------
@@ -239,14 +250,38 @@ def main():
         # This requires a np array of the pattern corners 3d coordinates
         # and another np array of the correponding 2d pixels.
         # 3d coordinates were extracted previously, so lets go to 2d..
-        pts_2d = np.ones((number_of_corners, 2), np.float32)
+        pts_2d_length = len(collection["labels"][args["pattern"]][args["camera"]]["idxs"])
+        pts_2d = np.ones((pts_2d_length, 2), np.float32)
         for idx, point in enumerate(collection['labels'][args['pattern']][args['camera']]['idxs']):
             pts_2d[idx, 0] = point['x']
             pts_2d[idx, 1] = point['y']
+        
+        # New 3d_pts array must have the same no. of points as 2d_pts array
+        # We extract the 3d points from pts_3d corresponding to the detected corners for each collection
+        pts_3d_detected = np.zeros((pts_2d_length, 3), np.float32)
+        i = 0
+        for label in collection["labels"][args["pattern"]][args["camera"]]["idxs"]:
+            pts_3d_detected[i] = pts_3d[label["id"]]
+            i += 1
 
-        retval, rvec, tvec = cv2.solvePnP(pts_3d, pts_2d, K, D)
+        retval, rvec, tvec = cv2.solvePnP(pts_3d_detected, pts_2d, K, D)
         if not retval:
             raise atomError('solvePnP failed.')
+
+        # Alternative to solvePnP -> estimatePoseCharucoBoard()
+
+        # First, I need to initialize a board object
+        # board_size = {
+        #     'x': nx,
+        #     'y': ny
+        # }
+        # inner_length = dataset['calibration_config']['calibration_patterns'][args['pattern']]['inner_size']
+        # dictionary = dataset['calibration_config']['calibration_patterns'][args['pattern']]['dictionary']
+        # pattern = patterns.CharucoPattern(board_size, square, inner_length, dictionary)
+
+        # retval, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(
+        #     # WIP, FILL THIS OUT
+        # )
 
         # Convert to 4x4 transform and add to list
         c_T_p = traslationRodriguesToTransform(tvec, rvec)
