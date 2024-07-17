@@ -8,24 +8,22 @@ import sys
 from functools import partial
 
 # ros imports
-from atom_core.utilities import createLambdaExpressionsForArgs
+from atom_core.config_io import atomError
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 import rospy
-from atom_core.naming import generateLabeledTopic
-from geometry_msgs.msg import PointStamped
-from sensor_msgs.msg import PointCloud2
 
 # 3rd-party imports
-from colorama import Back, Fore, Style
+from colorama import Fore, Style
 from pynput import keyboard
 
 # Atom imports
-from atom_calibration.odometry_inspector.depth_manual_labeling import clickedPointsCallback, clickedPointsReset
-from atom_calibration.odometry_inspector.lidar3d_manual_labeling import *
-from atom_calibration.odometry_inspector.visualization import setupVisualization, visualizationFunction
+from atom_core.utilities import createLambdaExpressionsForArgs
+from atom_calibration.transform_corrector.pose_interactive_marker import PoseInteractiveMarker
+from atom_calibration.transform_corrector.lidar3d_manual_labeling import *
+from atom_calibration.transform_corrector.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (filterCollectionsFromDataset,
                                   filterSensorsFromDataset, loadResultsJSON, saveAtomDataset)
 
-from atom_calibration.odometry_inspector.interactive_first_guess import InteractiveFirstGuess
 
 # own packages
 
@@ -83,14 +81,6 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode, output_file):
             selection['exit'] = True
         elif key_char == 'h':  # Prints help.
             printHelp()
-        elif key_char == 'd':  # Prints help.
-
-            if depth_mode['mode'] == 'detect':
-                depth_mode['mode'] = 'delete'
-            else:
-                depth_mode['mode'] = 'detect'
-
-            print('Changed depth mode to ' + depth_mode['mode'])
 
     except AttributeError:
         if key == keyboard.Key.right:  # Save and move to collection + 1.
@@ -124,41 +114,37 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode, output_file):
 # --- MAIN
 # -------------------------------------------------------------------------------
 
-
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-json", "--json_file",
-                    help="Json file containing input dataset.", type=str, required=True)
+    ap.add_argument("-json", "--json_file", type=str, required=True,
+                    help="Json file containing input dataset.",)
+    ap.add_argument("-ow", "--overwrite",
+                    help="Overwrites the data_corrected.json without asking for permission.",
+                    action='store_true')
     ap.add_argument(
-        "-ow", "--overwrite",
-        help="Overwrites the data_corrected.json without asking for permission.",
-        action='store_true')
-    ap.add_argument(
-        "-rnb", "--remove_nan_border",
-        help="Option for the labeling of depth images. It Will run a detection of nan values in the image, searching for the actual area of the image which is used. Then, border detection will use this estimated area...",
-        action='store_true')
+        "-rnb", "--remove_nan_border", action='store_true',
+        help="Option for the labeling of depth images. It Will run a detection of nan values in the image, searching for the actual area of the image which is used. Then, border detection will use this estimated area...",)
     ap.add_argument(
         "-rc", "--reference_collection",
-        help="", required=True)
+        help="Reference collection to always show in blue color.", required=True)
     ap.add_argument(
-        "-rs", "--reference_sensor",
-        help="", required=True)
+        "-rs", "--reference_sensor", required=False,
+        help="Sensor data to always show at reference collection in blue color. For now only lidar3d is supported.")
     ap.add_argument("-pll", "--parent_link_list", required=True, type=str,
                     help="The names of the parent frames in the TF to copy", nargs='+')
     ap.add_argument("-cll", "--child_link_list", required=True, type=str,
                     help="The names of the child frames in the TF to copy", nargs='+')
-
-    # ap.add_argument(
-    # "-2d", "--2d_mode", required=True,
-    # help="Interactive marker only moves in 2D. Useful for odometry transformations",)
+    ap.add_argument(
+        "-2d", "--2d_mode", action='store_true',
+        help="Interactive marker only moves in 2D. Useful for odometry transformations",)
     ap.add_argument("-s", "--marker_scale", type=float, default=0.9,
                     help='Scale of the interactive markers.')
-    ap.add_argument(
-        "-csf", "--collection_selection_function", default=None, type=str,
-        help="A string to be evaluated into a lambda function that receives a collection name as input and "
-        "returns True or False to indicate if the collection should be loaded (and used in the "
-        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-        "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    # ap.add_argument(
+    #     "-csf", "--collection_selection_function", default=None, type=str,
+    #     help="A string to be evaluated into a lambda function that receives a collection name as input and "
+    #     "returns True or False to indicate if the collection should be loaded (and used in the "
+    #     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+    #     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
@@ -166,12 +152,12 @@ def main():
     args_original = vars(ap.parse_args(args=arglist))
     args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
 
-    # Arguments which are not options for odometry_inspector
+    # Arguments which are not options for transform_corrector
     args['ros_visualization'] = True
     args['show_images'] = True
     args['use_incomplete_collections'] = True
     args['remove_partial_detections'] = False
-    # args['collection_selection_function'] = None
+    args['collection_selection_function'] = None
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
@@ -182,7 +168,8 @@ def main():
     # ---------------------------------------
     # --- Filter some collections and / or sensors from the dataset
     # ---------------------------------------
-    # dataset = filterCollectionsFromDataset(dataset, args)  # During dataset review there is no need to filter out collections
+    # During dataset review there is no need to filter out collections
+    dataset = filterCollectionsFromDataset(dataset, args)
 
     output_file = os.path.join(os.path.dirname(args['json_file']), 'dataset_corrected.json')
     if os.path.exists(output_file) and args['json_file'] != output_file and not args['overwrite']:
@@ -219,10 +206,34 @@ def main():
     listener.start()
 
     # ---------------------------------------
-    # Setting up interactive marker
+    # Setting up interactive marker server
     # ---------------------------------------
-    first_guess = InteractiveFirstGuess(args, dataset, selection)
-    first_guess.init()
+
+    interactive_marker_server = InteractiveMarkerServer('transform_corrector')
+
+    pose_markers = []
+    for parent, child in zip(args['parent_link_list'], args['child_link_list']):
+        print(parent, child)
+
+        name_in_dataset = parent + '-' + child
+
+        if 'transforms' not in dataset.keys():
+            atomError('Dataset must have the transforms field. Perhaps you are using an old dataset.')
+
+        if dataset['transforms'][name_in_dataset]['type'] == 'fixed':
+            is_fixed = True
+        else:
+            is_fixed = False
+
+        name = parent + '_' + child
+
+        pose_marker = PoseInteractiveMarker(
+            name=name, dataset=dataset, selection=selection, server=interactive_marker_server,
+            world_link=dataset['calibration_config']['world_link'],
+            parent=parent, child=child,
+            is_fixed=is_fixed, two_dimensional_mode=args['2d_mode'],)
+
+        pose_markers.append(pose_marker)
 
     # ---------------------------------------
     # --- Loop while displaying selected collection
@@ -235,11 +246,14 @@ def main():
     while not rospy.is_shutdown() and not selection['exit']:
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         if selection['collection_key'] != current_collection:
-            first_guess.additional_tf.updateAll()
-            first_guess.additional_tf.updateMarkers()
+
+            print('updating markers from dataset')
+            for pose_marker in pose_markers:
+                pose_marker.updateMarkersFromDataset()
+
             current_collection = selection['collection_key']
 
-        visualizationFunction(models=models, selection=selection, clicked_points=clicked_points)
+        visualizationFunction(models=models, selection=selection)
         rate.sleep()
 
         # if (rospy.Time.now() - tic).to_sec() > 3:
