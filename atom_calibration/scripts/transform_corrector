@@ -19,7 +19,6 @@ from pynput import keyboard
 # Atom imports
 from atom_core.utilities import createLambdaExpressionsForArgs
 from atom_calibration.transform_corrector.pose_interactive_marker import PoseInteractiveMarker
-from atom_calibration.transform_corrector.lidar3d_manual_labeling import *
 from atom_calibration.transform_corrector.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (filterCollectionsFromDataset,
                                   filterSensorsFromDataset, loadResultsJSON, saveAtomDataset)
@@ -42,14 +41,8 @@ def printHelp():
         ' Holding the Shift key will allow adding to the current selection.\n'\
         ' Holding the Ctrl key will allow subtraction from the current selection.\n'\
         ' The following keys are also available:\n'\
-        ' p - Publish selected points to /rviz_selected_points\n'\
-        ' b - Publish selected points to /rviz_selected_border_points\n'\
-        ' r - Publish selected points to /rviz_selected_remove_points\n'\
-        ' c - Publish selected points to /rviz_selected_clear_all_points\n'\
-        ' d - Switch between detect (find pattern inside user defined polygon) and delete (delete boundary points inside polygon) modes for depth labeling\n'\
         ' s - Save dataset\n'\
         ' q - Save dataset and quit \n'
-
     print(s)
 
 
@@ -90,9 +83,6 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode, output_file):
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
                 saveAtomDataset(output_file, dataset, freeze_dataset=True)
 
-                # More intuitive if detect mode is True at the beginning of a new collection
-                depth_mode['mode'] = 'detect'
-                print('Changed depth mode to ' + depth_mode['mode'])
             else:
                 print(Fore.RED + 'This is the last collection!!' + Fore.RESET)
         elif key == keyboard.Key.left:  # Save and move to collection - 1.
@@ -101,10 +91,6 @@ def keyPressedCallback(key, selection, dataset, args, depth_mode, output_file):
                 selection['collection_key'] = list(dataset['collections'].keys())[idx_collection-1]
                 print('Changed selected_collection_key to ' + str(selection['collection_key']))
                 saveAtomDataset(output_file, dataset, freeze_dataset=True)
-
-                # More intuitive if detect mode is True at the beginning of a new collection
-                depth_mode['mode'] = 'detect'
-                print('Changed depth mode to ' + depth_mode['mode'])
 
             else:
                 print(Fore.RED + 'This is the first collection!!' + Fore.RESET)
@@ -215,23 +201,22 @@ def main():
     for parent, child in zip(args['parent_link_list'], args['child_link_list']):
         print(parent, child)
 
-        name_in_dataset = parent + '-' + child
-
         if 'transforms' not in dataset.keys():
             atomError('Dataset must have the transforms field. Perhaps you are using an old dataset.')
 
+        name_in_dataset = parent + '-' + child
         if dataset['transforms'][name_in_dataset]['type'] == 'fixed':
             is_fixed = True
         else:
             is_fixed = False
 
         name = parent + '_' + child
-
         pose_marker = PoseInteractiveMarker(
             name=name, dataset=dataset, selection=selection, server=interactive_marker_server,
             world_link=dataset['calibration_config']['world_link'],
             parent=parent, child=child,
-            is_fixed=is_fixed, two_dimensional_mode=args['2d_mode'],)
+            is_fixed=is_fixed, two_dimensional_mode=args['2d_mode'],
+            marker_scale=args['marker_scale'])
 
         pose_markers.append(pose_marker)
 
@@ -247,7 +232,6 @@ def main():
         models = {'dataset': dataset, 'args': args, 'graphics': graphics}
         if selection['collection_key'] != current_collection:
 
-            print('updating markers from dataset')
             for pose_marker in pose_markers:
                 pose_marker.updateMarkersFromDataset()
 

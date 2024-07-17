@@ -5,41 +5,31 @@ Reads a set of data and labels from a group of sensors in a json file and calibr
 import copy
 import math
 import struct
-from re import I
-from tokenize import generate_tokens
 
 # 3rd-party
-import cv2
-import cv_bridge
 import numpy as np
 import atom_core.ros_numpy
 
-# import numpy as np  # TODO Eurico, line  fails if I don't do this
 import rospy
 import sensor_msgs.point_cloud2 as pc2
-import tf
 import tf2_ros
 from atom_calibration.calibration.objective_function import *
 from atom_calibration.collect.label_messages import *
 from atom_calibration.odometry_inspector.depth_manual_labeling import drawLabelsOnImage, normalizeDepthImage
-from atom_core.cache import Cache
-from atom_core.system import execute
 from atom_core.xacro_io import readXacroFile
 from atom_core.dataset_io import (
-    genCollectionPrefix, getCvImageFromDictionary, getCvImageFromDictionaryDepth,
+    getCvImageFromDictionary, getCvImageFromDictionaryDepth,
     getPointCloudMessageFromDictionary)
-from atom_core.drawing import drawCross2D, drawSquare2D
+from atom_core.drawing import drawSquare2D
 from atom_core.naming import generateLabeledTopic, generateName
 from atom_core.rospy_urdf_to_rviz_converter import urdfToMarkerArray
 from atom_core.config_io import uriReader
-from colorama import Fore, Style
 from cv_bridge import CvBridge
 from geometry_msgs.msg import Point, Pose, Quaternion, Transform, TransformStamped, Vector3
 from matplotlib import cm
 from rospy_message_converter import message_converter
 from sensor_msgs.msg import PointCloud2, PointField, sensor_msgs
-from std_msgs.msg import ColorRGBA, Header, UInt8MultiArray
-from urdf_parser_py.urdf import URDF
+from std_msgs.msg import ColorRGBA, Header
 
 # stdlib
 from visualization_msgs.msg import Marker, MarkerArray
