@@ -74,8 +74,6 @@ if __name__ == '__main__':
     # Check if TF exists and if it is fixed; we do this by comparing the TF from one of the collections to each other
     # I think it only makes sense to do this for the sensor dataset
 
-    is_fixed = True
-
     for parent_child_tuple in parent_child_list:
         tf_name = parent_child_tuple[0] + '-' + parent_child_tuple[1]
         selected_collection_quat = source_dataset["collections"][selected_collection_key]["transforms"][tf_name]["quat"]
