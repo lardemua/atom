@@ -323,7 +323,7 @@ def main():
         # Visualize detections on image.
         if args['show_images']:
             image_gui = getCvImageFromCollectionSensor(
-                collection_key, 'rgb_hand', dataset)
+                collection_key, args['camera'], dataset)
 
             # Four 3d points:  origin + axis tips
             axis_in_pattern = np.float32([[0, 0, 0],
