@@ -72,15 +72,20 @@ def main():
         "-mn", "--method_name", required=False, default='tsai',
         help="Hand eye method. One of ['tsai', 'park', 'horaud', 'andreff', 'daniilidis'].",
         type=str)
-    
+
     # save results in a csv file
-    ap.add_argument("-sfr", "--save_file_results", help="Store the results", action='store_true', default=False)
-    ap.add_argument("-sfrn", "--save_file_results_name", help="Name of csv file to save the results. "
-                    "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv", type=str, required=False)
+    ap.add_argument("-sfr", "--save_file_results", help="Store the results",
+                    action='store_true', default=False)
+    ap.add_argument(
+        "-sfrn", "--save_file_results_name",
+        help="Name of csv file to save the results. "
+        "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
+        type=str, required=False)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
-    args_original = vars(ap.parse_args(args=arglist))  # these args have the selection functions as strings
+    # these args have the selection functions as strings
+    args_original = vars(ap.parse_args(args=arglist))
     args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
 
     # ---------------------------------------
@@ -255,7 +260,7 @@ def main():
         for idx, point in enumerate(collection['labels'][args['pattern']][args['camera']]['idxs']):
             pts_2d[idx, 0] = point['x']
             pts_2d[idx, 1] = point['y']
-        
+
         # New 3d_pts array must have the same no. of points as 2d_pts array
         # We extract the 3d points from pts_3d corresponding to the detected corners for each collection
         pts_3d_detected = np.zeros((pts_2d_length, 3), np.float32)
@@ -268,16 +273,44 @@ def main():
         if not retval:
             raise atomError('solvePnP failed.')
 
+        # print('Transformation from SolvePnP')
+        # print('rvec =\n' + str(rvec))
+        # print('tvec =\n' + str(tvec))
+
         # Alternative to solvePnP -> estimatePoseCharucoBoard()
 
         # First, I need to initialize a board object
-        # board_size = {
-        #     'x': nx,
-        #     'y': ny
-        # }
-        # inner_length = dataset['calibration_config']['calibration_patterns'][args['pattern']]['inner_size']
-        # dictionary = dataset['calibration_config']['calibration_patterns'][args['pattern']]['dictionary']
-        # pattern = patterns.CharucoPattern(board_size, square, inner_length, dictionary)
+        board_size = {'x': nx, 'y': ny}
+        inner_length = dataset['calibration_config']['calibration_patterns'][
+            args['pattern']]['inner_size']
+        dictionary = dataset['calibration_config']['calibration_patterns'][
+            args['pattern']]['dictionary']
+        pattern = patterns.CharucoPattern(board_size, square, inner_length, dictionary)
+
+        # Build a numpy array with the charuco corners
+        corners = np.zeros(
+            (len(collection['labels'][args['pattern']][args['camera']]['idxs']), 1, 2), dtype=float)
+        ids = list(range(0, len(collection['labels'][args['pattern']][args['camera']]['idxs'])))
+        for idx, point in enumerate(collection['labels'][args['pattern']][args['camera']]['idxs']):
+            corners[idx, 0, 0] = point['x']
+            corners[idx, 0, 1] = point['y']
+            ids[idx] = point['id']
+
+        # Find pose of the camera w.r.t the chessboard
+        np_ids = np.array(ids, dtype=int)
+        rvec2, tvec2 = None, None
+
+        _, rvec2, tvec2 = cv2.aruco.estimatePoseCharucoBoard(np.array(corners, dtype=np.float32),
+                                                             np_ids, pattern.board,
+                                                             K, D, rvec2, tvec2)
+
+        # print('Transformation from EstimatePoseCharucoBoard')
+        # print('rvec2 =\n' + str(rvec2))
+        # print('tvec2 =\n' + str(tvec2))
+
+        # Lets use estimateCharucoBoard instead of solvePnP
+        rvec = rvec2
+        tvec = tvec2
 
         # retval, rvecs, tvecs = cv2.aruco.estimatePoseCharucoBoard(
         #     # WIP, FILL THIS OUT
@@ -431,7 +464,7 @@ def main():
             header = ['Transform', 'Description', 'Et0 [m]',
                       'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
             table = PrettyTable(header)
-            
+
             # This table needs to be different to the one printed because of its use during batch executions
             header_table_to_save = ['Transform', 'Et [m]', 'Erot [rad]']
             table_to_save = PrettyTable(header_table_to_save)
@@ -471,7 +504,7 @@ def main():
     filename_results_json = os.path.dirname(
         args['json_file']) + '/hand_eye_' + args['method_name'] + '_' + args['camera'] + '.json'
     saveAtomDataset(filename_results_json, dataset)
-    
+
 
 if __name__ == '__main__':
     main()
