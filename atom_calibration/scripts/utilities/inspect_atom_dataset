@@ -215,7 +215,7 @@ def main():
                         if len(collection['labels'][pattern_key][sensor_key]['idxs']) == number_of_corners:
                             row.append(Fore.GREEN + 'detected' + Style.RESET_ALL)
                         else:
-                            row.append(Fore.BLUE + 'partial' + Style.RESET_ALL)
+                            row.append(Fore.BLUE + 'partial (' + str(len(collection['labels'][pattern_key][sensor_key]['idxs'])) + '/' + str(number_of_corners) + ' corners detected)' + Style.RESET_ALL)
 
                 else:
                     if not collection['labels'][pattern_key][sensor_key]['detected']:
