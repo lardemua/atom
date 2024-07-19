@@ -160,6 +160,12 @@ def main():
                     type=float, required=False, default=None)
     ap.add_argument("-max_nfev", "--optimization_max_nfev", help="max_nfev parameter for optimization.",
                     type=int, required=False, default=None)
+    ap.add_argument("-sfr", "--save_file_results", help="Store the results",
+                    action='store_true', default=False)
+    ap.add_argument("-sfrn", "--save_file_results_name",
+                    help="Name of csv file to save the results."
+                        "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
+                    type=str, required=False)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -751,7 +757,7 @@ def main():
     if args['comparison_to_ground_truth']:
         # opt.printParametersErrors() # only if we want to see the value of each parameter
         printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,
-                                     selected_collection_key, output_folder)
+                                     selected_collection_key, output_folder, args)
 
     # ---------------------------------------
     # --- Save command line args

@@ -139,7 +139,7 @@ def addAveragesBottomRowToTable(table, header):
 
 
 def printComparisonToGroundTruth(
-        dataset, dataset_initial, dataset_ground_truth, selected_collection_key, output_folder):
+        dataset, dataset_initial, dataset_ground_truth, selected_collection_key, output_folder, args):
 
     # --------------------------------------------------
     # Evaluate sensor poses
@@ -147,6 +147,11 @@ def printComparisonToGroundTruth(
     for sensor_key, sensor in dataset["sensors"].items():
         header = ['Transform', 'Description', 'Et0 [m]', 'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
         table = PrettyTable(header)
+
+        # Create a table_to_save to be output as a csv file (#977) 
+        if args["save_file_results"]:
+            header_table_to_save = ['Transform', 'Et [m]', 'Erot [rad]']
+            table_to_save = PrettyTable(header_table_to_save)
 
         transform_key = generateKey(sensor["calibration_parent"], sensor["calibration_child"])
         row = [transform_key, Fore.BLUE + sensor_key + Style.RESET_ALL]
@@ -169,6 +174,11 @@ def printComparisonToGroundTruth(
 
         table.add_row(row)
 
+        if args["save_file_results"]:
+            row_table_to_save = [transform_key, round(translation_error_2,6), round(rotation_error_2, 6)]
+            table_to_save.add_row(row_table_to_save)
+
+
     # TODO Evaluate intrinsics
 
     # --------------------------------------------------
@@ -179,6 +189,8 @@ def printComparisonToGroundTruth(
 
             transform_key = generateKey(additional_tf["parent_link"], sensor["child_link"])
             row = [transform_key, Fore.LIGHTCYAN_EX + additional_tf_key + Style.RESET_ALL]
+
+
 
             transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
                 transform_key]
@@ -197,7 +209,11 @@ def printComparisonToGroundTruth(
             row.append(getNumberQualifier(rotation_error_1, unit='rad'))
             row.append(getNumberQualifier(rotation_error_2, unit='rad'))
             table.add_row(row)
-
+        
+        if args["save_file_results"]:
+            row_table_to_save = [transform_key, round(translation_error_2,6), round(rotation_error_2, 6)]
+            table_to_save.add_row(row_table_to_save)
+    
     # --------------------------------------------------
     # Evaluate pattern transforms
     # --------------------------------------------------
@@ -233,6 +249,10 @@ def printComparisonToGroundTruth(
         row.append(getNumberQualifier(rotation_error_2, unit='rad'))
         table.add_row(row)
 
+        if args["save_file_results"]:
+            row_table_to_save = [transform_key, round(translation_error_2,6), round(rotation_error_2, 6)]
+            table_to_save.add_row(row_table_to_save)
+
     # Add bottom row with averages
     table = addAveragesBottomRowToTable(table, header)
 
@@ -252,13 +272,24 @@ def printComparisonToGroundTruth(
     with open(filename, 'w', newline='') as file:
         file.write(removeColorsFromText(table.get_csv_string()))
 
+    # Save the results in a csv file (TFs in a separate file to the joint params)
+    # save results in csv file
+    if args['save_file_results']:
+        if args['save_file_results_name'] is None:
+            results_name = 'comparison_to_gt_tfs.csv'
+        else:
+            results_name = args['save_file_results_name']
+
+        with open(results_name, 'w', newline='') as f_output:
+            f_output.write(table_to_save.get_csv_string())
+
     # --------------------------------------------------
     # Evaluate joints
     # --------------------------------------------------
 
     if dataset['calibration_config']['joints'] is not None:
         header = ['Joint', 'Param', 'Error (ini)', 'Error (calib)']
-        table = PrettyTable(header)
+        table = PrettyTable(header) 
 
         for joint_key, joint in dataset['calibration_config']['joints'].items():
             for param in joint['params_to_calibrate']:
@@ -300,6 +331,7 @@ def printComparisonToGroundTruth(
         with open(filename, 'w', newline='') as file:
             file.write(removeColorsFromText(table.get_csv_string()))
 
+    
 
 def raise_timeout_error(signum, frame):
     raise subprocess.TimeoutExpired(None, 1)
