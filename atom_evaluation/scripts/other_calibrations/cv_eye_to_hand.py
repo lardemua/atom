@@ -78,7 +78,7 @@ def main():
                     action='store_true', default=False)
     ap.add_argument(
         "-sfrn", "--save_file_results_name",
-        help="Name of csv file to save the results. "
+        help="Name of csv file to save the results."
         "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
         type=str, required=False)
 
@@ -505,6 +505,14 @@ def main():
         args['json_file']) + '/hand_eye_' + args['method_name'] + '_' + args['camera'] + '.json'
     saveAtomDataset(filename_results_json, dataset)
 
+    # save results in csv file
+    if args['save_file_results']:
+        if args['save_file_results_name'] is None:
+            results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+        else:
+            with open(args['save_file_results_name'], 'w', newline='') as f_output:
+                f_output.write(table_to_save.get_csv_string())
 
 if __name__ == '__main__':
     main()
