@@ -537,11 +537,12 @@ def main():
     # save results in csv file
     if args['save_file_results']:
         if args['save_file_results_name'] is None:
-            results_name = 'cv_eye_to_hand_results.csv'
-            saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
+            results_name = os.path.dirname(args['json_file']) + '/cv_eye_to_hand_results.csv'
         else:
-            with open(args['save_file_results_name'], 'w', newline='') as f_output:
-                f_output.write(table_to_save.get_csv_string())
-
+            results_name = args['save_file_results_name']
+        
+        with open(results_name, 'w', newline='') as f_output:
+            f_output.write(table_to_save.get_csv_string())
+            
 if __name__ == '__main__':
     main()
