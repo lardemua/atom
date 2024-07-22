@@ -24,11 +24,12 @@ from colorama import init as colorama_init
 
 from atom_calibration.calibration.visualization import getCvImageFromCollectionSensor
 from atom_core.atom import getChain, getTransform
-from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, saveAtomDataset
+from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, saveAtomDataset, addNoiseToJointParameters
 from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform, translationQuaternionToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
 from atom_core.utilities import assertSensorModality, atomError, compareAtomTransforms, createLambdaExpressionsForArgs, saveFileResults
+
 
 colorama_init(autoreset=True)
 np.set_printoptions(precision=3, suppress=True)
@@ -72,8 +73,6 @@ def main():
         "-mn", "--method_name", required=False, default='tsai',
         help="Hand eye method. One of ['tsai', 'park', 'horaud', 'andreff', 'daniilidis'].",
         type=str)
-
-    # save results in a csv file
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
     ap.add_argument(
@@ -81,7 +80,13 @@ def main():
         help="Name of csv file to save the results."
         "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
         type=str, required=False)
-
+    ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
+                    help='Joints to add bias to', type=str, required=False)
+    ap.add_argument("-jbp", "--joint_bias_params", nargs='+',
+                    help='Joint parameters to add bias to. One of [origin_x, origin_y, origin_z, origin_roll, origin_pitch, origin_yaw].', type=str, required=False)
+    ap.add_argument("-jbv", "--joint_bias_values", nargs='+',
+                    help='Operates in tandem with "joint_bias_names"', type=float, required=False)
+    
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
     # these args have the selection functions as strings
@@ -109,6 +114,12 @@ def main():
 
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
     dataset_initial = deepcopy(dataset)  # store initial values
+
+
+    # ---------------------------------------
+    # --- Add noise to the joint parameters to be calibrated.
+    # ---------------------------------------
+    addNoiseToJointParameters(dataset, args)
 
     # ---------------------------------------
     # --- Define selected collection key.
