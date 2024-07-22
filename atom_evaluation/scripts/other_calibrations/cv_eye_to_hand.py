@@ -15,6 +15,7 @@ import numpy as np
 import argparse
 import cv2
 from atom_calibration.collect import patterns
+from atom_core.joint_models import getTransformationFromJoint
 import tf
 from colorama import Fore, Style
 from copy import deepcopy
@@ -120,6 +121,23 @@ def main():
     # --- Add noise to the joint parameters to be calibrated.
     # ---------------------------------------
     addNoiseToJointParameters(dataset, args)
+    
+    # Apply new joint values to the tfs 
+    if args['joint_bias_names'] is not None:
+        # TODO review this if test
+        # Read all joints being optimized, and correct the corresponding transforms
+        # print('Updating transforms from calibrated joints ...')
+        for collection_key, collection in dataset['collections'].items():
+            # print('Collection ' + collection_key)
+            for joint_key, joint in collection['joints'].items():
+
+                # Get the transformation from the joint configuration defined in the xacro, and the current joint value
+                quat, trans = getTransformationFromJoint(joint)
+
+                # print('Transform before:\n' + str(collection['transforms'][joint['transform_key']]))
+
+                collection['transforms'][joint['transform_key']]['quat'] = quat
+                collection['transforms'][joint['transform_key']]['trans'] = trans
 
     # ---------------------------------------
     # --- Define selected collection key.
