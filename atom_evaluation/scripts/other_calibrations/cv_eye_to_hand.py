@@ -537,7 +537,7 @@ def main():
     # save results in csv file
     if args['save_file_results']:
         if args['save_file_results_name'] is None:
-            results_name = f'{args["sensor_source"]}_to_{args["sensor_target"]}_results.csv'
+            results_name = 'cv_eye_to_hand_results.csv'
             saveFileResults(args['train_json_file'], args['test_json_file'], results_name, table_to_save)
         else:
             with open(args['save_file_results_name'], 'w', newline='') as f_output:
