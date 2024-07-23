@@ -25,7 +25,7 @@ from colorama import init as colorama_init
 
 from atom_calibration.calibration.visualization import getCvImageFromCollectionSensor
 from atom_core.atom import getChain, getTransform
-from atom_core.dataset_io import filterCollectionsFromDataset, loadResultsJSON, saveAtomDataset, addNoiseToJointParameters
+from atom_core.dataset_io import addNoiseToInitialGuess, filterCollectionsFromDataset, loadResultsJSON, saveAtomDataset, addNoiseToJointParameters
 from atom_core.geometry import matrixToTranslationRotation, translationRotationToTransform, traslationRodriguesToTransform, translationQuaternionToTransform
 from atom_core.naming import generateKey
 from atom_core.transformations import compareTransforms
@@ -81,6 +81,7 @@ def main():
         help="Name of csv file to save the results."
         "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
         type=str, required=False)
+    ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
     ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
                     help='Joints to add bias to', type=str, required=False)
     ap.add_argument(
@@ -89,6 +90,10 @@ def main():
         type=str, required=False)
     ap.add_argument("-jbv", "--joint_bias_values", nargs='+',
                     help='Operates in tandem with "joint_bias_names"', type=float, required=False)
+    ap.add_argument(
+        "-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
+        help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].",
+        type=float, default=[0.0, 0.0],),
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
@@ -107,6 +112,13 @@ def main():
     args["remove_partial_detections"] = False
     dataset = filterCollectionsFromDataset(dataset, args)
 
+    # ---------------------------------------
+    # --- Define selected collection key.
+    # ---------------------------------------
+    # We only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
+    selected_collection_key = list(dataset["collections"].keys())[0]
+    print("Selected collection key is " + str(selected_collection_key))
+
     # deleted = []
     # for collection_key, collection in dataset['collections'].items():
     #         if len(collection["labels"][args["pattern"]][args["camera"]]["idxs"]) < 10:
@@ -115,24 +127,20 @@ def main():
     # for collection_key in deleted:
     #     del dataset['collections'][collection_key]
 
+    # TODO add nig as well
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
-    dataset_initial = deepcopy(dataset)  # store initial values
 
     # ---------------------------------------
     # --- Add noise to the joint parameters to be calibrated.
     # ---------------------------------------
+    addNoiseToInitialGuess(dataset, args, selected_collection_key)
     addNoiseToJointParameters(dataset, args)
 
     # Apply new joint values to the tfs
     if args['joint_bias_names'] is not None:
         replaceTransformsFromJoints(dataset)
 
-    # ---------------------------------------
-    # --- Define selected collection key.
-    # ---------------------------------------
-    # We only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
-    selected_collection_key = list(dataset["collections"].keys())[0]
-    print("Selected collection key is " + str(selected_collection_key))
+    dataset_initial = deepcopy(dataset)  # store initial values
 
     # ---------------------------------------
     # Verifications

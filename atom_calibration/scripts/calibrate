@@ -232,6 +232,13 @@ def main():
     checkIfAtLeastOneLabeledCollectionPerSensor(dataset)
 
     # ---------------------------------------
+    # --- Define selected collection key.
+    # ---------------------------------------
+    # For the getters we only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
+    selected_collection_key = list(dataset["collections"].keys())[0]
+    print("Selected collection key is " + str(selected_collection_key))
+
+    # ---------------------------------------
     # --- Store initial values for transformations to be optimized
     # ---------------------------------------
     for collection_key, collection in dataset["collections"].items():
@@ -242,13 +249,6 @@ def main():
             transform["parent"] = generateName(
                 transform["parent"], suffix="ini")
             transform["child"] = generateName(transform["child"], suffix="ini")
-
-    # ---------------------------------------
-    # --- Define selected collection key.
-    # ---------------------------------------
-    # For the getters we only need to get one collection because optimized transformations are static, which means they are the same for all collections. Let's select the first key in the dictionary and always get that transformation.
-    selected_collection_key = list(dataset["collections"].keys())[0]
-    print("Selected collection key is " + str(selected_collection_key))
 
     # ---------------------------------------
     # --- Add noise to the transformations and joint parameters to be calibrated.
@@ -265,7 +265,6 @@ def main():
     dataset = filterJointParametersFromDataset(dataset, args)
     dataset_ground_truth = filterJointsFromDataset(dataset_ground_truth, args)
     dataset_ground_truth = filterJointParametersFromDataset(dataset_ground_truth, args)
-
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
