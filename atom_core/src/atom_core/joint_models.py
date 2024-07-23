@@ -7,6 +7,27 @@ import numpy as np
 from atom_core.utilities import atomError
 
 
+def replaceTransformsFromJoints(dataset):
+    """Computes transforms from joints and replaces the transforms in the dataset
+
+    Args:
+        dataset (dict): an atom dataset
+    """
+
+    # Read all joints being optimized, and correct the corresponding transforms
+    # print('Updating transforms from calibrated joints ...')
+    for collection_key, collection in dataset['collections'].items():
+        # print('Collection ' + collection_key)
+        for joint_key, joint in collection['joints'].items():
+
+            # Get the transformation from the joint configuration defined in the xacro, and the current joint value
+            quat, trans = getTransformationFromJoint(joint)
+
+            # print('Transform before:\n' + str(collection['transforms'][joint['transform_key']]))
+            collection['transforms'][joint['transform_key']]['quat'] = quat
+            collection['transforms'][joint['transform_key']]['trans'] = trans
+
+
 def getTransformationFromJoint(joint):
 
     # print(joint)

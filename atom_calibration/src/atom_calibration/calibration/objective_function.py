@@ -13,7 +13,7 @@ from datetime import datetime
 
 import re
 import numpy as np
-from atom_core.joint_models import getTransformationFromJoint
+from atom_core.joint_models import getTransformationFromJoint, replaceTransformsFromJoints
 import atom_core.ros_numpy
 from colorama import Fore, Style
 from scipy.spatial import distance
@@ -67,7 +67,8 @@ def errorReport(dataset, residuals, normalizer, args):
         row_save = [collection_key]
         v = []
         for sensor_key, sensor in dataset['sensors'].items():
-            keys = [k for k in residuals.keys() if ('c' + collection_key) == k.split('_')[0] and sensor_key in k]
+            keys = [k for k in residuals.keys() if ('c' + collection_key) ==
+                    k.split('_')[0] and sensor_key in k]
             v = [residuals[k] * normalizer[sensor['modality']] for k in keys if residuals[k]]
             if v:
                 if args['show_normalized_values']:
@@ -151,9 +152,9 @@ def errorReport(dataset, residuals, normalizer, args):
 
     table.align = 'c'
     table_to_save.align = 'c'
-    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL + ' (' + Fore.YELLOW + 'anchored sensor' +
-          Fore.BLACK + ', ' + Fore.RED + ' max error per sensor' + Fore.BLACK + ', ' + Fore.LIGHTBLACK_EX +
-          'not detected as \"---\")' + Style.RESET_ALL)
+    print(Style.BRIGHT + 'Errors per collection' + Style.RESET_ALL + ' (' + Fore.YELLOW +
+          'anchored sensor' + Fore.BLACK + ', ' + Fore.RED + ' max error per sensor' + Fore.BLACK + ', ' +
+          Fore.LIGHTBLACK_EX + 'not detected as \"---\")' + Style.RESET_ALL)
     print(table)
 
     # save results in csv file
@@ -165,9 +166,11 @@ def errorReport(dataset, residuals, normalizer, args):
 @Cache(args_to_ignore=['_dataset'])
 def getPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key, _dataset):
     pts_in_pattern_list = []  # collect the points
-    for pt_detected in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']:
+    for pt_detected in _dataset['collections'][_collection_key]['labels'][_pattern_key][
+            _sensor_key]['idxs']:
         id_detected = pt_detected['id']
-        point = [item for item in _dataset['patterns'][_pattern_key]['corners'] if item['id'] == id_detected][0]
+        point = [item for item in _dataset['patterns'][_pattern_key]
+                 ['corners'] if item['id'] == id_detected][0]
         pts_in_pattern_list.append(point)
 
     return np.array([[item['x'] for item in pts_in_pattern_list],  # convert list to np array
@@ -193,14 +196,19 @@ def getDepthPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key,
 @Cache(args_to_ignore=['_dataset'])
 def getPointsDetectedInImageAsNPArray(_collection_key, _pattern_key, _sensor_key, _dataset):
     return np.array(
-        [[item['x'] for item in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']],
-         [item['y'] for item in _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key]['idxs']]],
+        [[item['x']
+          for item in _dataset['collections'][_collection_key]['labels'][_pattern_key]
+          [_sensor_key]['idxs']],
+         [item['y']
+          for item in _dataset['collections'][_collection_key]['labels'][_pattern_key]
+          [_sensor_key]['idxs']]],
         dtype=float)
 
 
 @Cache(args_to_ignore=['_dataset'])
 def getPointsInSensorAsNPArray(_collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
-    cloud_msg = getPointCloudMessageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
+    cloud_msg = getPointCloudMessageFromDictionary(
+        _dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key][_label_key]
     pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points = np.zeros((4, pc.shape[0]))
@@ -235,16 +243,16 @@ def getDepthImageFromDictionary(dictionary_in, safe=False):
 
 
 @Cache(args_to_ignore=['_dataset'])
-def getPointsInDepthSensorAsNPArray(_collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
+def getPointsInDepthSensorAsNPArray(
+        _collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
     # getting image and detected idxs
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key][_label_key]
 
     # getting information from camera info
     pinhole_camera_model = PinholeCameraModel()
-    pinhole_camera_model.fromCameraInfo(
-        message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                            _dataset['sensors'][_sensor_key]['camera_info']))
+    pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
+        'sensor_msgs/CameraInfo', _dataset['sensors'][_sensor_key]['camera_info']))
     f_x = pinhole_camera_model.fx()
     f_y = pinhole_camera_model.fy()
     c_x = pinhole_camera_model.cx()
@@ -279,16 +287,16 @@ def getPointsInDepthSensorAsNPArray(_collection_key, _pattern_key, _sensor_key, 
     return points
 
 
-def getPointsInDepthSensorAsNPArrayNonCached(_collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
+def getPointsInDepthSensorAsNPArrayNonCached(
+        _collection_key, _pattern_key, _sensor_key, _label_key, _dataset):
     # getting image and detected idxs
     img = getDepthImageFromDictionary(_dataset['collections'][_collection_key]['data'][_sensor_key])
     idxs = _dataset['collections'][_collection_key]['labels'][_pattern_key][_sensor_key][_label_key]
 
     # getting information from camera info
     pinhole_camera_model = PinholeCameraModel()
-    pinhole_camera_model.fromCameraInfo(
-        message_converter.convert_dictionary_to_ros_message('sensor_msgs/CameraInfo',
-                                                            _dataset['sensors'][_sensor_key]['camera_info']))
+    pinhole_camera_model.fromCameraInfo(message_converter.convert_dictionary_to_ros_message(
+        'sensor_msgs/CameraInfo', _dataset['sensors'][_sensor_key]['camera_info']))
     f_x = pinhole_camera_model.fx()
     f_y = pinhole_camera_model.fy()
     c_x = pinhole_camera_model.cx()
@@ -388,22 +396,7 @@ def objectiveFunction(data):
     normalizer = data['normalizer']
 
     if not dataset['calibration_config']['joints'] == "":
-        # TODO review this if test
-        # Read all joints being optimized, and correct the corresponding transforms
-        # print('Updating transforms from calibrated joints ...')
-        for collection_key, collection in dataset['collections'].items():
-            # print('Collection ' + collection_key)
-            for joint_key, joint in collection['joints'].items():
-
-                # Get the transformation from the joint configuration defined in the xacro, and the current joint value
-                quat, trans = getTransformationFromJoint(joint)
-
-                # print('Transform before:\n' + str(collection['transforms'][joint['transform_key']]))
-
-                collection['transforms'][joint['transform_key']]['quat'] = quat
-                collection['transforms'][joint['transform_key']]['trans'] = trans
-
-                # print('Transform after:\n' + str(collection['transforms'][joint['transform_key']]))
+        replaceTransformsFromJoints(dataset)
 
     # print('Computing cost ...')
     r = {}  # Initialize residuals dictionary.
@@ -411,13 +404,15 @@ def objectiveFunction(data):
         for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
             for sensor_key, sensor in dataset['sensors'].items():  # iterate all sensors
 
-                if not collection['labels'][pattern_key][sensor_key]['detected']:  # pattern not detected by sensor in collection
+                # pattern not detected by sensor in collection
+                if not collection['labels'][pattern_key][sensor_key]['detected']:
                     continue
 
                 if sensor['modality'] == 'rgb':
                     # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
                     # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
-                    pts_in_pattern = getPointsInPatternAsNPArray(collection_key, pattern_key, sensor_key, dataset)
+                    pts_in_pattern = getPointsInPatternAsNPArray(
+                        collection_key, pattern_key, sensor_key, dataset)
 
                     # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                     from_frame = sensor['parent']
@@ -429,7 +424,8 @@ def objectiveFunction(data):
                     # print('T =\n' + str(sensor_to_pattern) + '\nquat = ' + str(q))
 
                     # Project points to the image of the sensor ------------------------------------------------------------
-                    w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
+                    w, h = collection['data'][sensor_key]['width'], collection['data'][
+                        sensor_key]['height']
                     K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
                     D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
 
@@ -440,22 +436,27 @@ def objectiveFunction(data):
                         collection_key, pattern_key, sensor_key, dataset)
 
                     # Compute the residuals as the distance between the pt_in_image and the pt_detected_in_image
-                    for idx, label_idx in enumerate(collection['labels'][pattern_key][sensor_key]['idxs']):
+                    for idx, label_idx in enumerate(
+                            collection['labels'][pattern_key]
+                            [sensor_key]['idxs']):
                         rname = 'c' + str(collection_key) + '_' + "p_" + pattern_key + "_" + \
                             str(sensor_key) + '_corner' + str(label_idx['id'])
-                        r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 +
-                                           (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer[
-                            'rgb']
+                        r[rname] = np.sqrt((pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2 + (
+                            pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2) / normalizer['rgb']
 
                     # Required by the visualization function to publish annotated images
                     idxs_projected = []
                     for idx in range(0, pts_in_image.shape[1]):
-                        idxs_projected.append({'x': pts_in_image[0][idx], 'y': pts_in_image[1][idx]})
-                    collection['labels'][pattern_key][sensor_key]['idxs_projected'] = idxs_projected  # store projections
+                        idxs_projected.append(
+                            {'x': pts_in_image[0][idx],
+                             'y': pts_in_image[1][idx]})
+                    # store projections
+                    collection['labels'][pattern_key][sensor_key]['idxs_projected'] = idxs_projected
 
                     # store the first projections
                     if 'idxs_initial' not in collection['labels'][pattern_key][sensor_key]:
-                        collection['labels'][pattern_key][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
+                        collection['labels'][pattern_key][sensor_key]['idxs_initial'] = copy.deepcopy(
+                            idxs_projected)
 
                 # elif sensor['msg_type'] == 'LaserScan':
                 elif sensor['modality'] == 'lidar2d':
@@ -463,7 +464,8 @@ def objectiveFunction(data):
                     idxs = collection['labels'][pattern_key][sensor_key]['idxs']
                     rhos = [collection['data'][sensor_key]['ranges'][idx] for idx in idxs]
                     thetas = [collection['data'][sensor_key]['angle_min'] +
-                              collection['data'][sensor_key]['angle_increment'] * idx for idx in idxs]
+                              collection['data'][sensor_key]['angle_increment'] * idx
+                              for idx in idxs]
 
                     # Convert from polar to cartesian coordinates and create np array with xyz coords
                     # TODO could be done only once
@@ -498,23 +500,34 @@ def objectiveFunction(data):
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
-                    pts_canvas_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
+                    pts_canvas_in_chessboard = np.array(
+                        [[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
 
                     # pts_canvas_in_chessboard = patterns['limit_points'][0:2, :].transpose()
 
                     # compute minimum distance to inner_pts for right most edge (first in pts_in_chessboard list)
-                    extrema_right = np.reshape(pts_in_chessboard[0:2, 0], (2, 1))  # longitudinal -> ignore z values
+                    extrema_right = np.reshape(
+                        pts_in_chessboard[0: 2, 0],
+                        (2, 1))  # longitudinal -> ignore z values
                     rname = collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_eright'
-                    r[rname] = float(np.amin(distance.cdist(extrema_right.transpose(),
-                                                            pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
-                        normalizer['lidar2d']
+                    r[rname] = float(
+                        np.amin(
+                            distance.cdist(
+                                extrema_right.transpose(),
+                                pts_canvas_in_chessboard.transpose(),
+                                'euclidean'))) / normalizer['lidar2d']
 
                     # compute minimum distance to inner_pts for left most edge (last in pts_in_chessboard list)
-                    extrema_left = np.reshape(pts_in_chessboard[0:2, -1], (2, 1))  # longitudinal -> ignore z values
+                    extrema_left = np.reshape(
+                        pts_in_chessboard[0: 2, -1],
+                        (2, 1))  # longitudinal -> ignore z values
                     rname = collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_eleft'
-                    r[rname] = float(np.amin(distance.cdist(extrema_left.transpose(),
-                                                            pts_canvas_in_chessboard.transpose(), 'euclidean'))) / \
-                        normalizer['lidar2d']
+                    r[rname] = float(
+                        np.amin(
+                            distance.cdist(
+                                extrema_left.transpose(),
+                                pts_canvas_in_chessboard.transpose(),
+                                'euclidean'))) / normalizer['lidar2d']
 
                     # --- Residuals: Longitudinal distance for inner points
                     pts = []
@@ -522,10 +535,12 @@ def objectiveFunction(data):
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
-                    pts_inner_in_chessboard = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
+                    pts_inner_in_chessboard = np.array(
+                        [[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
                     # pts_inner_in_chessboard = patterns['inner_points'][0:2, :].transpose()
-                    edges2d_in_chessboard = pts_in_chessboard[0:2,
-                                                              collection['labels'][sensor_key]['edge_idxs']]  # this
+                    edges2d_in_chessboard = pts_in_chessboard[0: 2,
+                                                              collection['labels'][sensor_key]
+                                                              ['edge_idxs']]  # this
                     # is a longitudinal residual, so ignore z values.
 
                     for idx in xrange(
@@ -534,9 +549,13 @@ def objectiveFunction(data):
                                         ).transpose()  # need the reshape because this
                         # becomes a shape (2,) which the function cdist does not support.
 
-                        rname = collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_inner_' + str(idx)
-                        r[rname] = float(np.amin(distance.cdist(xa, pts_inner_in_chessboard.transpose(), 'euclidean'))) / \
-                            normalizer['lidar2d']
+                        rname = collection_key + '_' + "p_" + pattern_key + \
+                            "_" + sensor_key + '_inner_' + str(idx)
+                        r[rname] = float(
+                            np.amin(
+                                distance.cdist(
+                                    xa, pts_inner_in_chessboard.transpose(),
+                                    'euclidean'))) / normalizer['lidar2d']
 
                     # --- Residuals: Beam direction distance from point to chessboard plan
                     # For computing the intersection we need:
@@ -552,13 +571,15 @@ def objectiveFunction(data):
                     # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
                     from_frame = sensor['parent']
                     to_frame = dataset['calibration_config']['calibration_pattern']['link']
-                    laser_to_chessboard = getTransform(from_frame, to_frame, collection['transforms'])
+                    laser_to_chessboard = getTransform(
+                        from_frame, to_frame, collection['transforms'])
 
                     p_co_in_chessboard = np.array([[0], [0], [0], [1]], float)
                     p_co_in_laser = np.dot(laser_to_chessboard, p_co_in_chessboard)
 
                     # Compute p_no. First compute an aux point (p_caux) and then use the vector from p_co to p_caux.
-                    p_caux_in_chessboard = np.array([[0], [0], [1], [1]], float)  # along the zz axis (plane normal)
+                    # along the zz axis (plane normal)
+                    p_caux_in_chessboard = np.array([[0], [0], [1], [1]], float)
                     p_caux_in_laser = np.dot(laser_to_chessboard, p_caux_in_chessboard)
 
                     p_no_in_laser = np.array([[p_caux_in_laser[0] - p_co_in_laser[0]],
@@ -575,19 +596,25 @@ def objectiveFunction(data):
                     for idx in range(0, pts_in_laser.shape[1]):  # for all points
                         rho = rhos[idx]
                         p1_in_laser = pts_in_laser[:, idx]
-                        pt_intersection = isect_line_plane_v3(p0_in_laser, p1_in_laser, p_co_in_laser, p_no_in_laser)
+                        pt_intersection = isect_line_plane_v3(
+                            p0_in_laser, p1_in_laser, p_co_in_laser, p_no_in_laser)
 
                         if pt_intersection is None:
                             raise ValueError('Pattern is almost parallel to the laser beam! Please remove collection ' +
                                              collection_key)
 
-                        rname = collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_beam_' + str(idx)
-                        r[rname] = abs(distance_two_3D_points(p0_in_laser, pt_intersection) - rho) / \
-                            normalizer['lidar2d']
+                        rname = collection_key + '_' + "p_" + pattern_key + \
+                            "_" + sensor_key + '_beam_' + str(idx)
+                        r[rname] = abs(distance_two_3D_points(
+                            p0_in_laser, pt_intersection) - rho) / normalizer['lidar2d']
 
                         if args['ros_visualization']:
                             marker.points.append(copy.deepcopy(rviz_p0_in_laser))
-                            marker.points.append(Point(pt_intersection[0], pt_intersection[1], pt_intersection[2]))
+                            marker.points.append(
+                                Point(
+                                    pt_intersection[0],
+                                    pt_intersection[1],
+                                    pt_intersection[2]))
 
                 # elif sensor['msg_type'] == 'PointCloud2':
                 elif sensor['modality'] == 'lidar3d':
@@ -624,23 +651,26 @@ def objectiveFunction(data):
                     from_frame = pattern['link']
                     to_frame = sensor['parent']
                     pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
-                    detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
+                    detected_limit_points_in_pattern = np.dot(
+                        pattern_to_sensor, detected_limit_points_in_sensor)
 
                     pts = []
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['left'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
-                    ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
-                                                                    float)
+                    ground_truth_limit_points_in_pattern = np.array(
+                        [[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
 
                     # Compute and save residuals
                     for idx in range(detected_limit_points_in_pattern.shape[1]):
                         m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
-                        rname = 'c' + collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_ld_' + str(idx)
-                        r[rname] = np.min(distance.cdist(m_pt,
-                                                         ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
-                            normalizer['lidar3d']
+                        rname = 'c' + collection_key + '_' + "p_" + \
+                            pattern_key + "_" + sensor_key + '_ld_' + str(idx)
+                        r[rname] = np.min(
+                            distance.cdist(
+                                m_pt, ground_truth_limit_points_in_pattern.transpose(),
+                                'euclidean')) / normalizer['lidar3d']
                     # ------------------------------------------------------------------------------------------------
                     # print('Objective function for ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
 
@@ -653,7 +683,8 @@ def objectiveFunction(data):
 
                     # print('POINTS IN SENSOR ' + sensor_key + ' took ' + str((datetime.now() - now_i).total_seconds()) + ' secs.')
                     now = datetime.now()
-                    from_frame = dataset['calibration_config']['calibration_patterns'][pattern_key]['link']
+                    from_frame = dataset['calibration_config']['calibration_patterns'][
+                        pattern_key]['link']
                     to_frame = sensor['parent']
                     depth_to_pattern = getTransform(from_frame, to_frame, collection['transforms'])
 
@@ -689,10 +720,12 @@ def objectiveFunction(data):
                     #     (datetime.now() - now).total_seconds()) + ' secs.')
                     now = datetime.now()
 
-                    from_frame = dataset['calibration_config']['calibration_patterns'][pattern_key]['link']
+                    from_frame = dataset['calibration_config']['calibration_patterns'][
+                        pattern_key]['link']
                     to_frame = sensor['parent']
                     pattern_to_sensor = getTransform(from_frame, to_frame, collection['transforms'])
-                    detected_limit_points_in_pattern = np.dot(pattern_to_sensor, detected_limit_points_in_sensor)
+                    detected_limit_points_in_pattern = np.dot(
+                        pattern_to_sensor, detected_limit_points_in_sensor)
                     # print('POINTS IN PATTERN LIMITS ' + sensor_key + ' took ' + str(
                     #     (datetime.now() - now).total_seconds()) + ' secs.')
                     pts = []
@@ -700,8 +733,8 @@ def objectiveFunction(data):
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['right'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['top'])
                     pts.extend(patterns[pattern_key]['frame']['lines_sampled']['bottom'])
-                    ground_truth_limit_points_in_pattern = np.array([[pt['x'] for pt in pts], [pt['y'] for pt in pts]],
-                                                                    float)
+                    ground_truth_limit_points_in_pattern = np.array(
+                        [[pt['x'] for pt in pts], [pt['y'] for pt in pts]], float)
                     now = datetime.now()
                     # # print("objective function: ", detected_limit_points_in_pattern.shape[1])
                     # # Compute and save residuals
@@ -713,12 +746,15 @@ def objectiveFunction(data):
                     #     print(detected_limit_points_in_pattern[0:2, :].shape)
                     #     print(len(collection['labels'][sensor_key]['samples_longitudinal']))
 
-                    for idx in collection['labels'][pattern_key][sensor_key]['samples_longitudinal']:
+                    for idx in collection['labels'][pattern_key][sensor_key][
+                            'samples_longitudinal']:
                         m_pt = np.reshape(detected_limit_points_in_pattern[0:2, idx], (1, 2))
-                        rname = 'c' + collection_key + '_' + "p_" + pattern_key + "_" + sensor_key + '_ld_' + str(idx)
-                        r[rname] = np.min(distance.cdist(m_pt,
-                                                         ground_truth_limit_points_in_pattern.transpose(), 'euclidean')) / \
-                            normalizer['depth']
+                        rname = 'c' + collection_key + '_' + "p_" + \
+                            pattern_key + "_" + sensor_key + '_ld_' + str(idx)
+                        r[rname] = np.min(
+                            distance.cdist(
+                                m_pt, ground_truth_limit_points_in_pattern.transpose(),
+                                'euclidean')) / normalizer['depth']
 
                     # print('LONGITUDINAL RESIDUALS ' + sensor_key + ' took ' + str((datetime.now() - now).total_seconds()) + ' secs.')
                     # print('TOTAL TIME Objective function for ' + sensor_key + ' took ' + str(
@@ -728,9 +764,11 @@ def objectiveFunction(data):
                     # print(r.keys())
 
                     # PROJECT CORNER POINTS TO SENSOR
-                    pts_in_pattern = getDepthPointsInPatternAsNPArray(collection_key, pattern_key, sensor_key, dataset)
+                    pts_in_pattern = getDepthPointsInPatternAsNPArray(
+                        collection_key, pattern_key, sensor_key, dataset)
 
-                    w, h = collection['data'][sensor_key]['width'], collection['data'][sensor_key]['height']
+                    w, h = collection['data'][sensor_key]['width'], collection['data'][
+                        sensor_key]['height']
                     K = np.ndarray((3, 3), buffer=np.array(sensor['camera_info']['K']), dtype=float)
                     D = np.ndarray((5, 1), buffer=np.array(sensor['camera_info']['D']), dtype=float)
 
@@ -744,12 +782,16 @@ def objectiveFunction(data):
                     # Required by the visualization function to publish annotated images
                     idxs_projected = []
                     for idx in range(0, pts_in_image.shape[1]):
-                        idxs_projected.append({'x': pts_in_image[0][idx], 'y': pts_in_image[1][idx]})
-                    collection['labels'][pattern_key][sensor_key]['idxs_projected'] = idxs_projected  # store projections
+                        idxs_projected.append(
+                            {'x': pts_in_image[0][idx],
+                             'y': pts_in_image[1][idx]})
+                    # store projections
+                    collection['labels'][pattern_key][sensor_key]['idxs_projected'] = idxs_projected
 
                     # store the first projections
                     if 'idxs_initial' not in collection['labels'][pattern_key][sensor_key]:
-                        collection['labels'][pattern_key][sensor_key]['idxs_initial'] = copy.deepcopy(idxs_projected)
+                        collection['labels'][pattern_key][sensor_key]['idxs_initial'] = copy.deepcopy(
+                            idxs_projected)
                 else:
                     raise ValueError("Unknown sensor msg_type or modality")
 

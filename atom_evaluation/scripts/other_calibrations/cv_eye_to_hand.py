@@ -15,7 +15,7 @@ import numpy as np
 import argparse
 import cv2
 from atom_calibration.collect import patterns
-from atom_core.joint_models import getTransformationFromJoint
+from atom_core.joint_models import getTransformationFromJoint, replaceTransformsFromJoints
 import tf
 from colorama import Fore, Style
 from copy import deepcopy
@@ -83,11 +83,13 @@ def main():
         type=str, required=False)
     ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
                     help='Joints to add bias to', type=str, required=False)
-    ap.add_argument("-jbp", "--joint_bias_params", nargs='+',
-                    help='Joint parameters to add bias to. One of [origin_x, origin_y, origin_z, origin_roll, origin_pitch, origin_yaw].', type=str, required=False)
+    ap.add_argument(
+        "-jbp", "--joint_bias_params", nargs='+',
+        help='Joint parameters to add bias to. One of [origin_x, origin_y, origin_z, origin_roll, origin_pitch, origin_yaw].',
+        type=str, required=False)
     ap.add_argument("-jbv", "--joint_bias_values", nargs='+',
                     help='Operates in tandem with "joint_bias_names"', type=float, required=False)
-    
+
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
     # these args have the selection functions as strings
@@ -116,28 +118,14 @@ def main():
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
     dataset_initial = deepcopy(dataset)  # store initial values
 
-
     # ---------------------------------------
     # --- Add noise to the joint parameters to be calibrated.
     # ---------------------------------------
     addNoiseToJointParameters(dataset, args)
-    
-    # Apply new joint values to the tfs 
+
+    # Apply new joint values to the tfs
     if args['joint_bias_names'] is not None:
-        # TODO review this if test
-        # Read all joints being optimized, and correct the corresponding transforms
-        # print('Updating transforms from calibrated joints ...')
-        for collection_key, collection in dataset['collections'].items():
-            # print('Collection ' + collection_key)
-            for joint_key, joint in collection['joints'].items():
-
-                # Get the transformation from the joint configuration defined in the xacro, and the current joint value
-                quat, trans = getTransformationFromJoint(joint)
-
-                # print('Transform before:\n' + str(collection['transforms'][joint['transform_key']]))
-
-                collection['transforms'][joint['transform_key']]['quat'] = quat
-                collection['transforms'][joint['transform_key']]['trans'] = trans
+        replaceTransformsFromJoints(dataset)
 
     # ---------------------------------------
     # --- Define selected collection key.
@@ -540,9 +528,10 @@ def main():
             results_name = os.path.dirname(args['json_file']) + '/cv_eye_to_hand_results.csv'
         else:
             results_name = args['save_file_results_name']
-        
+
         with open(results_name, 'w', newline='') as f_output:
             f_output.write(table_to_save.get_csv_string())
-            
+
+
 if __name__ == '__main__':
     main()

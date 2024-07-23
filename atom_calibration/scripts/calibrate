@@ -20,9 +20,10 @@ import numpy as np
 from colorama import Fore, Style
 import yaml
 from atom_core.optimization_utils import Optimizer, addArguments
-from atom_calibration.calibration.getters_and_setters import (getterCameraIntrinsics, getterTransform,
-                                                              setterCameraIntrinsics, setterTransform, getterJointParam, setterJointParam)
-from atom_calibration.calibration.objective_function import errorReport, objectiveFunction
+from atom_calibration.calibration.getters_and_setters import (
+    getterCameraIntrinsics, getterTransform, setterCameraIntrinsics, setterTransform,
+    getterJointParam, setterJointParam)
+from atom_calibration.calibration.objective_function import errorReport, objectiveFunction, replaceTransformsFromJoints
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   addNoiseToJointParameters,
@@ -93,61 +94,80 @@ def main():
                     "Overrides automatic detection of static robot.")
     ap.add_argument("-oas", "--only_anchored_sensor", action="store_true", default=False,
                     help="Runs optimization only using the anchored sensor and discarding all others.")
-    ap.add_argument("-as", "--anchor_sensors", nargs='+',
-                    help='Anchor sensors. You can name as many sensors as needed. Sensors names should be the ones defined in the config.yml. Example: -as rgb_hand lidar_center', type=str, required=False)
+    ap.add_argument(
+        "-as", "--anchor_sensors", nargs='+',
+        help='Anchor sensors. You can name as many sensors as needed. Sensors names should be the ones defined in the config.yml. Example: -as rgb_hand lidar_center',
+        type=str, required=False)
     ap.add_argument("-ap", "--anchor_patterns", action="store_true", default=False,
                     help="Runs optimization without changing the poses of the patterns.")
-    ap.add_argument("-gtpp", "--ground_truth_pattern_poses", action="store_true", default=False,
-                    help="Sets pattern poses from initial transforms stored in the dataset. Only for simulation, these are the values before eventually adding noise, which in the case of simulation consist of the ground truth.")
+    ap.add_argument(
+        "-gtpp", "--ground_truth_pattern_poses", action="store_true", default=False,
+        help="Sets pattern poses from initial transforms stored in the dataset. Only for simulation, these are the values before eventually adding noise, which in the case of simulation consist of the ground truth.")
     ap.add_argument("-uic", "--use_incomplete_collections", action="store_true", default=False,
                     help="Remove any collection which does not have a detection for all sensors.", )
     ap.add_argument("-ias", "--ignore_anchored_sensor", action="store_true", default=False,
                     help="Ignore the anchored sensor information in the dataset.", )
-    ap.add_argument("-rpd", "--remove_partial_detections", help="Remove detected labels which are only partial."
-                            "Used or the Charuco.", action="store_true", default=False)
-    ap.add_argument("-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
-                    help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].", type=float, default=[0.0, 0.0],),
+    ap.add_argument(
+        "-rpd", "--remove_partial_detections",
+        help="Remove detected labels which are only partial."
+        "Used or the Charuco.", action="store_true", default=False)
+    ap.add_argument(
+        "-nig", "--noisy_initial_guess", nargs=2, metavar=("translation", "rotation"),
+        help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].",
+        type=float, default=[0.0, 0.0],),
     ap.add_argument("-jbn", "--joint_bias_names", nargs='+',
                     help='Joints to add bias to', type=str, required=False)
-    ap.add_argument("-jbp", "--joint_bias_params", nargs='+',
-                    help='Joint parameters to add bias to. One of [origin_x, origin_y, origin_z, origin_roll, origin_pitch, origin_yaw].', type=str, required=False)
+    ap.add_argument(
+        "-jbp", "--joint_bias_params", nargs='+',
+        help='Joint parameters to add bias to. One of [origin_x, origin_y, origin_z, origin_roll, origin_pitch, origin_yaw].',
+        type=str, required=False)
     ap.add_argument("-jbv", "--joint_bias_values", nargs='+',
                     help='Operates in tandem with "joint_bias_names"', type=float, required=False)
-    ap.add_argument("-ssf", "--sensor_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives a sensor name as input and "
-                    "returns True or False to indicate if the sensor should be loaded (and used in the "
-                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
-                    "sensors left_laser and frontal_camera")
-    ap.add_argument("-csf", "--collection_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives a collection name as input and "
-                    "returns True or False to indicate if the collection should be loaded (and used in the "
-                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
-    ap.add_argument("-jsf", "--joint_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives a joint name as input and "
-                    "returns True or False to indicate if the joint should be calibrated (and used in the "
-                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    'language. Example: lambda name: name in ["left_arm_roll", "right_shoulder_lift"] , to load only '
-                    "joints left_arm_roll and right_shoulder_lift")
-    ap.add_argument("-jpsf", "--joint_parameter_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives a joint parameter name as input and returns True or False to indicate if the joint parameter should be calibrated (and used in the "
-                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    'language. Example: lambda name: name in ["origin_x", "origin_roll"] , to use only these parameters')
-    ap.add_argument("-psf", "--pattern_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
-    ap.add_argument("-atsf", "--additional_tf_selection_function", default=None, type=str,
-                    help="A string to be evaluated into a lambda function that receives an additional_tf name as input and returns True or False to indicate if the additional_tf should be calibrated (and used in the "
-                    "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
-                    'language. Example: lambda name: name in ["base_link_to_base_link_mb", "left_wheel_to_base_link"] , to load only '
-                    "additional_tfs base_link_to_base_link_mb and left_wheel_to_base_link")
-    ap.add_argument("-phased", "--phased_execution", help="Stay in a loop before calling optimization, and in another "
-                    "after calling the optimization. Good for debugging.", action="store_true", default=False)
+    ap.add_argument(
+        "-ssf", "--sensor_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a sensor name as input and "
+        "returns True or False to indicate if the sensor should be loaded (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
+        "sensors left_laser and frontal_camera")
+    ap.add_argument(
+        "-csf", "--collection_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a collection name as input and "
+        "returns True or False to indicate if the collection should be loaded (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
+    ap.add_argument(
+        "-jsf", "--joint_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a joint name as input and "
+        "returns True or False to indicate if the joint should be calibrated (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        'language. Example: lambda name: name in ["left_arm_roll", "right_shoulder_lift"] , to load only '
+        "joints left_arm_roll and right_shoulder_lift")
+    ap.add_argument(
+        "-jpsf", "--joint_parameter_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a joint parameter name as input and returns True or False to indicate if the joint parameter should be calibrated (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        'language. Example: lambda name: name in ["origin_x", "origin_roll"] , to use only these parameters')
+    ap.add_argument(
+        "-psf", "--pattern_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a pattern name as input (as defined in the config.yml) and returns True or False to indicate if the pattern should be used in the optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        "language. Example: lambda name: name in ['pattern_1', 'charuco_200x300'] , to load only these two patterns")
+    ap.add_argument(
+        "-atsf", "--additional_tf_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives an additional_tf name as input and returns True or False to indicate if the additional_tf should be calibrated (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        'language. Example: lambda name: name in ["base_link_to_base_link_mb", "left_wheel_to_base_link"] , to load only '
+        "additional_tfs base_link_to_base_link_mb and left_wheel_to_base_link")
+    ap.add_argument(
+        "-phased", "--phased_execution",
+        help="Stay in a loop before calling optimization, and in another "
+        "after calling the optimization. Good for debugging.", action="store_true", default=False)
     ap.add_argument("-ipg", "--initial_pose_ghost", action="store_true", default=False,
                     help="Draw a ghost mesh with the systems initial pose. Good for debugging.")
-    ap.add_argument("-ctgt", "--comparison_to_ground_truth",
-                    help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.", action="store_true", default=False)
+    ap.add_argument(
+        "-ctgt", "--comparison_to_ground_truth",
+        help="Will print a comparison to ground truth at the end of the optimization. Warning: only makes sense if the values in the dataset are the ground truth, which is the case in simulated systems.",
+        action="store_true", default=False)
     ap.add_argument("-sce", "--save_calibration_errors", action="store_true", default=False,
                     help="Saves a csv file with the errors at every iteration.")
     ap.add_argument("-ftol", "--optimization_ftol", help="ftol parameter for optimization.",
@@ -156,20 +176,24 @@ def main():
                     type=float, required=False, default=1e-5)
     ap.add_argument("-gtol", "--optimization_gtol", help="gtol parameter for optimization.",
                     type=float, required=False, default=1e-5)
-    ap.add_argument("-diff_step", "--optimization_diff_step", help="diff_step parameter for optimization.",
-                    type=float, required=False, default=None)
-    ap.add_argument("-max_nfev", "--optimization_max_nfev", help="max_nfev parameter for optimization.",
-                    type=int, required=False, default=None)
+    ap.add_argument(
+        "-diff_step", "--optimization_diff_step", help="diff_step parameter for optimization.",
+        type=float, required=False, default=None)
+    ap.add_argument(
+        "-max_nfev", "--optimization_max_nfev", help="max_nfev parameter for optimization.",
+        type=int, required=False, default=None)
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
-    ap.add_argument("-sfrn", "--save_file_results_name",
-                    help="Name of csv file to save the results."
-                        "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
-                    type=str, required=False)
+    ap.add_argument(
+        "-sfrn", "--save_file_results_name",
+        help="Name of csv file to save the results."
+        "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
+        type=str, required=False)
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
-    args_original = vars(ap.parse_args(args=arglist))  # these args have the selection functions as strings
+    # these args have the selection functions as strings
+    args_original = vars(ap.parse_args(args=arglist))
     args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
 
     # ---------------------------------------
@@ -197,7 +221,12 @@ def main():
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
     dataset = filterJointsFromDataset(dataset, args)
+
+    # Must add noise, transfer new joints to transforms, and only after remove unselected joints
+    addNoiseToJointParameters(dataset, args)
+    replaceTransformsFromJoints(dataset)
     dataset = filterJointParametersFromDataset(dataset, args)
+
     dataset = filterPatternsFromDataset(dataset, args)
     dataset = filterAdditionalTfsFromDataset(dataset, args)
     print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
@@ -233,7 +262,6 @@ def main():
 
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
-    addNoiseToJointParameters(dataset, args)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
@@ -255,8 +283,9 @@ def main():
         graphics = setupVisualization(dataset, args, selected_collection_key)
         opt.addDataModel("graphics", graphics)
 
-        opt.setVisualizationFunction(visualizationFunction, args["ros_visualization"], niterations=1,
-                                     figures=[])
+        opt.setVisualizationFunction(
+            visualizationFunction, args["ros_visualization"],
+            niterations=1, figures=[])
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Process anchored sensors
@@ -281,8 +310,10 @@ def main():
         verifyAnchoredSensor(dataset["calibration_config"]["anchored_sensor"], dataset['sensors'])
 
         if dataset["calibration_config"]["anchored_sensor"] in dataset["sensors"]:
-            anchored_parent = dataset["sensors"][dataset["calibration_config"]["anchored_sensor"]]["calibration_parent"]
-            anchored_child = dataset["sensors"][dataset["calibration_config"]["anchored_sensor"]]["calibration_child"]
+            anchored_parent = dataset["sensors"][
+                dataset["calibration_config"]["anchored_sensor"]]["calibration_parent"]
+            anchored_child = dataset["sensors"][
+                dataset["calibration_config"]["anchored_sensor"]]["calibration_child"]
             anchored_transform_keys.append(generateKey(anchored_parent, anchored_child))
         else:
             atomError('Anchored sensor ' + dataset["calibration_config"]
@@ -360,8 +391,9 @@ def main():
             if 'transforms' not in dataset or dataset['transforms'][transform_key]['type'] == 'fixed':
 
                 # push six parameters for each transform to be optimized.
-                ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
-                                                         collection_name=selected_collection_key)
+                ground_truth_transform = getterTransform(
+                    dataset_ground_truth, transform_key=transform_key,
+                    collection_name=selected_collection_key)
 
                 initial_transform = getterTransform(dataset, transform_key=transform_key,
                                                     collection_name=selected_collection_key)
@@ -374,11 +406,13 @@ def main():
                     bound_min = [-np.inf for x in initial_transform]
 
                 opt.pushParamVector(
-                    group_name=transform_key, data_key="dataset", bound_max=bound_max, bound_min=bound_min,
-                    getter=partial(getterTransform, transform_key=transform_key,
-                                   collection_name=selected_collection_key,),
-                    setter=partial(setterTransform,
-                                   transform_key=transform_key, collection_name=None),
+                    group_name=transform_key, data_key="dataset", bound_max=bound_max,
+                    bound_min=bound_min,
+                    getter=partial(
+                        getterTransform, transform_key=transform_key,
+                        collection_name=selected_collection_key,),
+                    setter=partial(
+                        setterTransform, transform_key=transform_key, collection_name=None),
                     suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
                     ground_truth_values=ground_truth_transform)
 
@@ -388,8 +422,9 @@ def main():
                 for collection_key, collection in dataset["collections"].items():
 
                     # push six parameters for each transform to be optimized.
-                    ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
-                                                             collection_name=collection_key)
+                    ground_truth_transform = getterTransform(
+                        dataset_ground_truth, transform_key=transform_key,
+                        collection_name=collection_key)
 
                     initial_transform = getterTransform(dataset, transform_key=transform_key,
                                                         collection_name=collection_key)
@@ -401,14 +436,17 @@ def main():
                         bound_max = [+np.inf for x in initial_transform]
                         bound_min = [-np.inf for x in initial_transform]
 
-                    opt.pushParamVector(group_name="c" + collection_key + "_" + transform_key,
-                                        data_key="dataset", bound_max=bound_max, bound_min=bound_min,
-                                        getter=partial(getterTransform, transform_key=transform_key,
-                                                       collection_name=collection_key),
-                                        setter=partial(setterTransform, transform_key=transform_key,
-                                                       collection_name=collection_key),
-                                        suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
-                                        ground_truth_values=ground_truth_transform)
+                    opt.pushParamVector(
+                        group_name="c" + collection_key + "_" + transform_key, data_key="dataset",
+                        bound_max=bound_max, bound_min=bound_min,
+                        getter=partial(
+                            getterTransform, transform_key=transform_key,
+                            collection_name=collection_key),
+                        setter=partial(
+                            setterTransform, transform_key=transform_key,
+                            collection_name=collection_key),
+                        suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+                        ground_truth_values=ground_truth_transform)
             else:
                 atomError('Unknown transform type ' + dataset['transforms'][transform_key]['type'])
 
@@ -426,13 +464,12 @@ def main():
                 cx = sensor['camera_info']['K'][2]
                 cy = sensor['camera_info']['K'][5]
                 ground_truth_values = getterCameraIntrinsics(dataset_ground_truth, sensor_key)
-                opt.pushParamVector(group_name=str(sensor_key) + "_intrinsics", data_key="dataset",
-                                    getter=partial(
-                                        getterCameraIntrinsics, sensor_key=sensor_key),
-                                    setter=partial(
-                                        setterCameraIntrinsics, sensor_key=sensor_key),
-                                    suffix=["_fx", "_fy", "_cx", "_cy", "_k1", "_k2", "_t1", "_t2", "_k3"],
-                                    ground_truth_values=ground_truth_values)
+                opt.pushParamVector(
+                    group_name=str(sensor_key) + "_intrinsics", data_key="dataset",
+                    getter=partial(getterCameraIntrinsics, sensor_key=sensor_key),
+                    setter=partial(setterCameraIntrinsics, sensor_key=sensor_key),
+                    suffix=["_fx", "_fy", "_cx", "_cy", "_k1", "_k2", "_t1", "_t2", "_k3"],
+                    ground_truth_values=ground_truth_values)
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add pattern(s) parameters
@@ -456,17 +493,21 @@ def main():
 
                 # Set transform using the initial estimate of the transformations.
 
-                initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][collection_key]
+                initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][
+                    collection_key]
                 if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
                         not child == initial_estimate["child"]:
-                    atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL + "at collection " +
-                              collection_key + '. You must run the calibration without this collection. Check how to use the csf flag.')
+                    atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key +
+                              Style.RESET_ALL + "at collection " + collection_key +
+                              '. You must run the calibration without this collection. Check how to use the csf flag.')
 
-                if transform_key not in dataset_ground_truth['collections'][selected_collection_key]['transforms'].keys():
+                if transform_key not in dataset_ground_truth['collections'][
+                        selected_collection_key]['transforms'].keys():
                     ground_truth_transform = None
                 else:
-                    ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
-                                                             collection_name=collection_key)
+                    ground_truth_transform = getterTransform(
+                        dataset_ground_truth, transform_key=transform_key,
+                        collection_name=collection_key)
 
                 if not args['ground_truth_pattern_poses']:
                     collection["transforms"][transform_key] = {"parent": parent, "child": child,
@@ -478,13 +519,16 @@ def main():
                 #   b) The Setter will received a transform value and a collection_key and copy the transform to that of the corresponding collection.
                 if not args['anchor_patterns']:
 
-                    opt.pushParamVector(group_name="c" + collection_key + "_" + transform_key,
-                                        data_key="dataset", suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
-                                        getter=partial(getterTransform, transform_key=transform_key,
-                                                       collection_name=collection_key),
-                                        setter=partial(setterTransform, transform_key=transform_key,
-                                                       collection_name=collection_key),
-                                        ground_truth_values=ground_truth_transform)
+                    opt.pushParamVector(
+                        group_name="c" + collection_key + "_" + transform_key, data_key="dataset",
+                        suffix=["_x", "_y", "_z", "_r1", "_r2", "_r3"],
+                        getter=partial(
+                            getterTransform, transform_key=transform_key,
+                            collection_name=collection_key),
+                        setter=partial(
+                            setterTransform, transform_key=transform_key,
+                            collection_name=collection_key),
+                        ground_truth_values=ground_truth_transform)
 
         else:  # fixed pattern ----------------------------------------------------------------------------------
             # if pattern is fixed it will not be replicated for all collections , i.e. there will be a single
@@ -499,23 +543,28 @@ def main():
             flg_have_initial_estimate = False
             for collection_key, collection in dataset["collections"].items():
                 if dataset["patterns"][pattern_key]["transforms_initial"][collection_key]['detected']:
-                    initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][collection_key]
+                    initial_estimate = dataset["patterns"][pattern_key]["transforms_initial"][
+                        collection_key]
                     flg_have_initial_estimate = True
                     break  # select the first available initial_estimate
 
             if flg_have_initial_estimate == False:
-                atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL)
+                atomError(
+                    "Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL)
 
             # TODO not sure why this check is here ...
             if not parent == initial_estimate["parent"] or not child == initial_estimate["child"]:
-                atomError("Initial estimate for pattern " + Fore.BLUE +
-                          pattern_key + Style.RESET_ALL + " does not have expected parent and child frame ids.")
+                atomError(
+                    "Initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL +
+                    " does not have expected parent and child frame ids.")
 
-            if transform_key not in dataset_ground_truth['collections'][selected_collection_key]['transforms'].keys():
+            if transform_key not in dataset_ground_truth['collections'][selected_collection_key][
+                    'transforms'].keys():
                 ground_truth_transform = None
             else:
-                ground_truth_transform = getterTransform(dataset_ground_truth, transform_key=transform_key,
-                                                         collection_name=selected_collection_key)
+                ground_truth_transform = getterTransform(
+                    dataset_ground_truth, transform_key=transform_key,
+                    collection_name=selected_collection_key)
 
             # The pattern is fixed but we have a replicated transform for each collection. Lets add those.
             if not args['ground_truth_pattern_poses']:  # nothing to do if we should use ground truth
@@ -608,11 +657,14 @@ def main():
                 # Additional_tf based residuals
                 if dataset['calibration_config']['additional_tfs'] is not None:
                     for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
-                        transform_key = generateKey(additional_tf['parent_link'], additional_tf['child_link'])
+                        transform_key = generateKey(
+                            additional_tf['parent_link'],
+                            additional_tf['child_link'])
                         if dataset['transforms'][transform_key]['type'] == 'fixed':
                             params.extend(opt.getParamsContainingPattern(transform_key))
                         elif dataset['transforms'][transform_key]['type'] == 'multiple':
-                            params.extend(opt.getParamsContainingPattern("c" + collection_key + "_" + transform_key))
+                            params.extend(opt.getParamsContainingPattern(
+                                "c" + collection_key + "_" + transform_key))
 
                 # Intrinsics parameters
                 if sensor["modality"] == "rgb" and args["optimize_intrinsics"]:
@@ -624,17 +676,19 @@ def main():
                     pattern_transform_key = generateKey(pattern["parent_link"],
                                                         pattern["link"])
                 else:
-                    pattern_transform_key = "c" + collection_key + "_" + generateKey(pattern["parent_link"],
-                                                                                     pattern["link"])
+                    pattern_transform_key = "c" + collection_key + "_" + \
+                        generateKey(pattern["parent_link"], pattern["link"])
 
                 params.extend(opt.getParamsContainingPattern(
                     pattern_transform_key))  # pattern related params
 
                 # TODO Append joint params. Right now appending all joint params. Should be clever and know, from residual, which will affect
                 if not dataset['calibration_config']['joints'] == "":
-                    for joint_key, joint in dataset['collections'][selected_collection_key]['joints'].items():
+                    for joint_key, joint in dataset['collections'][selected_collection_key][
+                            'joints'].items():
                         pattern_joint = 'joint-' + joint_key
-                        params.extend(opt.getParamsContainingPattern(pattern_joint))  # pattern related params
+                        params.extend(opt.getParamsContainingPattern(
+                            pattern_joint))  # pattern related params
 
                 if sensor["modality"] == "rgb":
                     # Compute step as a function of residual sampling factor
@@ -651,26 +705,34 @@ def main():
                     # The number of residuals for this error can be huge.
                     # Therefore, we do a random sample to reduce the number.
                     # The sample percentage has the interval [0.1, 1.0]
-                    population = range(0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
-                    number_of_samples = int(max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
+                    population = range(
+                        0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
+                    number_of_samples = int(
+                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
                     samples = rng.sample(population, number_of_samples)
 
                     # Save it to be used in the objective function.
                     collection["labels"][pattern_key][sensor_key]["samples"] = samples
 
                     for idx in samples:
-                        rname = "c" + collection_key + "_p_" + pattern_key + '_' + sensor_key + "_oe_" + str(idx)
+                        rname = "c" + collection_key + "_p_" + \
+                            pattern_key + '_' + sensor_key + "_oe_" + str(idx)
                         opt.pushResidual(name=rname, params=params)
 
                     # Extrema (limits) displacement error
-                    for idx in range(0, len(collection["labels"][pattern_key][sensor_key]["idxs_limit_points"])):
-                        rname = "c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx)
+                    for idx in range(
+                        0, len(
+                            collection["labels"][pattern_key][sensor_key]["idxs_limit_points"])):
+                        rname = "c" + collection_key + "_" + "p_" + \
+                            pattern_key + "_" + sensor_key + "_ld_" + str(idx)
                         opt.pushResidual(name=rname, params=params)
 
                 elif sensor["modality"] == "depth":
 
-                    population = range(0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
-                    number_of_samples = int(max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
+                    population = range(
+                        0, len(collection["labels"][pattern_key][sensor_key]["idxs"]))
+                    number_of_samples = int(
+                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population))
                     samples = rng.sample(population, number_of_samples)
 
                     # Save it to be used in the objective function.
@@ -678,13 +740,16 @@ def main():
 
                     for idx in samples:
                         opt.pushResidual(
-                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_oe_" + str(idx), params=params)
+                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key +
+                            "_oe_" + str(idx),
+                            params=params)
 
                     population_longitudinal = range(
                         0, len(collection["labels"][pattern_key][sensor_key]["idxs_limit_points"]))
                     number_of_samples_longitudinal = int(
                         max(0.1, min(args["sample_longitudinal_residuals"], 1.0)) * len(population_longitudinal))
-                    samples_longitudinal = rng.sample(population_longitudinal, number_of_samples_longitudinal)
+                    samples_longitudinal = rng.sample(
+                        population_longitudinal, number_of_samples_longitudinal)
 
                     # Save it to be used in the objective function.
                     collection["labels"][pattern_key][sensor_key]["samples_longitudinal"] = samples_longitudinal
@@ -692,7 +757,9 @@ def main():
                     # Extrema displacement error
                     for idx in samples_longitudinal:
                         opt.pushResidual(
-                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key + "_ld_" + str(idx), params=params)
+                            name="c" + collection_key + "_" + "p_" + pattern_key + "_" + sensor_key +
+                            "_ld_" + str(idx),
+                            params=params)
 
                 # print(opt.residuals.keys())
                 # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
@@ -734,14 +801,20 @@ def main():
     print('Optimization setup with ' + Fore.BLUE + str(len(opt.getParamNames())) +
           Style.RESET_ALL + ' parameters: ' + str(opt.getParamNames()))
 
-    dataset_initial = deepcopy(dataset)  # store initial values of dataset before starting optimization
+    # store initial values of dataset before starting optimization
+    dataset_initial = deepcopy(dataset)
 
     if args["phased_execution"]:
         waitForKeyPress2(function=opt.callObjectiveFunction, timeout=0.1)
 
     print("Initializing optimization ...")
-    options = {'ftol': args['optimization_ftol'], 'xtol': args['optimization_xtol'], 'gtol': args['optimization_gtol'],
-               'diff_step': args['optimization_diff_step'], 'max_nfev': args['optimization_max_nfev'], 'x_scale': 'jac'}
+    options = {
+        'ftol': args['optimization_ftol'],
+        'xtol': args['optimization_xtol'],
+        'gtol': args['optimization_gtol'],
+        'diff_step': args['optimization_diff_step'],
+        'max_nfev': args['optimization_max_nfev'],
+        'x_scale': 'jac'}
     opt.startOptimization(optimization_options=options)
 
     if args["phased_execution"]:

@@ -26,8 +26,8 @@ from rospy_message_converter import message_converter
 from std_msgs.msg import Header
 from atom_core.config_io import uriReader
 from atom_core.naming import generateName, generateKey
-from atom_calibration.collect.label_messages import (convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1,
-                                                     numpyFromPointCloudMsg)
+from atom_calibration.collect.label_messages import (
+    convertDepthImage32FC1to16UC1, convertDepthImage16UC1to32FC1, numpyFromPointCloudMsg)
 
 
 def printImageInfo(image, text=None):
@@ -59,8 +59,8 @@ def loadResultsJSON(json_file, collection_selection_function=None):
 
         for sensor_key, sensor in dataset['sensors'].items():
 
-            if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d' or
-                    sensor['modality'] == 'depth'):
+            if not (sensor['modality'] == 'rgb' or sensor['modality'] == 'lidar3d' or
+                    sensor['modality'] == 'lidar2d' or sensor['modality'] == 'depth'):
                 continue  # only process images or point clouds
 
             # Check if we really need to load the file.
@@ -71,14 +71,16 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 if os.path.isfile(filename):
                     load_file = True
                 else:
-                    raise ValueError('Datafile points to ' + collection['data'][sensor_key]['data_file'] +
-                                     ' but file ' + filename + ' does not exist.')
+                    raise ValueError(
+                        'Datafile points to ' + collection['data'][sensor_key]['data_file'] +
+                        ' but file ' + filename + ' does not exist.')
             else:
                 raise ValueError('Dataset does not contain data nor data_file folders.')
 
             if load_file and (sensor['modality'] == 'rgb'):  # Load image.
 
-                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                filename = os.path.dirname(
+                    json_file) + '/' + collection['data'][sensor_key]['data_file']
                 cv_image = cv2.imread(filename)  # Load image from file
                 dict_image = getDictionaryFromCvImage(cv_image)  # from opencv image to dictionary
 
@@ -86,19 +88,21 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 assert collection['data'][sensor_key]['height'] == dict_image['height'], 'Image height must be the same'
                 assert collection['data'][sensor_key]['width'] == dict_image['width'], 'Image width must be the same'
 
-                collection['data'][sensor_key]['data'] = dict_image['data']  # set data field of collection
+                # set data field of collection
+                collection['data'][sensor_key]['data'] = dict_image['data']
                 collection['data'][sensor_key]['encoding'] = dict_image['encoding']
                 collection['data'][sensor_key]['step'] = dict_image['step']
                 # Previous code, did not preserve frame_id and other properties
                 # collection['data'][sensor_key].update(getDictionaryFromCvImage(cv_image))
 
             elif load_file and sensor['modality'] == 'depth':
-                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                filename = os.path.dirname(
+                    json_file) + '/' + collection['data'][sensor_key]['data_file']
 
                 # print(collection['data'][sensor_key]['header']['frame_id'])
                 cv_image_int16_tenths_of_millimeters = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-                cv_image_float32_meters = convertDepthImage16UC1to32FC1(cv_image_int16_tenths_of_millimeters,
-                                                                        scale=10000.0)
+                cv_image_float32_meters = convertDepthImage16UC1to32FC1(
+                    cv_image_int16_tenths_of_millimeters, scale=10000.0)
                 # collection['data'][sensor_key]['encoding']='32FC1'
 
                 # cv2.imshow("cv_image_float32_meters", cv_image_int16_tenths_of_millimeters)
@@ -136,7 +140,8 @@ def loadResultsJSON(json_file, collection_selection_function=None):
 
             # Load point cloud.
             elif load_file and (sensor['modality'] == 'lidar3d' or sensor['modality'] == 'lidar2d'):
-                filename = os.path.dirname(json_file) + '/' + collection['data'][sensor_key]['data_file']
+                filename = os.path.dirname(
+                    json_file) + '/' + collection['data'][sensor_key]['data_file']
                 frame_id = str(collection['data'][sensor_key]['header']['frame_id'])
 
                 # setup header for point cloud from existing dictionary data
@@ -152,7 +157,8 @@ def loadResultsJSON(json_file, collection_selection_function=None):
                 msg = read_pcd(filename, cloud_header=header)
 
                 # convert to dictionary
-                collection['data'][sensor_key].update(message_converter.convert_ros_message_to_dictionary(msg))
+                collection['data'][sensor_key].update(
+                    message_converter.convert_ros_message_to_dictionary(msg))
 
     if skipped_loading:  # list is not empty
         print('Skipped loading images and point clouds for collections: ' + str(skipped_loading) + '.')
@@ -171,7 +177,8 @@ def saveAtomDataset(filename, dataset_in, save_data_files=True, freeze_dataset=F
         for collection_key, collection in dataset['collections'].items():
             for sensor_key, sensor in dataset['sensors'].items():
                 # print('Saving  collection ' + collection_key + ' sensor ' + sensor_key)
-                createDataFile(dataset, collection_key, sensor, sensor_key, os.path.dirname(filename))
+                createDataFile(dataset, collection_key, sensor,
+                               sensor_key, os.path.dirname(filename))
 
         # Do the same for additional data topics ...
         for description, sensor in dataset['additional_sensor_data'].items():
@@ -188,7 +195,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
 
     # Check if data_file has to be created based on the existence of the field 'data_file' and the file itself.
     if 'data_file' in dataset['collections'][collection_key][data_type][sensor_key]:
-        filename = output_folder + '/' + dataset['collections'][collection_key][data_type][sensor_key]['data_file']
+        filename = output_folder + '/' + \
+            dataset['collections'][collection_key][data_type][sensor_key]['data_file']
         if os.path.isfile(filename):
             create_data_file = False
             if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # remove the data field
@@ -208,7 +216,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         # Save image to disk if it does not exist
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.jpg'
         if not os.path.isfile(filename):  # Write rgb image file
-            cv_image = getCvImageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
+            cv_image = getCvImageFromDictionary(
+                dataset['collections'][collection_key][data_type][sensor_key])
 
             # flip color channels if needed
             if dataset['collections'][collection_key][data_type][sensor_key]['encoding'] == 'rgb8':
@@ -224,8 +233,10 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
 
         # Add data_file field, and remove data field
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.jpg'
-        dataset['collections'][collection_key][data_type][sensor_key]['data_file'] = filename_relative  # add data_file
-        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
+        # add data_file
+        dataset['collections'][collection_key][data_type][sensor_key]['data_file'] = filename_relative
+        # Delete data field from dictionary
+        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
     elif create_data_file and sensor['modality'] == 'lidar3d':  # save point cloud
@@ -235,7 +246,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
             # TODO must remove this or True, just for debugging
             # from: dictionary -> ros_message -> PointCloud2() -> pcd file
-            msg = getPointCloudMessageFromDictionary(dataset['collections'][collection_key][data_type][sensor_key])
+            msg = getPointCloudMessageFromDictionary(
+                dataset['collections'][collection_key][data_type][sensor_key])
             write_pcd(filename, msg)
             print('Saved file ' + filename + '.')
 
@@ -243,7 +255,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.pcd'
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
-        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
+        # Delete data field from dictionary
+        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
     elif create_data_file and sensor['modality'] == 'depth':
@@ -252,10 +265,12 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         filename = output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.png'
         # filename_np=output_folder + '/' + sensor['_name'] + '_' + str(collection_key) + '.npy'
         if not os.path.isfile(filename):  # Write pointcloud to pcd file
-            cv_image = getCvImageFromDictionaryDepth(dataset['collections'][collection_key][data_type][sensor_key])
+            cv_image = getCvImageFromDictionaryDepth(
+                dataset['collections'][collection_key][data_type][sensor_key])
             # print("image from getimage")
             # print(cv_image.dtype)
-            cv_image = convertDepthImage32FC1to16UC1(cv_image, scale=10000)  # Better to use tenths of milimeters
+            cv_image = convertDepthImage32FC1to16UC1(
+                cv_image, scale=10000)  # Better to use tenths of milimeters
             # cv2.normalize(cv_image, cv_image, 0, 65535, cv2.NORM_MINMAX)
             cv2.imwrite(filename, cv_image)
             print('Saved file ' + filename + '.')
@@ -264,7 +279,8 @@ def createDataFile(dataset, collection_key, sensor, sensor_key, output_folder, d
         filename_relative = sensor['_name'] + '_' + str(collection_key) + '.png'
         dataset['collections'][collection_key][data_type][sensor_key][
             'data_file'] = filename_relative  # add data_file field
-        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:  # Delete data field from dictionary
+        # Delete data field from dictionary
+        if 'data' in dataset['collections'][collection_key][data_type][sensor_key]:
             del dataset['collections'][collection_key][data_type][sensor_key]['data']
 
 
@@ -396,7 +412,8 @@ def createJSONFile(output_file, data):
     walk(D)
 
     f = open(output_file, 'w')
-    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)  # to get only four decimal places on the json file
+    # to get only four decimal places on the json file
+    json.encoder.FLOAT_REPR = lambda f: ("%.6f" % f)
     # print >> f, json.dumps(D, indent=2, sort_keys=True)
     f.write(json.dumps(D, indent=2, sort_keys=True, cls=NpEncoder))
     f.close()
@@ -414,7 +431,7 @@ def loadJSONFile(json_file):
     f = open(json_file, 'r')
     dataset = json.load(f)
 
-    f.close() # Close the file to prevent memory leaks
+    f.close()  # Close the file to prevent memory leaks
 
     return dataset
 
@@ -513,8 +530,11 @@ def checkIfAtLeastOneLabeledCollectionPerSensor(dataset):
                     one_detection = True
 
             if one_detection is False:
-                raise ValueError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + ' does not have a single collection in which the pattern ' +
-                                 pattern_key + ' is labeled.' + Fore.RED + ' Cannot calibrate this sensor.' + Style.RESET_ALL + ' Add more collections or remove this sensor.')
+                raise ValueError('Sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL +
+                                 ' does not have a single collection in which the pattern ' +
+                                 pattern_key + ' is labeled.' + Fore.RED +
+                                 ' Cannot calibrate this sensor.' + Style.RESET_ALL +
+                                 ' Add more collections or remove this sensor.')
 
 
 def filterSensorsFromDataset(dataset, args):
@@ -527,7 +547,8 @@ def filterSensorsFromDataset(dataset, args):
     if 'only_anchored_sensor' in args.keys():
         if args['only_anchored_sensor'] == True:
             if dataset['calibration_config']['anchored_sensor'] is None:
-                raise ValueError('Option only_anchored_sensor selected but there is no anchored sensor.')
+                raise ValueError(
+                    'Option only_anchored_sensor selected but there is no anchored sensor.')
 
             deleted = []
             for sensor_key in dataset['sensors']:
@@ -543,7 +564,8 @@ def filterSensorsFromDataset(dataset, args):
         if not args['sensor_selection_function'] is None:
             deleted = []
             for sensor_key in dataset['sensors']:
-                if not args['sensor_selection_function'](sensor_key):  # use the lambda expression ssf
+                # use the lambda expression ssf
+                if not args['sensor_selection_function'](sensor_key):
                     deleted.append(sensor_key)
 
             for sensor_key in deleted:
@@ -552,8 +574,9 @@ def filterSensorsFromDataset(dataset, args):
             print("Deleted sensors: " + str(deleted))
 
     if not dataset['sensors'].keys():
-        raise ValueError('No sensors were selected. Cannot optimize without sensors. Please revise your '
-                         'dataset and your sensor selection function.')
+        raise ValueError(
+            'No sensors were selected. Cannot optimize without sensors. Please revise your '
+            'dataset and your sensor selection function.')
 
     return dataset
 
@@ -569,7 +592,8 @@ def filterCollectionsFromDataset(dataset, args):
     if not args['collection_selection_function'] is None:
         deleted = []
         for collection_key in dataset['collections'].keys():
-            if not args['collection_selection_function'](collection_key):  # use the lambda expression csf
+            # use the lambda expression csf
+            if not args['collection_selection_function'](collection_key):
                 deleted.append(collection_key)
 
         for collection_key in deleted:
@@ -584,7 +608,8 @@ def filterCollectionsFromDataset(dataset, args):
         for collection_key, collection in dataset['collections'].items():
             for pattern_key, pattern in collection['labels'].items():
                 for sensor_label_key, sensor_label in pattern.items():
-                    if not sensor_label['detected']:  # one pattern not detected is enough for this to be an incomplete collection
+                    # one pattern not detected is enough for this to be an incomplete collection
+                    if not sensor_label['detected']:
                         deleted.append(collection_key)
                         break
 
@@ -596,7 +621,8 @@ def filterCollectionsFromDataset(dataset, args):
 
         if deleted:  # list is not empty
             print('Deleted collections: ' + str(deleted) +
-                  ' because these are incomplete. If you want to use them set the ' + Fore.BLUE + 'use_incomplete_collections' + Style.RESET_ALL + ' flag.')
+                  ' because these are incomplete. If you want to use them set the ' + Fore.BLUE +
+                  'use_incomplete_collections' + Style.RESET_ALL + ' flag.')
 
     if args['remove_partial_detections']:
         for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
@@ -604,7 +630,8 @@ def filterCollectionsFromDataset(dataset, args):
             # Deleting labels in which not all corners are found:
             for collection_key, collection in dataset['collections'].items():
                 for sensor_key, sensor_label in dataset['sensors'].items():
-                    if sensor_label['modality'] == 'rgb' and collection['labels'][pattern_key][sensor_key]['detected']:
+                    if sensor_label['modality'] == 'rgb' and collection['labels'][pattern_key][
+                            sensor_key]['detected']:
                         if not len(collection['labels'][pattern_key][sensor_key]['idxs']) == number_of_corners:
                             print(Fore.RED + 'Partial detection removed:' + Style.RESET_ALL + ' label from collection ' +
                                   collection_key + ' and pattern ' + Fore.BLUE + pattern_key + Style.RESET_ALL + ', sensor ' + sensor_key)
@@ -631,21 +658,25 @@ def filterCollectionsFromDataset(dataset, args):
                     if modality == 'rgb' and sensor_label['detected']:
                         flag_collection_has_at_least_one_rgb_detection = True
 
-            if not flag_collection_has_at_least_one_rgb_detection:  # delete collection without detection by cameras.
+            # delete collection without detection by cameras.
+            if not flag_collection_has_at_least_one_rgb_detection:
                 deleted.append(collection_key)
 
         for collection_key in deleted:
             del dataset['collections'][collection_key]
 
         if deleted:  # list is not empty
-            print('Deleted collections: ' + str(deleted) + ': at least one detection by a camera should be present.')
+            print('Deleted collections: ' + str(deleted) +
+                  ': at least one detection by a camera should be present.')
 
     if not dataset['collections'].keys():
-        raise ValueError('No collections were selected. Cannot optimize without collections. Please revise your '
-                         'dataset and your collection selection function.')
+        raise ValueError(
+            'No collections were selected. Cannot optimize without collections. Please revise your '
+            'dataset and your collection selection function.')
 
-    print('After filtering, will use ' + str(len(dataset['collections'].keys())) + ' collections: ' + str(
-        list(dataset['collections'].keys())))
+    print(
+        'After filtering, will use ' + str(len(dataset['collections'].keys())) + ' collections: ' +
+        str(list(dataset['collections'].keys())))
 
     return dataset
 
@@ -662,7 +693,8 @@ def filterPatternsFromDataset(dataset, args):
 
             deleted = []
             for pattern_key in dataset['calibration_config']['calibration_patterns']:
-                if not args['pattern_selection_function'](pattern_key):  # use the lambda expression psf
+                # use the lambda expression psf
+                if not args['pattern_selection_function'](pattern_key):
                     deleted.append(pattern_key)
 
             for pattern_key in deleted:
@@ -692,12 +724,14 @@ def filterJointParametersFromDataset(dataset, args):
                 deleted = []
                 for param in joint['params_to_calibrate']:
 
-                    if not args['joint_parameter_selection_function'](param):  # use the lambda expression jsf
+                    # use the lambda expression jsf
+                    if not args['joint_parameter_selection_function'](param):
                         deleted.append(param)
 
                 for param in deleted:
                     # print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
-                    dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(param)
+                    dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(
+                        param)
 
                 print("Deleted parameters " + str(deleted) + ' from joint ' + joint_key)
 
@@ -739,7 +773,8 @@ def filterAdditionalTfsFromDataset(dataset, args):
         if not args['additional_tf_selection_function'] is None:
             deleted = []
             for additional_tf_key in dataset['calibration_config']['additional_tfs']:
-                if not args['additional_tf_selection_function'](additional_tf_key):  # use the lambda expression atsf
+                # use the lambda expression atsf
+                if not args['additional_tf_selection_function'](additional_tf_key):
                     deleted.append(additional_tf_key)
 
             for additional_tf_key in deleted:
@@ -765,14 +800,19 @@ def addNoiseToJointParameters(dataset, args):
         print('No bias to add to joints')
         return
 
-    if np.any([args['joint_bias_names'] is None, args['joint_bias_values'] is None, args['joint_bias_values'] is None]):
+    if np.any([args['joint_bias_names'] is None, args['joint_bias_values'] is None,
+               args['joint_bias_values'] is None]):
         atomError('At least one of the arguments joint_bias_names, joint_bias_params or joint_bias_values are not given. These three must be used in tandem.')
 
     if len(args['joint_bias_names']) != len(args['joint_bias_params']) or \
             len(args['joint_bias_names']) != len(args['joint_bias_values']):
-        atomError('Args joint_bias_names, joint_bias_params and joint_bias_values must have the same size. Aborting.')
+        atomError(
+            'Args joint_bias_names, joint_bias_params and joint_bias_values must have the same size. Aborting.')
 
-    for joint_name, joint_param, joint_bias in zip(args['joint_bias_names'], args['joint_bias_params'], args['joint_bias_values']):
+    for joint_name, joint_param, joint_bias in zip(
+            args['joint_bias_names'],
+            args['joint_bias_params'],
+            args['joint_bias_values']):
         print('Adding bias ' + Fore.BLUE + str(joint_bias) + Style.RESET_ALL + ' to joint ' + Fore.GREEN +
               joint_name + Style.RESET_ALL + ' parameter ' + Fore.CYAN + joint_param + Style.RESET_ALL)
         for collection_key, collection in dataset['collections'].items():
@@ -780,7 +820,8 @@ def addNoiseToJointParameters(dataset, args):
                 atomWarn('Cannot add noise to joint ' + joint_name + ' for collection ' + collection_key)
                 continue
 
-            collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][joint_param] + joint_bias
+            collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][
+                joint_param] + joint_bias
 
 
 def addNoiseToInitialGuess(dataset, args, selected_collection_key):
@@ -801,7 +842,8 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         for _, additional_tf in dataset['calibration_config']['additional_tfs'].items():
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']
-            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
+            addNoiseToTF(dataset, selected_collection_key, calibration_parent,
+                         calibration_child, nig_trans, nig_rot)
 
     # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
@@ -811,7 +853,8 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         if sensor_key != dataset['calibration_config']['anchored_sensor']:
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
-            addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
+            addNoiseToTF(dataset, selected_collection_key, calibration_parent,
+                         calibration_child, nig_trans, nig_rot)
 
 
 def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
@@ -824,7 +867,8 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
         # Get original transformation
         quat = dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat']
-        translation = dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans']
+        translation = dataset['collections'][selected_collection_key]['transforms'][
+            transform_key]['trans']
 
         # Add noise to the 6 pose parameters
         v = np.random.uniform(-1.0, 1.0, 3)
@@ -836,9 +880,11 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
         new_angles = euler_angles + v
 
         # Replace the original atomic transformations by the new noisy ones
-        new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+        new_quat = tf.transformations.quaternion_from_euler(
+            new_angles[0], new_angles[1], new_angles[2])
         dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat'] = new_quat
-        dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans'] = list(new_translation)
+        dataset['collections'][selected_collection_key]['transforms'][transform_key]['trans'] = list(
+            new_translation)
 
         # Copy randomized transform to all collections
         for collection_key, collection in dataset['collections'].items():
@@ -853,7 +899,8 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
             # Get original transformation
             quat = dataset['collections'][collection_key]['transforms'][transform_key]['quat']
-            translation = dataset['collections'][collection_key]['transforms'][transform_key]['trans']
+            translation = dataset['collections'][collection_key]['transforms'][transform_key][
+                'trans']
 
             # Add noise to the 6 pose parameters
             v = np.random.uniform(-1.0, 1.0, 3)
@@ -865,9 +912,11 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
             new_angles = euler_angles + v
 
             # Replace the original atomic transformations by the new noisy ones
-            new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+            new_quat = tf.transformations.quaternion_from_euler(
+                new_angles[0], new_angles[1], new_angles[2])
             dataset['collections'][collection_key]['transforms'][transform_key]['quat'] = new_quat
-            dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = list(new_translation)
+            dataset['collections'][collection_key]['transforms'][transform_key]['trans'] = list(
+                new_translation)
 
 
 def copyTFToDataset(calibration_parent, calibration_child, source_dataset, target_dataset):
@@ -890,7 +939,8 @@ def copyTFToDataset(calibration_parent, calibration_child, source_dataset, targe
     # collections. We select the first collection (selected_collection_key) and retrieve the optimized
     # transformation for that.
     selected_collection_key = list(source_dataset['collections'].keys())[0]
-    optimized_transform = source_dataset['collections'][selected_collection_key]['transforms'][transform_name]
+    optimized_transform = source_dataset['collections'][selected_collection_key]['transforms'][
+        transform_name]
 
     # Iterate through all collections of the target dataset and replace the optimized transformation
     for collection_key, collection in target_dataset['collections'].items():
@@ -913,11 +963,17 @@ def getMixedDataset(train_dataset, test_dataset):
 
     # Replace optimized transformations in the test dataset copying from the train dataset
     for _, sensor in train_dataset['sensors'].items():
-        copyTFToDataset(sensor['calibration_parent'], sensor['calibration_child'], train_dataset, mixed_dataset)
+        copyTFToDataset(
+            sensor['calibration_parent'],
+            sensor['calibration_child'],
+            train_dataset, mixed_dataset)
 
     if train_dataset['calibration_config']['additional_tfs']:
         for _, additional_tf in mixed_dataset['calibration_config']['additional_tfs'].items():
-            copyTFToDataset(additional_tf['parent_link'], additional_tf['child_link'], train_dataset, mixed_dataset)
+            copyTFToDataset(
+                additional_tf['parent_link'],
+                additional_tf['child_link'],
+                train_dataset, mixed_dataset)
 
     # Copy intrinsic parameters for cameras from train to mixed dataset.
     for train_sensor_key, train_sensor in train_dataset['sensors'].items():
@@ -938,7 +994,8 @@ def getMixedDataset(train_dataset, test_dataset):
             for param_to_calibrate in config_joint['params_to_calibrate']:
 
                 # Because we know all joint parameters are static throughout all collections, it means we can pick up the value for a single train_selected_collection_key and copy it to all collections in the mixed dataset.
-                calibrated_value = train_dataset['collections'][train_selected_collection_key]['joints'][config_joint_key][param_to_calibrate]
+                calibrated_value = train_dataset['collections'][train_selected_collection_key][
+                    'joints'][config_joint_key][param_to_calibrate]
 
                 # Now copy that value to all collections in the mixed dataset
                 for collection_key, collection in mixed_dataset['collections'].items():
@@ -964,8 +1021,8 @@ def readAnnotationFile(json_file, sensor):
     if os.path.exists(annotations_file) is False:
         print('Annotation file does not exist ' + Fore.RED + annotations_file + Style.RESET_ALL +
               '\nPlease annotate this sensor using: ' + Fore.BLUE +
-              'rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset ' + json_file + ' --rgb_sensor ' + sensor +
-              Style.RESET_ALL)
+              'rosrun atom_evaluation annotate_pattern_borders_in_rgb_or_depth --dataset ' +
+              json_file + ' --rgb_sensor ' + sensor + Style.RESET_ALL)
         exit(0)
 
     print('Loading annotation file ' + Fore.BLUE + annotations_file + Style.RESET_ALL)
