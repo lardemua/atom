@@ -817,7 +817,10 @@ def addNoiseToJointParameters(dataset, args):
               joint_name + Style.RESET_ALL + ' parameter ' + Fore.CYAN + joint_param + Style.RESET_ALL)
         for collection_key, collection in dataset['collections'].items():
             if joint_name not in collection['joints']:
-                atomWarn('Cannot add noise to joint ' + joint_name + ' for collection ' + collection_key)
+                atomError(
+                    'Cannot add noise to joint ' + Fore.BLUE + joint_name + Style.RESET_ALL +
+                    ' parameter ' + Fore.BLUE + joint_param + Style.RESET_ALL + ' for collection ' +
+                    collection_key)
                 continue
 
             collection['joints'][joint_name][joint_param] = collection['joints'][joint_name][

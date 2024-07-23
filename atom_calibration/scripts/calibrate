@@ -220,15 +220,9 @@ def main():
     # ---------------------------------------
     dataset = filterCollectionsFromDataset(dataset, args)  # filter collections
     dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
-    dataset = filterJointsFromDataset(dataset, args)
-
-    # Must add noise, transfer new joints to transforms, and only after remove unselected joints
-    addNoiseToJointParameters(dataset, args)
-    replaceTransformsFromJoints(dataset)
-    dataset = filterJointParametersFromDataset(dataset, args)
-
     dataset = filterPatternsFromDataset(dataset, args)
     dataset = filterAdditionalTfsFromDataset(dataset, args)
+
     print("Loaded dataset containing " + str(len(dataset["sensors"].keys())) +
           " sensors and " + str(len(dataset["collections"].keys())) + " collections.")
 
@@ -261,7 +255,17 @@ def main():
     # ---------------------------------------
 
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
+
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
+
+    # Must add noise, transfer new joints to transforms, and only after remove unselected joints
+    addNoiseToJointParameters(dataset, args)
+    replaceTransformsFromJoints(dataset)
+    dataset = filterJointsFromDataset(dataset, args)
+    dataset = filterJointParametersFromDataset(dataset, args)
+    dataset_ground_truth = filterJointsFromDataset(dataset_ground_truth, args)
+    dataset_ground_truth = filterJointParametersFromDataset(dataset_ground_truth, args)
+
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Create data models
