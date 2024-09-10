@@ -804,6 +804,7 @@ def addNoiseFromNoisyTFLinks(dataset,args,selected_collection_key):
     if not mutually_inclusive_conditions(args['noisy_tf_links'], args['noisy_tf_values']):
         return
 
+
     # Iterate through pairs of tf's and apply noise
     translation_tf_noise = args['noisy_tf_values'][0]
     rotation_tf_noise = args['noisy_tf_values'][1]
