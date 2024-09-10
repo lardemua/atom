@@ -719,21 +719,22 @@ def filterJointParametersFromDataset(dataset, args):
 
     if 'joint_parameter_selection_function' in args:
         if not args['joint_parameter_selection_function'] is None:
-            for joint_key, joint in dataset['calibration_config']['joints'].items():
+            if dataset['calibration_config']['joints'] is not None:
+                for joint_key, joint in dataset['calibration_config']['joints'].items():
 
-                deleted = []
-                for param in joint['params_to_calibrate']:
+                    deleted = []
+                    for param in joint['params_to_calibrate']:
 
-                    # use the lambda expression jsf
-                    if not args['joint_parameter_selection_function'](param):
-                        deleted.append(param)
+                        # use the lambda expression jsf
+                        if not args['joint_parameter_selection_function'](param):
+                            deleted.append(param)
 
-                for param in deleted:
-                    # print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
-                    dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(
-                        param)
+                    for param in deleted:
+                        # print(dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'])
+                        dataset['calibration_config']['joints'][joint_key]['params_to_calibrate'].remove(
+                            param)
 
-                print("Deleted parameters " + str(deleted) + ' from joint ' + joint_key)
+                    print("Deleted parameters " + str(deleted) + ' from joint ' + joint_key)
 
     return dataset
 
@@ -748,9 +749,10 @@ def filterJointsFromDataset(dataset, args):
     if 'joint_selection_function' in args:
         if not args['joint_selection_function'] is None:
             deleted = []
-            for joint_key in dataset['calibration_config']['joints']:
-                if not args['joint_selection_function'](joint_key):  # use the lambda expression jsf
-                    deleted.append(joint_key)
+            if dataset['calibration_config']['joints'] is not None:
+                for joint_key in dataset['calibration_config']['joints']:
+                    if not args['joint_selection_function'](joint_key):  # use the lambda expression jsf
+                        deleted.append(joint_key)
 
             for joint_key in deleted:
                 del dataset['calibration_config']['joints'][joint_key]
