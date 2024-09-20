@@ -8,7 +8,7 @@ import sys
 from functools import partial
 
 # ros imports
-from atom_core.config_io import atomError
+from atom_core.utilities import atomError,atomWarn
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 import rospy
 
@@ -112,7 +112,7 @@ def main():
         help="Option for the labeling of depth images. It Will run a detection of nan values in the image, searching for the actual area of the image which is used. Then, border detection will use this estimated area...",)
     ap.add_argument(
         "-rc", "--reference_collection",
-        help="Reference collection to always show in blue color.", required=True)
+        help="Reference collection to always show in blue color. Argument should be in the form 00x.", required=True)
     ap.add_argument(
         "-rs", "--reference_sensor", required=False,
         help="Sensor data to always show at reference collection in blue color. For now only lidar3d is supported.")
@@ -242,6 +242,8 @@ def main():
 
         # if (rospy.Time.now() - tic).to_sec() > 3:
         # tic = rospy.Time.now()
+
+    atomWarn("If the corrections made were significant, the pattern poses might need to be recomputed with the estimatePatternPoses script. Check #984.")
 
 
 if __name__ == "__main__":
