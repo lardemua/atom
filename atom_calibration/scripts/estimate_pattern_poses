@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+
+# System and standard imports
+import argparse
+import os
+import os.path
+import sys
+
+# ros imports
+from atom_core.config_io import atomError
+from atom_calibration.collect.patterns import estimatePatternPosesForCollection
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
+import rospy
+
+# 3rd-party imports
+from colorama import Fore, Style
+
+# Atom imports
+from atom_core.utilities import createLambdaExpressionsForArgs
+from atom_core.dataset_io import (filterCollectionsFromDataset,
+                                  filterSensorsFromDataset, loadResultsJSON, saveAtomDataset)
+
+
+# own packages
+
+
+# global variables  ... are forbidden
+
+# -------------------------------------------------------------------------------
+# --- FUNCTIONS
+# -------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
+# --- MAIN
+# -------------------------------------------------------------------------------
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-json", "--json_file", type=str, required=True,
+                    help="Json file containing input dataset.",)
+    ap.add_argument("-ow", "--overwrite",
+                    help="Overwrites the input dataset without asking for permission.",
+                    action='store_true')
+
+    # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
+    arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
+    # these args have the selection functions as strings
+    args_original = vars(ap.parse_args(args=arglist))
+    args = createLambdaExpressionsForArgs(args_original)  # selection functions are now lambdas
+
+    # Arguments which are not options for transform_corrector
+    args['use_incomplete_collections'] = True
+    args['remove_partial_detections'] = False
+    args['collection_selection_function'] = None
+
+    # ---------------------------------------
+    # --- INITIALIZATION Read data from file
+    # ---------------------------------------
+    # Loads a json file containing the detections. Returned json_file has path resolved by urireader.
+    dataset, json_file = loadResultsJSON(args['json_file'], args['collection_selection_function'])
+
+    # ---------------------------------------
+    # --- Filter some collections and / or sensors from the dataset
+    # ---------------------------------------
+    # During dataset review there is no need to filter out collections
+    dataset = filterCollectionsFromDataset(dataset, args)
+
+    output_file = os.path.join(os.path.dirname(args['json_file']), 'dataset_corrected.json')
+    if os.path.exists(output_file) and args['json_file'] != output_file and not args['overwrite']:
+        ans = input('The file ' + args['json_file'] + ' already exists.'
+                    ' Do you want to overwrite? (Y/n)')
+        if ans.lower() == 'n':
+            sys.exit(0)
+
+    dataset = filterSensorsFromDataset(dataset, args)  # filter sensors
+
+    print('Loaded dataset containing ' + str(len(dataset['sensors'].keys())) + ' sensors and ' +
+          str(len(dataset['collections'].keys())) + ' collections.')
+
+    # ---------------------------------------
+    # --- Define selection
+    # ---------------------------------------
+    # Lets start with the first key on the collections dictionary.
+    # Data structure used to save the state of navigation throughout the collections in the dataset.
+    selection = {'collection_key': list(dataset['collections'].keys())[
+        0], 'previous_collection_key': None, 'exit': False}
+
+    # ---------------------------------------
+    # --- Define selection
+    # ---------------------------------------
+
+    for collection_key, collection in dataset['collections'].items():
+        print('Estimating pattern poses for collection ' + Fore.BLUE + collection_key +
+              Style.RESET_ALL + ' and pattern ' + Style.RESET_ALL)
+        estimatePatternPosesForCollection(dataset, collection_key)
+
+    # Save the dataset with the new pattern poses
+    saveAtomDataset(args['json_file'], dataset)
+
+
+if __name__ == "__main__":
+    main()
