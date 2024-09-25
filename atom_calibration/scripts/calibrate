@@ -74,6 +74,9 @@ def main():
                     action="store_true", default=False)
     ap.add_argument("-snv", "--show_normalized_values", action="store_true", default=False,
                     help="In the output table, shows normalized residuals alongside the original values.")
+    ap.add_argument(
+        "-rnm", "--rgb_normalizer_multiplier", type=float, default=1.0,
+        help="Multiplier of rgb normalizer. Used to enhance the importance of rgb modality errors vs metric errors.")
     ap.add_argument("-rv", "--ros_visualization", action="store_true",
                     help="Publish ros visualization markers.")
     ap.add_argument("-dpcc", "--draw_per_collection_colors", action="store_true",
@@ -795,8 +798,12 @@ def main():
                            for k in residuals.keys() if sensor_key in k]
 
         # If the normalizer is to big, the residuals may loose their influence when close to zero.
-        normalizer[modality] = np.mean(values)
-        print(f'Normalizer for {modality}: {normalizer[modality]}')
+        if modality == 'rgb':
+            normalizer[modality] = args['rgb_normalizer_multiplier'] * np.mean(values)
+        else:
+            normalizer[modality] = np.mean(values)
+
+        print('Normalizer for ' + str(modality) + ': ' + str(normalizer[modality]))
 
     # ---------------------------------------
     # --- Start Optimization
