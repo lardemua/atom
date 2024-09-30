@@ -76,7 +76,7 @@ def main():
                     help="In the output table, shows normalized residuals alongside the original values.")
     ap.add_argument(
         "-rnm", "--rgb_normalizer_multiplier", type=float, default=1.0,
-        help="Multiplier of rgb normalizer. Used to enhance the importance of rgb modality errors vs metric errors.")
+        help="Multiplier of rgb normalizer. Used to enhance the importance of rgb modality errors vs metric errors. Smaller values will make rgb errors more important.")
     ap.add_argument("-rv", "--ros_visualization", action="store_true",
                     help="Publish ros visualization markers.")
     ap.add_argument("-dpcc", "--draw_per_collection_colors", action="store_true",
