@@ -33,7 +33,8 @@ def main():
 
     atomStartupPrint('Removing collections from dataset')
 
-    ap = argparse.ArgumentParser(description='Splits an ATOM dataset json into train and test datasets.')
+    # ap = argparse.ArgumentParser(description='Splits an ATOM dataset json into train and test datasets.')
+    ap = argparse.ArgumentParser(description='Creates a new dataset from a existing ATOM dataset by removing selected collections. The output should be on a new folder.')
     ap.add_argument("-json", "--dataset_json",
                     help="Dataset json file to be split.", type=str, required=True)
     ap.add_argument("-csf", "--collection_selection_function", default=None, type=str,
@@ -41,7 +42,7 @@ def main():
                     "returns True or False to indicate if the collection should be loaded (and used in the "
                     "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
                     "language. Example: lambda name: int(name) > 5 , to load only collections 6, 7, and onward.")
-    ap.add_argument("-o", "--output", help="Name for the output file.",
+    ap.add_argument("-o", "--output", help="Name for the output json file.",
                     required=False, type=str)
 
     # - Save args
