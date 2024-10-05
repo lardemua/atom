@@ -37,13 +37,22 @@ from atom_core.vision import projectToCamera
 # -------------------------------------------------------------------------------
 
 
-def rangeToImage(collection, json_file, ss, ts, tf):
-    filename = os.path.dirname(json_file) + '/' + collection['data'][ss]['data_file']
-    msg = read_pcd(filename)
-    collection['data'][ss].update(message_converter.convert_ros_message_to_dictionary(msg))
+def rangeToImage(collection, json_file, rc, cs, tf,pattern_key):
 
-    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][ss])
-    idxs = collection['labels'][ss]['idxs_limit_points']
+    '''
+    rs -> ranging sensor
+    cs -> camera sensor
+    tf -> a transformation from the ranging to the imaging sensor
+    '''
+
+    filename = os.path.dirname(json_file) + '/' + collection['data'][rc]['data_file']
+    msg = read_pcd(filename)
+    collection['data'][rc].update(message_converter.convert_ros_message_to_dictionary(msg))
+
+    cloud_msg = getPointCloudMessageFromDictionary(collection['data'][rc])
+
+    idxs = collection['labels'][pattern_key][rc]['idxs_limit_points']
+
 
     pc = atom_core.ros_numpy.numpify(cloud_msg)[idxs]
     points_in_vel = np.zeros((4, pc.shape[0]))
@@ -55,9 +64,9 @@ def rangeToImage(collection, json_file, ss, ts, tf):
     points_in_cam = np.dot(tf, points_in_vel)
 
     # -- Project them to the image
-    w, h = collection['data'][ts]['width'], collection['data'][ts]['height']
-    K = np.ndarray((3, 3), buffer=np.array(mixed_dataset['sensors'][ts]['camera_info']['K']), dtype=float)
-    D = np.ndarray((5, 1), buffer=np.array(mixed_dataset['sensors'][ts]['camera_info']['D']), dtype=float)
+    w, h = collection['data'][cs]['width'], collection['data'][cs]['height']
+    K = np.ndarray((3, 3), buffer=np.array(mixed_dataset['sensors'][cs]['camera_info']['K']), dtype=float)
+    D = np.ndarray((5, 1), buffer=np.array(mixed_dataset['sensors'][cs]['camera_info']['D']), dtype=float)
 
     pts_in_image, _, _ = projectToCamera(K, D, w, h, points_in_cam[0:3, :])
 
@@ -163,10 +172,15 @@ if __name__ == "__main__":
             # ---------------------------------------
             # --- Range to image projection
             # ---------------------------------------
-            vel2cam = getTransform(from_frame, to_frame,
+            lidar2cam = getTransform(from_frame, to_frame,
                                 mixed_dataset['collections'][collection_key]['transforms'])
-            pts_in_image = rangeToImage(collection, args['test_json_file'], pattern_key,
-                                        args['range_sensor'], args['camera_sensor'], vel2cam)
+
+            pts_in_image = rangeToImage(collection,
+                                        args['test_json_file'],
+                                        args['range_sensor'],
+                                        args['camera_sensor'],
+                                        lidar2cam,
+                                        pattern_key)
 
             # ---------------------------------------
             # --- Get evaluation data for current collection
