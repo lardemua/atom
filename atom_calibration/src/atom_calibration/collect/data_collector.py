@@ -18,11 +18,12 @@ import atom_core.dataset_io
 # 3rd-party
 from networkx.readwrite import json_graph
 import rospy
+import rospkg
 import atom_msgs.srv
 import tf
 from matplotlib import cm
 from cv_bridge import CvBridge
-from colorama import Style, Fore
+from colorama import Style, Fore, Back
 from interactive_markers.menu_handler import *
 from rospy_message_converter import message_converter
 from tf.listener import TransformListener
@@ -42,6 +43,7 @@ from atom_msgs.msg import ImageWithRGBLabels, PointCloudWithLidar3DLabels, Depth
 class DataCollector:
 
     def __init__(self, args, server, menu_handler):
+
 
         self.output_folder = resolvePath(args['output_folder'])
 
@@ -94,11 +96,12 @@ class DataCollector:
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
         self.joint_state_position_dict = {}
-
-        # print(args['calibration_file'])
+        self.rospack = rospkg.RosPack()
+    
         self.config = loadConfig(args['calibration_file'])
         if self.config is None:
             sys.exit(1)  # loadJSON should tell you why.
+        
 
         self.world_link = self.config['world_link']
 
