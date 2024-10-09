@@ -140,25 +140,12 @@ def main():
                 atomError("No settings files matches were found for the given configuration, check if " + args["data_filename"] + " is well defined")
 
             # Get y data
-
-            # I don't like this method, but the "0," on the top row of all the processed csv's is making pandas a 
-            # nightmare to work with
-            # Get y data
             for name in x_data_files_names:
                 try:
                     file_path_to_get_data_fom = glob.glob(f'{args["results_folder"]}/{name}/{plot_line["ydata"]["file"]}')[0]
                 except:
                     atomError(f"Experiment {x_data_files_names} doesn't have data file {plot_line['ydata']['file']}")
                     exit()
-                # Method with pandas, not working
-                # df = df.T
-                # df.drop(0)
-                # print(df)
-                # for nam in df.columns:
-                #     print(nam)
-                # # element = df[plot_line["ydata"]["field"]].iloc[0]
-                # element = df['front_left_camera [px]'].iloc[0]
-                # print(element)
 
                 with open(file_path_to_get_data_fom, mode ='r')as file:
                   ydata_raw = list(csv.reader(file))
@@ -263,6 +250,7 @@ def main():
             plt.xscale(xscale)  # Set x-scale
             plt.yscale(yscale)  # Set y-scale
 
+            # Issue #990
             # from matplotlib.ticker import MaxNLocator, LogLocator,FormatStrFormatter,ScalarFormatter
             # import numpy as np
             # plt.gca().yaxis.set_major_locator(LogLocator(base=10, subs=np.arange(0.1, 1, 0.1), numticks=10))
@@ -308,18 +296,6 @@ def main():
 
     # Getting back to cwd, to prevent confusion if this script is further modified
     os.chdir(cwd)
-    
-
-        
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     main()

@@ -23,7 +23,7 @@ import atom_msgs.srv
 import tf
 from matplotlib import cm
 from cv_bridge import CvBridge
-from colorama import Style, Fore, Back
+from colorama import Style, Fore
 from interactive_markers.menu_handler import *
 from rospy_message_converter import message_converter
 from tf.listener import TransformListener
@@ -96,7 +96,6 @@ class DataCollector:
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
         self.joint_state_position_dict = {}
-        self.rospack = rospkg.RosPack()
     
         self.config = loadConfig(args['calibration_file'])
         if self.config is None:

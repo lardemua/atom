@@ -580,16 +580,6 @@ def filterSensorsFromDataset(dataset, args):
 
     return dataset
 
-def deleteCollectionFromDataset(dataset,collection_number):
-    # Use the filterCollectionsFromDataset instead. Check #948.
-    # Leaving this function here for potential future use only.
- 
-    # Converting int 90 to '090'
-    collection_key = generateCollectionKey(collection_number)
-    print(f'Deleting {collection_key}')
-    del dataset['collections'][collection_key]
-
-
 
 def filterCollectionsFromDataset(dataset, args):
     """
@@ -598,7 +588,6 @@ def filterCollectionsFromDataset(dataset, args):
     :param args: Makes use of 'collection_selection_function', 'use_incomplete_collections' and
                 'remove_partial_detections'
     """
-    # TODO This function doesn't provide a way to delete the collection number n, should it?
 
     if not args['collection_selection_function'] is None:
         deleted = []
@@ -893,10 +882,6 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
 
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']
-# <<<<<<< HEAD
-#             addNoiseToTF(dataset, selected_collection_key, calibration_parent,
-#                          calibration_child, nig_trans, nig_rot)
-# =======
 
             tf_to_add_noise = generateKey(calibration_parent,calibration_child)
             if tf_to_add_noise in ntfl_tfs:
@@ -904,7 +889,6 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
                 continue
 
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
-# >>>>>>> bruno
 
     # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
@@ -914,10 +898,6 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
         if sensor_key != dataset['calibration_config']['anchored_sensor']:
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
-# <<<<<<< HEAD
-#             addNoiseToTF(dataset, selected_collection_key, calibration_parent,
-#                          calibration_child, nig_trans, nig_rot)
-# =======
 
             tf_to_add_noise = generateKey(calibration_parent,calibration_child)
             if tf_to_add_noise in ntfl_tfs:
@@ -925,7 +905,6 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
                 continue
 
             addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot)
-# >>>>>>> bruno
 
 # TODO make a basic function called by fixed and multiple
 

@@ -180,7 +180,6 @@ class Lidar3DLabeler:
 
     def createInteractiveMarker(self, x=0, y=0, z=0):
         self.marker = InteractiveMarker()
-        # self.marker.header.frame_id = self.sensor_config['parent_link']
         self.marker.header.frame_id = self.config['world_link']
         self.marker.pose.position.x = x
         self.marker.pose.position.y = y

@@ -32,7 +32,8 @@ def parse_list_of_transformations(s):
     for pair in s.split(','):
         elements = pair.split(':')
         if len(elements) != 2:
-            raise atomError("Each pair of transformations parsed must contain exactly 2 elements separated by ':'")
+            atomError("Each pair of transformations parsed must contain exactly 2 elements separated by ':'")
+            exit()
         list_of_transformations.append(elements)
     return list_of_transformations
 
