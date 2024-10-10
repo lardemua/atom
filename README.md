@@ -59,6 +59,7 @@ or any other that is more adequate:
 * André Aguiar - INESC TEC
 * Daniela Rato - University of Aveiro
 * Manuel Gomes - University of Aveiro
+* Diogo Vieira - University of Aveiro
 
 ## Maintainers
 
