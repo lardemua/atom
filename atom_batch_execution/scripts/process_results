@@ -51,10 +51,6 @@ def main():
                     required=True, type=str)
     ap.add_argument("-of", "--output_folder", help="Folder where to store the processed results",
                     required=True, type=str)
-    ap.add_argument("-rs", "--run_suffix", help="Suffix used to signal multiple runs of the same experiment.",
-                    required=False, default='_run', type=str)
-    ap.add_argument("-fs", "--fold_suffix", help="Suffix used to signal multiple folds of the same run.",
-                    required=False, default='_fold', type=str)
     ap.add_argument("-ar", "--average_row", help="Name of the row to average. Default is 'Averages'",
                     required=False, default='Averages', type=str)
     ap.add_argument("-ctc", "--column_to_check", help="Name of the column to check for the average row. Default is 'Collection #', which is the case for ATOM result processing.",

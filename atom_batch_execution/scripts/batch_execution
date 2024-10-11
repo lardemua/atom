@@ -70,10 +70,6 @@ def main():
                     required=False, action='store_true')
     ap.add_argument("-dr", "--dry_run", help="Run without actually executing the processes.",
                     required=False, action='store_true')
-    ap.add_argument("-rs", "--run_suffix", help="Suffix used to signal multiple runs of the same experiment.",
-                    required=False, default='_run', type=str)
-    ap.add_argument("-fs", "--fold_suffix", help="Suffix used to signal multiple folds of the same run.",
-                    required=False, default='_fold', type=str)
 
     args = vars(ap.parse_args())
 
