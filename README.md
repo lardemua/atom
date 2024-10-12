@@ -52,17 +52,20 @@ or any other that is more adequate:
 
 ## Contributors
 
-* Miguel Riem Oliveira - University of Aveiro
-* Afonso Castro - University of Aveiro
-* Eurico Pedrosa - University of Aveiro
-* Tiago Madeira - University of Aveiro
-* André Aguiar - INESC TEC
-* Daniela Rato - University of Aveiro
-* Manuel Gomes - University of Aveiro
-* Diogo Vieira - University of Aveiro
+* Miguel Riem Oliveira - University of Aveiro (2019-present)
+* Afonso Castro - University of Aveiro (2019-2020)
+* Eurico Pedrosa - University of Aveiro (2019-2021)
+* Tiago Madeira - University of Aveiro (2019-2021)
+* André Aguiar - INESC TEC (2019-2020)
+* Daniela Rato - University of Aveiro (2021-2023)
+* Manuel Gomes - University of Aveiro (2021-present)
+* Diogo Vieira - University of Aveiro (2023-present)
+* Bruno Silva - University of Aveiro (2024-present)
 
 ## Maintainers
 
-* Miguel Riem Oliveira - University of Aveiro
-* Manuel Gomes - University of Aveiro
+* Miguel Riem Oliveira 
+* Manuel Gomes 
+* Diogo Vieira 
+* Bruno Silva  
 
