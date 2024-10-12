@@ -7,7 +7,6 @@ import getpass
 from datetime import datetime
 
 import numpy as np
-import rospkg
 from atom_calibration.collect.patterns import estimatePatternPosesForCollection, initializePatternsDict
 from atom_core.utilities import atomError, atomPrintOK
 import tf2_ros

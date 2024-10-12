@@ -78,8 +78,8 @@ def compareAtomTransforms(transform_1, transform_2):
     euler_angles_final = tf.transformations.euler_from_quaternion(transform_2['quat'])
 
 
-    deuler = np.subtract(euler_angles_final,euler_angles_init)
-    rotation_error = np.linalg.norm(deuler)
+    euler_delta = np.subtract(euler_angles_final,euler_angles_init)
+    rotation_error = np.linalg.norm(euler_delta)
 
     # print('translation_delta = ' + str(translation_delta))
 
