@@ -73,8 +73,8 @@ def main():
     ap.add_argument("-si", "--show_images", action="store_true",
                     default=False, help="shows images for each camera")
     ap.add_argument(
-        "-mn", "--method_name", required=False, default='tsai',
-        help="Hand eye method. One of ['tsai', 'park', 'horaud', 'andreff', 'daniilidis'].",
+        "-mn", "--method_name", required=False, default='sha',
+        help="Hand eye method. One of ['sha', 'li'].",
         type=str)
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
@@ -156,15 +156,11 @@ def main():
         atomError('Unknown method. Select one from ' + str(available_methods))
 
     if args['method_name'] == 'tsai':
-        method = cv2.CALIB_HAND_EYE_TSAI
+        method = cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
     elif args['method_name'] == 'park':
-        method = cv2.CALIB_HAND_EYE_PARK
-    elif args['method_name'] == 'horaud':
-        method = cv2.CALIB_HAND_EYE_HORAUD
-    elif args['method_name'] == 'andreff':
-        method = cv2.CALIB_HAND_EYE_ANDREFF
-    elif args['method_name'] == 'daniilidis':
-        method = cv2.CALIB_HAND_EYE_DANIILIDIS
+        method = cv2.CALIB_ROBOT_WORLD_HAND_EYE_LI
+    else:
+        atomError('Unknown method. Select one from ' + str(available_methods))
 
     # Check if the hand link is in the chain from the base to the pattern (since transforms involving the pattern aren't included in the transformation pool in the collections, it uses the pattern's parent link for the check)
     chain = getChain(from_frame=args['base_link'],
@@ -403,30 +399,49 @@ def main():
     h_T_b_Rs = []  # list of rotations for h_T_b
     h_T_b_ts = []  # list of translations for h_T_handrobot-baseh_T_bh_T_bh_T_bh_T_b:
 
+    b_T_h_Rs = []  # list of rotations for h_T_b
+    b_T_h_ts = []  # list of translations for h_T_handrobot-baseh_T_bh_T_bh_T_bh_T_b:
+
     for c_T_p, h_T_b in zip(c_T_p_lst, h_T_b_lst):
         # --- c_T_p    camera to pattern
         c_T_p_t, c_T_p_R = matrixToTranslationRotation(c_T_p)
         c_T_p_Rs.append(c_T_p_R)
         c_T_p_ts.append(c_T_p_t)
 
-        # --- h_T_b    base to hand
+        # --- h_T_b    hand to base
         h_T_b_t, h_T_b_R = matrixToTranslationRotation(h_T_b)
         h_T_b_Rs.append(h_T_b_R)
         h_T_b_ts.append(h_T_b_t)
+
+        # --- b_T_h    base to hand (for some reason robotworldhandeye uses this inverse transform)
+        b_T_h_t, b_T_h_R = matrixToTranslationRotation(np.linalg.inv(h_T_b))
+        b_T_h_Rs.append(b_T_h_R)
+        b_T_h_ts.append(b_T_h_t)
 
     # ---------------------------------------
     # Run hand eye calibration using calibrateHandEye
     # ---------------------------------------
 
     # In an eye-to-hand configuration, it returns b_T_c instead of h_T_c
-    b_T_c_R, b_T_c_t = cv2.calibrateHandEye(h_T_b_Rs,
-                                            h_T_b_ts,
-                                            c_T_p_Rs,
-                                            c_T_p_ts,
-                                            method=method)
+    # b_T_c_R, b_T_c_t = cv2.calibrateHandEye(h_T_b_Rs,
+    #                                         h_T_b_ts,
+    #                                         c_T_p_Rs,
+    #                                         c_T_p_ts,
+    #                                         method=method)
 
     # Rotations out of calibrateRobotWorldHandEye are 3x3
+    # b_T_c = translationRotationToTransform(b_T_c_t, b_T_c_R)
+    # print('hand eye b_T_c:\n' + str(b_T_c))
+
+    h_T_p_R, h_T_p_t, b_T_c_R, b_T_c_t = cv2.calibrateRobotWorldHandEye(b_T_h_Rs,
+                                                                        b_T_h_ts,
+                                                                        c_T_p_Rs,
+                                                                        c_T_p_ts,
+                                                                        method=method)
+
     b_T_c = translationRotationToTransform(b_T_c_t, b_T_c_R)
+    h_T_p = translationRotationToTransform(h_T_p_t, h_T_p_R)
+    # print('robot hand eye b_T_c:\n' + str(b_T_c))
 
     # Extract the transformation marked for calibration which is the
     # cp_T_cc, where cp (calibration parent) and cc (calibration child).
@@ -462,6 +477,20 @@ def main():
         dataset['collections'][collection_key]['transforms'][frame_key]['quat'] = quat
         dataset['collections'][collection_key]['transforms'][frame_key]['trans'] = trans
 
+    # Save the estoimated pattern pose using the h_T_p transform
+    # TODO changing this !!!
+    parent = dataset['calibration_config']['calibration_patterns'][args['pattern']]['parent_link']
+    child = dataset['calibration_config']['calibration_patterns'][args['pattern']]['link']
+
+    # Since the transformation h_T_p is static we will save the same transform to all collections
+    frame_key = generateKey(parent, child)
+
+    quat = tf.transformations.quaternion_from_matrix(h_T_p)
+    trans = h_T_p[0:3, 3].tolist()
+    for collection_key, collection in dataset['collections'].items():
+        dataset['collections'][collection_key]['transforms'][frame_key]['quat'] = quat
+        dataset['collections'][collection_key]['transforms'][frame_key]['trans'] = trans
+
     if args['compare_to_ground_truth']:
 
         # --------------------------------------------------
@@ -478,6 +507,27 @@ def main():
 
         translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
             b_T_c, b_T_c_ground_truth)
+        print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
+        print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
+
+        # --------------------------------------------------
+        # Compare h_T_p hand to pattern transform to ground truth
+        # --------------------------------------------------
+        parent = dataset['calibration_config']['calibration_patterns'][
+            args['pattern']]['parent_link']
+        child = dataset['calibration_config']['calibration_patterns'][args['pattern']]['link']
+
+        h_T_p_ground_truth = getTransform(
+            from_frame=parent,
+            to_frame=child,
+            transforms=dataset_ground_truth['collections'][selected_collection_key]
+            ['transforms'])
+        print(Fore.GREEN + 'Ground Truth h_T_p=\n' + str(h_T_p_ground_truth))
+
+        print('estimated h_T_p=\n' + str(h_T_p))
+
+        translation_error, rotation_error, _, _, _, _, _, _ = compareTransforms(
+            h_T_p, h_T_p_ground_truth)
         print('Etrans = ' + str(round(translation_error*1000, 3)) + ' (mm)')
         print('Erot = ' + str(round(rotation_error*180/math.pi, 3)) + ' (deg)')
 
