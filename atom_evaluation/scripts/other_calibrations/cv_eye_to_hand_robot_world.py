@@ -74,7 +74,7 @@ def main():
                     default=False, help="shows images for each camera")
     ap.add_argument(
         "-mn", "--method_name", required=False, default='sha',
-        help="Hand eye method. One of ['sha', 'li'].",
+        help="Hand eye method. One of ['shah', 'li'].",
         type=str)
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
@@ -151,13 +151,13 @@ def main():
     # Check that the camera has rgb modality
     assertSensorModality(dataset, args['camera'], 'rgb')
 
-    available_methods = ['tsai', 'park', 'horaud', 'andreff', 'daniilidis']
+    available_methods = ['shah', 'li']
     if args['method_name'] not in available_methods:
         atomError('Unknown method. Select one from ' + str(available_methods))
 
-    if args['method_name'] == 'tsai':
+    if args['method_name'] == 'shah':
         method = cv2.CALIB_ROBOT_WORLD_HAND_EYE_SHAH
-    elif args['method_name'] == 'park':
+    elif args['method_name'] == 'li':
         method = cv2.CALIB_ROBOT_WORLD_HAND_EYE_LI
     else:
         atomError('Unknown method. Select one from ' + str(available_methods))
