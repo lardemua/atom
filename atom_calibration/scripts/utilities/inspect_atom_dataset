@@ -15,7 +15,7 @@ from statistics import mean, stdev
 # Atom imports
 from colorama import Fore, Style
 from atom_core.dataset_io import loadResultsJSON, filterSensorsFromDataset
-from atom_core.utilities import addAveragesBottomRowToTable
+from atom_core.utilities import addAveragesBottomRowToTable,createLambdaExpressionsForArgs
 
 # Ros imports
 from urdf_parser_py.urdf import URDF
@@ -40,10 +40,18 @@ def main():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("-json", "--json_file", help="Json file containing input dataset.", type=str, required=True)
+    ap.add_argument(
+        "-ssf", "--sensor_selection_function", default=None, type=str,
+        help="A string to be evaluated into a lambda function that receives a sensor name as input and "
+        "returns True or False to indicate if the sensor should be loaded (and used in the "
+        "optimization). The Syntax is lambda name: f(x), where f(x) is the function in python "
+        'language. Example: lambda name: name in ["left_laser", "frontal_camera"] , to load only '
+        "sensors left_laser and frontal_camera")
 
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith('__')]
     args = vars(ap.parse_args(args=arglist))
+    args = createLambdaExpressionsForArgs(args)  # selection functions are now lambdas
 
     # ---------------------------------------
     # --- INITIALIZATION Read data from file
