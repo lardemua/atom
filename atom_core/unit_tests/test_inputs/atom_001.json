@@ -1,0 +1,42 @@
+{
+    "frame_0-frame_1": {
+        "parent": "frame_0",
+        "child": "frame_1"
+    },
+    "frame_1-frame_2": {
+        "parent": "frame_1",
+        "child": "frame_2"
+    },
+    "frame_2-frame_3": {
+        "parent": "frame_2",
+        "child": "frame_3"
+    },
+    "frame_2-frame_4": {
+        "parent": "frame_2",
+        "child": "frame_4"
+    },
+    "frame_2-frame_5": {
+        "parent": "frame_2",
+        "child": "frame_5"
+    },
+    "frame_3-frame_6": {
+        "parent": "frame_3",
+        "child": "frame_6"
+    },
+    "frame_3-frame_7": {
+        "parent": "frame_3",
+        "child": "frame_7"
+    },
+    "frame_4-frame_8": {
+        "parent": "frame_4",
+        "child": "frame_8"
+    },
+    "frame_5-frame_9": {
+        "parent": "frame_5",
+        "child": "frame_9"
+    },
+    "frame_5-frame_10": {
+        "parent": "frame_5",
+        "child": "frame_10"
+    }
+}

@@ -1,0 +1,62 @@
+{
+    "frame_0-frame_1": {
+        "parent": "frame_0",
+        "child": "frame_1",
+        "quat": [
+            0, 
+            0, 
+            0, 
+            1
+        ],
+        "trans": [
+            0,
+            0,
+            0
+        ]
+    },
+    "frame_1-frame_2": {
+        "parent": "frame_1",
+        "child": "frame_2",
+        "quat": [
+            0, 
+            0, 
+            0, 
+            1
+        ],
+        "trans": [
+            0,
+            0,
+            0
+        ]
+    },
+    "frame_2-frame_3": {
+        "parent": "frame_2",
+        "child": "frame_3",
+        "quat": [
+            0, 
+            0, 
+            0, 
+            1
+        ],
+        "trans": [
+            0,
+            0,
+            0
+        ]
+    },
+    "frame_2-frame_4": {
+        "parent": "frame_2",
+        "child": "frame_4",
+        "quat": [
+            0, 
+            0, 
+            0, 
+            1
+        ],
+        "trans": [
+            0,
+            0,
+            0
+        ]
+    }
+}
