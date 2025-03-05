@@ -152,6 +152,41 @@ def translationQuaternionToTransform(trans, quat):
     # print(str(matrix))
     return matrix
 
+def matrixToTranslationQuaternion(matrix):
+
+    tvec, R = matrixToTranslationRotation(matrix)
+    
+    trace = np.trace(R)
+
+    if trace > 0:
+        S = 2.0 * np.sqrt(trace + 1.0)
+        w = 0.25 * S
+        x = (R[2, 1] - R[1, 2]) / S
+        y = (R[0, 2] - R[2, 0]) / S
+        z = (R[1, 0] - R[0, 1]) / S
+    else:
+        if R[0, 0] > R[1, 1] and R[0, 0] > R[2, 2]:
+            S = 2.0 * np.sqrt(1.0 + R[0, 0] - R[1, 1] - R[2, 2])
+            x = 0.25 * S
+            w = (R[2, 1] - R[1, 2]) / S
+            y = (R[0, 1] + R[1, 0]) / S
+            z = (R[0, 2] + R[2, 0]) / S
+        elif R[1, 1] > R[2, 2]:
+            S = 2.0 * np.sqrt(1.0 + R[1, 1] - R[0, 0] - R[2, 2])
+            y = 0.25 * S
+            w = (R[0, 2] - R[2, 0]) / S
+            x = (R[0, 1] + R[1, 0]) / S
+            z = (R[1, 2] + R[2, 1]) / S
+        else:
+            S = 2.0 * np.sqrt(1.0 + R[2, 2] - R[0, 0] - R[1, 1])
+            z = 0.25 * S
+            w = (R[1, 0] - R[0, 1]) / S
+            x = (R[0, 2] + R[2, 0]) / S
+            y = (R[1, 2] + R[2, 1]) / S
+
+    quat = np.array([w, x, y, z])
+
+    return tvec, quat
 
 def quaternionMatrix(quaternion):
     """Return homogeneous rotation matrix from quaternion.
