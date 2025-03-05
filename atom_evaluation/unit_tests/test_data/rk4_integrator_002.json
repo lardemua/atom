@@ -1,0 +1,120 @@
+[
+    {
+      "angular_velocity": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "angular_velocity_covariance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "header": {
+        "frame_id": "imu_link",
+        "seq": 0,
+        "stamp": {
+          "nsecs": 0,
+          "secs": 0
+        }
+      },
+      "linear_acceleration": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "linear_acceleration_covariance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "orientation": {
+        "w": 1,
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "orientation_covariance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "angular_velocity": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "angular_velocity_covariance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "header": {
+        "frame_id": "imu_link",
+        "seq": 1,
+        "stamp": {
+          "nsecs": 0,
+          "secs": 1
+        }
+      },
+      "linear_acceleration": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "linear_acceleration_covariance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "orientation": {
+        "w": 0.8775826,
+        "x": 0.4794255,
+        "y": 0,
+        "z": 0
+      },
+      "orientation_covariance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+]
