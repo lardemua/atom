@@ -13,6 +13,7 @@ from atom_calibration.collect import patterns
 from atom_core.atom import getTransform
 from atom_core.dataset_io import addNoiseToInitialGuess, filterCollectionsFromDataset, loadResultsJSON
 from atom_core.utilities import atomError, createLambdaExpressionsForArgs
+from atom_core.geometry import matrixToTranslationQuaternion, matrixToTranslationRotation
 
 def quat_mult(q, r):
     """Hamilton product of two quaternions"""
@@ -74,21 +75,6 @@ def rk4_imu_integration(imu_data_0, imu_data_1, q):
 
     omega = np.array([*imu_data_0["angular_velocity"].values()])
     
-    # initial_delta_orientation = q
-# 
-    # Orientation integration
-    # ang_vel_0 = np.array([*imu_data_0["angular_velocity"].values()])
-    # ang_vel_1 = np.array([*imu_data_1["angular_velocity"].values()])
-# 
-    # d_ang_vel = (ang_vel_1 - ang_vel_0)/delta_t
-# 
-    # k1 = delta_t * (0.5 * np.matmul(omega(ang_vel_0), initial_delta_orientation))
-    # k2 = delta_t * (0.5 * np.matmul(omega(ang_vel_0 + 0.5*d_ang_vel*delta_t), normalize_quaternion(initial_delta_orientation + 0.5*k1)))
-    # k3 = delta_t * (0.5 * np.matmul(omega(ang_vel_0 + 0.5*d_ang_vel*delta_t), normalize_quaternion(initial_delta_orientation + 0.5*k2)))
-    # k4 = delta_t * (0.5 * np.matmul(omega(ang_vel_0 + d_ang_vel*delta_t), normalize_quaternion(initial_delta_orientation + k3)))
-    # 
-    # delta_orientation = normalize_quaternion(initial_delta_orientation + (k1 + 2*k2 + 2*k3 + k4)/6.0)
-
     k1 = quat_derivative(q, omega)*delta_t
     k2 = quat_derivative(q + k1/2, omega)*delta_t
     k3 = quat_derivative(q + k2/2, omega)*delta_t
@@ -175,19 +161,43 @@ def main():
 
     # For each collection, get a list of all IMU data from continuous_sensor_data from the previous collection to the next 
     
-    e = {} # For plotting/debugging
-    
+    tmp_tf = getTransform(
+        from_frame="world",
+        to_frame="imu_link",
+        transforms=dataset["collections"]["000"]["transforms"]
+    )
+    # 
+    # print(tmp_tf)
+    # exit(0)
+    # tmp_q = np.array([0.0000143, 0.0003491, 0.9999999, 0.0])
+
     tmp_checkpoint = 0 # Here to avoid iterating over the same datapoints
     for collection_key, collection in dataset["collections"].items():
-        
+
+        # If its the first collection, get an initial value for the orientation
+        if collection_key == list(dataset["collections"].keys())[0]:
+            tmp_tf = getTransform(
+                from_frame="world",
+                to_frame="imu_link",
+                transforms=collection["transforms"]
+                )
+
+            tmp_t, tmp_q = matrixToTranslationQuaternion(tmp_tf)            
+            # tmq_q = quat_mult(np.array([*collection["data"][imu_name]["orientation"].values()]), tmp_q) 
+
+            # print(tmp_q)
+            continue
+
         collection_stamp = (collection["data"][imu_name]["header"]["stamp"]["secs"], collection["data"][imu_name]["header"]["stamp"]["nsecs"])
+
 
         for i in range(tmp_checkpoint, len(dataset["continuous_sensor_data"][imu_name])-1):
 
-            if i == 0:
-                initial_orientation = np.array([*dataset["continuous_sensor_data"][imu_name][i]["orientation"].values()])
-                tmp_q = initial_orientation
-            
+            # if i == 0:
+            #     initial_orientation = np.array([*dataset["continuous_sensor_data"][imu_name][i]["orientation"].values()])
+            #     tmp_q = initial_orientation
+            # if i%2 != 0:
+                # continue
 
             data_0 = dataset["continuous_sensor_data"][imu_name][i]
             data_1 = dataset["continuous_sensor_data"][imu_name][i+1]
@@ -200,26 +210,30 @@ def main():
                 )
             
             elif method_name == "euler":
-                
-                delta_q = euler_integration(
+                tmp_q = euler_integration(
                     imu_data_0=data_0,
                     imu_data_1=data_1,
                     q = tmp_q
                 )
 
-            # Save for plotting
-            e[i] = np.linalg.norm(tmp_q - np.array([*dataset["continuous_sensor_data"][imu_name][i]["orientation"].values()]))
-
             if (dataset["continuous_sensor_data"][imu_name][i]["header"]["stamp"]["secs"], dataset["continuous_sensor_data"][imu_name][i]["header"]["stamp"]["nsecs"]) ==  collection_stamp:
                 tmp_checkpoint = i
-                final_orientation = tmp_q
-                print(f'Orientation at collection {collection_key}: {final_orientation}')
 
-        
+                gt_tf=getTransform(
+                    from_frame="world",
+                    to_frame="imu_link",
+                    transforms=collection["transforms"]
+                )
 
-    seaborn.lineplot(x=e.keys(), y=e.values())
-    plt.show()
-    
+                gt_t, gt_quat = matrixToTranslationQuaternion(gt_tf)
+                
+                print(f"gt_quat_imu_link = {gt_quat}")
+
+                print(f"Integrator quat = {tmp_q}")
+# 
+                print(np.linalg.norm(gt_quat - tmp_q))
+
+   
 
 if __name__ == "__main__":
     main()
