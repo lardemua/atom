@@ -42,7 +42,10 @@ def verifyConfig(config, template_config):
     # Check if all high level keys exist
     same_keys, extra_keys, missing_keys = dictionaries_have_same_keys(config, template_config)
     if not same_keys:
-        atomError('Config file does not have the correct keys.\nKeys that should not exist: ' +
+        if missing_keys == ['continuous_joint_and_tf_collection']:
+            atomWarn('In config file, the "continuous_joint_and_tf_collection" key is missing. Disbaling continuous joint and TF collection...')
+        else:
+            atomError('Config file does not have the correct keys.\nKeys that should not exist: ' +
                   str(extra_keys) + '\nKeys that are missing : ' + str(missing_keys))
 
     sensor_template = template_config['sensors']['hand_camera']
