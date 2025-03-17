@@ -106,6 +106,9 @@ additional_tfs:
   #  parent_link: "base_footprint"
   #  child_link: "base_link"
 
+# Enable continuous joint and transform collection (set to True or False)
+continuous_joint_and_tf_collection: True
+
 # ATOM can also calibrate several parameters of your joints.
 # In this section you should discriminate the joints that will be part of the calibrations.
 # For each joint you must specify which parameters to optimize.
