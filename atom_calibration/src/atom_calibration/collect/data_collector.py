@@ -373,9 +373,15 @@ class DataCollector:
         # Only get transforms if the abstract_transforms dictionary has already been created
 
         if self.abstract_transforms != None and self.tf_msg_buffer != None:
+            tmp_timestamp = msg.transforms[0].header.stamp
             tmp_transforms = self.getTransforms(self.abstract_transforms,
                                                 self.tf_buffer,
-                                                msg.transforms[0].header.stamp)
+                                                tmp_timestamp)
+            
+            tmp_transforms['stamp'] = {
+                'secs': tmp_timestamp.secs,
+                'nsecs': tmp_timestamp.nsecs
+            }
             
             self.tf_msg_buffer.append(tmp_transforms)
  
@@ -471,7 +477,8 @@ class DataCollector:
 
             key = generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {
-                'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
+                'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']
+                }
 
         return transforms_dict
 
@@ -671,17 +678,6 @@ class DataCollector:
             for msg in msg_list:
                 msg_dict = message_converter.convert_ros_message_to_dictionary(msg)
                 continuous_sensor_data_dict[sensor_key].append(msg_dict)
-
-        # # --------------------------------------
-        # # Create continuous_tf_data_lst
-        # # A list of TF messages (dictionaries)
-        # # --------------------------------------
-        # continuous_tf_data_lst = []
-
-        # for msg in self.tf_msg_buffer:
-        #     msg_dict = message_converter.convert_ros_message_to_dictionary(msg)
-        #     continuous_tf_data_lst.append(msg_dict)
-
             
         # --------------------------------------
         # Create collection_dict
