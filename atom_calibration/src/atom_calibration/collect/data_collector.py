@@ -79,7 +79,6 @@ class DataCollector:
         self.listener_2 = ConfigurableTransformListener(self.tf_buffer,
                                                         tf_topic='tf',
                                                         tf_static_topic='tf_static')
-
         self.sensors = {}
         self.transforms = {}
         self.server = server
@@ -94,6 +93,8 @@ class DataCollector:
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
         self.joint_state_position_dict = {}
+        self.abstract_transforms = None # Initialize this variable to avoid errors in subscribers
+        self.tf_msg_buffer = None # Initialize this variable to avoid errors in subscribers
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -106,7 +107,6 @@ class DataCollector:
         self.cm_sensors = cm.Pastel2(np.linspace(
             0, 1, len(self.config['sensors'].keys())))
 
-        # Reading the xacro
         self.dataset_name = self.output_folder.split('/')[-1]
         description_file, _, _ = atom_core.config_io.uriReader(
             self.config['description_file'])
@@ -131,7 +131,12 @@ class DataCollector:
 
         # Setup joint_state message subscriber
         self.subscriber_joint_states = rospy.Subscriber(
-            '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1)
+            '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1
+        )
+
+        self.subscriber_tfs = rospy.Subscriber(
+            '/tf', geometry_msgs.msg.TransformStamped, self.callbackReceivedTFMsg, queue_size=1
+        )
 
         # Configure patterns (compute corners positions, etc.)
         print('Initializing patterns ... ', end='')
@@ -342,6 +347,10 @@ class DataCollector:
                 self.additional_data_subscribers[description] = rospy.Subscriber(
                     value['topic_name'], rospy.AnyMsg,
                     partial(self.callbackReceivedAdditionalDataMsg, additional_data_key=description), queue_size=1)
+                
+        # Create a buffer for the tf messages, to save continuously
+        # TODO: rename this variable to something else, since tf_buffer is already used
+        self.tf_msg_buffer = []
 
     def callbackReceivedAdditionalDataMsg(self, msg, additional_data_key):
         self.additional_data_msgs[additional_data_key] = msg
@@ -353,7 +362,16 @@ class DataCollector:
         
         self.label_msgs[sensor_key] = msg
 
-
+    def callbackReceivedTFMsg(self, msg):
+        # Whenever a TF message is received, save the tfs in a "buffer" to save continuously
+        # Only get transforms if the abstract_transforms dictionary has already been created
+        if self.abstract_transforms != None and self.tf_msg_buffer != None:
+            tmp_transforms = self.getTransforms(self.abstract_transforms,
+                                                self.tf_buffer,
+                                                msg.transforms[0].header.stamp)
+            
+            self.tf_msg_buffer.append(tmp_transforms)
+ 
     def callbackReceivedJointStateMsg(self, msg):
         # Add the joint positions to the dictionary
         for name, position in zip(msg.name, msg.position):
@@ -646,7 +664,17 @@ class DataCollector:
             for msg in msg_list:
                 msg_dict = message_converter.convert_ros_message_to_dictionary(msg)
                 continuous_sensor_data_dict[sensor_key].append(msg_dict)
-                
+
+        # # --------------------------------------
+        # # Create continuous_tf_data_lst
+        # # A list of TF messages (dictionaries)
+        # # --------------------------------------
+        # continuous_tf_data_lst = []
+
+        # for msg in self.tf_msg_buffer:
+        #     msg_dict = message_converter.convert_ros_message_to_dictionary(msg)
+        #     continuous_tf_data_lst.append(msg_dict)
+
             
         # --------------------------------------
         # Create collection_dict
@@ -665,6 +693,7 @@ class DataCollector:
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
                    'continuous_sensor_data': continuous_sensor_data_dict,
+                   'continuous_tf_data': self.tf_msg_buffer,
                    'sensors': self.sensors,
                    'transforms': self.transforms,
                    'patterns': self.patterns_dict}
