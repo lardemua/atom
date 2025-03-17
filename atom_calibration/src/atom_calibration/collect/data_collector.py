@@ -134,9 +134,15 @@ class DataCollector:
             '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1
         )
 
-        self.subscriber_tfs = rospy.Subscriber(
-            '/tf', geometry_msgs.msg.TransformStamped, self.callbackReceivedTFMsg, queue_size=1
-        )
+        # For backwards compatibility, set continuous_joint_and_tf_collection to False if not defined in the configuation
+        if 'continuous_joint_and_tf_collection' not in self.config.keys():
+            self.config['continuous_joint_and_tf_collection'] = False
+
+        #  Only create this subscriber if this option is set to True
+        if self.config['continuous_joint_and_tf_collection'] == True:
+            self.subscriber_tfs = rospy.Subscriber(
+                '/tf', geometry_msgs.msg.TransformStamped, self.callbackReceivedTFMsg, queue_size=1
+            )
 
         # Configure patterns (compute corners positions, etc.)
         print('Initializing patterns ... ', end='')
@@ -365,6 +371,7 @@ class DataCollector:
     def callbackReceivedTFMsg(self, msg):
         # Whenever a TF message is received, save the tfs in a "buffer" to save continuously
         # Only get transforms if the abstract_transforms dictionary has already been created
+
         if self.abstract_transforms != None and self.tf_msg_buffer != None:
             tmp_transforms = self.getTransforms(self.abstract_transforms,
                                                 self.tf_buffer,
