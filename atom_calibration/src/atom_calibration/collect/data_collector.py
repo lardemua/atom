@@ -95,6 +95,7 @@ class DataCollector:
         self.joint_state_position_dict = {}
         self.abstract_transforms = None # Initialize this variable to avoid errors in subscribers
         self.tf_msg_buffer = None # Initialize this variable to avoid errors in subscribers
+        # self.joint_msg_buffer = None # Initialize this variable to avoid errors in subscribers
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -373,17 +374,81 @@ class DataCollector:
         # Only get transforms if the abstract_transforms dictionary has already been created
 
         if self.abstract_transforms != None and self.tf_msg_buffer != None:
+
+            # Create dict for saving tfs and joint states
+            tmp_transforms_and_joints = {} 
+
             tmp_timestamp = msg.transforms[0].header.stamp
-            tmp_transforms = self.getTransforms(self.abstract_transforms,
-                                                self.tf_buffer,
-                                                tmp_timestamp)
-            
-            tmp_transforms['stamp'] = {
+            tmp_transforms_and_joints['stamp'] = {
                 'secs': tmp_timestamp.secs,
                 'nsecs': tmp_timestamp.nsecs
             }
             
-            self.tf_msg_buffer.append(tmp_transforms)
+            # Get tfs
+            tmp_transforms = self.getTransforms(self.abstract_transforms,
+                                                self.tf_buffer,
+                                                tmp_timestamp)
+            
+            tmp_transforms_and_joints['transforms'] = tmp_transforms
+
+            # Get joints
+            tmp_joints = {}
+        
+            if self.config['joints'] is not None:
+                for config_joint_key, config_joint in self.config['joints'].items():
+
+                    # TODO should we set the position bias
+                    config_joint_dict = {'transform_key': None, 'position': None}
+
+                    # find joint in xacro
+                    found_in_urdf = False
+                    for urdf_joint in self.urdf_description.joints:
+                        if config_joint_key == urdf_joint.name:
+                            x, y, z = urdf_joint.origin.xyz
+                            roll, pitch, yaw = urdf_joint.origin.rpy
+                            config_joint_dict['origin_x'] = x
+                            config_joint_dict['origin_y'] = y
+                            config_joint_dict['origin_z'] = z
+                            config_joint_dict['origin_roll'] = roll
+                            config_joint_dict['origin_pitch'] = pitch
+                            config_joint_dict['origin_yaw'] = yaw
+
+                            ax, ay, az = urdf_joint.axis
+                            config_joint_dict['axis_x'] = ax
+                            config_joint_dict['axis_y'] = ay
+                            config_joint_dict['axis_z'] = az
+                            config_joint_dict['parent_link'] = urdf_joint.parent
+                            config_joint_dict['child_link'] = urdf_joint.child
+                            config_joint_dict['joint_type'] = urdf_joint.type
+                            found_in_urdf = True
+                            break
+
+                    if not found_in_urdf:
+                        atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                                  ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
+
+                    # find joint in transforms pool
+                    for transform_key, transform in tmp_transforms.items():
+                        if config_joint_dict['parent_link'] == transform['parent'] and config_joint_dict['child_link'] == transform['child']:
+                            config_joint_dict['transform_key'] = transform_key
+                            break
+
+                    if config_joint_dict['transform_key'] is None:
+                        atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                                  ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
+
+                    if config_joint_key not in self.joint_state_position_dict:
+                        atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
+                                  ' from /joint_state messages.')
+
+                    # Get current joint position from the joint state message
+                    config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
+
+                    tmp_joints[config_joint_key] = config_joint_dict
+
+                tmp_transforms_and_joints['joints'] = tmp_joints
+
+            self.tf_msg_buffer.append(tmp_transforms_and_joints)
  
     def callbackReceivedJointStateMsg(self, msg):
         # Add the joint positions to the dictionary
@@ -534,6 +599,7 @@ class DataCollector:
         # Create joint dict
         # --------------------------------------
         joints_dict = {}
+
         if self.config['joints'] is not None:
             for config_joint_key, config_joint in self.config['joints'].items():
 
@@ -585,7 +651,6 @@ class DataCollector:
                 config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
 
                 joints_dict[config_joint_key] = config_joint_dict
-
         # --------------------------------------
         # Create all_sensor_labels_dict
         # --------------------------------------
@@ -696,7 +761,7 @@ class DataCollector:
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
                    'continuous_sensor_data': continuous_sensor_data_dict,
-                   'continuous_tf_data': self.tf_msg_buffer,
+                   'continuous_tf_and_joint_data': self.tf_msg_buffer,
                    'sensors': self.sensors,
                    'transforms': self.transforms,
                    'patterns': self.patterns_dict}
