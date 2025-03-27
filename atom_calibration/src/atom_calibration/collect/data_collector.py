@@ -95,7 +95,7 @@ class DataCollector:
         self.joint_state_position_dict = {}
         self.abstract_transforms = None # Initialize this variable to avoid errors in subscribers
         self.tf_msg_buffer = None # Initialize this variable to avoid errors in subscribers
-        # self.joint_msg_buffer = None # Initialize this variable to avoid errors in subscribers
+        self.joint_msg_buffer = None # Initialize this variable to avoid errors in subscribers
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -358,6 +358,7 @@ class DataCollector:
         # Create a buffer for the tf messages, to save continuously
         # TODO: rename this variable to something else, since tf_buffer is already used
         self.tf_msg_buffer = []
+        self.joint_msg_buffer = []
 
     def callbackReceivedAdditionalDataMsg(self, msg, additional_data_key):
         self.additional_data_msgs[additional_data_key] = msg
@@ -373,23 +374,21 @@ class DataCollector:
         # Whenever a TF message is received, save the tfs in a "buffer" to save continuously
         # Only get transforms if the abstract_transforms dictionary has already been created
 
-        if self.abstract_transforms != None and self.tf_msg_buffer != None:
-
-            # Create dict for saving tfs and joint states
-            tmp_transforms_and_joints = {} 
+        if self.abstract_transforms != None and self.tf_msg_buffer != None and self.joint_msg_buffer != None:
 
             tmp_timestamp = msg.transforms[0].header.stamp
-            tmp_transforms_and_joints['stamp'] = {
-                'secs': tmp_timestamp.secs,
-                'nsecs': tmp_timestamp.nsecs
-            }
             
             # Get tfs
             tmp_transforms = self.getTransforms(self.abstract_transforms,
                                                 self.tf_buffer,
                                                 tmp_timestamp)
             
-            tmp_transforms_and_joints['transforms'] = tmp_transforms
+            tmp_transforms['stamp'] = {
+                'secs': tmp_timestamp.secs,
+                'nsecs': tmp_timestamp.nsecs
+            }
+
+            self.tf_msg_buffer.append(tmp_transforms)
 
             # Get joints
             tmp_joints = {}
@@ -445,10 +444,9 @@ class DataCollector:
                     config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
 
                     tmp_joints[config_joint_key] = config_joint_dict
+                    tmp_joints['stamp'] = tmp_transforms['stamp'] # The joints data has the same timestamp as the TFs
 
-                tmp_transforms_and_joints['joints'] = tmp_joints
-
-            self.tf_msg_buffer.append(tmp_transforms_and_joints)
+            self.joint_msg_buffer.append(tmp_joints)
  
     def callbackReceivedJointStateMsg(self, msg):
         # Add the joint positions to the dictionary
@@ -760,8 +758,11 @@ class DataCollector:
                    'calibration_config': self.config,
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
-                   'continuous_sensor_data': continuous_sensor_data_dict,
-                   'continuous_tf_and_joint_data': self.tf_msg_buffer,
+                   'continuous_data': {
+                       'sensor_data': continuous_sensor_data_dict,
+                       'transforms': self.tf_msg_buffer,
+                       'joints': self.joint_msg_buffer
+                   },
                    'sensors': self.sensors,
                    'transforms': self.transforms,
                    'patterns': self.patterns_dict}
