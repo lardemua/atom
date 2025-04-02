@@ -1,0 +1,6126 @@
+{
+  "continuous_data": {
+    "transforms": [
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 517000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765927173e-06,
+            -4.091445765088002e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 537000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808435976,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 557000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 577000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 597000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765927173e-06,
+            -4.091445765088002e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 617000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808435976,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 637000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 657000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765927173e-06,
+            -4.091445765088002e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 677000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 701000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 721000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 741000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 761000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 781000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388535727e-05,
+            1.4961270385380521e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 801000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 821000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 841000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874884477,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765613154e-06,
+            -4.091445764773984e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.257745728883262e-06,
+            9.257745726984464e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 861000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 881000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "base_link-base": {
+          "child": "base",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link-base_link_inertia": {
+          "child": "base_link_inertia",
+          "parent": "base_link",
+          "quat": [
+            0.0,
+            0.0,
+            1.0,
+            6.123233995736766e-17
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "base_link_inertia-shoulder_link": {
+          "child": "shoulder_link",
+          "parent": "base_link_inertia",
+          "quat": [
+            0.0,
+            0.0,
+            -2.0054457893424974e-05,
+            0.9999999997989093
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.1807
+          ]
+        },
+        "flange-imu_link": {
+          "child": "imu_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.01,
+            0.0,
+            0.0
+          ]
+        },
+        "flange-rgb_hand_link": {
+          "child": "rgb_hand_link",
+          "parent": "flange",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.02,
+            0.0,
+            0.065
+          ]
+        },
+        "flange-tool0": {
+          "child": "tool0",
+          "parent": "flange",
+          "quat": [
+            0.5,
+            0.4999999999999999,
+            0.5,
+            0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "forearm_link-wrist_1_link": {
+          "child": "wrist_1_link",
+          "parent": "forearm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00020941459808480385,
+            0.9999999780727629
+          ],
+          "trans": [
+            -0.57155,
+            0.0,
+            0.17415
+          ]
+        },
+        "rgb_hand_link-rgb_hand_optical_frame": {
+          "child": "rgb_hand_optical_frame",
+          "parent": "rgb_hand_link",
+          "quat": [
+            0.5,
+            -0.4999999999999999,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "shoulder_link-upper_arm_link": {
+          "child": "upper_arm_link",
+          "parent": "shoulder_link",
+          "quat": [
+            0.7071067811984594,
+            -9.25774572919728e-06,
+            9.257745727298483e-06,
+            0.7071067810534293
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "stamp": {
+          "nsecs": 901000000,
+          "secs": 2650
+        },
+        "table-leg1_table": {
+          "child": "leg1_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg2_table": {
+          "child": "leg2_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg3_table": {
+          "child": "leg3_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-leg4_table": {
+          "child": "leg4_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            -0.43,
+            -0.9299999999999999,
+            0.0
+          ]
+        },
+        "table-tabletop_table": {
+          "child": "tabletop_table",
+          "parent": "table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.795
+          ]
+        },
+        "tabletop_table-base_link": {
+          "child": "base_link",
+          "parent": "tabletop_table",
+          "quat": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "trans": [
+            0.0,
+            0.25,
+            0.001
+          ]
+        },
+        "upper_arm_link-forearm_link": {
+          "child": "forearm_link",
+          "parent": "upper_arm_link",
+          "quat": [
+            0.0,
+            0.0,
+            0.00010543172874928886,
+            0.9999999944420752
+          ],
+          "trans": [
+            -0.6127,
+            0.0,
+            0.0
+          ]
+        },
+        "world-table": {
+          "child": "table",
+          "parent": "world",
+          "quat": [
+            0.0,
+            0.0,
+            0.7071067811865475,
+            0.7071067811865476
+          ],
+          "trans": [
+            -1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "wrist_1_link-wrist_2_link": {
+          "child": "wrist_2_link",
+          "parent": "wrist_1_link",
+          "quat": [
+            0.7071067812472256,
+            4.091445765299136e-06,
+            -4.091445764459965e-06,
+            0.7071067811021956
+          ],
+          "trans": [
+            0.0,
+            -0.11985,
+            -2.458164590756244e-11
+          ]
+        },
+        "wrist_2_link-wrist_3_link": {
+          "child": "wrist_3_link",
+          "parent": "wrist_2_link",
+          "quat": [
+            -0.7071067811007841,
+            1.4961270388221708e-05,
+            1.4961270385066502e-05,
+            0.707106780955754
+          ],
+          "trans": [
+            0.0,
+            0.11655,
+            -2.390480459346185e-11
+          ]
+        },
+        "wrist_3_link-flange": {
+          "child": "flange",
+          "parent": "wrist_3_link",
+          "quat": [
+            0.4999999999999999,
+            0.5,
+            0.5,
+            -0.5000000000000001
+          ],
+          "trans": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    ]
+  }
+}
