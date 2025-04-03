@@ -33,6 +33,20 @@ def timeStampToFloat(stamp: Dict[str, int]) -> float:
     return t_float
 
 
+def quatMult(q1: List, q2: List) -> List:
+    w1, x1, y1, z1 = q1
+    w2, x2, y2, z2 = q2
+
+    res = [
+        w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2,
+        w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+        w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
+        w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2,
+    ]
+
+    return res
+
+
 def getTFToDeriveList(
     tf_list: List[Any], from_frame: str, to_frame: str, t: float, n: int
 ) -> List[Dict]:
@@ -95,7 +109,11 @@ def convertRotationsInTFToEuler(tf_list: List[Dict]) -> List[Dict]:
 def deriveRotation(
     tf_list: List[Dict], poly_degree: int, visualization: bool
 ) -> List[np.poly1d]:
-    """Given a list of transformations, return the functions that describe the angular velocities
+    """Given a list of transformations, return the functions that describe the angular velocities.
+    Angular velocities are calculated using the following:
+
+        dw = 2 * quaternionMultiplication(dq, q), with dw = [0, wx, wy, wz]
+
     Inputs:
         - tf_list: a list of transformation dictionaries to use for derivation;
         - poly_degree: the degree of the polynomial functions to fit the rotation data to;
@@ -109,23 +127,24 @@ def deriveRotation(
     # for each rotation variable
     rot_array = np.array(
         [
-            [tf["euler"][0] for tf in tf_list],
-            [tf["euler"][1] for tf in tf_list],
-            [tf["euler"][2] for tf in tf_list],
+            [tf["quat"][0] for tf in tf_list],
+            [tf["quat"][1] for tf in tf_list],
+            [tf["quat"][2] for tf in tf_list],
+            [tf["quat"][3] for tf in tf_list],
         ]
     )
 
-    p = [np.polyfit(t_arr, rot_array[i], deg=poly_degree) for i in range(3)]
-    p_der = []
+    q = [np.polyfit(t_arr, rot_array[i], deg=poly_degree) for i in range(4)]
+    dq = []
 
     if visualization:
-        fig, axes = plt.subplots(2, 3)
+        fig, axes = plt.subplots(2, 4)
 
-    for i in range(3):
-        poly_func = np.poly1d(p[i])
+    # Get quaternion derivatives, dq
+    for i in range(4):
+        poly_func = np.poly1d(q[i])
 
-        p_der.append(np.polyder(poly_func))
-        print(p_der)
+        dq.append(np.polyder(poly_func))
 
         if visualization:
             sns.scatterplot(x=t_arr, y=rot_array[i], ax=axes[0, i])
@@ -133,13 +152,21 @@ def deriveRotation(
             y_func = poly_func(x_func)
             sns.lineplot(x=x_func, y=y_func, color="red", ax=axes[0, i])
 
-            yder_func = p_der[i](x_func)
+            yder_func = dq[i](x_func)
             sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
+
+    q_conjugate = [q[0], -q[1], -q[2], -q[3]]
+
+    omega = 2 * (quatMult(dq, q_conjugate))
 
     if visualization:
         plt.show()
+    
+    print(omega[0](2661.35))
 
-    return p_der
+    ang_vels = [omega[1], omega[2], omega[3]]
+
+    return ang_vels
 
 
 def deriveFromTF(
@@ -168,16 +195,13 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    # For each tf, convert quat to axis-angle
-    tf_to_derive_lst = convertRotationsInTFToEuler(tf_to_derive_lst)
-
     print(tf_to_derive_lst)
 
     ang_vel_funcs = deriveRotation(
         tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
 
-    print([ang_vel_funcs[i](2661.35) for i in range(3)])
+    print([ang_vel_funcs[i](2661.035) for i in range(3)])
 
     o = []
     return o
@@ -192,8 +216,8 @@ if __name__ == "__main__":
     ) as f:
         input_dataset = json.load(f)
 
-    t = 2661.35
-    neighbourhood_size = 5
+    t = 2661.035
+    neighbourhood_size = 200
 
     first_order_derivatives = deriveFromTF(
         dataset=input_dataset,
