@@ -33,15 +33,13 @@ def timeStampToFloat(stamp: Dict[str, int]) -> float:
     return t_float
 
 
-def quatMult(q1: List, q2: List) -> List:
-    w1, x1, y1, z1 = q1
-    w2, x2, y2, z2 = q2
+def quatMult(q: List, p: List) -> List:
 
     res = [
-        w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2,
-        w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
-        w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
-        w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2,
+        p[0] * q[0] - q[1] * p[1] - q[2] * p[2] - q[3] * p[3],
+        q[1] * p[0] + q[0] * p[1] + q[2] * p[3] - q[3] * p[2],
+        q[2] * p[0] + q[0] * p[2] + q[3] * p[1] - q[1] * p[3],
+        q[3] * p[0] + q[0] * p[3] + q[1] * p[2] - q[2] * p[1],
     ]
 
     return res
@@ -157,12 +155,10 @@ def deriveRotation(
 
     q_conjugate = [q[0], -q[1], -q[2], -q[3]]
 
-    omega = 2 * (quatMult(dq, q_conjugate))
+    omega = quatMult(2*dq, q_conjugate)
 
     if visualization:
         plt.show()
-    
-    print(omega[0](2661.35))
 
     ang_vels = [omega[1], omega[2], omega[3]]
 
@@ -217,7 +213,7 @@ if __name__ == "__main__":
         input_dataset = json.load(f)
 
     t = 2661.035
-    neighbourhood_size = 200
+    neighbourhood_size = 75
 
     first_order_derivatives = deriveFromTF(
         dataset=input_dataset,
@@ -225,6 +221,6 @@ if __name__ == "__main__":
         from_frame="world",
         to_frame="imu_link",
         neighbourhood_size=neighbourhood_size,
-        poly_degree=51,
+        poly_degree=1,
         visualization=True,
     )
