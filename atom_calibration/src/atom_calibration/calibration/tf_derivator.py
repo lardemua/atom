@@ -6,6 +6,7 @@ import json
 from math import floor
 import os
 import pathlib
+from pprint import pprint
 from typing import Any, List, Dict
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -14,6 +15,8 @@ import numpy as np
 from atom_core.atom import getTransform
 from atom_core.geometry import matrixToTranslationQuaternion
 from scipy.spatial.transform import Rotation
+
+from atom_core.utilities import atomError
 
 
 def timeFloatToStamp(t_float: float) -> Dict[str, int]:
@@ -31,6 +34,60 @@ def timeStampToFloat(stamp: Dict[str, int]) -> float:
     t_float = stamp["secs"] + (10 ** (-9)) * stamp["nsecs"]
 
     return t_float
+
+
+def getTFList(dataset: Dict) -> List[Dict]:
+    """Acquire a list of tfs from the continuous data."""
+
+    # Check if dataset has /tf and /tf_static continuous data collected
+    if (
+        "/tf" not in dataset["continuous_data"].keys()
+        or "/tf_static" not in dataset["continuous_data"].keys()
+    ):
+        atomError("Dataset does not contain /tf and /tf_static continuous data!")
+
+    tf_list = []
+
+    # Create transforms list of dict with data from /tf and /tf_static
+    for tf_msg in dataset["continuous_data"]["/tf"]:
+
+        tf_dict_to_append = {}
+
+        # Get stamp from one of the transforms in the tf_msg
+        tf_dict_to_append["stamp"] = tf_msg["transforms"][0]["header"]["stamp"]
+
+        for tf in tf_msg["transforms"]:
+            child_frame = tf["child_frame_id"]
+            parent_frame = tf["header"]["frame_id"]
+            key = f"{parent_frame}-{child_frame}"
+
+            tf_dict_to_append[key] = {
+                "child": child_frame,
+                "parent": parent_frame,
+                "quat": [*tf["transform"]["rotation"].values()],
+                "trans": [*tf["transform"]["translation"].values()],
+            }
+
+            pprint(tf['transform']['rotation'])
+            pprint(tf_dict_to_append[key]['quat'])
+
+
+        # Include transforms from /tf_static. Only consider the last message.
+        for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
+            child_frame = tf["child_frame_id"]
+            parent_frame = tf["header"]["frame_id"]
+            key = f"{tf['header']['frame_id']}-{tf['child_frame_id']}"
+
+            tf_dict_to_append[key] = {
+                "child": child_frame,
+                "parent": parent_frame,
+                "quat": [*tf["transform"]["rotation"].values()],
+                "trans": [*tf["transform"]["translation"].values()],
+            }
+
+        tf_list.append(tf_dict_to_append)
+
+    return tf_list
 
 
 def quatMult(q: List, p: List) -> List:
@@ -155,7 +212,10 @@ def deriveRotation(
 
     q_conjugate = [q[0], -q[1], -q[2], -q[3]]
 
-    omega = quatMult(2*dq, q_conjugate)
+    print(np.shape(dq))
+    print(np.shape(q_conjugate))
+
+    omega = quatMult(2 * dq, q_conjugate)
 
     if visualization:
         plt.show()
@@ -175,7 +235,7 @@ def deriveFromTF(
     visualization: bool,
 ) -> List[float]:
 
-    tf_lst = dataset["continuous_data"]["transforms"]
+    tf_lst = getTFList(dataset)
 
     # Get a list of the n temporally closest (wrt t) tfs to use for derivation
     tf_to_derive_lst = getTFToDeriveList(
@@ -191,13 +251,13 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    print(tf_to_derive_lst)
+    # print(tf_to_derive_lst)
 
     ang_vel_funcs = deriveRotation(
         tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
 
-    print([ang_vel_funcs[i](2661.035) for i in range(3)])
+    print([ang_vel_funcs[i](2660.657) for i in range(3)])
 
     o = []
     return o
@@ -212,7 +272,7 @@ if __name__ == "__main__":
     ) as f:
         input_dataset = json.load(f)
 
-    t = 2661.035
+    t = 2660.657
     neighbourhood_size = 75
 
     first_order_derivatives = deriveFromTF(
@@ -221,6 +281,6 @@ if __name__ == "__main__":
         from_frame="world",
         to_frame="imu_link",
         neighbourhood_size=neighbourhood_size,
-        poly_degree=1,
+        poly_degree=2,
         visualization=True,
     )
