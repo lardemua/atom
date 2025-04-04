@@ -792,6 +792,12 @@ def objectiveFunction(data):
                     if 'idxs_initial' not in collection['labels'][pattern_key][sensor_key]:
                         collection['labels'][pattern_key][sensor_key]['idxs_initial'] = copy.deepcopy(
                             idxs_projected)
+                        
+                elif sensor['modality'] == 'imu':
+                    # Derivate expected tfs from dataset
+                    # Compare with actual imu data
+                    pass
+
                 else:
                     raise ValueError("Unknown sensor msg_type or modality")
 
