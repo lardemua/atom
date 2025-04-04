@@ -106,7 +106,7 @@ additional_tfs:
   #  child_link: "base_link"
 
 # Enable continuous data collection for a list of ROS message topics
-continuous_data: ["/topic1", "/topic2"]
+# continuous_data: ["/topic1", "/topic2"]
 
 # ATOM can also calibrate several parameters of your joints.
 # In this section you should discriminate the joints that will be part of the calibrations.
