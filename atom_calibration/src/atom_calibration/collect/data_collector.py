@@ -28,6 +28,7 @@ from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
 from urdf_parser_py.urdf import URDF
+import rostopic
 
 # local packages
 from atom_core.naming import generateKey
@@ -79,7 +80,6 @@ class DataCollector:
         self.listener_2 = ConfigurableTransformListener(self.tf_buffer,
                                                         tf_topic='tf',
                                                         tf_static_topic='tf_static')
-
         self.sensors = {}
         self.transforms = {}
         self.server = server
@@ -94,6 +94,9 @@ class DataCollector:
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
         self.joint_state_position_dict = {}
+        # self.abstract_transforms = None # Initialize this variable to avoid errors in subscribers
+        self.continuous_data_buffer = None # Initialize this variable to avoid errors in subscribers
+
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -106,7 +109,6 @@ class DataCollector:
         self.cm_sensors = cm.Pastel2(np.linspace(
             0, 1, len(self.config['sensors'].keys())))
 
-        # Reading the xacro
         self.dataset_name = self.output_folder.split('/')[-1]
         description_file, _, _ = atom_core.config_io.uriReader(
             self.config['description_file'])
@@ -131,7 +133,13 @@ class DataCollector:
 
         # Setup joint_state message subscriber
         self.subscriber_joint_states = rospy.Subscriber(
-            '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1)
+            '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1
+        )
+
+        # For backwards compatibility, set continuous_data to [] if not defined in the configuation
+        if 'continuous_data' not in self.config.keys():
+            self.config['continuous_data'] = []
+
 
         # Configure patterns (compute corners positions, etc.)
         print('Initializing patterns ... ', end='')
@@ -274,15 +282,6 @@ class DataCollector:
             else:
                 labels_topic = sensor_key + '/labels'
 
-            # Check if the sensor has the 'continuous' key. If it does not, default it to False
-            if 'continuous' not in sensor.keys():
-                sensor['continuous'] = False
-
-            # Create an empty list of data for each sensor with continuous collection for the msg_buffer
-            if sensor['continuous'] == True:
-                self.msg_buffer[sensor_key] = []
-                print('Created message buffer for continuous data collection for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + "!")
-
 
             print("Waiting for first message on topic " +
                   labels_topic + ' ... ', end='')
@@ -343,17 +342,27 @@ class DataCollector:
                     value['topic_name'], rospy.AnyMsg,
                     partial(self.callbackReceivedAdditionalDataMsg, additional_data_key=description), queue_size=1)
 
+        # Create the continuous data subscribers and dictionary of buffers
+        self.continuous_data_subscribers = {}
+        self.continuous_data_buffer = {}
+        for topic in self.config['continuous_data']:
+            self.continuous_data_buffer[topic] = []
+            self.continuous_data_subscribers[topic] = rospy.Subscriber(topic, rospy.AnyMsg, self.callbackContinuousData, callback_args=topic)
+            
+
+    def callbackContinuousData(self, msg, topic):
+        self.continuous_data_buffer[topic].append(message_converter.convert_ros_message_to_dictionary(msg))
+
+
     def callbackReceivedAdditionalDataMsg(self, msg, additional_data_key):
         self.additional_data_msgs[additional_data_key] = msg
 
     def callbackReceivedLabelMsg(self, msg, sensor_key):
         # print('Received labels message for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL)
-        if self.config['sensors'][sensor_key]['continuous'] == True:
-            self.msg_buffer[sensor_key].append(msg)
         
         self.label_msgs[sensor_key] = msg
 
-
+ 
     def callbackReceivedJointStateMsg(self, msg):
         # Add the joint positions to the dictionary
         for name, position in zip(msg.name, msg.position):
@@ -446,7 +455,8 @@ class DataCollector:
 
             key = generateKey(ab['parent'], ab['child'])
             transforms_dict[key] = {
-                'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']}
+                'trans': trans, 'quat': quat, 'parent': ab['parent'], 'child': ab['child']
+                }
 
         return transforms_dict
 
@@ -502,6 +512,7 @@ class DataCollector:
         # Create joint dict
         # --------------------------------------
         joints_dict = {}
+
         if self.config['joints'] is not None:
             for config_joint_key, config_joint in self.config['joints'].items():
 
@@ -553,7 +564,6 @@ class DataCollector:
                 config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
 
                 joints_dict[config_joint_key] = config_joint_dict
-
         # --------------------------------------
         # Create all_sensor_labels_dict
         # --------------------------------------
@@ -646,7 +656,6 @@ class DataCollector:
             for msg in msg_list:
                 msg_dict = message_converter.convert_ros_message_to_dictionary(msg)
                 continuous_sensor_data_dict[sensor_key].append(msg_dict)
-                
             
         # --------------------------------------
         # Create collection_dict
@@ -664,7 +673,7 @@ class DataCollector:
                    'calibration_config': self.config,
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
-                   'continuous_sensor_data': continuous_sensor_data_dict,
+                   'continuous_data': self.continuous_data_buffer,
                    'sensors': self.sensors,
                    'transforms': self.transforms,
                    'patterns': self.patterns_dict}

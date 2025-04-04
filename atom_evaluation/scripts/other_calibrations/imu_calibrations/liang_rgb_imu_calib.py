@@ -87,7 +87,7 @@ def estimate_cam_to_imu(dataset, args, pattern, imu_link_name, world_link_name, 
 
         # Pattern not detected by sensor in collection
         if not collection['labels'][args['pattern']][args['camera']]['detected']:
-            continue        
+            continue
 
         # Build a numpy array with the charuco corners
         corners = np.zeros(
@@ -107,9 +107,8 @@ def estimate_cam_to_imu(dataset, args, pattern, imu_link_name, world_link_name, 
         
         # Convert to 4x4 transform and add to list
         c_T_p = traslationRodriguesToTransform(tvec, rvec)
-
         c_T_p_lst.append((collection_key, c_T_p))
-        
+    
         # Get tf through FK. We can do this because the tfs in the dataset (in simulation) are GT.
         # TODO: Ultimately, this is not what we want to do. We are supposed to integrate IMU data to get the necessary TFs. This FK method is an intermediate step. Create an option for this to be enable for when IMU data integration is implemented.
         imu_T_w = getTransform(
