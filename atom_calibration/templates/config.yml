@@ -63,8 +63,6 @@ sensors:
   #           Current options: lidar3d, rgb, depth, lidar2d
   #       throttle:
   #           Set throttle: desired_frame_rate. If you don't use throttle, do not enter a value, i.e. "throttle: "
-  #       continuous:
-  #           Set to True to save all data from the sensor in the dataset during data collection
 
   # If you are using an image compressed topic such as:
   #   /world_camera/rgb/image_raw/compressed
@@ -79,7 +77,6 @@ sensors:
     topic_name: "/hand_camera/image_raw"
     modality: "rgb"
     throttle: 10
-    continuous: False
 
 
   # You can have more than one sensor:
@@ -90,7 +87,6 @@ sensors:
     topic_name: "/another_camera/image_raw"
     modality: "rgb"
     throttle:
-    continuous: False
 
 # ATOM will calibrate the extrinsic parameters of your links.
 # In this section you should discriminate the additional transformations that will be part of the calibrations.
@@ -109,8 +105,8 @@ additional_tfs:
   #  parent_link: "base_footprint"
   #  child_link: "base_link"
 
-# Enable continuous joint and transform collection (set to True or False)
-continuous_joint_and_tf_collection: False
+# Enable continuous data collection for a list of ROS message topics
+continuous_data: ["/topic1", "/topic2"]
 
 # ATOM can also calibrate several parameters of your joints.
 # In this section you should discriminate the joints that will be part of the calibrations.

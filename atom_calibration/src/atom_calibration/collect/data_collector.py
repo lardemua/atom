@@ -28,6 +28,7 @@ from rospy_message_converter import message_converter
 from tf.listener import TransformListener
 from sensor_msgs.msg import *
 from urdf_parser_py.urdf import URDF
+import rostopic
 
 # local packages
 from atom_core.naming import generateKey
@@ -93,9 +94,9 @@ class DataCollector:
         self.bridge = CvBridge()
         self.dataset_version = "3.0"  # included joint calibration
         self.joint_state_position_dict = {}
-        self.abstract_transforms = None # Initialize this variable to avoid errors in subscribers
-        self.tf_msg_buffer = None # Initialize this variable to avoid errors in subscribers
-        self.joint_msg_buffer = None # Initialize this variable to avoid errors in subscribers
+        # self.abstract_transforms = None # Initialize this variable to avoid errors in subscribers
+        self.continuous_data_buffer = None # Initialize this variable to avoid errors in subscribers
+
 
         # print(args['calibration_file'])
         self.config = loadConfig(args['calibration_file'])
@@ -135,15 +136,10 @@ class DataCollector:
             '/joint_states', JointState, self.callbackReceivedJointStateMsg, queue_size=1
         )
 
-        # For backwards compatibility, set continuous_joint_and_tf_collection to False if not defined in the configuation
-        if 'continuous_joint_and_tf_collection' not in self.config.keys():
-            self.config['continuous_joint_and_tf_collection'] = False
+        # For backwards compatibility, set continuous_data to [] if not defined in the configuation
+        if 'continuous_data' not in self.config.keys():
+            self.config['continuous_data'] = []
 
-        #  Only create this subscriber if this option is set to True
-        if self.config['continuous_joint_and_tf_collection'] == True:
-            self.subscriber_tfs = rospy.Subscriber(
-                '/tf', geometry_msgs.msg.TransformStamped, self.callbackReceivedTFMsg, queue_size=1
-            )
 
         # Configure patterns (compute corners positions, etc.)
         print('Initializing patterns ... ', end='')
@@ -286,15 +282,6 @@ class DataCollector:
             else:
                 labels_topic = sensor_key + '/labels'
 
-            # Check if the sensor has the 'continuous' key. If it does not, default it to False
-            if 'continuous' not in sensor.keys():
-                sensor['continuous'] = False
-
-            # Create an empty list of data for each sensor with continuous collection for the msg_buffer
-            if sensor['continuous'] == True:
-                self.msg_buffer[sensor_key] = []
-                print('Created message buffer for continuous data collection for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL + "!")
-
 
             print("Waiting for first message on topic " +
                   labels_topic + ' ... ', end='')
@@ -354,99 +341,27 @@ class DataCollector:
                 self.additional_data_subscribers[description] = rospy.Subscriber(
                     value['topic_name'], rospy.AnyMsg,
                     partial(self.callbackReceivedAdditionalDataMsg, additional_data_key=description), queue_size=1)
-                
-        # Create a buffer for the tf messages, to save continuously
-        # TODO: rename this variable to something else, since tf_buffer is already used
-        self.tf_msg_buffer = []
-        self.joint_msg_buffer = []
+
+        # Create the continuous data subscribers and dictionary of buffers
+        self.continuous_data_subscribers = {}
+        self.continuous_data_buffer = {}
+        for topic in self.config['continuous_data']:
+            self.continuous_data_buffer[topic] = []
+            self.continuous_data_subscribers[topic] = rospy.Subscriber(topic, rospy.AnyMsg, self.callbackContinuousData, callback_args=topic)
+            
+
+    def callbackContinuousData(self, msg, topic):
+        self.continuous_data_buffer[topic].append(message_converter.convert_ros_message_to_dictionary(msg))
+
 
     def callbackReceivedAdditionalDataMsg(self, msg, additional_data_key):
         self.additional_data_msgs[additional_data_key] = msg
 
     def callbackReceivedLabelMsg(self, msg, sensor_key):
         # print('Received labels message for sensor ' + Fore.BLUE + sensor_key + Style.RESET_ALL)
-        if self.config['sensors'][sensor_key]['continuous'] == True:
-            self.msg_buffer[sensor_key].append(msg)
         
         self.label_msgs[sensor_key] = msg
 
-    def callbackReceivedTFMsg(self, msg):
-        # Whenever a TF message is received, save the tfs in a "buffer" to save continuously
-        # Only get transforms if the abstract_transforms dictionary has already been created
-
-        if self.abstract_transforms != None and self.tf_msg_buffer != None and self.joint_msg_buffer != None:
-
-            tmp_timestamp = msg.transforms[0].header.stamp
-            
-            # Get tfs
-            tmp_transforms = self.getTransforms(self.abstract_transforms,
-                                                self.tf_buffer,
-                                                tmp_timestamp)
-            
-            tmp_transforms['stamp'] = {
-                'secs': tmp_timestamp.secs,
-                'nsecs': tmp_timestamp.nsecs
-            }
-
-            self.tf_msg_buffer.append(tmp_transforms)
-
-            # Get joints
-            tmp_joints = {}
-        
-            if self.config['joints'] is not None:
-                for config_joint_key, config_joint in self.config['joints'].items():
-
-                    # TODO should we set the position bias
-                    config_joint_dict = {'transform_key': None, 'position': None}
-
-                    # find joint in xacro
-                    found_in_urdf = False
-                    for urdf_joint in self.urdf_description.joints:
-                        if config_joint_key == urdf_joint.name:
-                            x, y, z = urdf_joint.origin.xyz
-                            roll, pitch, yaw = urdf_joint.origin.rpy
-                            config_joint_dict['origin_x'] = x
-                            config_joint_dict['origin_y'] = y
-                            config_joint_dict['origin_z'] = z
-                            config_joint_dict['origin_roll'] = roll
-                            config_joint_dict['origin_pitch'] = pitch
-                            config_joint_dict['origin_yaw'] = yaw
-
-                            ax, ay, az = urdf_joint.axis
-                            config_joint_dict['axis_x'] = ax
-                            config_joint_dict['axis_y'] = ay
-                            config_joint_dict['axis_z'] = az
-                            config_joint_dict['parent_link'] = urdf_joint.parent
-                            config_joint_dict['child_link'] = urdf_joint.child
-                            config_joint_dict['joint_type'] = urdf_joint.type
-                            found_in_urdf = True
-                            break
-
-                    if not found_in_urdf:
-                        atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                                  ' to be calibrated, but it does not exist in the urdf description. Run the calibration package configuration for more information.')
-
-                    # find joint in transforms pool
-                    for transform_key, transform in tmp_transforms.items():
-                        if config_joint_dict['parent_link'] == transform['parent'] and config_joint_dict['child_link'] == transform['child']:
-                            config_joint_dict['transform_key'] = transform_key
-                            break
-
-                    if config_joint_dict['transform_key'] is None:
-                        atomError('Defined joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                                  ' to be calibrated, but it does not exist in the transformation pool. Run the calibration package configuration for more information.')
-
-                    if config_joint_key not in self.joint_state_position_dict:
-                        atomError('Could not get position of joint ' + Fore.BLUE + config_joint_key + Style.RESET_ALL +
-                                  ' from /joint_state messages.')
-
-                    # Get current joint position from the joint state message
-                    config_joint_dict['position'] = self.joint_state_position_dict[config_joint_key]
-
-                    tmp_joints[config_joint_key] = config_joint_dict
-                    tmp_joints['stamp'] = tmp_transforms['stamp'] # The joints data has the same timestamp as the TFs
-
-            self.joint_msg_buffer.append(tmp_joints)
  
     def callbackReceivedJointStateMsg(self, msg):
         # Add the joint positions to the dictionary
@@ -758,11 +673,7 @@ class DataCollector:
                    'calibration_config': self.config,
                    'collections': self.collections,
                    'additional_sensor_data': self.additional_data,
-                   'continuous_data': {
-                       'sensor_data': continuous_sensor_data_dict,
-                       'transforms': self.tf_msg_buffer,
-                       'joints': self.joint_msg_buffer
-                   },
+                   'continuous_data': self.continuous_data_buffer,
                    'sensors': self.sensors,
                    'transforms': self.transforms,
                    'patterns': self.patterns_dict}
