@@ -132,12 +132,15 @@ def getTFToDeriveList(
 
         tvec, quat = matrixToTranslationQuaternion(source_target_tf)
 
+        # tvec need to be turned into a row instead of a column
+        trans = np.array([tvec[i, 0] for i in range(3)])
+
         # Use dict form for tf
 
         dict_to_append = {
             "parent": from_frame,
             "child": to_frame,
-            "trans": tvec,
+            "trans": trans,
             "quat": quat,
             "stamp": stamp,
         }
@@ -208,7 +211,12 @@ def deriveRotation(
             yder_func = dq[i](x_func)
             sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
 
-    q_conjugate = [np.poly1d(q[0]), np.poly1d(-q[1]), np.poly1d(-q[2]), np.poly1d(-q[3])]
+    q_conjugate = [
+        np.poly1d(q[0]),
+        np.poly1d(-q[1]),
+        np.poly1d(-q[2]),
+        np.poly1d(-q[3]),
+    ]
 
     print(dq)
     print(q_conjugate)
@@ -221,6 +229,68 @@ def deriveRotation(
     ang_vels = [omega[1], omega[2], omega[3]]
 
     return ang_vels
+
+
+def deriveTranslation(
+    tf_list: List[Dict], poly_degree: int, visualization: bool
+) -> List[np.poly1d]:
+    """Given a list of transformations, return the functions that describe the linear accelerations.
+
+    Inputs:
+        - tf_list: a list of transformation dictionaries to use for derivation;
+        - poly_degree: the degree of the polynomial functions to fit the translation data to;
+        - visualization: enable graph visualization.
+    Outputs:
+        - p_der: a list of 3 polynomial functions to describe the linear acceleration related to each axis of translation.
+    """
+
+    # Get time values
+    t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
+
+    # for each translation variable
+    trans_array = np.array(
+        [
+            [tf["trans"][0] for tf in tf_list],
+            [tf["trans"][1] for tf in tf_list],
+            [tf["trans"][2] for tf in tf_list],
+        ]
+    )
+
+    q = [np.polyfit(t_arr, trans_array[i], deg=poly_degree) for i in range(3)]
+    dq = []
+    ddq = []
+
+    if visualization:
+        fig, axes = plt.subplots(3, 3)
+
+    # Get translation derivatives, dq
+    for i in range(3):
+        poly_func = np.poly1d(q[i])
+
+        dq.append(np.polyder(poly_func))
+
+        dq_func = np.poly1d(dq[i])
+
+        ddq.append(np.polyder(dq_func))
+
+        if visualization:
+            sns.scatterplot(x=t_arr, y=trans_array[i], ax=axes[0, i])
+            x_func = np.linspace(t_arr.min(), t_arr.max(), 1000)
+            y_func = poly_func(x_func)
+            sns.lineplot(x=x_func, y=y_func, color="red", ax=axes[0, i])
+
+            yder_func = dq[i](x_func)
+            sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
+
+            y2der_func = ddq[i](x_func)
+            sns.lineplot(x=x_func,y=y2der_func, color="blue", ax=axes[2,i])
+
+    if visualization:
+        plt.show()
+
+    lin_accel = [ddq[0], ddq[1], ddq[2]]
+
+    return lin_accel
 
 
 def deriveFromTF(
@@ -236,7 +306,10 @@ def deriveFromTF(
     tf_lst = getTFList(dataset)
 
     # DEBUG
-    with open('/home/diogo/catkin_ws/src/atom/atom_calibration/src/atom_calibration/test.json', 'w') as f:
+    with open(
+        "/home/diogo/catkin_ws/src/atom/atom_calibration/src/atom_calibration/test.json",
+        "w",
+    ) as f:
         json.dump(tf_lst, f)
 
     # Get a list of the n temporally closest (wrt t) tfs to use for derivation
@@ -255,11 +328,18 @@ def deriveFromTF(
 
     # print(tf_to_derive_lst)
 
-    ang_vel_funcs = deriveRotation(
-        tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
+    lin_accel_funcs = deriveTranslation(
+        tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
+    print(lin_accel_funcs)
+    print([lin_accel_funcs[i][2660.657] for i in range(3)])
 
-    print([ang_vel_funcs[i](2660.657) for i in range(3)])
+    # DISABLING TEMPORARILY
+    # ang_vel_funcs = deriveRotation(
+    #     tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
+    # )
+
+    # print([ang_vel_funcs[i](2660.657) for i in range(3)])
 
     o = []
     return o
