@@ -3,20 +3,19 @@ Utilities for the derivation of TF data
 """
 
 import json
-from math import floor
 import os
 import pathlib
+from math import floor
 from pprint import pprint
-from typing import Any, List, Dict
-from matplotlib import pyplot as plt
-import seaborn as sns
+from typing import Any, Dict, List
 
 import numpy as np
+import seaborn as sns
 from atom_core.atom import getTransform
 from atom_core.geometry import matrixToTranslationQuaternion
-from scipy.spatial.transform import Rotation
-
 from atom_core.utilities import atomError
+from matplotlib import pyplot as plt
+from scipy.spatial.transform import Rotation
 
 
 def timeFloatToStamp(t_float: float) -> Dict[str, int]:
@@ -68,9 +67,8 @@ def getTFList(dataset: Dict) -> List[Dict]:
                 "trans": [*tf["transform"]["translation"].values()],
             }
 
-            pprint(tf['transform']['rotation'])
-            pprint(tf_dict_to_append[key]['quat'])
-
+            pprint(tf["transform"]["rotation"])
+            pprint(tf_dict_to_append[key]["quat"])
 
         # Include transforms from /tf_static. Only consider the last message.
         for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
@@ -210,10 +208,10 @@ def deriveRotation(
             yder_func = dq[i](x_func)
             sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
 
-    q_conjugate = [q[0], -q[1], -q[2], -q[3]]
+    q_conjugate = [np.poly1d(q[0]), np.poly1d(-q[1]), np.poly1d(-q[2]), np.poly1d(-q[3])]
 
-    print(np.shape(dq))
-    print(np.shape(q_conjugate))
+    print(dq)
+    print(q_conjugate)
 
     omega = quatMult(2 * dq, q_conjugate)
 
@@ -236,6 +234,10 @@ def deriveFromTF(
 ) -> List[float]:
 
     tf_lst = getTFList(dataset)
+
+    # DEBUG
+    with open('/home/diogo/catkin_ws/src/atom/atom_calibration/src/atom_calibration/test.json', 'w') as f:
+        json.dump(tf_lst, f)
 
     # Get a list of the n temporally closest (wrt t) tfs to use for derivation
     tf_to_derive_lst = getTFToDeriveList(
@@ -281,6 +283,6 @@ if __name__ == "__main__":
         from_frame="world",
         to_frame="imu_link",
         neighbourhood_size=neighbourhood_size,
-        poly_degree=2,
+        poly_degree=5,
         visualization=True,
     )
