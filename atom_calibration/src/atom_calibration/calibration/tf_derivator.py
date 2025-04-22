@@ -327,30 +327,6 @@ def deriveFromTF(
         tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
 
-    # DEBUG
-    # I need to apply the rotation from the IMU to the world frame to the data from the IMU to compare with the data for
-
-    imu_data = [
-        *dataset["collections"]["000"]["data"]["imu_hand"][
-            "linear_acceleration"
-        ].values()
-    ]
-
-    world_T_imu = getTransform(
-        from_frame="imu_link",
-        to_frame="world",
-        transforms=dataset["collections"]["000"]["transforms"],
-    )
-
-    R = world_T_imu[:3, :3]
-
-    imu_data = R @ imu_data
-
-    # Remove gravity
-    imu_data[2] -= 9.81
-
-    print(f"imu_data: {imu_data}")
-
     lin_accel = []
     for i in range(3):
         tmp_f = lin_accel_funcs[i]
@@ -365,6 +341,42 @@ def deriveFromTF(
     ang_vel = [0, 0, 0]
 
     return lin_accel, ang_vel
+
+
+def calculateErrors(
+    dataset: dict, results: dict, sensor_name: str, from_frame: str, to_frame: str
+) -> dict:
+    """Calculate the errors in the derivation at each collection's timestamp by comparing the derivation results to the sensor data."""
+
+    # Error dict
+    e = {}
+
+    for collection_key, results in results.items():
+
+        # Calculate IMU data
+        # I need to apply the rotation from the IMU to the world frame to the data from the IMU to compare correctly
+        imu_accel = [
+            *dataset["collections"][collection_key]["data"][sensor_name][
+                "linear_acceleration"
+            ].values()
+        ]
+
+        world_T_imu = getTransform(
+            from_frame=from_frame,
+            to_frame=to_frame,
+            transforms=dataset["collections"][collection_key]["transforms"],
+        )
+
+        R = world_T_imu[:3, :3]
+
+        imu_accel = R @ imu_accel
+
+        # Remove gravity
+        imu_accel[2] -= 9.81
+
+        e["collection_key"] = {"e_a": np.linalg.norm(imu_accel - results["lin_accel"])}
+
+    return e
 
 
 def deriveDataset(
@@ -403,6 +415,17 @@ def deriveDataset(
         }
 
     pprint(derivation_results)
+
+    # Calculate errors
+    e = calculateErrors(
+        dataset=dataset,
+        results=derivation_results,
+        sensor_name=sensor_name,
+        from_frame=from_frame,
+        to_frame=to_frame,
+    )
+
+    print(e)
 
     return 0
 
