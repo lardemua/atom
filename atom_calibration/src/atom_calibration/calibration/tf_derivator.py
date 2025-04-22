@@ -16,6 +16,7 @@ from atom_core.atom import getTransform
 from atom_core.geometry import matrixToTranslationQuaternion
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
+from prettytable import PrettyTable
 from scipy.spatial.transform import Rotation
 
 
@@ -374,7 +375,10 @@ def calculateErrors(
         # Remove gravity
         imu_accel[2] -= 9.81
 
-        e["collection_key"] = {"e_a": np.linalg.norm(imu_accel - results["lin_accel"])}
+        e[collection_key] = {
+            "e_lin_accel": np.linalg.norm(imu_accel - results["lin_accel"]),
+            "e_ang_vel": "NaN",
+        }
 
     return e
 
@@ -425,7 +429,22 @@ def deriveDataset(
         to_frame=to_frame,
     )
 
-    print(e)
+    # Print error table
+    e_table = PrettyTable()
+    e_table.field_names = ["Collection", "E_lin_accel (m/s^2)", "E_ang_vel (rad/s)"]
+
+    e_table.add_rows(
+        [
+            [
+                collection_key,
+                round(float(e[collection_key]["e_lin_accel"]), 4),
+                round(float(e[collection_key]["e_ang_vel"]), 4),
+            ]
+            for collection_key in e.keys()
+        ]
+    )
+
+    print(e_table)
 
     return 0
 
@@ -439,7 +458,6 @@ if __name__ == "__main__":
     ) as f:
         input_dataset = json.load(f)
 
-    t = 2660.667
     neighbourhood_size = 75
 
     derivation_results = deriveDataset(
@@ -449,7 +467,7 @@ if __name__ == "__main__":
         sensor_name="imu_hand",
         neighbourhood_size=neighbourhood_size,
         poly_degree=2,
-        visualization=False,
+        visualization=True,
     )
 
     # first_order_derivatives = deriveFromTF(
