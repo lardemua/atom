@@ -3,6 +3,7 @@ Utilities for the derivation of TF data
 """
 
 import json
+import math
 import os
 import pathlib
 from math import floor
@@ -67,9 +68,6 @@ def getTFList(dataset: Dict) -> List[Dict]:
                 "trans": [*tf["transform"]["translation"].values()],
             }
 
-            pprint(tf["transform"]["rotation"])
-            pprint(tf_dict_to_append[key]["quat"])
-
         # Include transforms from /tf_static. Only consider the last message.
         for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
             child_frame = tf["child_frame_id"]
@@ -115,6 +113,7 @@ def getTFToDeriveList(
             element_t = timeStampToFloat(element["stamp"])
             t_dist = abs(t - element_t)
 
+            # if element_t <= t and (min_element is None or t_dist < min_t_dist):
             if min_element is None or t_dist < min_t_dist:
                 min_t_dist = t_dist
                 min_element = element
@@ -218,9 +217,6 @@ def deriveRotation(
         np.poly1d(-q[3]),
     ]
 
-    print(dq)
-    print(q_conjugate)
-
     omega = quatMult(2 * dq, q_conjugate)
 
     if visualization:
@@ -283,7 +279,7 @@ def deriveTranslation(
             sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
 
             y2der_func = ddq[i](x_func)
-            sns.lineplot(x=x_func,y=y2der_func, color="blue", ax=axes[2,i])
+            sns.lineplot(x=x_func, y=y2der_func, color="blue", ax=axes[2, i])
 
     if visualization:
         plt.show()
@@ -302,6 +298,7 @@ def deriveFromTF(
     poly_degree: int,
     visualization: bool,
 ) -> List[float]:
+    """Given a dataset and a timestamp t, return the results of derivation for that instant of time."""
 
     tf_lst = getTFList(dataset)
 
@@ -326,13 +323,38 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    # print(tf_to_derive_lst)
-
     lin_accel_funcs = deriveTranslation(
         tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
-    print(lin_accel_funcs)
-    print([lin_accel_funcs[i][2660.657] for i in range(3)])
+
+    # DEBUG
+    # I need to apply the rotation from the IMU to the world frame to the data from the IMU to compare with the data for
+
+    imu_data = [
+        *dataset["collections"]["000"]["data"]["imu_hand"][
+            "linear_acceleration"
+        ].values()
+    ]
+
+    world_T_imu = getTransform(
+        from_frame="imu_link",
+        to_frame="world",
+        transforms=dataset["collections"]["000"]["transforms"],
+    )
+
+    R = world_T_imu[:3, :3]
+
+    imu_data = R @ imu_data
+
+    # Remove gravity
+    imu_data[2] -= 9.81
+
+    print(f"imu_data: {imu_data}")
+
+    lin_accel = []
+    for i in range(3):
+        tmp_f = lin_accel_funcs[i]
+        lin_accel.append(tmp_f(t))
 
     # DISABLING TEMPORARILY
     # ang_vel_funcs = deriveRotation(
@@ -340,9 +362,49 @@ def deriveFromTF(
     # )
 
     # print([ang_vel_funcs[i](2660.657) for i in range(3)])
+    ang_vel = [0, 0, 0]
 
-    o = []
-    return o
+    return lin_accel, ang_vel
+
+
+def deriveDataset(
+    dataset: dict,
+    from_frame: str,
+    to_frame: str,
+    sensor_name: str,
+    neighbourhood_size: int,
+    poly_degree: int,
+    visualization: bool,
+) -> dict:
+    """
+    Derive for all timestamps corresponding to collections in a dataset.
+    Return a dictionary containing the derivation results for each collection.
+    """
+
+    # Get list of timestamps to integrate for
+    derivation_results = {}
+    for collection_key, collection in dataset["collections"].items():
+        t = timeStampToFloat(collection["data"][sensor_name]["header"]["stamp"])
+
+        # Derive at each timestamp
+        lin_accel, ang_vel = deriveFromTF(
+            dataset=dataset,
+            from_frame=from_frame,
+            to_frame=to_frame,
+            t=t,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=poly_degree,
+            visualization=visualization,
+        )
+
+        derivation_results[collection_key] = {
+            "lin_accel": lin_accel,
+            "ang_vel": ang_vel,
+        }
+
+    pprint(derivation_results)
+
+    return 0
 
 
 if __name__ == "__main__":
@@ -354,15 +416,25 @@ if __name__ == "__main__":
     ) as f:
         input_dataset = json.load(f)
 
-    t = 2660.657
+    t = 2660.667
     neighbourhood_size = 75
 
-    first_order_derivatives = deriveFromTF(
+    derivation_results = deriveDataset(
         dataset=input_dataset,
-        t=t,
         from_frame="world",
         to_frame="imu_link",
+        sensor_name="imu_hand",
         neighbourhood_size=neighbourhood_size,
-        poly_degree=5,
-        visualization=True,
+        poly_degree=2,
+        visualization=False,
     )
+
+    # first_order_derivatives = deriveFromTF(
+    #     dataset=input_dataset,
+    #     t=t,
+    #     from_frame="world",
+    #     to_frame="imu_link",
+    #     neighbourhood_size=neighbourhood_size,
+    #     poly_degree=2,
+    #     visualization=True,
+    # )
