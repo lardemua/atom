@@ -3,7 +3,6 @@ Utilities for the derivation of TF data
 """
 
 import json
-import math
 import os
 import pathlib
 from math import floor
