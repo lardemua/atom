@@ -10,6 +10,7 @@ from pprint import pprint
 from typing import Any, Dict, List
 
 import numpy as np
+from scipy.interpolate import UnivariateSpline
 import seaborn as sns
 from atom_core.atom import getTransform
 from atom_core.geometry import matrixToTranslationQuaternion
@@ -252,12 +253,34 @@ def deriveTranslation(
         ]
     )
 
+    # q = []
+    # for i in range(3):
+    #     spline = UnivariateSpline(t_arr, trans_array[i], k=3)
+    #     print(spline)
+    #     exit(0)
+
     q = [np.polyfit(t_arr, trans_array[i], deg=poly_degree) for i in range(3)]
     dq = []
     ddq = []
 
     if visualization:
         fig, axes = plt.subplots(3, 3)
+        
+        plot_titles = [
+            r"$x(t)$",
+            r"$y(t)$",
+            r"$z(t)$",
+            r"$\dot{x}(t)$",
+            r"$\dot{y}(t)$",
+            r"$\dot{z}(t)$",
+            r"$\ddot{x}(t)$",
+            r"$\ddot{y}(t)$",
+            r"$\ddot{z}(t)$",
+        ]
+        
+        for ax, title in zip(axes.reshape(-1), plot_titles):
+            ax.set_title(title)
+
 
     # Get translation derivatives, dq
     for i in range(3):
@@ -266,7 +289,6 @@ def deriveTranslation(
         dq.append(np.polyder(poly_func))
 
         dq_func = np.poly1d(dq[i])
-
         ddq.append(np.polyder(dq_func))
 
         if visualization:
