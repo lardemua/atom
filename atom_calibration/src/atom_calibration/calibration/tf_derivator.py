@@ -10,13 +10,13 @@ from pprint import pprint
 from typing import Any, Dict, List
 
 import numpy as np
-from scipy.interpolate import UnivariateSpline
 import seaborn as sns
 from atom_core.atom import getTransform
 from atom_core.geometry import matrixToTranslationQuaternion
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from prettytable import PrettyTable
+from scipy.interpolate import UnivariateSpline
 from scipy.spatial.transform import Rotation
 
 
@@ -265,7 +265,7 @@ def deriveTranslation(
 
     if visualization:
         fig, axes = plt.subplots(3, 3)
-        
+
         plot_titles = [
             r"$x(t)$",
             r"$y(t)$",
@@ -277,10 +277,9 @@ def deriveTranslation(
             r"$\ddot{y}(t)$",
             r"$\ddot{z}(t)$",
         ]
-        
+
         for ax, title in zip(axes.reshape(-1), plot_titles):
             ax.set_title(title)
-
 
     # Get translation derivatives, dq
     for i in range(3):
@@ -325,11 +324,11 @@ def deriveFromTF(
     tf_lst = getTFList(dataset)
 
     # DEBUG
-    with open(
-        "/home/diogo/catkin_ws/src/atom/atom_calibration/src/atom_calibration/test.json",
-        "w",
-    ) as f:
-        json.dump(tf_lst, f)
+    # with open(
+    #     "/home/diogo/catkin_ws/src/atom/atom_calibration/src/atom_calibration/test.json",
+    #     "w",
+    # ) as f:
+    #     json.dump(tf_lst, f)
 
     # Get a list of the n temporally closest (wrt t) tfs to use for derivation
     tf_to_derive_lst = getTFToDeriveList(
@@ -365,7 +364,94 @@ def deriveFromTF(
     return lin_accel, ang_vel
 
 
-def calculateErrors(
+def deriveDatasetAtCollections(
+    dataset: dict,
+    from_frame: str,
+    to_frame: str,
+    sensor_name: str,
+    neighbourhood_size: int,
+    poly_degree: int,
+    visualization: bool,
+) -> dict:
+    """
+    Derive for all timestamps corresponding to collections in a dataset.
+    Return a dictionary containing the derivation results for each collection.
+    """
+
+    # Get list of timestamps to integrate for
+    derivation_results = {}
+    for collection_key, collection in dataset["collections"].items():
+        t = timeStampToFloat(collection["data"][sensor_name]["header"]["stamp"])
+
+        # Derive at each timestamp
+        lin_accel, ang_vel = deriveFromTF(
+            dataset=dataset,
+            from_frame=from_frame,
+            to_frame=to_frame,
+            t=t,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=poly_degree,
+            visualization=visualization,
+        )
+
+        derivation_results[collection_key] = {
+            "lin_accel": lin_accel,
+            "ang_vel": ang_vel,
+        }
+
+    pprint(derivation_results)
+
+    return derivation_results
+
+
+def deriveDatasetAllDataPoints(
+    dataset: dict,
+    from_frame: str,
+    to_frame: str,
+    sensor_name: str,
+    sensor_topic: str,
+    neighbourhood_size: int,
+    poly_degree: int,
+    visualization: bool,
+) -> dict:
+    """
+    Derive for all timestamps corresponding to collections in a dataset.
+    Return a dictionary containing the derivation results for each collection.
+    """
+
+    # Get list of timestamps to integrate for
+    derivation_results = {}
+    count = 0
+    # for datapoint in dataset["continuous_data"][sensor_topic]:
+    # t = timeStampToFloat(datapoint["header"]["stamp"])
+
+    for datapoint in dataset["continuous_data"]["/tf"]:
+        t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
+        # Derive at each timestamp
+        lin_accel, ang_vel = deriveFromTF(
+            dataset=dataset,
+            from_frame=from_frame,
+            to_frame=to_frame,
+            t=t,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=poly_degree,
+            visualization=visualization,
+        )
+
+        derivation_results[str(t)] = {
+            "lin_accel": lin_accel,
+            "ang_vel": ang_vel,
+        }
+
+        print(count)
+        count += 1
+
+    # pprint(derivation_results)
+
+    return derivation_results
+
+
+def calculateErrorsAtCollections(
     dataset: dict, results: dict, sensor_name: str, from_frame: str, to_frame: str
 ) -> dict:
     """Calculate the errors in the derivation at each collection's timestamp by comparing the derivation results to the sensor data."""
@@ -404,75 +490,131 @@ def calculateErrors(
     return e
 
 
-def deriveDataset(
+def calculateErrorsAllDataPoints(
     dataset: dict,
+    tf_list: List[Dict],
+    results: dict,
+    sensor_name: str,
+    sensor_topic: str,
     from_frame: str,
     to_frame: str,
-    sensor_name: str,
-    neighbourhood_size: int,
-    poly_degree: int,
-    visualization: bool,
 ) -> dict:
-    """
-    Derive for all timestamps corresponding to collections in a dataset.
-    Return a dictionary containing the derivation results for each collection.
-    """
+    """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
-    # Get list of timestamps to integrate for
-    derivation_results = {}
-    for collection_key, collection in dataset["collections"].items():
-        t = timeStampToFloat(collection["data"][sensor_name]["header"]["stamp"])
+    # Error dict with errors vectors for each axis
+    e = {"e_lin_accel": {"x": [], "y": [], "z": []}, "e_ang_vel": {}}
+    # Time vector
+    t_vec = []
 
-        # Derive at each timestamp
-        lin_accel, ang_vel = deriveFromTF(
-            dataset=dataset,
+    idx = 0
+
+    for tf_pool in tf_list:
+
+        # Find the closest IMU datapoint
+        tf_pool_t = timeStampToFloat(tf_pool["stamp"])
+
+        t_dist_min = None
+        for sensor_datapoint in dataset["continuous_data"][sensor_topic]:
+            sensor_datapoint_t = timeStampToFloat(sensor_datapoint["header"]["stamp"])
+
+            if sensor_datapoint_t > tf_pool_t + 0.1:
+                break
+            else:
+                t_dist = abs(tf_pool_t - sensor_datapoint_t)
+
+                if t_dist_min is None or t_dist < t_dist_min:
+                    t_dist_min = t_dist
+                    closest_sensor_datapoint = sensor_datapoint
+
+        # Now that we have the closest datapoint, we can compare
+        imu_accel = [*closest_sensor_datapoint["linear_acceleration"].values()]
+
+        # Compensate for world-imu tf
+        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+
+        world_T_imu = getTransform(
             from_frame=from_frame,
             to_frame=to_frame,
-            t=t,
-            neighbourhood_size=neighbourhood_size,
-            poly_degree=poly_degree,
-            visualization=visualization,
+            transforms=tf_pool,
         )
 
-        derivation_results[collection_key] = {
-            "lin_accel": lin_accel,
-            "ang_vel": ang_vel,
-        }
+        R = world_T_imu[:3, :3]
 
-    pprint(derivation_results)
+        # imu_accel = R @ imu_accel
 
-    # Calculate errors
-    e = calculateErrors(
-        dataset=dataset,
-        results=derivation_results,
-        sensor_name=sensor_name,
-        from_frame=from_frame,
-        to_frame=to_frame,
-    )
+        # Remove gravity
+        imu_accel[2] -= 9.81
 
-    # Print error table
-    e_table = PrettyTable()
-    e_table.field_names = ["Collection", "E_lin_accel (m/s^2)", "E_ang_vel (rad/s)"]
+        # print(imu_accel)
+        # print(results[str(timeStampToFloat(closest_sensor_datapoint["header"]["stamp"]))])
+        # exit(0)
 
-    e_table.add_rows(
-        [
-            [
-                collection_key,
-                round(float(e[collection_key]["e_lin_accel"]), 4),
-                round(float(e[collection_key]["e_ang_vel"]), 4),
-            ]
-            for collection_key in e.keys()
-        ]
-    )
+        # Calculate errors
+        e["e_lin_accel"]["x"].append(
+            imu_accel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][0]
+        )
+        e["e_lin_accel"]["y"].append(
+            imu_accel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][1]
+        )
+        e["e_lin_accel"]["z"].append(
+            imu_accel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
+        )
+        # For plotting
+        t_vec.append(tf_pool_t)
 
-    print(e_table)
+    # Reparametrize time
+    t_vec_reparam = []
+    for i in range(len(t_vec)):
+        t_vec_reparam.append(t_vec[i] - t_vec[0])
 
-    return 0
+    fig, axes = plt.subplots(1, 3)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], ax=axes[2])
+
+    plot_titles = [
+        r"$E_{a_x}(t)$",
+        r"$E_{a_y}(t)$",
+        r"$E_{a_z}(t)$",
+    ]
+
+    for ax, title in zip(axes, plot_titles):
+        ax.set_title(title)
+        ax.set(
+            xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
+        )
+
+    plt.show()
+
+    return e
+
+
+def plotIMUData(dataset: Dict) -> None:
+    """Simple function for debugging."""
+
+    t_arr = []
+    imu_data = {"x": [], "y": [], "z": []}
+
+    for datapoint in dataset["continuous_data"]["/imu"]:
+        t_arr.append(timeStampToFloat(datapoint["header"]["stamp"]))
+        imu_data["x"].append(datapoint["linear_acceleration"]["x"])
+        imu_data["y"].append(datapoint["linear_acceleration"]["y"])
+        imu_data["z"].append(datapoint["linear_acceleration"]["z"])
+
+    # Reparametrize time
+    t_vec_reparam = []
+    for i in range(len(t_arr)):
+        t_vec_reparam.append(t_arr[i] - t_arr[0])
+
+    fig, axes = plt.subplots(1, 3)
+    sns.scatterplot(x=t_vec_reparam, y=imu_data["x"], ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=imu_data["y"], ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=imu_data["z"], ax=axes[2])
+
+    plt.show()
 
 
 if __name__ == "__main__":
-
-    script_dir = pathlib.Path(__file__).parent
 
     with open(
         pathlib.Path(os.environ["ATOM_DATASETS"]) / "rihibot/dataset1/dataset.json"
@@ -481,22 +623,48 @@ if __name__ == "__main__":
 
     neighbourhood_size = 75
 
-    derivation_results = deriveDataset(
+    tf_lst = getTFList(input_dataset)
+
+    # Add a grid in the background of the graphs
+    sns.set_theme(style="whitegrid")
+
+    plotIMUData(input_dataset)
+
+    derivation_results = deriveDatasetAllDataPoints(
         dataset=input_dataset,
         from_frame="world",
         to_frame="imu_link",
         sensor_name="imu_hand",
+        sensor_topic="/imu",
         neighbourhood_size=neighbourhood_size,
-        poly_degree=2,
-        visualization=True,
+        poly_degree=3,
+        visualization=False,
     )
 
-    # first_order_derivatives = deriveFromTF(
-    #     dataset=input_dataset,
-    #     t=t,
-    #     from_frame="world",
-    #     to_frame="imu_link",
-    #     neighbourhood_size=neighbourhood_size,
-    #     poly_degree=2,
-    #     visualization=True,
-    # )
+    # Calculate errors
+    e = calculateErrorsAllDataPoints(
+        dataset=input_dataset,
+        tf_list=tf_lst,
+        results=derivation_results,
+        sensor_name="imu_hand",
+        sensor_topic="/imu",
+        from_frame="world",
+        to_frame="imu_link",
+    )
+
+    # Print error table
+    # e_table = PrettyTable()
+    # e_table.field_names = ["Collection", "E_lin_accel (m/s^2)", "E_ang_vel (rad/s)"]
+#
+# e_table.add_rows(
+# [
+# [
+# collection_key,
+# round(float(e[collection_key]["e_lin_accel"]), 4),
+# round(float(e[collection_key]["e_ang_vel"]), 4),
+# ]
+# for collection_key in e.keys()
+# ]
+# )
+#
+# print(e_table)
