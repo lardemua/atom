@@ -2,6 +2,7 @@
 Utilities for the derivation of TF data
 """
 
+from copy import deepcopy
 import json
 import os
 import pathlib
@@ -114,7 +115,7 @@ def getTFToDeriveList(
             element_t = timeStampToFloat(element["stamp"])
             t_dist = abs(t - element_t)
 
-            # if element_t <= t and (min_element is None or t_dist < min_t_dist):
+            # if min_element is None or (element_t <= t and t_dist < min_t_dist):
             if min_element is None or t_dist < min_t_dist:
                 min_t_dist = t_dist
                 min_element = element
@@ -428,6 +429,12 @@ def deriveDatasetAllDataPoints(
     for datapoint in dataset["continuous_data"]["/tf"]:
         t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
         # Derive at each timestamp
+
+        # if t > timeStampToFloat(dataset["continuous_data"]["/tf"][0]["transforms"][0]["header"]["stamp"]) + 8:
+        #     visualization = True
+        # else:
+        #     visualization = False
+
         lin_accel, ang_vel = deriveFromTF(
             dataset=dataset,
             from_frame=from_frame,
@@ -607,11 +614,83 @@ def plotIMUData(dataset: Dict) -> None:
         t_vec_reparam.append(t_arr[i] - t_arr[0])
 
     fig, axes = plt.subplots(1, 3)
+    fig.suptitle("IMU Data w/o gravity correction")
     sns.scatterplot(x=t_vec_reparam, y=imu_data["x"], ax=axes[0])
     sns.scatterplot(x=t_vec_reparam, y=imu_data["y"], ax=axes[1])
     sns.scatterplot(x=t_vec_reparam, y=imu_data["z"], ax=axes[2])
 
+    axes[0].set_title(r"$a_x$")
+    axes[1].set_title(r"$a_y$")
+    axes[2].set_title(r"$a_z$")
+
     plt.show()
+
+
+def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> List:
+    """Identify TF datapoints where there is a transition between a stationary state and movement or vice-versa."""
+
+    # Make a copy of tf_list to remove timestamps
+    tf_list_copy = deepcopy(tf_list)
+
+    # Make a first pass through the list to remove stamps
+    for i in range(len(tf_list_copy)):
+        tf_list_copy[i].pop("stamp")
+
+    transition_point_timestamp_list = []
+
+    # Create a list of dictionaries with timestamp and distance vector from one datapoint to the next datapoint as well as the previous
+    for i in range(len(tf_list_copy)):
+        if (i == 0) or (i == len(tf_list_copy) - 1):
+            continue
+
+        tf_pool_t = timeStampToFloat(tf_list[i]["stamp"])
+
+        tf_current = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_list_copy[i]
+        )
+
+        tf_previous = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_list_copy[i - 1]
+        )
+        tf_next = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_list_copy[i + 1]
+        )
+
+        tvec_current, _ = matrixToTranslationQuaternion(tf_current)
+        tvec_previous, _ = matrixToTranslationQuaternion(tf_previous)
+        tvec_next, _ = matrixToTranslationQuaternion(tf_next)
+
+        delta_previous_to_current = {
+            "trans": {
+                "x": tvec_current[0] - tvec_previous[0],
+                "y": tvec_current[1] - tvec_previous[1],
+                "z": tvec_current[2] - tvec_previous[2],
+            }
+        }
+
+        delta_current_to_next = {
+            "trans": {
+                "x": tvec_next[0] - tvec_current[0],
+                "y": tvec_next[1] - tvec_current[1],
+                "z": tvec_next[2] - tvec_current[2],
+            }
+        }
+
+        # Get the difference between the slopes
+        delta_previous_to_next = {
+            "trans": np.linalg.norm(
+                [
+                    delta_current_to_next["trans"][axis]
+                    - delta_previous_to_current["trans"][axis]
+                    for axis in ["x", "y", "z"]
+                ]
+            )
+        }
+
+        if delta_previous_to_next["trans"] > 0.0005:
+            transition_point_timestamp_list.append(tf_pool_t)
+
+    return transition_point_timestamp_list
 
 
 if __name__ == "__main__":
@@ -629,6 +708,12 @@ if __name__ == "__main__":
     sns.set_theme(style="whitegrid")
 
     plotIMUData(input_dataset)
+
+    transition_point_list = identifyTransitionPoints(
+        tf_list=tf_lst, from_frame="world", to_frame="imu_link"
+    )
+
+    exit(0)
 
     derivation_results = deriveDatasetAllDataPoints(
         dataset=input_dataset,
