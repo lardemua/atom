@@ -101,7 +101,12 @@ def quatMult(q: List, p: List) -> List:
 
 
 def getTFToDeriveList(
-    tf_list: List[Any], from_frame: str, to_frame: str, t: float, n: int
+    tf_list: List[Any],
+    from_frame: str,
+    to_frame: str,
+    t: float,
+    n: int,
+    transition_point_list: List,
 ) -> List[Dict]:
     """Get a list of n source-target TFs in the temporal neighbourhood of timestamp."""
 
@@ -147,6 +152,23 @@ def getTFToDeriveList(
         }
 
         source_to_target_tf_lst.append(dict_to_append)
+
+    # Remove from the list tfs with the stamp before/after transition points based on where it is in relation to t
+    for tf in source_to_target_tf_lst:
+        tf_t = timeStampToFloat(tf["stamp"])
+        if tf_t in transition_point_list:
+            if tf_t <= t:
+                source_to_target_tf_lst = [
+                    x
+                    for x in source_to_target_tf_lst
+                    if not timeStampToFloat(x["stamp"]) <= tf_t
+                ]
+            elif tf_t >= t:
+                source_to_target_tf_lst = [
+                    x
+                    for x in source_to_target_tf_lst
+                    if not timeStampToFloat(x["stamp"]) >= tf_t
+                ]
 
     return source_to_target_tf_lst
 
@@ -319,8 +341,13 @@ def deriveFromTF(
     neighbourhood_size: int,
     poly_degree: int,
     visualization: bool,
+    transition_point_list: List,
 ) -> List[float]:
     """Given a dataset and a timestamp t, return the results of derivation for that instant of time."""
+
+    # Don't do anything if t is a transition point
+    if t in transition_point_list:
+        return None, None
 
     tf_lst = getTFList(dataset)
 
@@ -338,6 +365,7 @@ def deriveFromTF(
         to_frame=to_frame,
         t=t,
         n=neighbourhood_size,
+        transition_point_list=transition_point_list,
     )
 
     # Sort tf_to_derive_list according to timestamp
@@ -414,6 +442,7 @@ def deriveDatasetAllDataPoints(
     neighbourhood_size: int,
     poly_degree: int,
     visualization: bool,
+    transition_point_list: List,
 ) -> dict:
     """
     Derive for all timestamps corresponding to collections in a dataset.
@@ -430,10 +459,8 @@ def deriveDatasetAllDataPoints(
         t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
         # Derive at each timestamp
 
-        # if t > timeStampToFloat(dataset["continuous_data"]["/tf"][0]["transforms"][0]["header"]["stamp"]) + 8:
-        #     visualization = True
-        # else:
-        #     visualization = False
+        print(count)
+        count += 1
 
         lin_accel, ang_vel = deriveFromTF(
             dataset=dataset,
@@ -443,17 +470,16 @@ def deriveDatasetAllDataPoints(
             neighbourhood_size=neighbourhood_size,
             poly_degree=poly_degree,
             visualization=visualization,
+            transition_point_list=transition_point_list,
         )
+
+        if lin_accel is None and lin_accel is None:
+            continue
 
         derivation_results[str(t)] = {
             "lin_accel": lin_accel,
             "ang_vel": ang_vel,
         }
-
-        print(count)
-        count += 1
-
-    # pprint(derivation_results)
 
     return derivation_results
 
@@ -505,6 +531,7 @@ def calculateErrorsAllDataPoints(
     sensor_topic: str,
     from_frame: str,
     to_frame: str,
+    transition_point_list: List,
 ) -> dict:
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
@@ -519,6 +546,9 @@ def calculateErrorsAllDataPoints(
 
         # Find the closest IMU datapoint
         tf_pool_t = timeStampToFloat(tf_pool["stamp"])
+
+        if tf_pool_t in transition_point_list:
+            continue
 
         t_dist_min = None
         for sensor_datapoint in dataset["continuous_data"][sensor_topic]:
@@ -713,8 +743,6 @@ if __name__ == "__main__":
         tf_list=tf_lst, from_frame="world", to_frame="imu_link"
     )
 
-    exit(0)
-
     derivation_results = deriveDatasetAllDataPoints(
         dataset=input_dataset,
         from_frame="world",
@@ -724,6 +752,7 @@ if __name__ == "__main__":
         neighbourhood_size=neighbourhood_size,
         poly_degree=3,
         visualization=False,
+        transition_point_list=transition_point_list,
     )
 
     # Calculate errors
@@ -735,6 +764,7 @@ if __name__ == "__main__":
         sensor_topic="/imu",
         from_frame="world",
         to_frame="imu_link",
+        transition_point_list=transition_point_list,
     )
 
     # Print error table
