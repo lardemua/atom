@@ -2,6 +2,7 @@
 Utilities for the derivation of TF data
 """
 
+import argparse
 import json
 import os
 import pathlib
@@ -388,6 +389,7 @@ def deriveDatasetAtCollections(
     neighbourhood_size: int,
     poly_degree: int,
     visualization: bool,
+    transition_point_list: List,
 ) -> dict:
     """
     Derive for all timestamps corresponding to collections in a dataset.
@@ -408,14 +410,16 @@ def deriveDatasetAtCollections(
             neighbourhood_size=neighbourhood_size,
             poly_degree=poly_degree,
             visualization=visualization,
+            transition_point_list=transition_point_list,
         )
+
+        if lin_accel is None and ang_vel is None:
+            continue
 
         derivation_results[collection_key] = {
             "lin_accel": lin_accel,
             "ang_vel": ang_vel,
         }
-
-    pprint(derivation_results)
 
     return derivation_results
 
@@ -466,10 +470,6 @@ def deriveDatasetAllDataPoints(
             "ang_vel": ang_vel,
         }
 
-        # Debug
-        with open("test.json", "w") as f:
-            json.dump(derivation_results, f)
-
     return derivation_results
 
 
@@ -490,6 +490,11 @@ def calculateErrorsAtCollections(
                 "linear_acceleration"
             ].values()
         ]
+        imu_ang_vel = [
+            *dataset["collections"][collection_key]["data"][sensor_name][
+                "angular_velocity"
+            ].values()
+        ]
 
         world_T_imu = getTransform(
             from_frame=from_frame,
@@ -505,8 +510,8 @@ def calculateErrorsAtCollections(
         imu_accel[2] -= 9.81
 
         e[collection_key] = {
-            "e_lin_accel": np.linalg.norm(imu_accel - results["lin_accel"]),
-            "e_ang_vel": "NaN",
+            "e_lin_accel": np.linalg.norm(np.array(imu_accel) - results["lin_accel"]),
+            "e_ang_vel": np.linalg.norm(np.array(imu_ang_vel) - results["ang_vel"]),
         }
 
     return e
@@ -516,11 +521,11 @@ def calculateErrorsAllDataPoints(
     dataset: dict,
     tf_list: List[Dict],
     results: dict,
-    sensor_name: str,
     sensor_topic: str,
     from_frame: str,
     to_frame: str,
     transition_point_list: List,
+    save_derivation_plot: bool,
 ) -> dict:
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
@@ -531,8 +536,6 @@ def calculateErrorsAllDataPoints(
     }
     # Time vector
     t_vec = []
-
-    idx = 0
 
     for tf_pool in tf_list:
 
@@ -561,14 +564,6 @@ def calculateErrorsAllDataPoints(
 
         # Compensate for world-imu tf
         tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
-
-        world_T_imu = getTransform(
-            from_frame=from_frame,
-            to_frame=to_frame,
-            transforms=tf_pool,
-        )
-
-        R = world_T_imu[:3, :3]
 
         # Remove gravity
         imu_accel[2] -= 9.81
@@ -623,7 +618,9 @@ def calculateErrorsAllDataPoints(
             xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
         )
 
-    plt.show()
+    if save_derivation_plot:
+        plt.savefig("results.png")
+    # plt.show()
 
     return e
 
@@ -749,12 +746,48 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
 
 if __name__ == "__main__":
 
-    with open(
-        pathlib.Path(os.environ["ATOM_DATASETS"]) / "rihibot/dataset_test/dataset.json"
-    ) as f:
-        input_dataset = json.load(f)
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-m",
+        "--mode",
+        type=str,
+        default="collections",
+        help="Choose whether to plot out the errors align the entire dataset or only calculate the errors at each collection. Accepted modes are: ['dataset', 'collections']",
+    )
+    ap.add_argument(
+        "-json",
+        "--json_file",
+        type=str,
+        required=True,
+        help="Json file containing input dataset.",
+    )
+    ap.add_argument(
+        "-ns",
+        "--neighbourhood_size",
+        type=int,
+        default=75,
+        help="Number of TF samples to use for curve-fitting at each datapoint.",
+    )
+    ap.add_argument(
+        "-pd",
+        "--poly_degree",
+        type=int,
+        default=3,
+        help="Degree of polynomial to use for curve-fitting.",
+    )
+    ap.add_argument(
+        "-sdp",
+        "--save_derivation_plot",
+        help="Store the results in a plot when deriving the entire dataset",
+        action="store_true",
+        default=False,
+    )
 
-    neighbourhood_size = 75
+    args = vars(ap.parse_args())
+
+    with open(args["json_file"]) as f:
+        input_dataset = json.load(f)
+    neighbourhood_size = args["neighbourhood_size"]
 
     tf_lst = getTFList(input_dataset)
 
@@ -767,43 +800,64 @@ if __name__ == "__main__":
         tf_list=tf_lst, from_frame="world", to_frame="imu_link"
     )
 
-    derivation_results = deriveDatasetAllDataPoints(
-        dataset=input_dataset,
-        from_frame="world",
-        to_frame="imu_link",
-        sensor_name="imu_hand",
-        sensor_topic="/imu",
-        neighbourhood_size=neighbourhood_size,
-        poly_degree=2,
-        visualization=False,
-        transition_point_list=transition_point_list,
-    )
+    if args["mode"] == "collections":
+        derivation_results = deriveDatasetAtCollections(
+            dataset=input_dataset,
+            from_frame="world",
+            to_frame="imu_link",
+            sensor_name="imu_hand",
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=2,
+            visualization=False,
+            transition_point_list=transition_point_list,
+        )
 
-    # Calculate errors
-    e = calculateErrorsAllDataPoints(
-        dataset=input_dataset,
-        tf_list=tf_lst,
-        results=derivation_results,
-        sensor_name="imu_hand",
-        sensor_topic="/imu",
-        from_frame="world",
-        to_frame="imu_link",
-        transition_point_list=transition_point_list,
-    )
+        # Calculate errors
+        e = calculateErrorsAtCollections(
+            dataset=input_dataset,
+            results=derivation_results,
+            from_frame="world",
+            to_frame="imu_link",
+            sensor_name="imu_hand",
+        )
 
-    # Print error table
-    # e_table = PrettyTable()
-    # e_table.field_names = ["Collection", "E_lin_accel (m/s^2)", "E_ang_vel (rad/s)"]
-#
-# e_table.add_rows(
-# [
-# [
-# collection_key,
-# round(float(e[collection_key]["e_lin_accel"]), 4),
-# round(float(e[collection_key]["e_ang_vel"]), 4),
-# ]
-# for collection_key in e.keys()
-# ]
-# )
-#
-# print(e_table)
+        # Print error table
+        e_table = PrettyTable()
+        e_table.field_names = ["Collection", "E_lin_accel (m/s^2)", "E_ang_vel (rad/s)"]
+
+        e_table.add_rows(
+            [
+                [
+                    collection_key,
+                    round(float(e[collection_key]["e_lin_accel"]), 4),
+                    round(float(e[collection_key]["e_ang_vel"]), 4),
+                ]
+                for collection_key in e.keys()
+            ]
+        )
+
+        print(e_table)
+
+    if args["mode"] == "dataset":
+        derivation_results = deriveDatasetAllDataPoints(
+            dataset=input_dataset,
+            from_frame="world",
+            to_frame="imu_link",
+            sensor_name="imu_hand",
+            sensor_topic="/imu",
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=args["poly_degree"],
+            visualization=False,
+            transition_point_list=transition_point_list,
+        )
+
+        e = calculateErrorsAllDataPoints(
+            dataset=input_dataset,
+            tf_list=tf_lst,
+            results=derivation_results,
+            sensor_topic="/imu",
+            from_frame="world",
+            to_frame="imu_link",
+            transition_point_list=transition_point_list,
+            save_derivation_plot=args["save_derivation_plot"],
+        )
