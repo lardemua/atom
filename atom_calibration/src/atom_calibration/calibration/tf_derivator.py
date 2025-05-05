@@ -2,10 +2,10 @@
 Utilities for the derivation of TF data
 """
 
-from copy import deepcopy
 import json
 import os
 import pathlib
+from copy import deepcopy
 from math import floor
 from pprint import pprint
 from typing import Any, Dict, List
@@ -17,7 +17,6 @@ from atom_core.geometry import matrixToTranslationQuaternion
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from prettytable import PrettyTable
-from scipy.interpolate import UnivariateSpline
 from scipy.spatial.transform import Rotation
 
 
@@ -276,12 +275,6 @@ def deriveTranslation(
         ]
     )
 
-    # q = []
-    # for i in range(3):
-    #     spline = UnivariateSpline(t_arr, trans_array[i], k=3)
-    #     print(spline)
-    #     exit(0)
-
     q = [np.polyfit(t_arr, trans_array[i], deg=poly_degree) for i in range(3)]
     dq = []
     ddq = []
@@ -351,13 +344,6 @@ def deriveFromTF(
 
     tf_lst = getTFList(dataset)
 
-    # DEBUG
-    # with open(
-    #     "/home/diogo/catkin_ws/src/atom/atom_calibration/src/atom_calibration/test.json",
-    #     "w",
-    # ) as f:
-    #     json.dump(tf_lst, f)
-
     # Get a list of the n temporally closest (wrt t) tfs to use for derivation
     tf_to_derive_lst = getTFToDeriveList(
         tf_list=tf_lst,
@@ -382,13 +368,14 @@ def deriveFromTF(
         tmp_f = lin_accel_funcs[i]
         lin_accel.append(tmp_f(t))
 
-    # DISABLING TEMPORARILY
-    # ang_vel_funcs = deriveRotation(
-    #     tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
-    # )
+    ang_vel_funcs = deriveRotation(
+        tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
+    )
 
-    # print([ang_vel_funcs[i](2660.657) for i in range(3)])
-    ang_vel = [0, 0, 0]
+    ang_vel = []
+    for i in range(3):
+        tmp_f = ang_vel_funcs[i]
+        ang_vel.append(tmp_f(t))
 
     return lin_accel, ang_vel
 
@@ -452,8 +439,6 @@ def deriveDatasetAllDataPoints(
     # Get list of timestamps to integrate for
     derivation_results = {}
     count = 0
-    # for datapoint in dataset["continuous_data"][sensor_topic]:
-    # t = timeStampToFloat(datapoint["header"]["stamp"])
 
     for datapoint in dataset["continuous_data"]["/tf"]:
         t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
@@ -473,13 +458,17 @@ def deriveDatasetAllDataPoints(
             transition_point_list=transition_point_list,
         )
 
-        if lin_accel is None and lin_accel is None:
+        if lin_accel is None and ang_vel is None:
             continue
 
         derivation_results[str(t)] = {
             "lin_accel": lin_accel,
             "ang_vel": ang_vel,
         }
+
+        # Debug
+        with open("test.json", "w") as f:
+            json.dump(derivation_results, f)
 
     return derivation_results
 
@@ -536,7 +525,10 @@ def calculateErrorsAllDataPoints(
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
     # Error dict with errors vectors for each axis
-    e = {"e_lin_accel": {"x": [], "y": [], "z": []}, "e_ang_vel": {}}
+    e = {
+        "e_lin_accel": {"x": [], "y": [], "z": []},
+        "e_ang_vel": {"x": [], "y": [], "z": []},
+    }
     # Time vector
     t_vec = []
 
@@ -565,6 +557,7 @@ def calculateErrorsAllDataPoints(
 
         # Now that we have the closest datapoint, we can compare
         imu_accel = [*closest_sensor_datapoint["linear_acceleration"].values()]
+        imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
 
         # Compensate for world-imu tf
         tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
@@ -577,14 +570,8 @@ def calculateErrorsAllDataPoints(
 
         R = world_T_imu[:3, :3]
 
-        # imu_accel = R @ imu_accel
-
         # Remove gravity
         imu_accel[2] -= 9.81
-
-        # print(imu_accel)
-        # print(results[str(timeStampToFloat(closest_sensor_datapoint["header"]["stamp"]))])
-        # exit(0)
 
         # Calculate errors
         e["e_lin_accel"]["x"].append(
@@ -596,6 +583,15 @@ def calculateErrorsAllDataPoints(
         e["e_lin_accel"]["z"].append(
             imu_accel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
         )
+        e["e_ang_vel"]["x"].append(
+            imu_ang_vel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][0]
+        )
+        e["e_ang_vel"]["y"].append(
+            imu_ang_vel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][1]
+        )
+        e["e_ang_vel"]["z"].append(
+            imu_ang_vel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][2]
+        )
         # For plotting
         t_vec.append(tf_pool_t)
 
@@ -604,18 +600,24 @@ def calculateErrorsAllDataPoints(
     for i in range(len(t_vec)):
         t_vec_reparam.append(t_vec[i] - t_vec[0])
 
-    fig, axes = plt.subplots(1, 3)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], ax=axes[0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], ax=axes[1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], ax=axes[2])
+    fig, axes = plt.subplots(2, 3)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], ax=axes[0, 0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], ax=axes[0, 1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], ax=axes[0, 2])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], ax=axes[1, 0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], ax=axes[1, 1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], ax=axes[1, 2])
 
     plot_titles = [
         r"$E_{a_x}(t)$",
         r"$E_{a_y}(t)$",
         r"$E_{a_z}(t)$",
+        r"$E_{\omega_x}(t)$",
+        r"$E_{\omega_y}(t)$",
+        r"$E_{\omega_z}(t)$",
     ]
 
-    for ax, title in zip(axes, plot_titles):
+    for ax, title in zip(axes.reshape(-1), plot_titles):
         ax.set_title(title)
         ax.set(
             xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
@@ -686,16 +688,22 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
             from_frame=from_frame, to_frame=to_frame, transforms=tf_list_copy[i + 1]
         )
 
-        tvec_current, _ = matrixToTranslationQuaternion(tf_current)
-        tvec_previous, _ = matrixToTranslationQuaternion(tf_previous)
-        tvec_next, _ = matrixToTranslationQuaternion(tf_next)
+        tvec_current, quat_current = matrixToTranslationQuaternion(tf_current)
+        tvec_previous, quat_previous = matrixToTranslationQuaternion(tf_previous)
+        tvec_next, quat_next = matrixToTranslationQuaternion(tf_next)
 
         delta_previous_to_current = {
             "trans": {
                 "x": tvec_current[0] - tvec_previous[0],
                 "y": tvec_current[1] - tvec_previous[1],
                 "z": tvec_current[2] - tvec_previous[2],
-            }
+            },
+            "quat": {
+                "w": quat_current[0] - quat_previous[0],
+                "x": quat_current[1] - quat_previous[1],
+                "y": quat_current[2] - quat_previous[2],
+                "z": quat_current[3] - quat_previous[3],
+            },
         }
 
         delta_current_to_next = {
@@ -703,7 +711,13 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
                 "x": tvec_next[0] - tvec_current[0],
                 "y": tvec_next[1] - tvec_current[1],
                 "z": tvec_next[2] - tvec_current[2],
-            }
+            },
+            "quat": {
+                "w": quat_next[0] - quat_current[0],
+                "x": quat_next[1] - quat_current[1],
+                "y": quat_next[2] - quat_current[2],
+                "z": quat_next[3] - quat_current[3],
+            },
         }
 
         # Get the difference between the slopes
@@ -714,10 +728,20 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
                     - delta_previous_to_current["trans"][axis]
                     for axis in ["x", "y", "z"]
                 ]
-            )
+            ),
+            "quat": np.linalg.norm(
+                [
+                    delta_current_to_next["quat"][var]
+                    - delta_previous_to_current["quat"][var]
+                    for var in ["w", "x", "y", "z"]
+                ]
+            ),
         }
 
-        if delta_previous_to_next["trans"] > 0.0005:
+        if (
+            delta_previous_to_next["trans"] > 0.0005
+            or delta_previous_to_next["quat"] > 0.002
+        ):
             transition_point_timestamp_list.append(tf_pool_t)
 
     return transition_point_timestamp_list
@@ -726,7 +750,7 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
 if __name__ == "__main__":
 
     with open(
-        pathlib.Path(os.environ["ATOM_DATASETS"]) / "rihibot/dataset1/dataset.json"
+        pathlib.Path(os.environ["ATOM_DATASETS"]) / "rihibot/dataset_test/dataset.json"
     ) as f:
         input_dataset = json.load(f)
 
@@ -750,7 +774,7 @@ if __name__ == "__main__":
         sensor_name="imu_hand",
         sensor_topic="/imu",
         neighbourhood_size=neighbourhood_size,
-        poly_degree=3,
+        poly_degree=2,
         visualization=False,
         transition_point_list=transition_point_list,
     )
