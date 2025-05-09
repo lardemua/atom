@@ -65,70 +65,120 @@ def convertRotationsInTFToEuler(tf_list: List[Dict]) -> List[Dict]:
     return tf_list
 
 
-def deriveRotation(
-    tf_list: List[Dict], poly_degree: int, visualization: bool
-) -> List[np.poly1d]:
+def deriveRotation(dataset: dict, visualization: bool) -> dict:
     """Given a list of transformations, return the functions that describe the angular velocities.
     Angular velocities are calculated using the following:
 
         dw = 2 * quaternionMultiplication(dq, q), with dw = [0, wx, wy, wz]
 
     Inputs:
-        - tf_list: a list of transformation dictionaries to use for derivation;
-        - poly_degree: the degree of the polynomial functions to fit the rotation data to;
+        - dataset: dataset
         - visualization: enable graph visualization.
     Outputs:
-        - p_der: a list of 3 polynomial functions to describe the angular velocity related to each axis of rotation.
+        - ang_vel_dict: a dictionary with the angular velocities over time.
     """
+
     # Get time values
-    t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
+    t_arr = []
+    quat_dict = {"x": [], "y": [], "z": [], "w": []}
 
-    # for each rotation variable
-    rot_array = np.array(
-        [
-            [tf["quat"][0] for tf in tf_list],
-            [tf["quat"][1] for tf in tf_list],
-            [tf["quat"][2] for tf in tf_list],
-            [tf["quat"][3] for tf in tf_list],
+    for datapoint in dataset["continuous_data"]["/tf"]:
+        # Get time
+        t_arr.append(timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"]))
+
+        # Get all tfs for the tf_pool
+        tf_dict = {}
+
+        for tf in datapoint["transforms"]:
+            child_frame = tf["child_frame_id"]
+            parent_frame = tf["header"]["frame_id"]
+            key = f"{parent_frame}-{child_frame}"
+
+            tf_dict[key] = {
+                "child": child_frame,
+                "parent": parent_frame,
+                "quat": [*tf["transform"]["rotation"].values()],
+                "trans": [*tf["transform"]["translation"].values()],
+            }
+
+        # Include transforms from /tf_static. Only consider the last message.
+        for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
+            child_frame = tf["child_frame_id"]
+            parent_frame = tf["header"]["frame_id"]
+            key = f"{tf['header']['frame_id']}-{tf['child_frame_id']}"
+
+            tf_dict[key] = {
+                "child": child_frame,
+                "parent": parent_frame,
+                "quat": [*tf["transform"]["rotation"].values()],
+                "trans": [*tf["transform"]["translation"].values()],
+            }
+
+        # Now get the tf from the source to the target frames
+        source_to_target_tf_trans, source_to_target_tf_quat = (
+            matrixToTranslationQuaternion(
+                getTransform(
+                    from_frame="world", to_frame="imu_link", transforms=tf_dict
+                )
+            )
+        )
+
+        quat_dict["w"].append(source_to_target_tf_quat[0])
+        quat_dict["x"].append(source_to_target_tf_quat[1])
+        quat_dict["y"].append(source_to_target_tf_quat[2])
+        quat_dict["z"].append(source_to_target_tf_quat[3])
+
+    ang_vel_dict = {"x": [], "y": [], "z": []}
+
+    for i in range(len(t_arr)):
+        if i == 0 or i == len(t_arr) - 1:
+            continue
+
+        data = {
+            "t": [t_arr[i - 1], t_arr[i], t_arr[i + 1]],
+            "w": [quat_dict["w"][i - 1], quat_dict["w"][i], quat_dict["w"][i + 1]],
+            "x": [quat_dict["x"][i - 1], quat_dict["x"][i], quat_dict["x"][i + 1]],
+            "y": [quat_dict["y"][i - 1], quat_dict["y"][i], quat_dict["y"][i + 1]],
+            "z": [quat_dict["z"][i - 1], quat_dict["z"][i], quat_dict["z"][i + 1]],
+        }
+
+        ddata_dt = centralNumericalFirstDerivative(data)
+
+        # Now that we have dq, we need to convert it to omegas
+        q_conjugate = [
+            quat_dict["w"][i],
+            -1 * quat_dict["x"][i],
+            -1 * quat_dict["y"][i],
+            -1 * quat_dict["z"][i],
         ]
-    )
 
-    q = [np.polyfit(t_arr, rot_array[i], deg=poly_degree) for i in range(4)]
-    dq = []
+        omega = quatMult(2 * ddata_dt, q_conjugate)
 
-    if visualization:
-        fig, axes = plt.subplots(2, 4)
-
-    # Get quaternion derivatives, dq
-    for i in range(4):
-        poly_func = np.poly1d(q[i])
-
-        dq.append(np.polyder(poly_func))
-
-        if visualization:
-            sns.scatterplot(x=t_arr, y=rot_array[i], ax=axes[0, i])
-            x_func = np.linspace(t_arr.min(), t_arr.max(), 1000)
-            y_func = poly_func(x_func)
-            sns.lineplot(x=x_func, y=y_func, color="red", ax=axes[0, i])
-
-            yder_func = dq[i](x_func)
-            sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
-
-    q_conjugate = [
-        np.poly1d(q[0]),
-        np.poly1d(-q[1]),
-        np.poly1d(-q[2]),
-        np.poly1d(-q[3]),
-    ]
-
-    omega = quatMult(2 * dq, q_conjugate)
+        ang_vel_dict["x"].append(omega[1])
+        ang_vel_dict["y"].append(omega[2])
+        ang_vel_dict["z"].append(omega[3])
 
     if visualization:
+        fig, axes = plt.subplots(1, 3)
+
+        plot_titles = [
+            r"$\omega_{x}(t)$",
+            r"$\omega_{y}(t)$",
+            r"$\omega{z}(t)$",
+        ]
+
+        for ax, title in zip(axes, plot_titles):
+            ax.set_title(title)
+
+        t_arr_plot = t_arr[1:-1]
+
+        sns.scatterplot(x=t_arr_plot, y=ang_vel_dict["x"], ax=axes[0])
+        sns.scatterplot(x=t_arr_plot, y=ang_vel_dict["y"], ax=axes[1])
+        sns.scatterplot(x=t_arr_plot, y=ang_vel_dict["z"], ax=axes[2])
+
         plt.show()
 
-    ang_vels = [omega[1], omega[2], omega[3]]
-
-    return ang_vels
+    return ang_vel_dict
 
 
 def centralNumericalFirstDerivative(data: Dict[str, float]) -> List[float]:
@@ -161,15 +211,14 @@ def centralNumericalSecondDerivative(data: Dict[str, float]) -> List[float]:
     return dddata_dtt
 
 
-def deriveTranslation(dataset: dict, visualization: bool) -> List[np.poly1d]:
+def deriveTranslation(dataset: dict, visualization: bool) -> dict:
     """Given a list of transformations, return the functions that describe the linear accelerations.
 
     Inputs:
         - dataset
-        - sensor_topic: topic of sensor messages in continuous_data
         - visualization: enable graph visualization.
     Outputs:
-        - p_der: a list of 3 polynomial functions to describe the linear acceleration related to each axis of translation.
+        - lin_accel_dict: a dictionary with the linear acceleration values over time.
     """
 
     # Get time values
@@ -256,7 +305,7 @@ def deriveTranslation(dataset: dict, visualization: bool) -> List[np.poly1d]:
             ax.set_title(title)
 
         t_arr_plot = t_arr[2:-2]
-        
+
         sns.scatterplot(x=t_arr, y=trans_dict["x"], ax=axes[0, 0])
         sns.scatterplot(x=t_arr, y=trans_dict["y"], ax=axes[0, 1])
         sns.scatterplot(x=t_arr, y=trans_dict["z"], ax=axes[0, 2])
@@ -267,7 +316,7 @@ def deriveTranslation(dataset: dict, visualization: bool) -> List[np.poly1d]:
         plt.show()
         exit(0)
 
-    return lin_accel
+    return lin_accel_dict
 
 
 def deriveFromTF(
@@ -285,25 +334,9 @@ def deriveFromTF(
     # if t in transition_point_list:
     #     return None, None, None
 
-    lin_accel = deriveTranslation(dataset=dataset, visualization=visualization)
+    lin_accel_dict = deriveTranslation(dataset=dataset, visualization=visualization)
 
-    exit(0)
-
-    lin_accel = []
-    for i in range(3):
-        tmp_f = lin_accel_funcs[i]
-        lin_accel.append(tmp_f(t))
-
-    ang_vel_funcs = deriveRotation(
-        tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
-    )
-
-    ang_vel = []
-    for i in range(3):
-        tmp_f = ang_vel_funcs[i]
-        ang_vel.append(tmp_f(t))
-
-    return lin_accel, ang_vel, r2_arr
+    ang_vel_dict = deriveRotation(dataset=dataset, visualization=visualization)
 
 
 def deriveDatasetAtCollections(
@@ -723,4 +756,5 @@ if __name__ == "__main__":
     #     tf_list=tf_lst, from_frame="world", to_frame="imu_link"
     # )
 
-    (_,) = deriveTranslation(dataset=input_dataset, visualization=True)
+    lin_accel_dict = deriveTranslation(dataset=input_dataset, visualization=False)
+    ang_vel_dict = deriveRotation(dataset=input_dataset, visualization=True)
