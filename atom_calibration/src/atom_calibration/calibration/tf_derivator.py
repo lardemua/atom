@@ -14,7 +14,10 @@ from typing import Any, Dict, List
 import numpy as np
 import seaborn as sns
 from atom_core.atom import getTransform
-from atom_core.geometry import matrixToTranslationQuaternion
+from atom_core.geometry import (
+    matrixToTranslationQuaternion,
+    matrixToTranslationRotation,
+)
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from prettytable import PrettyTable
@@ -276,7 +279,24 @@ def deriveTranslation(
         ]
     )
 
-    q = [np.polyfit(t_arr, trans_array[i], deg=poly_degree) for i in range(3)]
+    q = []
+    trans_array_pred = []  # For R^2 calcs
+    r2_arr = []
+    for i in range(3):
+        coeffs = np.polyfit(t_arr, trans_array[i], deg=poly_degree)
+        q.append(coeffs)
+
+        p = np.poly1d(coeffs)
+
+        trans_array_pred.append(p(t_arr))
+
+        # Calculate R^2 for the fitting
+        ss_res = np.sum((trans_array[i] - trans_array_pred[i]) ** 2)
+        ss_tot = np.sum((trans_array[i] - np.mean(trans_array[i])) ** 2)
+        r2 = 1 - (ss_res / ss_tot)
+
+        r2_arr.append(r2)
+
     dq = []
     ddq = []
 
@@ -324,7 +344,7 @@ def deriveTranslation(
 
     lin_accel = [ddq[0], ddq[1], ddq[2]]
 
-    return lin_accel
+    return lin_accel, r2_arr
 
 
 def deriveFromTF(
@@ -341,7 +361,7 @@ def deriveFromTF(
 
     # Don't do anything if t is a transition point
     if t in transition_point_list:
-        return None, None
+        return None, None, None
 
     tf_lst = getTFList(dataset)
 
@@ -360,7 +380,7 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    lin_accel_funcs = deriveTranslation(
+    lin_accel_funcs, r2_arr = deriveTranslation(
         tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
 
@@ -378,7 +398,7 @@ def deriveFromTF(
         tmp_f = ang_vel_funcs[i]
         ang_vel.append(tmp_f(t))
 
-    return lin_accel, ang_vel
+    return lin_accel, ang_vel, r2_arr
 
 
 def deriveDatasetAtCollections(
@@ -444,14 +464,29 @@ def deriveDatasetAllDataPoints(
     derivation_results = {}
     count = 0
 
+    # DEBUG
+    r2_dict = {"x": [], "y": [], "z": []}
+    t_arr = []
+
     for datapoint in dataset["continuous_data"]["/tf"]:
         t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
         # Derive at each timestamp
 
         print(count)
         count += 1
+        
+        # print(len(deriveFromTF(
+            # dataset=dataset,
+            # from_frame=from_frame,
+            # to_frame=to_frame,
+            # t=t,
+            # neighbourhood_size=neighbourhood_size,
+            # poly_degree=poly_degree,
+            # visualization=visualization,
+            # transition_point_list=transition_point_list,
+        # )))
 
-        lin_accel, ang_vel = deriveFromTF(
+        lin_accel, ang_vel, r2_arr = deriveFromTF(
             dataset=dataset,
             from_frame=from_frame,
             to_frame=to_frame,
@@ -469,6 +504,19 @@ def deriveDatasetAllDataPoints(
             "lin_accel": lin_accel,
             "ang_vel": ang_vel,
         }
+
+        r2_dict["x"].append(r2_arr[0])
+        r2_dict["y"].append(r2_arr[1])
+        r2_dict["z"].append(r2_arr[2])
+
+    plt.figure()
+    _, axes = plt.subplots(1,3)
+    pprint(r2_dict)
+    sns.scatterplot(x=t_arr, y=r2_dict["x"], ax=axes[0])
+    sns.scatterplot(x=t_arr, y=r2_dict["y"], ax=axes[1])
+    sns.scatterplot(x=t_arr, y=r2_dict["z"], ax=axes[2])
+
+    plt.show()
 
     return derivation_results
 
@@ -549,14 +597,11 @@ def calculateErrorsAllDataPoints(
         for sensor_datapoint in dataset["continuous_data"][sensor_topic]:
             sensor_datapoint_t = timeStampToFloat(sensor_datapoint["header"]["stamp"])
 
-            if sensor_datapoint_t > tf_pool_t + 0.1:
-                break
-            else:
-                t_dist = abs(tf_pool_t - sensor_datapoint_t)
+            t_dist = abs(tf_pool_t - sensor_datapoint_t)
 
-                if t_dist_min is None or t_dist < t_dist_min:
-                    t_dist_min = t_dist
-                    closest_sensor_datapoint = sensor_datapoint
+            if t_dist_min is None or t_dist < t_dist_min:
+                t_dist_min = t_dist
+                closest_sensor_datapoint = sensor_datapoint
 
         # Now that we have the closest datapoint, we can compare
         imu_accel = [*closest_sensor_datapoint["linear_acceleration"].values()]
@@ -564,6 +609,14 @@ def calculateErrorsAllDataPoints(
 
         # Compensate for world-imu tf
         tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+
+        world_imu_tf = getTransform(
+            from_frame=to_frame, to_frame=from_frame, transforms=tf_pool
+        )
+
+        R = world_imu_tf[:3, :3]
+
+        imu_accel = R @ imu_accel
 
         # Remove gravity
         imu_accel[2] -= 9.81
@@ -619,8 +672,8 @@ def calculateErrorsAllDataPoints(
         )
 
     if save_derivation_plot:
-        plt.savefig("results.png")
-    # plt.show()
+        plt.savefig(fname="results.png", dpi=300)
+    plt.show()
 
     return e
 
@@ -737,7 +790,7 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
 
         if (
             delta_previous_to_next["trans"] > 0.0005
-            or delta_previous_to_next["quat"] > 0.002
+            or delta_previous_to_next["quat"] > 0.001
         ):
             transition_point_timestamp_list.append(tf_pool_t)
 
@@ -823,12 +876,22 @@ if __name__ == "__main__":
 
         # Print error table
         e_table = PrettyTable()
-        e_table.field_names = ["Collection", "E_lin_accel (m/s^2)", "E_ang_vel (rad/s)"]
+        e_table.field_names = [
+            "Collection",
+            "t",
+            "E_lin_accel (m/s^2)",
+            "E_ang_vel (rad/s)",
+        ]
 
         e_table.add_rows(
             [
                 [
                     collection_key,
+                    timeStampToFloat(
+                        input_dataset["collections"][collection_key]["data"][
+                            "imu_hand"
+                        ]["header"]["stamp"]
+                    ),
                     round(float(e[collection_key]["e_lin_accel"]), 4),
                     round(float(e[collection_key]["e_ang_vel"]), 4),
                 ]
