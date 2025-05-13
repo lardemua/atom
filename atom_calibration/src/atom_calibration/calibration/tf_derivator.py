@@ -59,6 +59,7 @@ def getTFList(dataset: Dict) -> List[Dict]:
         tf_dict_to_append = {}
 
         # Get stamp from one of the transforms in the tf_msg
+        # NOTE: Since all of the TFs in the same "transforms" field have the same stamp, I can just access the first one
         tf_dict_to_append["stamp"] = tf_msg["transforms"][0]["header"]["stamp"]
 
         for tf in tf_msg["transforms"]:
@@ -66,24 +67,48 @@ def getTFList(dataset: Dict) -> List[Dict]:
             parent_frame = tf["header"]["frame_id"]
             key = f"{parent_frame}-{child_frame}"
 
+            trans = [
+                tf["transform"]["translation"]["x"],
+                tf["transform"]["translation"]["y"],
+                tf["transform"]["translation"]["z"],
+            ]
+            quat = [
+                tf["transform"]["rotation"]["x"],
+                tf["transform"]["rotation"]["y"],
+                tf["transform"]["rotation"]["z"],
+                tf["transform"]["rotation"]["w"],
+            ]
+
             tf_dict_to_append[key] = {
                 "child": child_frame,
                 "parent": parent_frame,
-                "quat": [*tf["transform"]["rotation"].values()],
-                "trans": [*tf["transform"]["translation"].values()],
+                "quat": quat,
+                "trans": trans,
             }
 
         # Include transforms from /tf_static. Only consider the last message.
         for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
             child_frame = tf["child_frame_id"]
             parent_frame = tf["header"]["frame_id"]
-            key = f"{tf['header']['frame_id']}-{tf['child_frame_id']}"
+            key = f"{parent_frame}-{child_frame}"
+
+            trans = [
+                tf["transform"]["translation"]["x"],
+                tf["transform"]["translation"]["y"],
+                tf["transform"]["translation"]["z"],
+            ]
+            quat = [
+                tf["transform"]["rotation"]["x"],
+                tf["transform"]["rotation"]["y"],
+                tf["transform"]["rotation"]["z"],
+                tf["transform"]["rotation"]["w"],
+            ]
 
             tf_dict_to_append[key] = {
                 "child": child_frame,
                 "parent": parent_frame,
-                "quat": [*tf["transform"]["rotation"].values()],
-                "trans": [*tf["transform"]["translation"].values()],
+                "quat": quat,
+                "trans": trans,
             }
 
         tf_list.append(tf_dict_to_append)
@@ -267,6 +292,9 @@ def deriveTranslation(
         - p_der: a list of 3 polynomial functions to describe the linear acceleration related to each axis of translation.
     """
 
+    if tf_list == []:
+        return None
+
     # Get time values
     t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
 
@@ -280,22 +308,9 @@ def deriveTranslation(
     )
 
     q = []
-    trans_array_pred = []  # For R^2 calcs
-    r2_arr = []
     for i in range(3):
         coeffs = np.polyfit(t_arr, trans_array[i], deg=poly_degree)
         q.append(coeffs)
-
-        p = np.poly1d(coeffs)
-
-        trans_array_pred.append(p(t_arr))
-
-        # Calculate R^2 for the fitting
-        ss_res = np.sum((trans_array[i] - trans_array_pred[i]) ** 2)
-        ss_tot = np.sum((trans_array[i] - np.mean(trans_array[i])) ** 2)
-        r2 = 1 - (ss_res / ss_tot)
-
-        r2_arr.append(r2)
 
     dq = []
     ddq = []
@@ -344,7 +359,7 @@ def deriveTranslation(
 
     lin_accel = [ddq[0], ddq[1], ddq[2]]
 
-    return lin_accel, r2_arr
+    return lin_accel
 
 
 def deriveFromTF(
@@ -360,8 +375,9 @@ def deriveFromTF(
     """Given a dataset and a timestamp t, return the results of derivation for that instant of time."""
 
     # Don't do anything if t is a transition point
-    if t in transition_point_list:
-        return None, None, None
+    for transition_point in transition_point_list:
+        if t > transition_point + 0.5 and t < transition_point + 0.5:
+            return None, None
 
     tf_lst = getTFList(dataset)
 
@@ -380,9 +396,12 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    lin_accel_funcs, r2_arr = deriveTranslation(
+    lin_accel_funcs = deriveTranslation(
         tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
+
+    if lin_accel_funcs is None:
+        return None, None
 
     lin_accel = []
     for i in range(3):
@@ -398,7 +417,7 @@ def deriveFromTF(
         tmp_f = ang_vel_funcs[i]
         ang_vel.append(tmp_f(t))
 
-    return lin_accel, ang_vel, r2_arr
+    return lin_accel, ang_vel
 
 
 def deriveDatasetAtCollections(
@@ -464,29 +483,25 @@ def deriveDatasetAllDataPoints(
     derivation_results = {}
     count = 0
 
-    # DEBUG
-    r2_dict = {"x": [], "y": [], "z": []}
-    t_arr = []
-
     for datapoint in dataset["continuous_data"]["/tf"]:
         t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
         # Derive at each timestamp
 
         print(count)
         count += 1
-        
+
         # print(len(deriveFromTF(
-            # dataset=dataset,
-            # from_frame=from_frame,
-            # to_frame=to_frame,
-            # t=t,
-            # neighbourhood_size=neighbourhood_size,
-            # poly_degree=poly_degree,
-            # visualization=visualization,
-            # transition_point_list=transition_point_list,
+        # dataset=dataset,
+        # from_frame=from_frame,
+        # to_frame=to_frame,
+        # t=t,
+        # neighbourhood_size=neighbourhood_size,
+        # poly_degree=poly_degree,
+        # visualization=visualization,
+        # transition_point_list=transition_point_list,
         # )))
 
-        lin_accel, ang_vel, r2_arr = deriveFromTF(
+        lin_accel, ang_vel = deriveFromTF(
             dataset=dataset,
             from_frame=from_frame,
             to_frame=to_frame,
@@ -505,17 +520,6 @@ def deriveDatasetAllDataPoints(
             "ang_vel": ang_vel,
         }
 
-        r2_dict["x"].append(r2_arr[0])
-        r2_dict["y"].append(r2_arr[1])
-        r2_dict["z"].append(r2_arr[2])
-
-    plt.figure()
-    _, axes = plt.subplots(1,3)
-    pprint(r2_dict)
-    sns.scatterplot(x=t_arr, y=r2_dict["x"], ax=axes[0])
-    sns.scatterplot(x=t_arr, y=r2_dict["y"], ax=axes[1])
-    sns.scatterplot(x=t_arr, y=r2_dict["z"], ax=axes[2])
-
     plt.show()
 
     return derivation_results
@@ -529,7 +533,7 @@ def calculateErrorsAtCollections(
     # Error dict
     e = {}
 
-    for collection_key, results in results.items():
+    for collection_key, result in results.items():
 
         # Calculate IMU data
         # I need to apply the rotation from the IMU to the world frame to the data from the IMU to compare correctly
@@ -558,7 +562,7 @@ def calculateErrorsAtCollections(
         imu_accel[2] -= 9.81
 
         e[collection_key] = {
-            "e_lin_accel": np.linalg.norm(np.array(imu_accel) - results["lin_accel"]),
+            "e_lin_accel": np.linalg.norm(np.array(imu_accel) - result["lin_accel"]),
             "e_ang_vel": np.linalg.norm(np.array(imu_ang_vel) - results["ang_vel"]),
         }
 
@@ -607,11 +611,13 @@ def calculateErrorsAllDataPoints(
         imu_accel = [*closest_sensor_datapoint["linear_acceleration"].values()]
         imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
 
+        # TODO: compensate for world-imu rotation
+
         # Compensate for world-imu tf
         tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
 
         world_imu_tf = getTransform(
-            from_frame=to_frame, to_frame=from_frame, transforms=tf_pool
+            from_frame="world", to_frame="imu_link", transforms=tf_pool
         )
 
         R = world_imu_tf[:3, :3]
@@ -648,28 +654,29 @@ def calculateErrorsAllDataPoints(
     for i in range(len(t_vec)):
         t_vec_reparam.append(t_vec[i] - t_vec[0])
 
-    fig, axes = plt.subplots(2, 3)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], ax=axes[0, 0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], ax=axes[0, 1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], ax=axes[0, 2])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], ax=axes[1, 0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], ax=axes[1, 1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], ax=axes[1, 2])
+    fig, axes = plt.subplots(2, 1)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], s=30, label="x", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], s=30, label="y", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], s=30, label="z", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=axes[1])
 
     plot_titles = [
-        r"$E_{a_x}(t)$",
-        r"$E_{a_y}(t)$",
-        r"$E_{a_z}(t)$",
-        r"$E_{\omega_x}(t)$",
-        r"$E_{\omega_y}(t)$",
-        r"$E_{\omega_z}(t)$",
+        r"$E_{a}(t)$",
+        r"$E_{\omega}(t)$",
     ]
 
-    for ax, title in zip(axes.reshape(-1), plot_titles):
+    for ax, title in zip(axes, plot_titles):
         ax.set_title(title)
-        ax.set(
-            xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
-        )
+    
+    axes[0].set(
+        xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
+    )
+    axes[1].set(
+        xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$"
+    )
+
 
     if save_derivation_plot:
         plt.savefig(fname="results.png", dpi=300)
@@ -725,7 +732,9 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
         if (i == 0) or (i == len(tf_list_copy) - 1):
             continue
 
+        tf_pool_prev_t = timeStampToFloat(tf_list[i - 1]["stamp"])
         tf_pool_t = timeStampToFloat(tf_list[i]["stamp"])
+        tf_pool_next_t = timeStampToFloat(tf_list[i + 1]["stamp"])
 
         tf_current = getTransform(
             from_frame=from_frame, to_frame=to_frame, transforms=tf_list_copy[i]
@@ -793,8 +802,50 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
             or delta_previous_to_next["quat"] > 0.001
         ):
             transition_point_timestamp_list.append(tf_pool_t)
+            # transition_point_timestamp_list.append(tf_pool_prev_t)
+            # transition_point_timestamp_list.append(tf_pool_next_t)
 
     return transition_point_timestamp_list
+
+
+def plotTFs(tf_list: List) -> None:
+
+    plt.figure()
+
+    t_vec = []
+    x_vec = []
+    y_vec = []
+    z_vec = []
+
+    tf_pool_t_0 = timeStampToFloat(tf_list[0]["stamp"])
+    for tf_pool in tf_list:
+
+        tf_pool_t = timeStampToFloat(tf_pool.pop("stamp"))
+        t_vec.append(tf_pool_t - tf_pool_t_0)
+
+        world_imu_tf = getTransform(
+            from_frame="world", to_frame="imu_link", transforms=tf_pool
+        )
+
+        # trans, quat = matrixToTranslationQuaternion(world_imu_tf)
+
+        # quat = [*quat[1:], quat[0]]
+
+        # print(trans)
+        # print(quat)
+        # print(world_imu_tf[0, 3])
+        # print(world_imu_tf[1, 3])
+        # print(world_imu_tf[2, 3])
+
+        x_vec.append(world_imu_tf[0, 3])
+        y_vec.append(world_imu_tf[1, 3])
+        z_vec.append(world_imu_tf[2, 3])
+
+    sns.scatterplot(x=t_vec, y=x_vec, label="x")
+    sns.scatterplot(x=t_vec, y=y_vec, label="y")
+    sns.scatterplot(x=t_vec, y=z_vec, label="z")
+
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -843,6 +894,13 @@ if __name__ == "__main__":
     neighbourhood_size = args["neighbourhood_size"]
 
     tf_lst = getTFList(input_dataset)
+
+    # with open("./test.json", "w") as f:
+    # a = json.dumps(tf_lst, indent=2)
+    #
+    # f.write(a)
+
+    # plotTFs(tf_lst)
 
     # Add a grid in the background of the graphs
     sns.set_theme(style="whitegrid")

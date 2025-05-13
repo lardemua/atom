@@ -183,7 +183,8 @@ def matrixToTranslationQuaternion(matrix):
             w = (R[1, 0] - R[0, 1]) / S
             x = (R[0, 2] + R[2, 0]) / S
             y = (R[1, 2] + R[2, 1]) / S
-
+    
+    # TODO: Review the order of the vars in the quaternion, because the data collector places w last
     quat = np.array([w, x, y, z])
 
     return tvec, quat
