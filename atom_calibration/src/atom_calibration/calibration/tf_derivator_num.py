@@ -237,11 +237,23 @@ def deriveTranslation(dataset: dict, visualization: bool) -> dict:
             parent_frame = tf["header"]["frame_id"]
             key = f"{parent_frame}-{child_frame}"
 
+            trans = [
+                tf["transform"]["translation"]["x"],
+                tf["transform"]["translation"]["y"],
+                tf["transform"]["translation"]["z"],
+            ]
+            quat = [
+                tf["transform"]["rotation"]["x"],
+                tf["transform"]["rotation"]["y"],
+                tf["transform"]["rotation"]["z"],
+                tf["transform"]["rotation"]["w"],
+            ]
+
             tf_dict[key] = {
                 "child": child_frame,
                 "parent": parent_frame,
-                "quat": [*tf["transform"]["rotation"].values()],
-                "trans": [*tf["transform"]["translation"].values()],
+                "quat": quat,
+                "trans": trans,
             }
 
         # Include transforms from /tf_static. Only consider the last message.
@@ -250,11 +262,23 @@ def deriveTranslation(dataset: dict, visualization: bool) -> dict:
             parent_frame = tf["header"]["frame_id"]
             key = f"{tf['header']['frame_id']}-{tf['child_frame_id']}"
 
+            trans = [
+                tf["transform"]["translation"]["x"],
+                tf["transform"]["translation"]["y"],
+                tf["transform"]["translation"]["z"],
+            ]
+            quat = [
+                tf["transform"]["rotation"]["x"],
+                tf["transform"]["rotation"]["y"],
+                tf["transform"]["rotation"]["z"],
+                tf["transform"]["rotation"]["w"],
+            ]
+
             tf_dict[key] = {
                 "child": child_frame,
                 "parent": parent_frame,
-                "quat": [*tf["transform"]["rotation"].values()],
-                "trans": [*tf["transform"]["translation"].values()],
+                "quat": quat,
+                "trans": trans,
             }
 
         # Now get the tf from the source to the target frames
@@ -290,28 +314,23 @@ def deriveTranslation(dataset: dict, visualization: bool) -> dict:
         lin_accel_dict["z"].append(dddata_dtt[2])
 
     if visualization:
-        fig, axes = plt.subplots(2, 3)
+        
+        fig, ax1 = plt.subplots()
 
-        plot_titles = [
-            r"$x(t)$",
-            r"$y(t)$",
-            r"$z(t)$",
-            r"$\ddot{x}(t)$",
-            r"$\ddot{y}(t)$",
-            r"$\ddot{z}(t)$",
-        ]
-
-        for ax, title in zip(axes.reshape(-1), plot_titles):
-            ax.set_title(title)
+        plt.title("Displacement and Linear Acceleration")
 
         t_arr_plot = t_arr[2:-2]
+        t_arr_reparam = [t - t_arr[0] for t in t_arr]
+        t_arr_plot_reparam = [t - t_arr[0] for t in t_arr_plot]
 
-        sns.scatterplot(x=t_arr, y=trans_dict["x"], ax=axes[0, 0])
-        sns.scatterplot(x=t_arr, y=trans_dict["y"], ax=axes[0, 1])
-        sns.scatterplot(x=t_arr, y=trans_dict["z"], ax=axes[0, 2])
-        sns.scatterplot(x=t_arr_plot, y=lin_accel_dict["x"], ax=axes[1, 0])
-        sns.scatterplot(x=t_arr_plot, y=lin_accel_dict["y"], ax=axes[1, 1])
-        sns.scatterplot(x=t_arr_plot, y=lin_accel_dict["z"], ax=axes[1, 2])
+        ax2 = ax1.twinx()
+
+        sns.scatterplot(x=t_arr_reparam, y=trans_dict["x"], marker="o", color="red", ax=ax1)
+        sns.scatterplot(x=t_arr_reparam, y=trans_dict["y"], marker="o", color="green", ax=ax1)
+        sns.scatterplot(x=t_arr_reparam, y=trans_dict["z"], marker="o", color="blue", ax=ax1)
+        sns.scatterplot(x=t_arr_plot_reparam, y=lin_accel_dict["x"], marker="x", color="red", ax=ax2)
+        sns.scatterplot(x=t_arr_plot_reparam, y=lin_accel_dict["y"], marker="x", color="green", ax=ax2)
+        sns.scatterplot(x=t_arr_plot_reparam, y=lin_accel_dict["z"], marker="x", color="blue", ax=ax2)
 
         plt.show()
         exit(0)
@@ -337,93 +356,6 @@ def deriveFromTF(
     lin_accel_dict = deriveTranslation(dataset=dataset, visualization=visualization)
 
     ang_vel_dict = deriveRotation(dataset=dataset, visualization=visualization)
-
-
-def deriveDatasetAtCollections(
-    dataset: dict,
-    from_frame: str,
-    to_frame: str,
-    sensor_name: str,
-    neighbourhood_size: int,
-    poly_degree: int,
-    visualization: bool,
-    transition_point_list: List,
-) -> dict:
-    """
-    Derive for all timestamps corresponding to collections in a dataset.
-    Return a dictionary containing the derivation results for each collection.
-    """
-
-    # Get list of timestamps to integrate for
-    derivation_results = {}
-    for collection_key, collection in dataset["collections"].items():
-        t = timeStampToFloat(collection["data"][sensor_name]["header"]["stamp"])
-
-        # Derive at each timestamp
-        lin_accel, ang_vel = deriveFromTF(
-            dataset=dataset,
-            from_frame=from_frame,
-            to_frame=to_frame,
-            t=t,
-            neighbourhood_size=neighbourhood_size,
-            poly_degree=poly_degree,
-            visualization=visualization,
-            transition_point_list=transition_point_list,
-        )
-
-        if lin_accel is None and ang_vel is None:
-            continue
-
-        derivation_results[collection_key] = {
-            "lin_accel": lin_accel,
-            "ang_vel": ang_vel,
-        }
-
-    return derivation_results
-
-
-def deriveDatasetAllDataPoints(
-    dataset: dict,
-    from_frame: str,
-    to_frame: str,
-    sensor_name: str,
-    sensor_topic: str,
-    visualization: bool,
-) -> dict:
-    """
-    Derive for all timestamps corresponding to collections in a dataset.
-    Return a dictionary containing the derivation results for each collection.
-    """
-
-    # Get list of timestamps to integrate for
-    derivation_results = {}
-    count = 0
-
-    for datapoint in dataset["continuous_data"]["/tf"]:
-        t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
-        # Derive at each timestamp
-
-        print(count)
-        count += 1
-
-        lin_accel, ang_vel = deriveFromTF(
-            dataset=dataset,
-            from_frame=from_frame,
-            to_frame=to_frame,
-            t=t,
-            neighbourhood_size=neighbourhood_size,
-            visualization=visualization,
-        )
-
-        if lin_accel is None and ang_vel is None:
-            continue
-
-        derivation_results[str(t)] = {
-            "lin_accel": lin_accel,
-            "ang_vel": ang_vel,
-        }
-
-    return derivation_results
 
 
 def calculateErrorsAtCollections(
@@ -472,12 +404,11 @@ def calculateErrorsAtCollections(
 
 def calculateErrorsAllDataPoints(
     dataset: dict,
-    tf_list: List[Dict],
-    results: dict,
+    lin_accel_dict: dict,
+    ang_vel_dict: dict,
     sensor_topic: str,
     from_frame: str,
     to_frame: str,
-    transition_point_list: List,
     save_derivation_plot: bool,
 ) -> dict:
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
@@ -490,13 +421,24 @@ def calculateErrorsAllDataPoints(
     # Time vector
     t_vec = []
 
-    for tf_pool in tf_list:
+    for i in range(len(dataset["continuous_data"]["/tf"])):
+
+        if i in [
+            0,
+            1,
+            len(dataset["continuous_data"]["/tf"]) - 1,
+            len(dataset["continuous_data"]["/tf"]) - 2,
+        ]:
+            continue
+
+        results_lists_idx = i - 2
+
+        print(results_lists_idx)
+
+        tf_msg = dataset["continuous_data"]["/tf"][i]
 
         # Find the closest IMU datapoint
-        tf_pool_t = timeStampToFloat(tf_pool["stamp"])
-
-        if tf_pool_t in transition_point_list:
-            continue
+        tf_pool_t = timeStampToFloat(tf_msg["transforms"][0]["header"]["stamp"])
 
         t_dist_min = None
         for sensor_datapoint in dataset["continuous_data"][sensor_topic]:
@@ -513,10 +455,39 @@ def calculateErrorsAllDataPoints(
         imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
 
         # Compensate for world-imu tf
-        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+        t_vec.append(timeStampToFloat(tf_msg["transforms"][0]["header"]["stamp"]))
 
+        # Get all tfs for the tf_pool
+        tf_dict = {}
+
+        for tf in tf_msg["transforms"]:
+            child_frame = tf["child_frame_id"]
+            parent_frame = tf["header"]["frame_id"]
+            key = f"{parent_frame}-{child_frame}"
+
+            tf_dict[key] = {
+                "child": child_frame,
+                "parent": parent_frame,
+                "quat": [*tf["transform"]["rotation"].values()],
+                "trans": [*tf["transform"]["translation"].values()],
+            }
+
+        # Include transforms from /tf_static. Only consider the last message.
+        for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
+            child_frame = tf["child_frame_id"]
+            parent_frame = tf["header"]["frame_id"]
+            key = f"{tf['header']['frame_id']}-{tf['child_frame_id']}"
+
+            tf_dict[key] = {
+                "child": child_frame,
+                "parent": parent_frame,
+                "quat": [*tf["transform"]["rotation"].values()],
+                "trans": [*tf["transform"]["translation"].values()],
+            }
+
+        # Now get the tf from the source to the target frames
         world_imu_tf = getTransform(
-            from_frame=to_frame, to_frame=from_frame, transforms=tf_pool
+            from_frame="world", to_frame="imu_link", transforms=tf_dict
         )
 
         R = world_imu_tf[:3, :3]
@@ -528,53 +499,56 @@ def calculateErrorsAllDataPoints(
 
         # Calculate errors
         e["e_lin_accel"]["x"].append(
-            imu_accel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][0]
+            imu_accel[0] - lin_accel_dict["x"][results_lists_idx]
         )
         e["e_lin_accel"]["y"].append(
-            imu_accel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][1]
+            imu_accel[1] - lin_accel_dict["y"][results_lists_idx]
         )
         e["e_lin_accel"]["z"].append(
-            imu_accel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
+            imu_accel[2] - lin_accel_dict["z"][results_lists_idx]
         )
         e["e_ang_vel"]["x"].append(
-            imu_ang_vel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][0]
+            imu_ang_vel[0] - ang_vel_dict["x"][results_lists_idx]
         )
         e["e_ang_vel"]["y"].append(
-            imu_ang_vel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][1]
+            imu_ang_vel[1] - ang_vel_dict["y"][results_lists_idx]
         )
         e["e_ang_vel"]["z"].append(
-            imu_ang_vel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][2]
+            imu_ang_vel[2] - ang_vel_dict["z"][results_lists_idx]
         )
-        # For plotting
-        t_vec.append(tf_pool_t)
 
     # Reparametrize time
     t_vec_reparam = []
     for i in range(len(t_vec)):
         t_vec_reparam.append(t_vec[i] - t_vec[0])
 
-    fig, axes = plt.subplots(2, 3)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], ax=axes[0, 0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], ax=axes[0, 1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], ax=axes[0, 2])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], ax=axes[1, 0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], ax=axes[1, 1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], ax=axes[1, 2])
+    print(len(t_vec_reparam))
+    
+    fig, axes = plt.subplots(2, 1)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], marker="o", color="red", s=30, label=r"$E_{a_x}$", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], marker="o", color="green", s=30, label=r"$E_{a_y}$", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], marker="o", color="blue", s=30, label=r"$E_{a_z}$", ax=axes[0])
+    
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=axes[1])
 
     plot_titles = [
-        r"$E_{a_x}(t)$",
-        r"$E_{a_y}(t)$",
-        r"$E_{a_z}(t)$",
-        r"$E_{\omega_x}(t)$",
-        r"$E_{\omega_y}(t)$",
-        r"$E_{\omega_z}(t)$",
+        r"$E_{a}(t)$",
+        r"$E_{\omega}(t)$",
     ]
-
-    for ax, title in zip(axes.reshape(-1), plot_titles):
+    
+    for ax, title in zip(axes, plot_titles):
         ax.set_title(title)
-        ax.set(
-            xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
-        )
+    
+    axes[0].set(
+        xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
+    )
+    axes[1].set(
+        xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$"
+    )
+    
+    fig.tight_layout()
 
     if save_derivation_plot:
         plt.savefig(fname="results.png", dpi=300)
@@ -720,20 +694,6 @@ if __name__ == "__main__":
         help="Json file containing input dataset.",
     )
     ap.add_argument(
-        "-ns",
-        "--neighbourhood_size",
-        type=int,
-        default=75,
-        help="Number of TF samples to use for curve-fitting at each datapoint.",
-    )
-    ap.add_argument(
-        "-pd",
-        "--poly_degree",
-        type=int,
-        default=3,
-        help="Degree of polynomial to use for curve-fitting.",
-    )
-    ap.add_argument(
         "-sdp",
         "--save_derivation_plot",
         help="Store the results in a plot when deriving the entire dataset",
@@ -745,7 +705,6 @@ if __name__ == "__main__":
 
     with open(args["json_file"]) as f:
         input_dataset = json.load(f)
-    neighbourhood_size = args["neighbourhood_size"]
 
     # Add a grid in the background of the graphs
     sns.set_theme(style="whitegrid")
@@ -756,5 +715,15 @@ if __name__ == "__main__":
     #     tf_list=tf_lst, from_frame="world", to_frame="imu_link"
     # )
 
-    lin_accel_dict = deriveTranslation(dataset=input_dataset, visualization=False)
-    ang_vel_dict = deriveRotation(dataset=input_dataset, visualization=True)
+    lin_accel_dict = deriveTranslation(dataset=input_dataset, visualization=True)
+    ang_vel_dict = deriveRotation(dataset=input_dataset, visualization=False)
+
+    e = calculateErrorsAllDataPoints(
+        dataset=input_dataset,
+        lin_accel_dict=lin_accel_dict,
+        ang_vel_dict=ang_vel_dict,
+        sensor_topic="/imu",
+        from_frame="world",
+        to_frame="imu_link",
+        save_derivation_plot=False,
+    )
