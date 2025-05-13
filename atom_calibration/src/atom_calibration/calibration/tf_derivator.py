@@ -586,6 +586,13 @@ def calculateErrorsAllDataPoints(
         "e_lin_accel": {"x": [], "y": [], "z": []},
         "e_ang_vel": {"x": [], "y": [], "z": []},
     }
+
+    # Dict with tf data for plotting
+    tf_data_dict = {
+        "trans": {"x": [], "y": [], "z": []},
+        "quat": {"x": [], "y": [], "z": [], "w": []}
+    }
+
     # Time vector
     t_vec = []
 
@@ -611,15 +618,13 @@ def calculateErrorsAllDataPoints(
         imu_accel = [*closest_sensor_datapoint["linear_acceleration"].values()]
         imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
 
-        # TODO: compensate for world-imu rotation
-
         # Compensate for world-imu tf
         tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
 
         world_imu_tf = getTransform(
             from_frame="world", to_frame="imu_link", transforms=tf_pool
         )
-
+        
         R = world_imu_tf[:3, :3]
 
         imu_accel = R @ imu_accel
@@ -649,15 +654,29 @@ def calculateErrorsAllDataPoints(
         # For plotting
         t_vec.append(tf_pool_t)
 
+        tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
+        tf_data_dict["trans"]["x"].append(tf_trans[0][0])
+        tf_data_dict["trans"]["y"].append(tf_trans[1][0])
+        tf_data_dict["trans"]["z"].append(tf_trans[2][0])
+
+        # NOTE: Should I add (and plot out) the rotation? I don't know that it would be super clear, due to the fact that the orientation is expressed in quaternions 
+
     # Reparametrize time
     t_vec_reparam = []
     for i in range(len(t_vec)):
         t_vec_reparam.append(t_vec[i] - t_vec[0])
 
     fig, axes = plt.subplots(2, 1)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], s=30, label="x", ax=axes[0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], s=30, label="y", ax=axes[0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], s=30, label="z", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], marker="o", color="red", s=30, label=r"$E_{a_x}$", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], marker="o", color="green", s=30, label=r"$E_{a_y}$", ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], marker="o", color="blue", s=30, label=r"$E_{a_z}$", ax=axes[0])
+    # TF data
+    ax2=axes[0].twinx()
+    ax2.set(ylabel="Translation [m]")
+    sns.scatterplot(x=t_vec_reparam, y=tf_data_dict["trans"]["x"], marker="x", color="red", s=30, label=r"$x$", ax=ax2)
+    sns.scatterplot(x=t_vec_reparam, y=tf_data_dict["trans"]["y"], marker="x", color="green", s=30, label=r"$y$", ax=ax2)
+    sns.scatterplot(x=t_vec_reparam, y=tf_data_dict["trans"]["z"], marker="x", color="blue", s=30, label=r"$z$", ax=ax2)
+    
     sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=axes[1])
     sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=axes[1])
     sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=axes[1])
