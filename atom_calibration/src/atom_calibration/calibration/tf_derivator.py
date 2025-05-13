@@ -563,7 +563,7 @@ def calculateErrorsAtCollections(
 
         e[collection_key] = {
             "e_lin_accel": np.linalg.norm(np.array(imu_accel) - result["lin_accel"]),
-            "e_ang_vel": np.linalg.norm(np.array(imu_ang_vel) - results["ang_vel"]),
+            "e_ang_vel": np.linalg.norm(np.array(imu_ang_vel) - result["ang_vel"]),
         }
 
     return e
