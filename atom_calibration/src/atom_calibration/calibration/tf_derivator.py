@@ -696,7 +696,7 @@ def calculateErrorsAllDataPoints(
         xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$"
     )
 
-
+    fig.tight_layout()
     if save_derivation_plot:
         plt.savefig(fname="results.png", dpi=300)
     plt.show()
