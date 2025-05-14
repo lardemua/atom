@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Utilities for the derivation of TF data
 """
@@ -672,9 +674,15 @@ def calculateErrorsAllDataPoints(
         tf_data_dict["trans"]["y"].append(tf_trans[1][0])
         tf_data_dict["trans"]["z"].append(tf_trans[2][0])
 
-        lin_vel_data_dict["x"].append(results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][0])
-        lin_vel_data_dict["y"].append(results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][1])
-        lin_vel_data_dict["z"].append(results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][2])
+        lin_vel_data_dict["x"].append(
+            results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][0]
+        )
+        lin_vel_data_dict["y"].append(
+            results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][1]
+        )
+        lin_vel_data_dict["z"].append(
+            results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][2]
+        )
         # NOTE: Should I add (and plot out) the rotation? I don't know that it would be super clear, due to the fact that the orientation is expressed in quaternions
 
     # Reparametrize time
@@ -682,8 +690,7 @@ def calculateErrorsAllDataPoints(
     for i in range(len(t_vec)):
         t_vec_reparam.append(t_vec[i] - t_vec[0])
 
-    plt.figure(1)
-    fig1, ax = plt.subplots()
+    fig1, ax1 = plt.subplots()
     sns.scatterplot(
         x=t_vec_reparam,
         y=e["e_lin_accel"]["x"],
@@ -691,7 +698,7 @@ def calculateErrorsAllDataPoints(
         color="red",
         s=30,
         label=r"$E_{a_x}$",
-        ax=ax,
+        ax=ax1,
     )
     sns.scatterplot(
         x=t_vec_reparam,
@@ -700,7 +707,7 @@ def calculateErrorsAllDataPoints(
         color="green",
         s=30,
         label=r"$E_{a_y}$",
-        ax=ax,
+        ax=ax1,
     )
     sns.scatterplot(
         x=t_vec_reparam,
@@ -709,95 +716,28 @@ def calculateErrorsAllDataPoints(
         color="blue",
         s=30,
         label=r"$E_{a_z}$",
-        ax=ax,
+        ax=ax1,
     )
-    # TF data
-    ax2 = ax.twinx()
-    ax2.set(ylabel="Translation [m]")
-    sns.scatterplot(
-        x=t_vec_reparam,
-        y=tf_data_dict["trans"]["x"],
-        marker="x",
-        color="red",
-        s=30,
-        label=r"$x$",
-        ax=ax2,
-    )
-    sns.scatterplot(
-        x=t_vec_reparam,
-        y=tf_data_dict["trans"]["y"],
-        marker="x",
-        color="green",
-        s=30,
-        label=r"$y$",
-        ax=ax2,
-    )
-    sns.scatterplot(
-        x=t_vec_reparam,
-        y=tf_data_dict["trans"]["z"],
-        marker="x",
-        color="blue",
-        s=30,
-        label=r"$z$",
-        ax=ax2,
-    )
-    # Linear velocity plots
-    ax3 = ax.twinx()
-    ax3.set(ylabel="Velocity [m/s]")
-    ax3.spines.right.set_position(("axes", 1.1))
-    sns.scatterplot(
-        x=t_vec_reparam,
-        y=lin_vel_data_dict["x"],
-        marker="D",
-        color="red",
-        s=30,
-        label=r"$\dot{x}$",
-        ax=ax3,
-    )
-    sns.scatterplot(
-        x=t_vec_reparam,
-        y=lin_vel_data_dict["y"],
-        marker="D",
-        color="green",
-        s=30,
-        label=r"$\dot{y}$",
-        ax=ax3,
-    )
-    sns.scatterplot(
-        x=t_vec_reparam,
-        y=lin_vel_data_dict["z"],
-        marker="D",
-        color="blue",
-        s=30,
-        label=r"$\dot{z}$",
-        ax=ax3,
-    )
-
-    plt.show(block=False)
-
-    plt.figure(2)
-    fig2, ax4 = plt.subplots()
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax4)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax4)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=ax4)
+    
+    fig2, ax2 = plt.subplots()
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax2)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax2)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=ax2)
 
     plot_titles = [
         r"$E_{a}(t)$",
         r"$E_{\omega}(t)$",
     ]
 
-    # for ax, title in zip(axes, plot_titles):
-        # ax.set_title(title)
+    for ax, title in zip([ax1, ax2], plot_titles):
+        ax.set_title(title)
 
-    ax.set(
-        xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
-    )
-    ax4.set(
-        xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$"
-    )
+    ax1.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$")
+    ax2.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$")
 
     fig1.tight_layout()
     fig2.tight_layout()
+
     plt.show()
 
     return e
@@ -956,6 +896,160 @@ def plotTFs(tf_list: List) -> None:
     plt.show()
 
 
+def plotDerivationResults(
+    tf_list: List, derivation_results: Dict, from_frame: str, to_frame: str
+) -> None:
+    data_dict = {
+        "t": [],
+        "position": {"x": [], "y": [], "z": []},
+        "lin_vel": {"x": [], "y": [], "z": []},
+        "lin_accel": {"x": [], "y": [], "z": []},
+    }
+    
+    # Copy it so the original keeps the timestamps
+    tf_list_copy = deepcopy(tf_list)
+
+    for tf_pool in tf_list_copy:
+
+        # Compensate for world-imu tf
+        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+
+        tf_pool_t = timeStampToFloat(tf_pool_stamp)
+
+        world_imu_tf = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+        )
+
+        # For plotting
+        data_dict["t"].append(tf_pool_t)
+        # Reparametrize t
+        data_dict["t_reparam"] = [t - data_dict["t"][0] for t in data_dict["t"]]
+
+        tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
+        # Position Data
+        data_dict["position"]["x"].append(tf_trans[0][0])
+        data_dict["position"]["y"].append(tf_trans[1][0])
+        data_dict["position"]["z"].append(tf_trans[2][0])
+
+        # Linear Velocity Data
+        data_dict["lin_vel"]["x"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][0]
+        )
+        data_dict["lin_vel"]["y"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][1]
+        )
+        data_dict["lin_vel"]["z"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][2]
+        )
+
+        # Linear Acceleration Data
+        data_dict["lin_accel"]["x"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][0]
+        )
+        data_dict["lin_accel"]["y"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][1]
+        )
+        data_dict["lin_accel"]["z"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
+        )
+
+    # Plot x data
+    fig1, ax1 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["x"],
+        marker="o",
+        label=r"$x$",
+        ax=ax1,
+    )
+    ax2 = ax1.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_vel"]["x"],
+        marker="s",
+        label=r"$\dot{x}$",
+        ax=ax2,
+    )
+    ax3 = ax1.twinx()
+    ax3.spines.right.set_position(("axes", 1.2))
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel"]["x"],
+        marker="D",
+        label=r"$\ddot{x}$",
+        ax=ax3,
+    )
+
+    # Plot y data
+    fig2, ax4 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["y"],
+        marker="o",
+        label=r"$y$",
+        ax=ax4,
+    )
+    ax5 = ax4.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_vel"]["y"],
+        marker="s",
+        label=r"$\dot{y}$",
+        ax=ax5,
+    )
+    ax6 = ax4.twinx()
+    ax6.spines.right.set_position(("axes", 1.2))
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel"]["y"],
+        marker="D",
+        label=r"$\ddot{y}$",
+        ax=ax6,
+    )
+
+    # Plot z data
+    fig3, ax7 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["z"],
+        marker="o",
+        label=r"$z$",
+        ax=ax7,
+    )
+    ax8 = ax7.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_vel"]["z"],
+        marker="s",
+        label=r"$\dot{z}$",
+        ax=ax8,
+    )
+    ax9 = ax7.twinx()
+    ax9.spines.right.set_position(("axes", 1.2))
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel"]["z"],
+        marker="D",
+        label=r"$\ddot{z}$",
+        ax=ax9,
+    )
+
+    # Some plot formatting
+    for ax in [ax1, ax4, ax7]:
+        ax.set(ylabel=r"Position $[m]$")
+        ax.set_ylim(-2,2)
+    for ax in [ax2, ax5, ax8]:
+        ax.set(ylabel=r"Velocity $[m/s]$")
+        ax.set_ylim(-2,2)
+    for ax in [ax3, ax6, ax9]:
+        ax.set(ylabel=r"Acceleration $[m/s^2]$")
+        ax.set_ylim(-1,1)
+    for fig in [fig1, fig2, fig3]:
+        fig.tight_layout()
+
+    plt.show()
+
+
 if __name__ == "__main__":
 
     ap = argparse.ArgumentParser()
@@ -1011,11 +1105,11 @@ if __name__ == "__main__":
     plotIMUData(input_dataset)
 
     # transition_point_list = identifyTransitionPoints(
-        # tf_list=tf_lst, from_frame="world", to_frame="imu_link"
+    # tf_list=tf_lst, from_frame="world", to_frame="imu_link"
     # )
 
     transition_point_list = []
-    
+
     if args["mode"] == "collections":
         derivation_results = deriveDatasetAtCollections(
             dataset=input_dataset,
@@ -1083,6 +1177,13 @@ if __name__ == "__main__":
             poly_degree=args["poly_degree"],
             visualization=False,
             transition_point_list=transition_point_list,
+        )
+
+        plotDerivationResults(
+            tf_list=tf_lst,
+            derivation_results=derivation_results,
+            from_frame="world",
+            to_frame="imu_link",
         )
 
         e = calculateErrorsAllDataPoints(
