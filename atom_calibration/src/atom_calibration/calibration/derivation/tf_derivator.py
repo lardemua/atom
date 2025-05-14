@@ -25,7 +25,6 @@ from matplotlib import pyplot as plt
 from prettytable import PrettyTable
 from scipy.spatial.transform import Rotation
 
-
 def timeFloatToStamp(t_float: float) -> Dict[str, int]:
 
     secs = floor(t_float)
@@ -357,6 +356,7 @@ def deriveTranslation(
             sns.lineplot(x=x_func, y=y2der_func, color="blue", ax=axes[2, i])
 
     if visualization:
+        fig.tight_layout
         plt.show()
 
     lin_accel = [ddq[0], ddq[1], ddq[2]]
@@ -718,7 +718,7 @@ def calculateErrorsAllDataPoints(
         label=r"$E_{a_z}$",
         ax=ax1,
     )
-    
+
     fig2, ax2 = plt.subplots()
     sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax2)
     sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax2)
@@ -896,6 +896,79 @@ def plotTFs(tf_list: List) -> None:
     plt.show()
 
 
+def inspectDerivatives(dataset: Dict, neighbourhood_size: int, poly_degree: int, transition_point_list: List, tf_list: List, from_frame: str, to_frame: str) -> None:
+
+    data_dict = {
+        "t": [],
+        "position": {"x": [], "y": [], "z": []},
+    }
+
+    # Copy it so the original keeps the timestamps
+    tf_list_copy = deepcopy(tf_list)
+
+    for tf_pool in tf_list_copy:
+
+        # Compensate for world-imu tf
+        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+
+        tf_pool_t = timeStampToFloat(tf_pool_stamp)
+
+        world_imu_tf = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+        )
+
+        # For plotting
+        data_dict["t"].append(tf_pool_t)
+        # Reparametrize t
+        data_dict["t_reparam"] = [t - data_dict["t"][0] for t in data_dict["t"]]
+
+        tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
+
+        # Position Data
+        data_dict["position"]["x"].append(tf_trans[0][0])
+        data_dict["position"]["y"].append(tf_trans[1][0])
+        data_dict["position"]["z"].append(tf_trans[2][0])
+
+    fig, ax = plt.subplots()
+    sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["x"], label="x")
+    sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["y"], label="y")
+    sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["z"], label="z")
+    
+    # Create a list to append to so I can access the variable outside the function
+    selected_t_lst = []
+    def on_click_choose_closest_point(event):
+        """Utility for picking a point in a graph. Used for inspecting derivative functions from tf_derivator in inspect mode."""
+
+        if event.inaxes == ax:
+            # Get click location
+            click_x, click_y = event.xdata, event.ydata
+
+            # Find closest point
+            distances = np.abs(np.array(data_dict["t_reparam"]) - click_x)
+            idx = np.argmin(distances)
+            closest_x = data_dict["t_reparam"][idx]
+            print(f"Closest point: ({closest_x})")
+            selected_t_lst.append(closest_x)
+
+    cid = fig.canvas.mpl_connect("button_press_event", on_click_choose_closest_point)
+
+    plt.show()
+
+    # Pick the last point chosen
+    t_to_inspect = selected_t_lst[-1] + data_dict["t"][0]
+
+    # Derive at each timestamp
+    lin_accel, lin_vel, ang_vel = deriveFromTF(
+        dataset=dataset,
+        from_frame=from_frame,
+        to_frame=to_frame,
+        t=t_to_inspect,
+        neighbourhood_size=neighbourhood_size,
+        poly_degree=poly_degree,
+        visualization=True,
+        transition_point_list=transition_point_list,
+        )
+
 def plotDerivationResults(
     tf_list: List, derivation_results: Dict, from_frame: str, to_frame: str
 ) -> None:
@@ -905,7 +978,7 @@ def plotDerivationResults(
         "lin_vel": {"x": [], "y": [], "z": []},
         "lin_accel": {"x": [], "y": [], "z": []},
     }
-    
+
     # Copy it so the original keeps the timestamps
     tf_list_copy = deepcopy(tf_list)
 
@@ -1037,13 +1110,13 @@ def plotDerivationResults(
     # Some plot formatting
     for ax in [ax1, ax4, ax7]:
         ax.set(ylabel=r"Position $[m]$")
-        ax.set_ylim(-2,2)
+        ax.set_ylim(-2, 2)
     for ax in [ax2, ax5, ax8]:
         ax.set(ylabel=r"Velocity $[m/s]$")
-        ax.set_ylim(-2,2)
+        ax.set_ylim(-2, 2)
     for ax in [ax3, ax6, ax9]:
         ax.set(ylabel=r"Acceleration $[m/s^2]$")
-        ax.set_ylim(-1,1)
+        ax.set_ylim(-1, 1)
     for fig in [fig1, fig2, fig3]:
         fig.tight_layout()
 
@@ -1097,12 +1170,10 @@ if __name__ == "__main__":
 
     tf_lst = getTFList(input_dataset)
 
-    # plotTFs(tf_lst)
-
     # Add a grid in the background of the graphs
     sns.set_theme(style="whitegrid")
 
-    plotIMUData(input_dataset)
+    # plotIMUData(input_dataset)
 
     # transition_point_list = identifyTransitionPoints(
     # tf_list=tf_lst, from_frame="world", to_frame="imu_link"
@@ -1196,3 +1267,15 @@ if __name__ == "__main__":
             transition_point_list=transition_point_list,
             save_derivation_plot=args["save_derivation_plot"],
         )
+
+    if args["mode"] == "inspect":
+        # The idea is to plot out the derivatives in a given point
+        inspectDerivatives(
+            dataset=input_dataset,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=args["poly_degree"],
+            transition_point_list=transition_point_list,
+            tf_list=tf_lst,
+            from_frame="world",
+            to_frame="imu_link",
+            )
