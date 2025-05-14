@@ -293,7 +293,7 @@ def deriveTranslation(
     """
 
     if tf_list == []:
-        return None
+        return None, None
 
     # Get time values
     t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
@@ -358,8 +358,9 @@ def deriveTranslation(
         plt.show()
 
     lin_accel = [ddq[0], ddq[1], ddq[2]]
+    lin_vel = [dq[0], dq[1], dq[2]]
 
-    return lin_accel
+    return lin_accel, lin_vel
 
 
 def deriveFromTF(
@@ -377,7 +378,7 @@ def deriveFromTF(
     # Don't do anything if t is a transition point
     for transition_point in transition_point_list:
         if t > transition_point + 0.5 and t < transition_point + 0.5:
-            return None, None
+            return None, None, None
 
     tf_lst = getTFList(dataset)
 
@@ -396,17 +397,22 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    lin_accel_funcs = deriveTranslation(
+    lin_accel_funcs, lin_vel_funcs = deriveTranslation(
         tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
 
     if lin_accel_funcs is None:
-        return None, None
+        return None, None, None
 
     lin_accel = []
     for i in range(3):
         tmp_f = lin_accel_funcs[i]
         lin_accel.append(tmp_f(t))
+
+    lin_vel = []
+    for i in range(3):
+        tmp_f = lin_vel_funcs[i]
+        lin_vel.append(tmp_f(t))
 
     ang_vel_funcs = deriveRotation(
         tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
@@ -417,7 +423,7 @@ def deriveFromTF(
         tmp_f = ang_vel_funcs[i]
         ang_vel.append(tmp_f(t))
 
-    return lin_accel, ang_vel
+    return lin_accel, lin_vel, ang_vel
 
 
 def deriveDatasetAtCollections(
@@ -501,7 +507,7 @@ def deriveDatasetAllDataPoints(
         # transition_point_list=transition_point_list,
         # )))
 
-        lin_accel, ang_vel = deriveFromTF(
+        lin_accel, lin_vel, ang_vel = deriveFromTF(
             dataset=dataset,
             from_frame=from_frame,
             to_frame=to_frame,
@@ -517,6 +523,7 @@ def deriveDatasetAllDataPoints(
 
         derivation_results[str(t)] = {
             "lin_accel": lin_accel,
+            "lin_vel": lin_vel,
             "ang_vel": ang_vel,
         }
 
@@ -590,7 +597,13 @@ def calculateErrorsAllDataPoints(
     # Dict with tf data for plotting
     tf_data_dict = {
         "trans": {"x": [], "y": [], "z": []},
-        "quat": {"x": [], "y": [], "z": [], "w": []}
+        "quat": {"x": [], "y": [], "z": [], "w": []},
+    }
+    # Dict with linear velocity data for plotting
+    lin_vel_data_dict = {
+        "x": [],
+        "y": [],
+        "z": [],
     }
 
     # Time vector
@@ -624,7 +637,7 @@ def calculateErrorsAllDataPoints(
         world_imu_tf = getTransform(
             from_frame="world", to_frame="imu_link", transforms=tf_pool
         )
-        
+
         R = world_imu_tf[:3, :3]
 
         imu_accel = R @ imu_accel
@@ -659,46 +672,132 @@ def calculateErrorsAllDataPoints(
         tf_data_dict["trans"]["y"].append(tf_trans[1][0])
         tf_data_dict["trans"]["z"].append(tf_trans[2][0])
 
-        # NOTE: Should I add (and plot out) the rotation? I don't know that it would be super clear, due to the fact that the orientation is expressed in quaternions 
+        lin_vel_data_dict["x"].append(results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][0])
+        lin_vel_data_dict["y"].append(results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][1])
+        lin_vel_data_dict["z"].append(results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][2])
+        # NOTE: Should I add (and plot out) the rotation? I don't know that it would be super clear, due to the fact that the orientation is expressed in quaternions
 
     # Reparametrize time
     t_vec_reparam = []
     for i in range(len(t_vec)):
         t_vec_reparam.append(t_vec[i] - t_vec[0])
 
-    fig, axes = plt.subplots(2, 1)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["x"], marker="o", color="red", s=30, label=r"$E_{a_x}$", ax=axes[0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["y"], marker="o", color="green", s=30, label=r"$E_{a_y}$", ax=axes[0])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_lin_accel"]["z"], marker="o", color="blue", s=30, label=r"$E_{a_z}$", ax=axes[0])
+    plt.figure(1)
+    fig1, ax = plt.subplots()
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=e["e_lin_accel"]["x"],
+        marker="o",
+        color="red",
+        s=30,
+        label=r"$E_{a_x}$",
+        ax=ax,
+    )
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=e["e_lin_accel"]["y"],
+        marker="o",
+        color="green",
+        s=30,
+        label=r"$E_{a_y}$",
+        ax=ax,
+    )
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=e["e_lin_accel"]["z"],
+        marker="o",
+        color="blue",
+        s=30,
+        label=r"$E_{a_z}$",
+        ax=ax,
+    )
     # TF data
-    ax2=axes[0].twinx()
+    ax2 = ax.twinx()
     ax2.set(ylabel="Translation [m]")
-    sns.scatterplot(x=t_vec_reparam, y=tf_data_dict["trans"]["x"], marker="x", color="red", s=30, label=r"$x$", ax=ax2)
-    sns.scatterplot(x=t_vec_reparam, y=tf_data_dict["trans"]["y"], marker="x", color="green", s=30, label=r"$y$", ax=ax2)
-    sns.scatterplot(x=t_vec_reparam, y=tf_data_dict["trans"]["z"], marker="x", color="blue", s=30, label=r"$z$", ax=ax2)
-    
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=axes[1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=axes[1])
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=axes[1])
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=tf_data_dict["trans"]["x"],
+        marker="x",
+        color="red",
+        s=30,
+        label=r"$x$",
+        ax=ax2,
+    )
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=tf_data_dict["trans"]["y"],
+        marker="x",
+        color="green",
+        s=30,
+        label=r"$y$",
+        ax=ax2,
+    )
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=tf_data_dict["trans"]["z"],
+        marker="x",
+        color="blue",
+        s=30,
+        label=r"$z$",
+        ax=ax2,
+    )
+    # Linear velocity plots
+    ax3 = ax.twinx()
+    ax3.set(ylabel="Velocity [m/s]")
+    ax3.spines.right.set_position(("axes", 1.1))
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=lin_vel_data_dict["x"],
+        marker="D",
+        color="red",
+        s=30,
+        label=r"$\dot{x}$",
+        ax=ax3,
+    )
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=lin_vel_data_dict["y"],
+        marker="D",
+        color="green",
+        s=30,
+        label=r"$\dot{y}$",
+        ax=ax3,
+    )
+    sns.scatterplot(
+        x=t_vec_reparam,
+        y=lin_vel_data_dict["z"],
+        marker="D",
+        color="blue",
+        s=30,
+        label=r"$\dot{z}$",
+        ax=ax3,
+    )
+
+    plt.show(block=False)
+
+    plt.figure(2)
+    fig2, ax4 = plt.subplots()
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax4)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax4)
+    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=ax4)
 
     plot_titles = [
         r"$E_{a}(t)$",
         r"$E_{\omega}(t)$",
     ]
 
-    for ax, title in zip(axes, plot_titles):
-        ax.set_title(title)
-    
-    axes[0].set(
+    # for ax, title in zip(axes, plot_titles):
+        # ax.set_title(title)
+
+    ax.set(
         xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
     )
-    axes[1].set(
+    ax4.set(
         xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$"
     )
 
-    fig.tight_layout()
-    if save_derivation_plot:
-        plt.savefig(fname="results.png", dpi=300)
+    fig1.tight_layout()
+    fig2.tight_layout()
     plt.show()
 
     return e
@@ -817,7 +916,7 @@ def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> L
         }
 
         if (
-            delta_previous_to_next["trans"] > 0.0005
+            delta_previous_to_next["trans"] > 0.0001
             or delta_previous_to_next["quat"] > 0.001
         ):
             transition_point_timestamp_list.append(tf_pool_t)
@@ -845,16 +944,6 @@ def plotTFs(tf_list: List) -> None:
         world_imu_tf = getTransform(
             from_frame="world", to_frame="imu_link", transforms=tf_pool
         )
-
-        # trans, quat = matrixToTranslationQuaternion(world_imu_tf)
-
-        # quat = [*quat[1:], quat[0]]
-
-        # print(trans)
-        # print(quat)
-        # print(world_imu_tf[0, 3])
-        # print(world_imu_tf[1, 3])
-        # print(world_imu_tf[2, 3])
 
         x_vec.append(world_imu_tf[0, 3])
         y_vec.append(world_imu_tf[1, 3])
@@ -914,11 +1003,6 @@ if __name__ == "__main__":
 
     tf_lst = getTFList(input_dataset)
 
-    # with open("./test.json", "w") as f:
-    # a = json.dumps(tf_lst, indent=2)
-    #
-    # f.write(a)
-
     # plotTFs(tf_lst)
 
     # Add a grid in the background of the graphs
@@ -926,10 +1010,12 @@ if __name__ == "__main__":
 
     plotIMUData(input_dataset)
 
-    transition_point_list = identifyTransitionPoints(
-        tf_list=tf_lst, from_frame="world", to_frame="imu_link"
-    )
+    # transition_point_list = identifyTransitionPoints(
+        # tf_list=tf_lst, from_frame="world", to_frame="imu_link"
+    # )
 
+    transition_point_list = []
+    
     if args["mode"] == "collections":
         derivation_results = deriveDatasetAtCollections(
             dataset=input_dataset,
@@ -964,10 +1050,18 @@ if __name__ == "__main__":
             [
                 [
                     collection_key,
-                    timeStampToFloat(
-                        input_dataset["collections"][collection_key]["data"][
-                            "imu_hand"
-                        ]["header"]["stamp"]
+                    round(
+                        timeStampToFloat(
+                            input_dataset["collections"][collection_key]["data"][
+                                "imu_hand"
+                            ]["header"]["stamp"]
+                        )
+                        - timeStampToFloat(
+                            input_dataset["continuous_data"]["/imu"][0]["header"][
+                                "stamp"
+                            ],
+                        ),
+                        4,
                     ),
                     round(float(e[collection_key]["e_lin_accel"]), 4),
                     round(float(e[collection_key]["e_ang_vel"]), 4),
