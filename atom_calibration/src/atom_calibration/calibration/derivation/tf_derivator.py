@@ -142,11 +142,12 @@ def getTFToDeriveList(
 
     # Find the n tf dicts (full topological tree) closest to the timestamp
     closest_tf_dicts = []
-
+    
+    tf_list_copy = deepcopy(tf_list)
     for i in range(n):
         min_t_dist = None
         min_element = None
-        for element in tf_list:
+        for element in tf_list_copy:
             element_t = timeStampToFloat(element["stamp"])
             t_dist = abs(t - element_t)
 
@@ -156,7 +157,7 @@ def getTFToDeriveList(
                 min_element = element
 
         closest_tf_dicts.append(min_element)
-        tf_list.remove(min_element)
+        tf_list_copy.remove(min_element)
 
     # Get the source-target tfs
     source_to_target_tf_lst = []
@@ -950,6 +951,7 @@ def inspectDerivatives(
         """Utility for picking a point in a graph. Used for inspecting derivative functions from tf_derivator in inspect mode."""
 
         if event.inaxes == ax:
+
             # Get click location
             click_x, click_y = event.xdata, event.ydata
 
@@ -960,24 +962,46 @@ def inspectDerivatives(
             print(f"Closest point: ({closest_x})")
             selected_t_lst.append(closest_x)
 
+            t_to_inspect = selected_t_lst[-1] + data_dict["t"][0]
+
+            # Draw the velocity curves
+            tf_to_derive_lst = getTFToDeriveList(
+                tf_list=tf_lst,
+                from_frame=from_frame,
+                to_frame=to_frame,
+                t=t_to_inspect,
+                n=neighbourhood_size,
+                transition_point_list=transition_point_list,
+            )
+            # Sort tf_to_derive_list according to timestamp
+            tf_to_derive_lst = sorted(
+                tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
+            )
+            lin_accel_funcs, lin_vel_funcs = deriveTranslation(
+                tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=False
+            )
+            t_func_start = timeStampToFloat(tf_to_derive_lst[0]["stamp"])
+            t_func_end = timeStampToFloat(tf_to_derive_lst[-1]["stamp"])
+            t_func = np.linspace(t_func_start, t_func_end, 1000)
+            t_func_reparam = [t - data_dict["t"][0] for t in t_func]
+            
+            lines_plotted = [obj for obj in ax.get_lines()]
+            for line in lines_plotted:
+                line.remove()
+
+            for i in range(3):
+                y_func = lin_vel_funcs[i](t_func)
+                p = sns.lineplot(x=t_func_reparam, y=y_func)
+                lines_plotted.append(p)
+
+            plt.draw()
+
     cid = fig.canvas.mpl_connect("button_press_event", on_click_choose_closest_point)
 
     plt.show()
 
-    # Pick the last point chosen
-    t_to_inspect = selected_t_lst[-1] + data_dict["t"][0]
-
-    # Derive at each timestamp
-    lin_accel, lin_vel, ang_vel = deriveFromTF(
-        dataset=dataset,
-        from_frame=from_frame,
-        to_frame=to_frame,
-        t=t_to_inspect,
-        neighbourhood_size=neighbourhood_size,
-        poly_degree=poly_degree,
-        visualization=True,
-        transition_point_list=transition_point_list,
-    )
+    
+    plt.draw()
 
 
 def plotDerivationResults(
