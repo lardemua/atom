@@ -15,6 +15,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import seaborn as sns
+from atom_calibration.calibration.derivation.derivation_utils import centralNumericalSecondDerivative
 from atom_core.atom import getTransform
 from atom_core.geometry import (
     matrixToTranslationQuaternion,
@@ -142,7 +143,7 @@ def getTFToDeriveList(
 
     # Find the n tf dicts (full topological tree) closest to the timestamp
     closest_tf_dicts = []
-    
+
     tf_list_copy = deepcopy(tf_list)
     for i in range(n):
         min_t_dist = None
@@ -940,9 +941,15 @@ def inspectDerivatives(
         data_dict["position"]["z"].append(tf_trans[2][0])
 
     fig, ax = plt.subplots()
-    sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["x"], label="x")
-    sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["y"], label="y")
-    sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["z"], label="z")
+    sns.scatterplot(
+        x=data_dict["t_reparam"], y=data_dict["position"]["x"], label="x", color="r"
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"], y=data_dict["position"]["y"], label="y", color="g"
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"], y=data_dict["position"]["z"], label="z", color="b"
+    )
 
     # Create a list to append to so I can access the variable outside the function
     selected_t_lst = []
@@ -984,24 +991,55 @@ def inspectDerivatives(
             t_func_end = timeStampToFloat(tf_to_derive_lst[-1]["stamp"])
             t_func = np.linspace(t_func_start, t_func_end, 1000)
             t_func_reparam = [t - data_dict["t"][0] for t in t_func]
-            
+
+            # Remove previous plots
             lines_plotted = [obj for obj in ax.get_lines()]
             for line in lines_plotted:
                 line.remove()
+            scatters = [obj for obj in ax.collections if isinstance(obj, plt.matplotlib.collections.PathCollection)]
+            scatters_to_delete = [obj for obj in scatters if len(obj.get_offsets()) == 1]
+            for scatter in scatters_to_delete:
+                scatter.remove()
 
+            line_colors = ["r", "g", "b"]
             for i in range(3):
-                y_func = lin_vel_funcs[i](t_func)
-                p = sns.lineplot(x=t_func_reparam, y=y_func)
-                lines_plotted.append(p)
+                vel_func = lin_vel_funcs[i](t_func)
+                accel_func = lin_accel_funcs[i](t_func)
+                p_vel = sns.lineplot(
+                    x=t_func_reparam,
+                    y=vel_func,
+                    ax=ax,
+                    linestyle="--",
+                    color=line_colors[i],
+                )
+                p_accel = sns.lineplot(
+                    x=t_func_reparam,
+                    y=accel_func,
+                    ax=ax,
+                    linestyle="-.",
+                    color=line_colors[i],
+                )
+
+            # Now also get numerical derivative
+            # Get t_i-1, t_i and t_i+1
+            tmp_idx_t = data_dict["t"].index(t_to_inspect)
+            data_to_derive = {
+                "t": data_dict["t"][tmp_idx_t - 1 : tmp_idx_t + 2],
+                "x": data_dict["position"]["x"][tmp_idx_t - 1 : tmp_idx_t + 2],
+                "y": data_dict["position"]["y"][tmp_idx_t - 1 : tmp_idx_t + 2],
+                "z": data_dict["position"]["z"][tmp_idx_t - 1 : tmp_idx_t + 2],
+            }
+            dddata_dtt = centralNumericalSecondDerivative(data_to_derive)
+            
+            for i in range(3):
+                p_num_accel = sns.scatterplot(x=[t_to_inspect - data_dict["t"][0]], y=[dddata_dtt[i]], ax=ax, color=line_colors[i])
 
             plt.draw()
 
     cid = fig.canvas.mpl_connect("button_press_event", on_click_choose_closest_point)
 
+    fig.tight_layout()
     plt.show()
-
-    
-    plt.draw()
 
 
 def plotDerivationResults(
