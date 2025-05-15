@@ -25,6 +25,7 @@ from matplotlib import pyplot as plt
 from prettytable import PrettyTable
 from scipy.spatial.transform import Rotation
 
+
 def timeFloatToStamp(t_float: float) -> Dict[str, int]:
 
     secs = floor(t_float)
@@ -896,7 +897,15 @@ def plotTFs(tf_list: List) -> None:
     plt.show()
 
 
-def inspectDerivatives(dataset: Dict, neighbourhood_size: int, poly_degree: int, transition_point_list: List, tf_list: List, from_frame: str, to_frame: str) -> None:
+def inspectDerivatives(
+    dataset: Dict,
+    neighbourhood_size: int,
+    poly_degree: int,
+    transition_point_list: List,
+    tf_list: List,
+    from_frame: str,
+    to_frame: str,
+) -> None:
 
     data_dict = {
         "t": [],
@@ -933,9 +942,10 @@ def inspectDerivatives(dataset: Dict, neighbourhood_size: int, poly_degree: int,
     sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["x"], label="x")
     sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["y"], label="y")
     sns.scatterplot(x=data_dict["t_reparam"], y=data_dict["position"]["z"], label="z")
-    
+
     # Create a list to append to so I can access the variable outside the function
     selected_t_lst = []
+
     def on_click_choose_closest_point(event):
         """Utility for picking a point in a graph. Used for inspecting derivative functions from tf_derivator in inspect mode."""
 
@@ -967,16 +977,23 @@ def inspectDerivatives(dataset: Dict, neighbourhood_size: int, poly_degree: int,
         poly_degree=poly_degree,
         visualization=True,
         transition_point_list=transition_point_list,
-        )
+    )
+
 
 def plotDerivationResults(
-    tf_list: List, derivation_results: Dict, from_frame: str, to_frame: str
+    dataset: Dict,
+    tf_list: List,
+    derivation_results: Dict,
+    from_frame: str,
+    to_frame: str,
 ) -> None:
     data_dict = {
         "t": [],
+        "t_reparam": [],
         "position": {"x": [], "y": [], "z": []},
         "lin_vel": {"x": [], "y": [], "z": []},
         "lin_accel": {"x": [], "y": [], "z": []},
+        "lin_accel_imu": {"x": [], "y": [], "z": []},
     }
 
     # Copy it so the original keeps the timestamps
@@ -993,10 +1010,30 @@ def plotDerivationResults(
             from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
         )
 
+        # Get closest acceleration data
+        closest_imu_datapoint = min(
+            dataset["continuous_data"]["/imu"],
+            key=lambda datapoint: abs(
+                timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
+            ),
+        )
+
+        imu_accel = [
+            closest_imu_datapoint["linear_acceleration"]["x"],
+            closest_imu_datapoint["linear_acceleration"]["y"],
+            closest_imu_datapoint["linear_acceleration"]["z"],
+        ]
+
+        R = world_imu_tf[:3, :3]
+
+        imu_accel = R @ imu_accel
+
+        imu_accel[2] -= 9.81
+
         # For plotting
         data_dict["t"].append(tf_pool_t)
         # Reparametrize t
-        data_dict["t_reparam"] = [t - data_dict["t"][0] for t in data_dict["t"]]
+        data_dict["t_reparam"].append(tf_pool_t - data_dict["t"][0])
 
         tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
         # Position Data
@@ -1026,13 +1063,17 @@ def plotDerivationResults(
             derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
         )
 
+        data_dict["lin_accel_imu"]["x"].append(imu_accel[0])
+        data_dict["lin_accel_imu"]["y"].append(imu_accel[1])
+        data_dict["lin_accel_imu"]["z"].append(imu_accel[2])
+
     # Plot x data
     fig1, ax1 = plt.subplots()
     sns.scatterplot(
         x=data_dict["t_reparam"],
         y=data_dict["position"]["x"],
         marker="o",
-        label=r"$x$",
+        color="r",
         ax=ax1,
     )
     ax2 = ax1.twinx()
@@ -1040,7 +1081,7 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["lin_vel"]["x"],
         marker="s",
-        label=r"$\dot{x}$",
+        color="g",
         ax=ax2,
     )
     ax3 = ax1.twinx()
@@ -1049,7 +1090,15 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["lin_accel"]["x"],
         marker="D",
-        label=r"$\ddot{x}$",
+        color="b",
+        alpha=0.8,
+        ax=ax3,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel_imu"]["x"],
+        marker="*",
+        color="orange",
         ax=ax3,
     )
 
@@ -1059,7 +1108,7 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["position"]["y"],
         marker="o",
-        label=r"$y$",
+        color="r",
         ax=ax4,
     )
     ax5 = ax4.twinx()
@@ -1067,7 +1116,7 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["lin_vel"]["y"],
         marker="s",
-        label=r"$\dot{y}$",
+        color="g",
         ax=ax5,
     )
     ax6 = ax4.twinx()
@@ -1076,7 +1125,15 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["lin_accel"]["y"],
         marker="D",
-        label=r"$\ddot{y}$",
+        color="b",
+        alpha=0.8,
+        ax=ax6,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel_imu"]["y"],
+        marker="*",
+        color="orange",
         ax=ax6,
     )
 
@@ -1086,7 +1143,7 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["position"]["z"],
         marker="o",
-        label=r"$z$",
+        color="r",
         ax=ax7,
     )
     ax8 = ax7.twinx()
@@ -1094,7 +1151,7 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["lin_vel"]["z"],
         marker="s",
-        label=r"$\dot{z}$",
+        color="g",
         ax=ax8,
     )
     ax9 = ax7.twinx()
@@ -1103,20 +1160,35 @@ def plotDerivationResults(
         x=data_dict["t_reparam"],
         y=data_dict["lin_accel"]["z"],
         marker="D",
-        label=r"$\ddot{z}$",
+        alpha=0.8,
+        color="b",
+        ax=ax9,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel_imu"]["z"],
+        marker="*",
+        color="orange",
         ax=ax9,
     )
 
     # Some plot formatting
+    ax1.set_title(r"Translation Data ($x$)")
+    ax4.set_title(r"Translation Data ($y$)")
+    ax7.set_title(r"Translation Data ($z$)")
+
     for ax in [ax1, ax4, ax7]:
         ax.set(ylabel=r"Position $[m]$")
         ax.set_ylim(-2, 2)
+        ax.yaxis.label.set_color("r")
     for ax in [ax2, ax5, ax8]:
         ax.set(ylabel=r"Velocity $[m/s]$")
         ax.set_ylim(-2, 2)
+        ax.yaxis.label.set_color("g")
     for ax in [ax3, ax6, ax9]:
         ax.set(ylabel=r"Acceleration $[m/s^2]$")
         ax.set_ylim(-1, 1)
+        ax.yaxis.label.set_color("b")
     for fig in [fig1, fig2, fig3]:
         fig.tight_layout()
 
@@ -1251,6 +1323,7 @@ if __name__ == "__main__":
         )
 
         plotDerivationResults(
+            dataset=input_dataset,
             tf_list=tf_lst,
             derivation_results=derivation_results,
             from_frame="world",
@@ -1278,4 +1351,4 @@ if __name__ == "__main__":
             tf_list=tf_lst,
             from_frame="world",
             to_frame="imu_link",
-            )
+        )
