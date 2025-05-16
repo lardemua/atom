@@ -106,7 +106,7 @@ def deriveTranslation(
     """
 
     if tf_list == []:
-        return None, None
+        return None, None, None
 
     # Get time values
     t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
@@ -124,7 +124,7 @@ def deriveTranslation(
     for i in range(3):
         coeffs = np.polyfit(t_arr, trans_array[i], deg=poly_degree)
         q.append(coeffs)
-
+    q_funcs = []
     dq = []
     ddq = []
 
@@ -149,6 +149,7 @@ def deriveTranslation(
     # Get translation derivatives, dq
     for i in range(3):
         poly_func = np.poly1d(q[i])
+        q_funcs.append(poly_func)
 
         dq.append(np.polyder(poly_func))
 
@@ -173,8 +174,9 @@ def deriveTranslation(
 
     lin_accel = [ddq[0], ddq[1], ddq[2]]
     lin_vel = [dq[0], dq[1], dq[2]]
+    pos_curve = [q_funcs[0], q_funcs[1], q_funcs[2]]
 
-    return lin_accel, lin_vel
+    return lin_accel, lin_vel, pos_curve
 
 
 def deriveFromTF(
@@ -211,12 +213,12 @@ def deriveFromTF(
         tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
     )
 
-    lin_accel_funcs, lin_vel_funcs = deriveTranslation(
+    lin_accel_funcs, lin_vel_funcs, pos_funcs = deriveTranslation(
         tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=visualization
     )
 
     if lin_accel_funcs is None:
-        return None, None, None
+        return None, None, None, None
 
     lin_accel = []
     for i in range(3):
@@ -628,13 +630,25 @@ def inspectDerivatives(
 
     fig, ax = plt.subplots()
     sns.scatterplot(
-        x=data_dict["t_reparam"], y=data_dict["position"]["x"], label="x", color="r"
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["x"],
+        label="x",
+        color="r",
+        alpha=0.7,
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"], y=data_dict["position"]["y"], label="y", color="g"
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["y"],
+        label="y",
+        color="g",
+        alpha=0.7,
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"], y=data_dict["position"]["z"], label="z", color="b"
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["z"],
+        label="z",
+        color="b",
+        alpha=0.7,
     )
 
     # Create a list to append to so I can access the variable outside the function
@@ -670,7 +684,7 @@ def inspectDerivatives(
             tf_to_derive_lst = sorted(
                 tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
             )
-            lin_accel_funcs, lin_vel_funcs = deriveTranslation(
+            lin_accel_funcs, lin_vel_funcs, pos_funcs = deriveTranslation(
                 tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=False
             )
             t_func_start = timeStampToFloat(tf_to_derive_lst[0]["stamp"])
@@ -694,9 +708,25 @@ def inspectDerivatives(
                 scatter.remove()
 
             line_colors = ["r", "g", "b"]
+            curve_fitting_colors = ["orange", "green", "cyan"]
+            curve_fitting_labels = [
+                r"$x$ polynomial curve",
+                r"$y$ polynomial curve",
+                r"$z$ polynomial curve",
+            ]
             for i in range(3):
+                pos_func = pos_funcs[i](t_func)
                 vel_func = lin_vel_funcs[i](t_func)
                 accel_func = lin_accel_funcs[i](t_func)
+                p_pos = sns.lineplot(
+                    x=t_func_reparam,
+                    y=pos_func,
+                    ax=ax,
+                    linestyle="-",
+                    color=curve_fitting_colors[i],
+                    label=curve_fitting_labels[i],
+                    markersize=50,
+                )
                 p_vel = sns.lineplot(
                     x=t_func_reparam,
                     y=vel_func,

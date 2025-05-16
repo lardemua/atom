@@ -21,7 +21,7 @@ def timeFloatToStamp(t_float: float) -> Dict[str, int]:
     stamp = {"secs": secs, "nsecs": nsecs}
 
     return stamp
-
+    
 
 def timeStampToFloat(stamp: Dict[str, int]) -> float:
 
