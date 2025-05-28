@@ -7,16 +7,9 @@ Utilities for the derivation of TF data
 import argparse
 import json
 from copy import deepcopy
-from numpy._typing._generic_alias import NDArray
-from numpy._typing._generic_alias import NDArray
-from numpy._typing._generic_alias import NDArray
-from numpy._typing._generic_alias import NDArray
-from numpy import float64, generic
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-from pandas.io.formats.info import frame_see_also_sub
-from scipy.signal import savgol_filter
 import seaborn as sns
 from atom_calibration.calibration.derivation.derivation_utils import (
     centralNumericalSecondDerivative,
@@ -194,10 +187,15 @@ def deriveFromTF(
     neighbourhood_size: int,
     poly_degree: int,
     visualization: bool,
+    transition_point_list: List,
 ) -> Tuple:
     """Given a dataset and a timestamp t, return the results of derivation for that instant of time."""
 
     # Don't do anything if t is a transition point
+    for transition_point in transition_point_list:
+        if t > transition_point + 0.5 and t < transition_point + 0.5:
+            return None, None, None
+
     tf_lst = getTFList(dataset)
 
     # Get a list of the n temporally closest (wrt t) tfs to use for derivation
@@ -207,6 +205,7 @@ def deriveFromTF(
         to_frame=to_frame,
         t=t,
         n=neighbourhood_size,
+        transition_point_list=transition_point_list,
     )
 
     # Sort tf_to_derive_list according to timestamp
@@ -290,8 +289,12 @@ def deriveDatasetAllDataPoints(
     dataset: dict,
     from_frame: str,
     to_frame: str,
+    sensor_name: str,
+    sensor_topic: str,
     neighbourhood_size: int,
     poly_degree: int,
+    visualization: bool,
+    transition_point_list: List,
 ) -> dict:
     """
     Derive for all timestamps corresponding to collections in a dataset.
@@ -300,85 +303,47 @@ def deriveDatasetAllDataPoints(
 
     # Get list of timestamps to integrate for
     derivation_results = {}
+    count = 0
 
-    tf_pool_lst: List[Dict[Any, Any]] = getTFList(dataset=dataset)
-    tf_pool_lst_copy = deepcopy(tf_pool_lst)
+    for datapoint in dataset["continuous_data"]["/tf"]:
+        t = timeStampToFloat(datapoint["transforms"][0]["header"]["stamp"])
+        # Derive at each timestamp
 
-    # Organize the data in lists for plotting and deriving
-    data_dict = {
-        "t": [],
-        "trans": {"x": [], "y": [], "z": []},
-        "quat": {"x": [], "y": [], "z": [], "w": []},
-    }
+        print(count)
+        count += 1
 
-    for tf_pool in tf_pool_lst_copy:
-        data_dict["t"].append(timeStampToFloat(stamp=tf_pool.pop("stamp")))
+        # print(len(deriveFromTF(
+        # dataset=dataset,
+        # from_frame=from_frame,
+        # to_frame=to_frame,
+        # t=t,
+        # neighbourhood_size=neighbourhood_size,
+        # poly_degree=poly_degree,
+        # visualization=visualization,
+        # transition_point_list=transition_point_list,
+        # )))
 
-        # Get source-target tf
-        source_target_tf = getTransform(
-            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+        lin_accel, lin_vel, ang_vel = deriveFromTF(
+            dataset=dataset,
+            from_frame=from_frame,
+            to_frame=to_frame,
+            t=t,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=poly_degree,
+            visualization=visualization,
+            transition_point_list=transition_point_list,
         )
 
-        tvec, quat = matrixToTranslationQuaternion(matrix=source_target_tf)
+        if lin_accel is None and ang_vel is None:
+            continue
 
-        data_dict["trans"]["x"].append(tvec[0][0])
-        data_dict["trans"]["y"].append(tvec[1][0])
-        data_dict["trans"]["z"].append(tvec[2][0])
+        derivation_results[str(t)] = {
+            "lin_accel": lin_accel,
+            "lin_vel": lin_vel,
+            "ang_vel": ang_vel,
+        }
 
-        data_dict["quat"]["w"].append(quat[0])
-        data_dict["quat"]["x"].append(quat[1])
-        data_dict["quat"]["y"].append(quat[2])
-        data_dict["quat"]["z"].append(quat[3])
-
-    dt = data_dict["t"][1] - data_dict["t"][0]
-
-    # Now derive the data
-    lin_vel_x = savgol_filter(
-        x=data_dict["trans"]["x"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=1,
-        delta=dt,
-    )
-    lin_vel_y = savgol_filter(
-        x=data_dict["trans"]["y"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=1,
-        delta=dt,
-    )
-    lin_vel_z = savgol_filter(
-        x=data_dict["trans"]["z"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=1,
-        delta=dt,
-    )
-    lin_accel_x = savgol_filter(
-        x=data_dict["trans"]["x"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=2,
-        delta=dt,
-    )
-    lin_accel_y = savgol_filter(
-        x=data_dict["trans"]["y"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=2,
-        delta=dt,
-    )
-    lin_accel_z = savgol_filter(
-        x=data_dict["trans"]["z"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=2,
-        delta=dt,
-    )
-    lin_vel: dict[str, Any] = {"x": lin_vel_x, "y": lin_vel_y, "z": lin_vel_z}
-    lin_accel: dict[str, Any] = {"x": lin_accel_x, "y": lin_accel_y, "z": lin_accel_z}
-
-    derivation_results = {"lin_accel": lin_accel, "lin_vel": lin_vel}
+    plt.show()
 
     return derivation_results
 
@@ -618,9 +583,6 @@ def plotIMUData(dataset: Dict) -> None:
     axes[0].set_title(r"$a_x$")
     axes[1].set_title(r"$a_y$")
     axes[2].set_title(r"$a_z$")
-
-    for i in range(3):
-        axes[i].set_ylim(-10, 10)
 
     plt.show()
 
@@ -868,21 +830,31 @@ def plotDerivationResults(
         data_dict["position"]["y"].append(tf_trans[1][0])
         data_dict["position"]["z"].append(tf_trans[2][0])
 
+        # Linear Velocity Data
+        data_dict["lin_vel"]["x"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][0]
+        )
+        data_dict["lin_vel"]["y"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][1]
+        )
+        data_dict["lin_vel"]["z"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][2]
+        )
+
+        # Linear Acceleration Data
+        data_dict["lin_accel"]["x"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][0]
+        )
+        data_dict["lin_accel"]["y"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][1]
+        )
+        data_dict["lin_accel"]["z"].append(
+            derivation_results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
+        )
 
         data_dict["lin_accel_imu"]["x"].append(imu_accel[0])
         data_dict["lin_accel_imu"]["y"].append(imu_accel[1])
         data_dict["lin_accel_imu"]["z"].append(imu_accel[2])
-
-    # Linear Velocity Data
-    data_dict["lin_vel"]["x"] = derivation_results["lin_vel"]["x"]
-    data_dict["lin_vel"]["y"] = derivation_results["lin_vel"]["y"]
-    data_dict["lin_vel"]["z"] = derivation_results["lin_vel"]["z"]
-
-    # Linear Acceleration Data
-    data_dict["lin_accel"]["x"] = derivation_results["lin_accel"]["x"]
-    data_dict["lin_accel"]["y"] = derivation_results["lin_accel"]["y"]
-    data_dict["lin_accel"]["z"] = derivation_results["lin_accel"]["z"]
-
 
     # Plot x data
     fig1, ax1 = plt.subplots()
@@ -916,7 +888,6 @@ def plotDerivationResults(
         y=data_dict["lin_accel_imu"]["x"],
         marker="*",
         color="orange",
-        label="IMU Acceleration data",
         ax=ax3,
     )
 
@@ -952,7 +923,6 @@ def plotDerivationResults(
         y=data_dict["lin_accel_imu"]["y"],
         marker="*",
         color="orange",
-        label="IMU Acceleration data",
         ax=ax6,
     )
 
@@ -988,7 +958,6 @@ def plotDerivationResults(
         y=data_dict["lin_accel_imu"]["z"],
         marker="*",
         color="orange",
-        label="IMU Acceleration data",
         ax=ax9,
     )
 
@@ -1019,13 +988,13 @@ def plotDerivationResults(
 if __name__ == "__main__":
 
     ap = argparse.ArgumentParser()
-    # ap.add_argument(
-    #     "-m",
-    #     "--mode",
-    #     type=str,
-    #     default="collections",
-    #     help="Choose whether to plot out the errors align the entire dataset or only calculate the errors at each collection. Accepted modes are: ['dataset', 'collections']",
-    # )
+    ap.add_argument(
+        "-m",
+        "--mode",
+        type=str,
+        default="collections",
+        help="Choose whether to plot out the errors align the entire dataset or only calculate the errors at each collection. Accepted modes are: ['dataset', 'collections']",
+    )
     ap.add_argument(
         "-json",
         "--json_file",
@@ -1056,30 +1025,120 @@ if __name__ == "__main__":
     )
 
     args = vars(ap.parse_args())
-    neighbourhood_size = args["neighbourhood_size"]
 
     with open(args["json_file"]) as f:
         input_dataset = json.load(f)
+    neighbourhood_size = args["neighbourhood_size"]
+
+    tf_lst = getTFList(input_dataset)
 
     # Add a grid in the background of the graphs
     sns.set_theme(style="whitegrid")
 
-    plotIMUData(dataset=input_dataset)
+    plotIMUData(input_dataset)
 
-    tf_lst = getTFList(input_dataset)
+    # transition_point_list = identifyTransitionPoints(
+    # tf_list=tf_lst, from_frame="world", to_frame="imu_link"
+    # )
 
-    derivation_results = deriveDatasetAllDataPoints(
-        dataset=input_dataset,
-        from_frame="world",
-        to_frame="accelerometer",
-        neighbourhood_size=neighbourhood_size,
-        poly_degree=args["poly_degree"],
-    )
+    transition_point_list = []
 
-    plotDerivationResults(
-        dataset=input_dataset,
-        tf_list=tf_lst,
-        derivation_results=derivation_results,
-        from_frame="world",
-        to_frame="accelerometer",
-    )
+    if args["mode"] == "collections":
+        derivation_results = deriveDatasetAtCollections(
+            dataset=input_dataset,
+            from_frame="world",
+            to_frame="imu_link",
+            sensor_name="imu_hand",
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=2,
+            visualization=False,
+            transition_point_list=transition_point_list,
+        )
+
+        # Calculate errors
+        e = calculateErrorsAtCollections(
+            dataset=input_dataset,
+            results=derivation_results,
+            from_frame="world",
+            to_frame="imu_link",
+            sensor_name="imu_hand",
+        )
+
+        # Print error table
+        e_table = PrettyTable()
+        e_table.field_names = [
+            "Collection",
+            "t",
+            "E_lin_accel (m/s^2)",
+            "E_ang_vel (rad/s)",
+        ]
+
+        e_table.add_rows(
+            [
+                [
+                    collection_key,
+                    round(
+                        timeStampToFloat(
+                            input_dataset["collections"][collection_key]["data"][
+                                "imu_hand"
+                            ]["header"]["stamp"]
+                        )
+                        - timeStampToFloat(
+                            input_dataset["continuous_data"]["/imu"][0]["header"][
+                                "stamp"
+                            ],
+                        ),
+                        4,
+                    ),
+                    round(float(e[collection_key]["e_lin_accel"]), 4),
+                    round(float(e[collection_key]["e_ang_vel"]), 4),
+                ]
+                for collection_key in e.keys()
+            ]
+        )
+
+        print(e_table)
+
+    if args["mode"] == "dataset":
+        derivation_results = deriveDatasetAllDataPoints(
+            dataset=input_dataset,
+            from_frame="world",
+            to_frame="imu_link",
+            sensor_name="imu_hand",
+            sensor_topic="/imu",
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=args["poly_degree"],
+            visualization=False,
+            transition_point_list=transition_point_list,
+        )
+
+        plotDerivationResults(
+            dataset=input_dataset,
+            tf_list=tf_lst,
+            derivation_results=derivation_results,
+            from_frame="world",
+            to_frame="imu_link",
+        )
+
+        e = calculateErrorsAllDataPoints(
+            dataset=input_dataset,
+            tf_list=tf_lst,
+            results=derivation_results,
+            sensor_topic="/imu",
+            from_frame="world",
+            to_frame="imu_link",
+            transition_point_list=transition_point_list,
+            save_derivation_plot=args["save_derivation_plot"],
+        )
+
+    if args["mode"] == "inspect":
+        # The idea is to plot out the derivatives in a given point
+        inspectDerivatives(
+            dataset=input_dataset,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=args["poly_degree"],
+            transition_point_list=transition_point_list,
+            tf_list=tf_lst,
+            from_frame="world",
+            to_frame="imu_link",
+        )

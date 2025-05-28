@@ -88,7 +88,7 @@ def getTFList(dataset: Dict) -> List[Dict]:
             }
 
         # Include transforms from /tf_static. Only consider the last message.
-        for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
+        for tf in dataset["continuous_data"]["/tf_static"][0]["transforms"]:
             child_frame = tf["child_frame_id"]
             parent_frame = tf["header"]["frame_id"]
             key = f"{parent_frame}-{child_frame}"
@@ -342,7 +342,6 @@ def getTFToDeriveList(
     to_frame: str,
     t: float,
     n: int,
-    transition_point_list: List,
 ) -> List[Dict]:
     """Get a list of n source-target TFs in the temporal neighbourhood of timestamp."""
 
@@ -389,23 +388,6 @@ def getTFToDeriveList(
         }
 
         source_to_target_tf_lst.append(dict_to_append)
-
-    # Remove from the list tfs with the stamp before/after transition points based on where it is in relation to t
-    for tf in source_to_target_tf_lst:
-        tf_t = timeStampToFloat(tf["stamp"])
-        if tf_t in transition_point_list:
-            if tf_t <= t:
-                source_to_target_tf_lst = [
-                    x
-                    for x in source_to_target_tf_lst
-                    if not timeStampToFloat(x["stamp"]) <= tf_t
-                ]
-            elif tf_t >= t:
-                source_to_target_tf_lst = [
-                    x
-                    for x in source_to_target_tf_lst
-                    if not timeStampToFloat(x["stamp"]) >= tf_t
-                ]
 
     return source_to_target_tf_lst
 
