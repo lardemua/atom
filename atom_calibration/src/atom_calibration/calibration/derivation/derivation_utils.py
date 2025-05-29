@@ -12,6 +12,37 @@ from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from scipy.spatial.transform import Rotation
 
+def plotIMUData(dataset: Dict) -> None:
+    """Simple function for debugging."""
+
+    t_arr = []
+    imu_data = {"x": [], "y": [], "z": []}
+
+    for datapoint in dataset["continuous_data"]["/imu"]:
+        t_arr.append(timeStampToFloat(datapoint["header"]["stamp"]))
+        imu_data["x"].append(datapoint["linear_acceleration"]["x"])
+        imu_data["y"].append(datapoint["linear_acceleration"]["y"])
+        imu_data["z"].append(datapoint["linear_acceleration"]["z"])
+
+    # Reparametrize time
+    t_vec_reparam = []
+    for i in range(len(t_arr)):
+        t_vec_reparam.append(t_arr[i] - t_arr[0])
+
+    fig, axes = plt.subplots(1, 3)
+    fig.suptitle("IMU Data w/o gravity correction")
+    sns.scatterplot(x=t_vec_reparam, y=imu_data["x"], ax=axes[0])
+    sns.scatterplot(x=t_vec_reparam, y=imu_data["y"], ax=axes[1])
+    sns.scatterplot(x=t_vec_reparam, y=imu_data["z"], ax=axes[2])
+
+    axes[0].set_title(r"$a_x$")
+    axes[1].set_title(r"$a_y$")
+    axes[2].set_title(r"$a_z$")
+
+    for i in range(3):
+        axes[i].set_ylim(-10, 10)
+
+    plt.show()
 
 def timeFloatToStamp(t_float: float) -> Dict[str, int]:
 
@@ -402,3 +433,392 @@ def convertRotationsInTFToEuler(tf_list: List[Dict]) -> List[Dict]:
         tf["euler"] = r_euler.tolist()
 
     return tf_list
+
+
+def plotDerivationResults(
+    dataset: Dict,
+    tf_list: List,
+    derivation_results: Dict,
+    from_frame: str,
+    to_frame: str,
+) -> None:
+
+    data_dict = {
+        "t": [],
+        "t_reparam": [],
+        "position": {"x": [], "y": [], "z": []},
+        "lin_vel": {"x": [], "y": [], "z": []},
+        "lin_accel": {"x": [], "y": [], "z": []},
+        "lin_accel_imu": {"x": [], "y": [], "z": []},
+    }
+
+    # Copy it so the original keeps the timestamps
+    tf_list_copy = deepcopy(tf_list)
+
+    for tf_pool in tf_list_copy:
+
+        # Compensate for world-imu tf
+        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+
+        tf_pool_t = timeStampToFloat(tf_pool_stamp)
+
+        world_imu_tf = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+        )
+
+        # Get closest acceleration data
+        closest_imu_datapoint = min(
+            dataset["continuous_data"]["/imu"],
+            key=lambda datapoint: abs(
+                timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
+            ),
+        )
+
+        imu_accel = [
+            closest_imu_datapoint["linear_acceleration"]["x"],
+            closest_imu_datapoint["linear_acceleration"]["y"],
+            closest_imu_datapoint["linear_acceleration"]["z"],
+        ]
+
+        R = world_imu_tf[:3, :3]
+
+        imu_accel = R @ imu_accel
+
+        imu_accel[2] -= 9.81
+
+        # For plotting
+        data_dict["t"].append(tf_pool_t)
+        # Reparametrize t
+        data_dict["t_reparam"].append(tf_pool_t - data_dict["t"][0])
+
+        tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
+        # Position Data
+        data_dict["position"]["x"].append(tf_trans[0][0])
+        data_dict["position"]["y"].append(tf_trans[1][0])
+        data_dict["position"]["z"].append(tf_trans[2][0])
+
+        data_dict["lin_accel_imu"]["x"].append(imu_accel[0])
+        data_dict["lin_accel_imu"]["y"].append(imu_accel[1])
+        data_dict["lin_accel_imu"]["z"].append(imu_accel[2])
+
+    # Linear Velocity Data
+    data_dict["lin_vel"]["x"] = derivation_results["lin_vel"]["x"]
+    data_dict["lin_vel"]["y"] = derivation_results["lin_vel"]["y"]
+    data_dict["lin_vel"]["z"] = derivation_results["lin_vel"]["z"]
+
+    # Linear Acceleration Data
+    data_dict["lin_accel"]["x"] = derivation_results["lin_accel"]["x"]
+    data_dict["lin_accel"]["y"] = derivation_results["lin_accel"]["y"]
+    data_dict["lin_accel"]["z"] = derivation_results["lin_accel"]["z"]
+
+    # Plot x data
+    fig1, ax1 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["x"],
+        marker="o",
+        color="r",
+        ax=ax1,
+    )
+    ax2 = ax1.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_vel"]["x"],
+        marker="s",
+        color="g",
+        ax=ax2,
+    )
+    ax3 = ax1.twinx()
+    ax3.spines.right.set_position(("axes", 1.1))
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel"]["x"],
+        marker="D",
+        color="b",
+        alpha=0.8,
+        ax=ax3,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel_imu"]["x"],
+        marker="*",
+        color="orange",
+        label="IMU Acceleration data",
+        ax=ax3,
+    )
+
+    # Plot y data
+    fig2, ax4 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["y"],
+        marker="o",
+        color="r",
+        ax=ax4,
+    )
+    ax5 = ax4.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_vel"]["y"],
+        marker="s",
+        color="g",
+        ax=ax5,
+    )
+    ax6 = ax4.twinx()
+    ax6.spines.right.set_position(("axes", 1.1))
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel"]["y"],
+        marker="D",
+        color="b",
+        alpha=0.8,
+        ax=ax6,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel_imu"]["y"],
+        marker="*",
+        color="orange",
+        label="IMU Acceleration data",
+        ax=ax6,
+    )
+
+    # Plot z data
+    fig3, ax7 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["z"],
+        marker="o",
+        color="r",
+        ax=ax7,
+    )
+    ax8 = ax7.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_vel"]["z"],
+        marker="s",
+        color="g",
+        ax=ax8,
+    )
+    ax9 = ax7.twinx()
+    ax9.spines.right.set_position(("axes", 1.1))
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel"]["z"],
+        marker="D",
+        alpha=0.8,
+        color="b",
+        ax=ax9,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["lin_accel_imu"]["z"],
+        marker="*",
+        color="orange",
+        label="IMU Acceleration data",
+        ax=ax9,
+    )
+
+    # Some plot formatting
+    ax1.set_title(r"Translation Data ($x$)")
+    ax4.set_title(r"Translation Data ($y$)")
+    ax7.set_title(r"Translation Data ($z$)")
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
+        ax.set(xlabel=r"Time since first datapoint, $t$ $[s]$")
+    for ax in [ax1, ax4, ax7]:
+        ax.set(ylabel=r"Position $[m]$")
+        ax.set_ylim(-2, 2)
+        ax.yaxis.label.set_color("r")
+    for ax in [ax2, ax5, ax8]:
+        ax.set(ylabel=r"Velocity $[m/s]$")
+        ax.set_ylim(-2, 2)
+        ax.yaxis.label.set_color("g")
+    for ax in [ax3, ax6, ax9]:
+        ax.set(ylabel=r"Acceleration $[m/s^2]$")
+        ax.set_ylim(-1, 1)
+        ax.yaxis.label.set_color("b")
+    for fig in [fig1, fig2, fig3]:
+        fig.tight_layout()
+
+    plt.show()
+
+def inspectDerivatives(
+    dataset: Dict,
+    neighbourhood_size: int,
+    poly_degree: int,
+    transition_point_list: List,
+    tf_list: List,
+    from_frame: str,
+    to_frame: str,
+) -> None:
+
+    data_dict = {
+        "t": [],
+        "position": {"x": [], "y": [], "z": []},
+    }
+
+    # Copy it so the original keeps the timestamps
+    tf_list_copy = deepcopy(tf_list)
+
+    for tf_pool in tf_list_copy:
+
+        # Compensate for world-imu tf
+        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+
+        tf_pool_t = timeStampToFloat(tf_pool_stamp)
+
+        world_imu_tf = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+        )
+
+        # For plotting
+        data_dict["t"].append(tf_pool_t)
+        # Reparametrize t
+        data_dict["t_reparam"] = [t - data_dict["t"][0] for t in data_dict["t"]]
+
+        tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
+
+        # Position Data
+        data_dict["position"]["x"].append(tf_trans[0][0])
+        data_dict["position"]["y"].append(tf_trans[1][0])
+        data_dict["position"]["z"].append(tf_trans[2][0])
+
+    fig, ax = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["x"],
+        label="x",
+        color="r",
+        alpha=0.7,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["y"],
+        label="y",
+        color="g",
+        alpha=0.7,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["position"]["z"],
+        label="z",
+        color="b",
+        alpha=0.7,
+    )
+
+    # Create a list to append to so I can access the variable outside the function
+    selected_t_lst = []
+
+    def on_click_choose_closest_point(event):
+        """Utility for picking a point in a graph. Used for inspecting derivative functions from tf_derivator in inspect mode."""
+
+        if event.inaxes == ax:
+
+            # Get click location
+            click_x, click_y = event.xdata, event.ydata
+
+            # Find closest point
+            distances = np.abs(np.array(data_dict["t_reparam"]) - click_x)
+            idx = np.argmin(distances)
+            closest_x = data_dict["t_reparam"][idx]
+            print(f"Closest point: ({closest_x})")
+            selected_t_lst.append(closest_x)
+
+            t_to_inspect = selected_t_lst[-1] + data_dict["t"][0]
+
+            # Draw the velocity curves
+            tf_to_derive_lst = getTFToDeriveList(
+                tf_list=tf_lst,
+                from_frame=from_frame,
+                to_frame=to_frame,
+                t=t_to_inspect,
+                n=neighbourhood_size,
+                transition_point_list=transition_point_list,
+            )
+            # Sort tf_to_derive_list according to timestamp
+            tf_to_derive_lst = sorted(
+                tf_to_derive_lst, key=lambda x: timeStampToFloat(x["stamp"])
+            )
+            lin_accel_funcs, lin_vel_funcs, pos_funcs = deriveTranslation(
+                tf_list=tf_to_derive_lst, poly_degree=poly_degree, visualization=False
+            )
+            t_func_start = timeStampToFloat(tf_to_derive_lst[0]["stamp"])
+            t_func_end = timeStampToFloat(tf_to_derive_lst[-1]["stamp"])
+            t_func = np.linspace(t_func_start, t_func_end, 1000)
+            t_func_reparam = [t - data_dict["t"][0] for t in t_func]
+
+            # Remove previous plots
+            lines_plotted = [obj for obj in ax.get_lines()]
+            for line in lines_plotted:
+                line.remove()
+            scatters = [
+                obj
+                for obj in ax.collections
+                if isinstance(obj, plt.matplotlib.collections.PathCollection)
+            ]
+            scatters_to_delete = [
+                obj for obj in scatters if len(obj.get_offsets()) == 1
+            ]
+            for scatter in scatters_to_delete:
+                scatter.remove()
+
+            line_colors = ["r", "g", "b"]
+            curve_fitting_colors = ["orange", "green", "cyan"]
+            curve_fitting_labels = [
+                r"$x$ polynomial curve",
+                r"$y$ polynomial curve",
+                r"$z$ polynomial curve",
+            ]
+            for i in range(3):
+                pos_func = pos_funcs[i](t_func)
+                vel_func = lin_vel_funcs[i](t_func)
+                accel_func = lin_accel_funcs[i](t_func)
+                p_pos = sns.lineplot(
+                    x=t_func_reparam,
+                    y=pos_func,
+                    ax=ax,
+                    linestyle="-",
+                    color=curve_fitting_colors[i],
+                    label=curve_fitting_labels[i],
+                    markersize=50,
+                )
+                p_vel = sns.lineplot(
+                    x=t_func_reparam,
+                    y=vel_func,
+                    ax=ax,
+                    linestyle="--",
+                    color=line_colors[i],
+                )
+                p_accel = sns.lineplot(
+                    x=t_func_reparam,
+                    y=accel_func,
+                    ax=ax,
+                    linestyle="-.",
+                    color=line_colors[i],
+                )
+
+            # Now also get numerical derivative
+            # Get t_i-1, t_i and t_i+1
+            tmp_idx_t = data_dict["t"].index(t_to_inspect)
+            data_to_derive = {
+                "t": data_dict["t"][tmp_idx_t - 1 : tmp_idx_t + 2],
+                "x": data_dict["position"]["x"][tmp_idx_t - 1 : tmp_idx_t + 2],
+                "y": data_dict["position"]["y"][tmp_idx_t - 1 : tmp_idx_t + 2],
+                "z": data_dict["position"]["z"][tmp_idx_t - 1 : tmp_idx_t + 2],
+            }
+            dddata_dtt = centralNumericalSecondDerivative(data_to_derive)
+
+            for i in range(3):
+                p_num_accel = sns.scatterplot(
+                    x=[t_to_inspect - data_dict["t"][0]],
+                    y=[dddata_dtt[i]],
+                    ax=ax,
+                    color=line_colors[i],
+                )
+
+            plt.draw()
+
+    cid = fig.canvas.mpl_connect("button_press_event", on_click_choose_closest_point)
+
+    fig.tight_layout()
+    plt.show()
