@@ -434,60 +434,44 @@ def calculateErrorsAllDataPoints(
     sensor_topic: str,
     from_frame: str,
     to_frame: str,
-    transition_point_list: List,
-    save_derivation_plot: bool,
 ) -> dict:
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
-    # Error dict with errors vectors for each axis
-    e = {
+    data_dict = {
+        "t": [],
+        "t_reparam": [],
+        "lin_accel": {"x": [], "y": [], "z": []},
+        "lin_accel_imu": {"x": [], "y": [], "z": []},
         "e_lin_accel": {"x": [], "y": [], "z": []},
-        "e_ang_vel": {"x": [], "y": [], "z": []},
     }
 
-    # Dict with tf data for plotting
-    tf_data_dict = {
-        "trans": {"x": [], "y": [], "z": []},
-        "quat": {"x": [], "y": [], "z": [], "w": []},
-    }
-    # Dict with linear velocity data for plotting
-    lin_vel_data_dict = {
-        "x": [],
-        "y": [],
-        "z": [],
-    }
-
-    # Time vector
-    t_vec = []
-
-    for tf_pool in tf_list:
+    for i in range(len(tf_list)):
+        tf_pool = tf_list[i]
 
         # Find the closest IMU datapoint
-        tf_pool_t = timeStampToFloat(tf_pool["stamp"])
-
-        if tf_pool_t in transition_point_list:
-            continue
-
-        t_dist_min = None
-        for sensor_datapoint in dataset["continuous_data"][sensor_topic]:
-            sensor_datapoint_t = timeStampToFloat(sensor_datapoint["header"]["stamp"])
-
-            t_dist = abs(tf_pool_t - sensor_datapoint_t)
-
-            if t_dist_min is None or t_dist < t_dist_min:
-                t_dist_min = t_dist
-                closest_sensor_datapoint = sensor_datapoint
-
-        # Now that we have the closest datapoint, we can compare
-        imu_accel = [*closest_sensor_datapoint["linear_acceleration"].values()]
-        imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
+        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
+        tf_pool_t = timeStampToFloat(tf_pool_stamp)
 
         # Compensate for world-imu tf
-        tf_pool_stamp = tf_pool.pop("stamp")  # Remove stamp so getTransform() works
-
         world_imu_tf = getTransform(
-            from_frame="world", to_frame="imu_link", transforms=tf_pool
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
         )
+
+        # Get closest acceleration data
+        closest_sensor_datapoint = min(
+            dataset["continuous_data"][sensor_topic],
+            key=lambda datapoint: abs(
+                timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
+            ),
+        )
+
+        # Now that we have the closest datapoint, we can compare
+        imu_accel = [
+            closest_sensor_datapoint["linear_acceleration"]["x"],
+            closest_sensor_datapoint["linear_acceleration"]["y"],
+            closest_sensor_datapoint["linear_acceleration"]["z"],
+        ]
+        # imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
 
         R = world_imu_tf[:3, :3]
 
@@ -496,98 +480,99 @@ def calculateErrorsAllDataPoints(
         # Remove gravity
         imu_accel[2] -= 9.81
 
-        # Calculate errors
-        e["e_lin_accel"]["x"].append(
-            imu_accel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][0]
-        )
-        e["e_lin_accel"]["y"].append(
-            imu_accel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][1]
-        )
-        e["e_lin_accel"]["z"].append(
-            imu_accel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["lin_accel"][2]
-        )
-        e["e_ang_vel"]["x"].append(
-            imu_ang_vel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][0]
-        )
-        e["e_ang_vel"]["y"].append(
-            imu_ang_vel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][1]
-        )
-        e["e_ang_vel"]["z"].append(
-            imu_ang_vel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][2]
-        )
         # For plotting
-        t_vec.append(tf_pool_t)
+        data_dict["t"].append(tf_pool_t)
+        # Reparametrize t
+        data_dict["t_reparam"].append(tf_pool_t - data_dict["t"][0])
 
-        tf_trans, tf_quat = matrixToTranslationQuaternion(world_imu_tf)
-        tf_data_dict["trans"]["x"].append(tf_trans[0][0])
-        tf_data_dict["trans"]["y"].append(tf_trans[1][0])
-        tf_data_dict["trans"]["z"].append(tf_trans[2][0])
+        data_dict["lin_accel_imu"]["x"].append(imu_accel[0])
+        data_dict["lin_accel_imu"]["y"].append(imu_accel[1])
+        data_dict["lin_accel_imu"]["z"].append(imu_accel[2])
 
-        lin_vel_data_dict["x"].append(
-            results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][0]
+        # Calculate errors
+        data_dict["e_lin_accel"]["x"].append(
+            imu_accel[0] - results["lin_accel"]["x"][i]
         )
-        lin_vel_data_dict["y"].append(
-            results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][1]
+        data_dict["e_lin_accel"]["y"].append(
+            imu_accel[1] - results["lin_accel"]["y"][i]
         )
-        lin_vel_data_dict["z"].append(
-            results[str(timeStampToFloat(tf_pool_stamp))]["lin_vel"][2]
+        data_dict["e_lin_accel"]["z"].append(
+            imu_accel[2] - results["lin_accel"]["z"][i]
         )
+        # e["e_ang_vel"]["x"].append(
+        #     imu_ang_vel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][0]
+        # )
+        # e["e_ang_vel"]["y"].append(
+        #     imu_ang_vel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][1]
+        # )
+        # e["e_ang_vel"]["z"].append(
+        #     imu_ang_vel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][2]
+        # )
+
         # NOTE: Should I add (and plot out) the rotation? I don't know that it would be super clear, due to the fact that the orientation is expressed in quaternions
-
-    # Reparametrize time
-    t_vec_reparam = []
-    for i in range(len(t_vec)):
-        t_vec_reparam.append(t_vec[i] - t_vec[0])
 
     fig1, ax1 = plt.subplots()
     sns.scatterplot(
-        x=t_vec_reparam,
-        y=e["e_lin_accel"]["x"],
+        x=data_dict["t_reparam"],
+        y=data_dict["e_lin_accel"]["x"],
         marker="o",
-        color="red",
+        color="r",
         s=30,
         label=r"$E_{a_x}$",
+        alpha=0.9,
         ax=ax1,
     )
+    fig2, ax2 = plt.subplots()
     sns.scatterplot(
-        x=t_vec_reparam,
-        y=e["e_lin_accel"]["y"],
+        x=data_dict["t_reparam"],
+        y=data_dict["e_lin_accel"]["y"],
         marker="o",
-        color="green",
+        color="g",
         s=30,
         label=r"$E_{a_y}$",
-        ax=ax1,
+        alpha=0.9,
+        ax=ax2,
     )
+    fig3, ax3 = plt.subplots()
     sns.scatterplot(
-        x=t_vec_reparam,
-        y=e["e_lin_accel"]["z"],
+        x=data_dict["t_reparam"],
+        y=data_dict["e_lin_accel"]["z"],
         marker="o",
-        color="blue",
+        color="b",
         s=30,
         label=r"$E_{a_z}$",
-        ax=ax1,
+        alpha=0.9,
+        ax=ax3,
     )
 
-    fig2, ax2 = plt.subplots()
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax2)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax2)
-    sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=ax2)
+    # fig2, ax2 = plt.subplots()
+    # sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax2)
+    # sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax2)
+    # sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=ax2)
 
     plot_titles = [
         r"$E_{a}(t)$",
-        r"$E_{\omega}(t)$",
+        r"$E_{a}(t)$",
+        r"$E_{a}(t)$",
+        # r"$E_{\omega}(t)$",
     ]
 
-    for ax, title in zip([ax1, ax2], plot_titles):
+    for ax, title in zip([ax1, ax2, ax3], plot_titles):
+        # for ax, title in zip([ax1, ax2], plot_titles):
         ax.set_title(title)
 
-    ax1.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$")
-    ax2.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$")
+        ax.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$")
+    # ax2.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$")
 
     fig1.tight_layout()
-    fig2.tight_layout()
+    # fig2.tight_layout()
 
     plt.show()
+
+    # Error dict returned
+    e = {
+        "lin_accel": data_dict["e_lin_accel"]
+    }
 
     return e
 
@@ -814,6 +799,7 @@ def plotDerivationResults(
     from_frame: str,
     to_frame: str,
 ) -> None:
+
     data_dict = {
         "t": [],
         "t_reparam": [],
@@ -868,7 +854,6 @@ def plotDerivationResults(
         data_dict["position"]["y"].append(tf_trans[1][0])
         data_dict["position"]["z"].append(tf_trans[2][0])
 
-
         data_dict["lin_accel_imu"]["x"].append(imu_accel[0])
         data_dict["lin_accel_imu"]["y"].append(imu_accel[1])
         data_dict["lin_accel_imu"]["z"].append(imu_accel[2])
@@ -882,7 +867,6 @@ def plotDerivationResults(
     data_dict["lin_accel"]["x"] = derivation_results["lin_accel"]["x"]
     data_dict["lin_accel"]["y"] = derivation_results["lin_accel"]["y"]
     data_dict["lin_accel"]["z"] = derivation_results["lin_accel"]["z"]
-
 
     # Plot x data
     fig1, ax1 = plt.subplots()
@@ -1080,6 +1064,15 @@ if __name__ == "__main__":
         dataset=input_dataset,
         tf_list=tf_lst,
         derivation_results=derivation_results,
+        from_frame="world",
+        to_frame="accelerometer",
+    )
+
+    e = calculateErrorsAllDataPoints(
+        dataset=input_dataset,
+        tf_list=tf_lst,
+        results=derivation_results,
+        sensor_topic="/imu",
         from_frame="world",
         to_frame="accelerometer",
     )
