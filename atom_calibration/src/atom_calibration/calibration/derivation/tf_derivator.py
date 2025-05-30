@@ -100,90 +100,79 @@ def deriveRotation(
 
 
 def deriveTranslation(
-    tf_list: List[Dict], poly_degree: int, visualization: bool
+    tf_data_dict: Dict[str, Any],
+    poly_degree: int,
+    neighbourhood_size: int,
 ) -> Tuple:
     """Given a list of transformations, return the functions that describe the linear accelerations.
 
     Inputs:
-        - tf_list: a list of transformation dictionaries to use for derivation;
+        - tf_data_dict: a dictionary with the following structure:
+            tf_data_dict = {
+                "t": [t_array],
+                "trans": {"x": [x_trans_array], "y": [y_trans_array], "z": [z_trans_array]},
+                "quat": ...
+                }
+        ;
         - poly_degree: the degree of the polynomial functions to fit the translation data to;
-        - visualization: enable graph visualization.
+        - neighbourhood_size: number of datapoints to use for the savgol_filter() function.
     Outputs:
-        - p_der: a list of 3 polynomial functions to describe the linear acceleration related to each axis of translation.
+        - lin_vel: A list of 3 arrays of linear velocity at each datapoint;
+        - lin_accel: A list of 3 arrays of linear acceleration at each datapoint.
     """
 
-    if tf_list == []:
-        return None, None, None
+    dt = tf_data_dict["t"][1] - tf_data_dict["t"][0]
 
-    # Get time values
-    t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
-
-    # for each translation variable
-    trans_array = np.array(
-        [
-            [tf["trans"][0] for tf in tf_list],
-            [tf["trans"][1] for tf in tf_list],
-            [tf["trans"][2] for tf in tf_list],
-        ]
+    lin_vel_x = savgol_filter(
+        x=tf_data_dict["trans"]["x"],
+        window_length=neighbourhood_size,
+        polyorder=poly_degree,
+        deriv=1,
+        delta=dt,
     )
+    lin_vel_y = savgol_filter(
+        x=tf_data_dict["trans"]["y"],
+        window_length=neighbourhood_size,
+        polyorder=poly_degree,
+        deriv=1,
+        delta=dt,
+    )
+    lin_vel_z = savgol_filter(
+        x=tf_data_dict["trans"]["z"],
+        window_length=neighbourhood_size,
+        polyorder=poly_degree,
+        deriv=1,
+        delta=dt,
+    )
+    lin_accel_x = savgol_filter(
+        x=tf_data_dict["trans"]["x"],
+        window_length=neighbourhood_size,
+        polyorder=poly_degree,
+        deriv=2,
+        delta=dt,
+    )
+    lin_accel_y = savgol_filter(
+        x=tf_data_dict["trans"]["y"],
+        window_length=neighbourhood_size,
+        polyorder=poly_degree,
+        deriv=2,
+        delta=dt,
+    )
+    lin_accel_z = savgol_filter(
+        x=tf_data_dict["trans"]["z"],
+        window_length=neighbourhood_size,
+        polyorder=poly_degree,
+        deriv=2,
+        delta=dt,
+    )
+    lin_vel_arr: dict[str, Any] = {"x": lin_vel_x, "y": lin_vel_y, "z": lin_vel_z}
+    lin_accel_arr: dict[str, Any] = {
+        "x": lin_accel_x,
+        "y": lin_accel_y,
+        "z": lin_accel_z,
+    }
 
-    q = []
-    for i in range(3):
-        coeffs = np.polyfit(t_arr, trans_array[i], deg=poly_degree)
-        q.append(coeffs)
-    q_funcs = []
-    dq = []
-    ddq = []
-
-    if visualization:
-        fig, axes = plt.subplots(3, 3)
-
-        plot_titles = [
-            r"$x(t)$",
-            r"$y(t)$",
-            r"$z(t)$",
-            r"$\dot{x}(t)$",
-            r"$\dot{y}(t)$",
-            r"$\dot{z}(t)$",
-            r"$\ddot{x}(t)$",
-            r"$\ddot{y}(t)$",
-            r"$\ddot{z}(t)$",
-        ]
-
-        for ax, title in zip(axes.reshape(-1), plot_titles):
-            ax.set_title(title)
-
-    # Get translation derivatives, dq
-    for i in range(3):
-        poly_func = np.poly1d(q[i])
-        q_funcs.append(poly_func)
-
-        dq.append(np.polyder(poly_func))
-
-        dq_func = np.poly1d(dq[i])
-        ddq.append(np.polyder(dq_func))
-
-        if visualization:
-            sns.scatterplot(x=t_arr, y=trans_array[i], ax=axes[0, i])
-            x_func = np.linspace(t_arr.min(), t_arr.max(), 1000)
-            y_func = poly_func(x_func)
-            sns.lineplot(x=x_func, y=y_func, color="red", ax=axes[0, i])
-
-            yder_func = dq[i](x_func)
-            sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
-
-            y2der_func = ddq[i](x_func)
-            sns.lineplot(x=x_func, y=y2der_func, color="blue", ax=axes[2, i])
-
-    if visualization:
-        fig.tight_layout
-        plt.show()
-
-    lin_accel = [ddq[0], ddq[1], ddq[2]]
-    lin_vel = [dq[0], dq[1], dq[2]]
-    pos_curve = [q_funcs[0], q_funcs[1], q_funcs[2]]
-
-    return lin_accel, lin_vel, pos_curve
+    return lin_vel_arr, lin_accel_arr
 
 
 def deriveDatasetAtCollections(
@@ -273,55 +262,13 @@ def deriveDatasetAllDataPoints(
         data_dict["quat"]["y"].append(quat[2])
         data_dict["quat"]["z"].append(quat[3])
 
-    dt = data_dict["t"][1] - data_dict["t"][0]
+    lin_vel_arr, lin_accel_arr = deriveTranslation(
+        tf_data_dict=data_dict,
+        poly_degree=poly_degree,
+        neighbourhood_size=neighbourhood_size,
+    )
 
-    # Now derive the data
-    lin_vel_x = savgol_filter(
-        x=data_dict["trans"]["x"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=1,
-        delta=dt,
-    )
-    lin_vel_y = savgol_filter(
-        x=data_dict["trans"]["y"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=1,
-        delta=dt,
-    )
-    lin_vel_z = savgol_filter(
-        x=data_dict["trans"]["z"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=1,
-        delta=dt,
-    )
-    lin_accel_x = savgol_filter(
-        x=data_dict["trans"]["x"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=2,
-        delta=dt,
-    )
-    lin_accel_y = savgol_filter(
-        x=data_dict["trans"]["y"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=2,
-        delta=dt,
-    )
-    lin_accel_z = savgol_filter(
-        x=data_dict["trans"]["z"],
-        window_length=neighbourhood_size,
-        polyorder=poly_degree,
-        deriv=2,
-        delta=dt,
-    )
-    lin_vel: dict[str, Any] = {"x": lin_vel_x, "y": lin_vel_y, "z": lin_vel_z}
-    lin_accel: dict[str, Any] = {"x": lin_accel_x, "y": lin_accel_y, "z": lin_accel_z}
-
-    derivation_results = {"lin_accel": lin_accel, "lin_vel": lin_vel}
+    derivation_results = {"lin_accel": lin_accel_arr, "lin_vel": lin_vel_arr}
 
     return derivation_results
 
