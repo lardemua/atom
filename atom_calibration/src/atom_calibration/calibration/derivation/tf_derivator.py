@@ -10,9 +10,9 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+from pandas.core.arrays.period import DIFFERENT_FREQ
 import seaborn as sns
 from atom_calibration.calibration.derivation.derivation_utils import (
-    centralNumericalSecondDerivative,
     getTFList,
     getTFToDeriveList,
     inspectDerivatives,
@@ -24,6 +24,7 @@ from atom_calibration.calibration.derivation.derivation_utils import (
 from atom_core.atom import getTransform
 from atom_core.geometry import (
     matrixToTranslationQuaternion,
+    translationQuaternionToTransform,
 )
 from matplotlib import pyplot as plt
 from numpy import float64, generic
@@ -34,67 +35,70 @@ from scipy.signal import savgol_filter
 
 
 def deriveRotation(
-    tf_list: List[Dict[str, Any]], poly_degree: int, visualization: bool
-) -> List[np.poly1d]:
-    """Given a list of transformations, return the functions that describe the angular velocities.
-    Angular velocities are calculated using the following:
-
-        dw = 2 * quaternionMultiplication(dq, q), with dw = [0, wx, wy, wz]
+    tf_data_dict: Dict[str, Any], poly_degree: int, neighbourhood_size: int
+) -> Dict:
+    """
+    Angular velocities are calculated from the temporal derivatives of the rotation matrix
 
     Inputs:
-        - tf_list: a list of transformation dictionaries to use for derivation;
+        - tf_data_dict: a dictionary with the following structure:
+            tf_data_dict = {
+                "t": [t_array],
+                "trans": {"x": [x_trans_array], "y": [y_trans_array], "z": [z_trans_array]},
+                "quat": ...
+                }
+        ;
         - poly_degree: the degree of the polynomial functions to fit the rotation data to;
-        - visualization: enable graph visualization.
+        - neighbourhood_size: number of datapoints to use for the savgol_filter() function.
     Outputs:
-        - p_der: a list of 3 polynomial functions to describe the angular velocity related to each axis of rotation.
+        - ang_vel: A list of 3 arrays of angular velocity at each datapoint;
     """
+
     # Get time values
-    t_arr = np.array([timeStampToFloat(tf["stamp"]) for tf in tf_list])
+    dt = tf_data_dict["t"][1] - tf_data_dict["t"][0]
 
-    # for each rotation variable
-    rot_array = np.array(
-        [
-            [tf["quat"][0] for tf in tf_list],
-            [tf["quat"][1] for tf in tf_list],
-            [tf["quat"][2] for tf in tf_list],
-            [tf["quat"][3] for tf in tf_list],
-        ]
-    )
+    R_arr = []
 
-    q = [np.polyfit(t_arr, rot_array[i], deg=poly_degree) for i in range(4)]
-    dq = []
+    # For each datapoint
+    for i in range(len(tf_data_dict["t"])):
+        quat = [tf_data_dict["quat"][var][i] for var in ["x", "y", "z", "w"]]
+        tvec = [tf_data_dict["trans"][var][i] for var in ["x", "y", "z"]]
 
-    if visualization:
-        fig, axes = plt.subplots(2, 4)
+        # get tf matrix
+        M = translationQuaternionToTransform(tvec, quat)
 
-    # Get quaternion derivatives, dq
-    for i in range(4):
-        poly_func = np.poly1d(q[i])
+        R_arr.append(M[:3, :3])
 
-        dq.append(np.polyder(poly_func))
+    R_arr = np.array(R_arr)
+    dR_arr = np.zeros_like(R_arr)
+    print(np.shape(R_arr))
 
-        if visualization:
-            sns.scatterplot(x=t_arr, y=rot_array[i], ax=axes[0, i])
-            x_func = np.linspace(t_arr.min(), t_arr.max(), 1000)
-            y_func = poly_func(x_func)
-            sns.lineplot(x=x_func, y=y_func, color="red", ax=axes[0, i])
+    # Derive each element of rotation matrix
 
-            yder_func = dq[i](x_func)
-            sns.lineplot(x=x_func, y=yder_func, color="green", ax=axes[1, i])
+    for j in range(3):
+        for k in range(3):
+            series = R_arr[:, j, k]
 
-    q_conjugate = [
-        np.poly1d(q[0]),
-        np.poly1d(-q[1]),
-        np.poly1d(-q[2]),
-        np.poly1d(-q[3]),
-    ]
+            deriv = savgol_filter(
+                x=series,
+                window_length=neighbourhood_size,
+                polyorder=poly_degree,
+                deriv=1,
+                delta=dt,
+            )
 
-    omega = quatMult(2 * dq, q_conjugate)
+            dR_arr[:, j, k] = deriv
 
-    if visualization:
-        plt.show()
+    # Compute ang_vels
+    ang_vels = {"x": [], "y": [], "z": []}
+    for k in range(R_arr.shape[0]):
+        R = R_arr[k]
+        dR = dR_arr[k]
+        omega_hat = R.T @ dR
 
-    ang_vels = [omega[1], omega[2], omega[3]]
+        ang_vels["x"].append(omega_hat[2, 1])
+        ang_vels["y"].append(omega_hat[0, 2])
+        ang_vels["z"].append(omega_hat[1, 0])
 
     return ang_vels
 
@@ -104,8 +108,7 @@ def deriveTranslation(
     poly_degree: int,
     neighbourhood_size: int,
 ) -> Tuple:
-    """Given a list of transformations, return the functions that describe the linear accelerations.
-
+    """
     Inputs:
         - tf_data_dict: a dictionary with the following structure:
             tf_data_dict = {
@@ -268,7 +271,17 @@ def deriveDatasetAllDataPoints(
         neighbourhood_size=neighbourhood_size,
     )
 
-    derivation_results = {"lin_accel": lin_accel_arr, "lin_vel": lin_vel_arr}
+    ang_vels = deriveRotation(
+        tf_data_dict=data_dict,
+        poly_degree=poly_degree,
+        neighbourhood_size=neighbourhood_size,
+    )
+
+    derivation_results = {
+        "lin_accel": lin_accel_arr,
+        "lin_vel": lin_vel_arr,
+        "ang_vel": ang_vels,
+    }
 
     return derivation_results
 
@@ -398,8 +411,6 @@ def calculateErrorsAllDataPoints(
         # e["e_ang_vel"]["z"].append(
         #     imu_ang_vel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][2]
         # )
-
-        # NOTE: Should I add (and plot out) the rotation? I don't know that it would be super clear, due to the fact that the orientation is expressed in quaternions
 
     fig1, ax1 = plt.subplots()
     sns.scatterplot(

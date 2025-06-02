@@ -12,6 +12,7 @@ from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from scipy.spatial.transform import Rotation
 
+
 def plotIMUData(dataset: Dict) -> None:
     """Simple function for debugging."""
 
@@ -44,6 +45,7 @@ def plotIMUData(dataset: Dict) -> None:
 
     plt.show()
 
+
 def timeFloatToStamp(t_float: float) -> Dict[str, int]:
 
     secs = floor(t_float)
@@ -52,7 +54,7 @@ def timeFloatToStamp(t_float: float) -> Dict[str, int]:
     stamp = {"secs": secs, "nsecs": nsecs}
 
     return stamp
-    
+
 
 def timeStampToFloat(stamp: Dict[str, int]) -> float:
 
@@ -146,102 +148,6 @@ def getTFList(dataset: Dict) -> List[Dict]:
         tf_list.append(tf_dict_to_append)
 
     return tf_list
-
-
-def centralNumericalFirstDerivative(data: Dict[str, float]) -> List[float]:
-    """
-    Numerically calculates the first derivative at instant t_i using central derivation.
-
-    Input:
-        data: a dictionary of the relevant data for derivation. The dictionary must have the following structure:
-
-        data = {
-            "t": [
-                t_{i-1},
-                t_i,
-                t_{i+1},
-                ],
-            "var1": [
-                var1(t_{i-1}),
-                var(t_i),
-                var(t_{i+1}),
-                ],
-            ....
-            "varN": [
-                varN(t_{i-1}),
-                varN(t_i),
-                varN(t_{i+1}),
-                ]
-            }
-
-    Output:
-        ddata_dt: a list with the derivatives at instant t, in order of the variables of the input dictionary
-
-        ddata_dt = [
-            dvar1_dt(t_i),
-            ...,
-            dvarN_dt(t_i)
-            ]
-    """
-    ddata_dt = []
-
-    for var in data.keys():
-        if var == "t":
-            continue
-
-        dvar_dt = (data[var][2] - data[var][0]) / (data["t"][2] - data["t"][0])
-        ddata_dt.append(dvar_dt)
-
-    return ddata_dt
-
-
-def centralNumericalSecondDerivative(data: Dict[str, float]) -> List[float]:
-    """
-    Numerically calculates the second derivative at instant t_i using central derivation.
-
-    Input:
-        data: a dictionary of the relevant data for derivation. Uses 3 datapoints, where t_i is the central instant. The dictionary must have the following structure:
-
-        data = {
-            "t": [
-                t_{i-1},
-                t_i,
-                t_{i+1},
-                ],
-            "var1": [
-                var1(t_{i-1}),
-                var(t_i),
-                var(t_{i+1}),
-                ],
-            ....
-            "varN": [
-                varN(t_{i-1}),
-                varN(t_i),
-                varN(t_{i+1}),
-                ]
-            }
-
-    Output:
-        dddata_dtt: a list with the derivatives at instant t, in order of the variables of the input dictionary
-
-        dddata_dtt = [
-            ddvar1_dtt(t_i),
-            ...,
-            ddvarN_dtt(t_i)
-            ]
-    """
-    dddata_dtt = []
-
-    for var in data.keys():
-        if var == "t":
-            continue
-
-        ddvar_dtt = (data[var][2] - 2 * data[var][1] + data[var][0]) / (
-            (data["t"][2] - data["t"][1]) ** 2
-        )
-        dddata_dtt.append(ddvar_dtt)
-
-    return dddata_dtt
 
 
 def identifyTransitionPoints(tf_list: List, from_frame: str, to_frame: str) -> List:
@@ -443,6 +349,7 @@ def plotDerivationResults(
     to_frame: str,
 ) -> None:
 
+    # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions
     data_dict = {
         "t": [],
         "t_reparam": [],
@@ -450,6 +357,8 @@ def plotDerivationResults(
         "lin_vel": {"x": [], "y": [], "z": []},
         "lin_accel": {"x": [], "y": [], "z": []},
         "lin_accel_imu": {"x": [], "y": [], "z": []},
+        "ang_vel": {"x": [], "y": [], "z": []},
+        "ang_vel_imu": {"x": [], "y": [], "z": []},
     }
 
     # Copy it so the original keeps the timestamps
@@ -474,16 +383,21 @@ def plotDerivationResults(
             ),
         )
 
+        # Get data from IMU
         imu_accel = [
             closest_imu_datapoint["linear_acceleration"]["x"],
             closest_imu_datapoint["linear_acceleration"]["y"],
             closest_imu_datapoint["linear_acceleration"]["z"],
         ]
 
+        imu_ang_vel = [
+            closest_imu_datapoint["angular_velocity"]["x"],
+            closest_imu_datapoint["angular_velocity"]["y"],
+            closest_imu_datapoint["angular_velocity"]["z"],
+        ]
+
         R = world_imu_tf[:3, :3]
-
         imu_accel = R @ imu_accel
-
         imu_accel[2] -= 9.81
 
         # For plotting
@@ -501,6 +415,10 @@ def plotDerivationResults(
         data_dict["lin_accel_imu"]["y"].append(imu_accel[1])
         data_dict["lin_accel_imu"]["z"].append(imu_accel[2])
 
+        data_dict["ang_vel_imu"]["x"].append(imu_ang_vel[0])
+        data_dict["ang_vel_imu"]["y"].append(imu_ang_vel[1])
+        data_dict["ang_vel_imu"]["z"].append(imu_ang_vel[2])
+
     # Linear Velocity Data
     data_dict["lin_vel"]["x"] = derivation_results["lin_vel"]["x"]
     data_dict["lin_vel"]["y"] = derivation_results["lin_vel"]["y"]
@@ -510,6 +428,11 @@ def plotDerivationResults(
     data_dict["lin_accel"]["x"] = derivation_results["lin_accel"]["x"]
     data_dict["lin_accel"]["y"] = derivation_results["lin_accel"]["y"]
     data_dict["lin_accel"]["z"] = derivation_results["lin_accel"]["z"]
+
+    # Angular Velocity Data
+    data_dict["ang_vel"]["x"] = derivation_results["ang_vel"]["x"]
+    data_dict["ang_vel"]["y"] = derivation_results["ang_vel"]["y"]
+    data_dict["ang_vel"]["z"] = derivation_results["ang_vel"]["z"]
 
     # Plot x data
     fig1, ax1 = plt.subplots()
@@ -619,11 +542,68 @@ def plotDerivationResults(
         ax=ax9,
     )
 
+    # Angular Velocity Plots
+    fig4, ax10 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_vel"]["x"],
+        marker="o",
+        color="r",
+        label="Derivation Results",
+        ax=ax10,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_vel_imu"]["x"],
+        marker="*",
+        color="orange",
+        label="IMU Angular Velocity Data",
+        ax=ax10,
+    )
+
+    fig5, ax11 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_vel"]["y"],
+        marker="o",
+        color="r",
+        label="Derivation Results",
+        ax=ax11,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_vel_imu"]["y"],
+        marker="*",
+        color="orange",
+        label="IMU Angular Velocity Data",
+        ax=ax11,
+    )
+    fig6, ax12 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_vel"]["z"],
+        marker="o",
+        color="r",
+        label="Derivation Results",
+        ax=ax12,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_vel_imu"]["z"],
+        marker="*",
+        color="orange",
+        label="IMU Angular Velocity Data",
+        ax=ax12,
+    )
     # Some plot formatting
     ax1.set_title(r"Translation Data ($x$)")
     ax4.set_title(r"Translation Data ($y$)")
     ax7.set_title(r"Translation Data ($z$)")
-    for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
+    ax10.set_title(r"Angular Velocity Data ($\omega_x$)")
+    ax11.set_title(r"Angular Velocity Data ($\omega_y$)")
+    ax12.set_title(r"Angular Velocity Data ($\omega_z$)")
+
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10]:
         ax.set(xlabel=r"Time since first datapoint, $t$ $[s]$")
     for ax in [ax1, ax4, ax7]:
         ax.set(ylabel=r"Position $[m]$")
@@ -637,10 +617,14 @@ def plotDerivationResults(
         ax.set(ylabel=r"Acceleration $[m/s^2]$")
         ax.set_ylim(-1, 1)
         ax.yaxis.label.set_color("b")
+    for ax in [ax10, ax11, ax12]:
+        ax.set(ylabel=r"Angular Velocity $[rad/s]$")
+        ax.set_ylim(-1.5, 1.5)
+        ax.yaxis.label.set_color("r")
     for fig in [fig1, fig2, fig3]:
         fig.tight_layout()
-
     plt.show()
+
 
 def inspectDerivatives(
     dataset: Dict,
