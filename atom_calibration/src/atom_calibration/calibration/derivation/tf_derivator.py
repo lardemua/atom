@@ -10,15 +10,11 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-from pandas.core.arrays.period import DIFFERENT_FREQ
 import seaborn as sns
 from atom_calibration.calibration.derivation.derivation_utils import (
     getTFList,
-    getTFToDeriveList,
-    inspectDerivatives,
     plotDerivationResults,
     plotIMUData,
-    quatMult,
     timeStampToFloat,
 )
 from atom_core.atom import getTransform
@@ -27,11 +23,8 @@ from atom_core.geometry import (
     translationQuaternionToTransform,
 )
 from matplotlib import pyplot as plt
-from numpy import float64, generic
-from numpy._typing._generic_alias import NDArray
-from pandas.io.formats.info import frame_see_also_sub
-from prettytable import PrettyTable
 from scipy.signal import savgol_filter
+import tf
 
 
 def deriveRotation(
@@ -71,7 +64,6 @@ def deriveRotation(
 
     R_arr = np.array(R_arr)
     dR_arr = np.zeros_like(R_arr)
-    print(np.shape(R_arr))
 
     # Derive each element of rotation matrix
 
@@ -227,6 +219,7 @@ def deriveDatasetAllDataPoints(
     to_frame: str,
     neighbourhood_size: int,
     poly_degree: int,
+    noise: tuple,
 ) -> dict:
     """
     Derive for all timestamps corresponding to collections in a dataset.
@@ -239,6 +232,9 @@ def deriveDatasetAllDataPoints(
     tf_pool_lst: List[Dict[Any, Any]] = getTFList(dataset=dataset)
     tf_pool_lst_copy = deepcopy(tf_pool_lst)
 
+    # with open("test.json", "w") as f:
+    #     json.dump(tf_pool_lst_copy, f, indent=4)
+
     # Organize the data in lists for plotting and deriving
     data_dict = {
         "t": [],
@@ -246,8 +242,29 @@ def deriveDatasetAllDataPoints(
         "quat": {"x": [], "y": [], "z": [], "w": []},
     }
 
+    noise_trans = noise[0]
+    noise_rot = noise[1]
+
     for tf_pool in tf_pool_lst_copy:
         data_dict["t"].append(timeStampToFloat(stamp=tf_pool.pop("stamp")))
+
+        # Add noise to the atomic tf of the imu
+        for tf_key, transform in tf_pool.items():
+            if transform["child"] == to_frame:
+                quat = transform["quat"]
+                trans = transform["trans"]
+
+                v = np.random.uniform(-1.0, 1.0, 3)
+                v = v / np.linalg.norm(v)
+                new_trans = trans + v * noise_trans
+
+                v = np.random.choice([-1.0, 1.0], 3) * noise_rot
+                euler_angles = tf.transformations.euler_from_quaternion(quat)
+                new_angles = euler_angles + v
+                new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
+
+                transform["quat"] = new_quat
+                transform["trans"] = list(new_trans)
 
         # Get source-target tf
         source_target_tf = getTransform(
@@ -516,6 +533,16 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
     )
+    ap.add_argument(
+        "-nig",
+        "--noisy_initial_guess",
+        nargs=2,
+        metavar=("translation", "rotation"),
+        help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].",
+        type=float,
+        default=[0.0, 0.0],
+    )
+    ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
 
     args = vars(ap.parse_args())
     neighbourhood_size = args["neighbourhood_size"]
@@ -528,6 +555,10 @@ if __name__ == "__main__":
 
     plotIMUData(dataset=input_dataset)
 
+    dataset_ground_truth = deepcopy(x=input_dataset)
+
+    selected_collection_key = list(input_dataset["collections"].keys())[0]
+
     tf_lst = getTFList(input_dataset)
 
     derivation_results = deriveDatasetAllDataPoints(
@@ -536,6 +567,7 @@ if __name__ == "__main__":
         to_frame="accelerometer",
         neighbourhood_size=neighbourhood_size,
         poly_degree=args["poly_degree"],
+        noise=args["noisy_initial_guess"],
     )
 
     plotDerivationResults(
