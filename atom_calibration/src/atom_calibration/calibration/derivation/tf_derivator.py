@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
-"""
-Utilities for the derivation of TF data
-"""
-
 import argparse
 import json
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
+from atom_core.utilities import atomError
 import numpy as np
 import seaborn as sns
 from atom_calibration.calibration.derivation.derivation_utils import (
@@ -66,11 +63,9 @@ def deriveRotation(
     dR_arr = np.zeros_like(R_arr)
 
     # Derive each element of rotation matrix
-
     for j in range(3):
         for k in range(3):
             series = R_arr[:, j, k]
-
             deriv = savgol_filter(
                 x=series,
                 window_length=neighbourhood_size,
@@ -78,7 +73,6 @@ def deriveRotation(
                 deriv=1,
                 delta=dt,
             )
-
             dR_arr[:, j, k] = deriv
 
     # Compute ang_vels
@@ -245,24 +239,38 @@ def deriveDatasetAllDataPoints(
     noise_trans = noise[0]
     noise_rot = noise[1]
 
-    for tf_pool in tf_pool_lst_copy:
+    for tf_pool_idx in range(len(tf_pool_lst_copy)):
+    # for tf_pool in tf_pool_lst_copy:
+        tf_pool = tf_pool_lst_copy[tf_pool_idx]
         data_dict["t"].append(timeStampToFloat(stamp=tf_pool.pop("stamp")))
+        
+        # Calculate the new atomic tf with noise.
+        if tf_pool_idx == 0:
+            # Add noise to the atomic tf of the imu
+            for tf_key, transform in tf_pool.items():
+                if transform["child"] == to_frame:
+                    # Check if the transform is fixed. It should be, given how ATOM works, but it's better to check regardless.
+                    if dataset["transforms"][f"{transform['parent']}-{transform['child']}"]["type"] != "fixed":
+                        atomError("The TF you're trying to add noise to isn't fixed! Are you sure your dataset was correctly collected?")
 
-        # Add noise to the atomic tf of the imu
+                    quat = transform["quat"]
+                    trans = transform["trans"]
+
+                    v = np.random.uniform(-1.0, 1.0, 3)
+                    v = v / np.linalg.norm(v)
+                    new_trans = trans + v * noise_trans
+
+                    v = np.random.choice([-1.0, 1.0], 3) * noise_rot
+                    euler_angles = tf.transformations.euler_from_quaternion(quat)
+                    new_angles = euler_angles + v
+                    new_quat = tf.transformations.quaternion_from_euler(
+                        new_angles[0], new_angles[1], new_angles[2]
+                    )
+
+        # Now that we have the new translation and rotation values with noise, apply them to all datapoints
+        
         for tf_key, transform in tf_pool.items():
             if transform["child"] == to_frame:
-                quat = transform["quat"]
-                trans = transform["trans"]
-
-                v = np.random.uniform(-1.0, 1.0, 3)
-                v = v / np.linalg.norm(v)
-                new_trans = trans + v * noise_trans
-
-                v = np.random.choice([-1.0, 1.0], 3) * noise_rot
-                euler_angles = tf.transformations.euler_from_quaternion(quat)
-                new_angles = euler_angles + v
-                new_quat = tf.transformations.quaternion_from_euler(new_angles[0], new_angles[1], new_angles[2])
-
                 transform["quat"] = new_quat
                 transform["trans"] = list(new_trans)
 
