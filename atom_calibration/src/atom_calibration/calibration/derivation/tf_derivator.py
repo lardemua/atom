@@ -23,6 +23,7 @@ from atom_core.geometry import (
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from scipy.signal import savgol_filter
+from scipy.spatial.transform import Rotation
 
 
 def deriveRotation(
@@ -48,8 +49,8 @@ def deriveRotation(
     # Get time values
     dt = tf_data_dict["t"][1] - tf_data_dict["t"][0]
 
-    R_arr = []
-
+    # R_arr = []
+    r_vec_array = []
     # For each datapoint
     for i in range(len(tf_data_dict["t"])):
         quat = [tf_data_dict["quat"][var][i] for var in ["x", "y", "z", "w"]]
@@ -58,34 +59,31 @@ def deriveRotation(
         # get tf matrix
         M = translationQuaternionToTransform(tvec, quat)
 
-        R_arr.append(M[:3, :3])
+        r = Rotation.from_matrix(M[:3,:3])
+        r_vec =r.as_rotvec()
+        r_vec_array.append(r_vec)
 
-    R_arr = np.array(R_arr)
-    dR_arr = np.zeros_like(R_arr)
+    r_vec_array = np.array(r_vec_array)
+    dr_vec_array = np.zeros_like(r_vec_array)
 
-    # Derive each element of rotation matrix
-    for j in range(3):
-        for k in range(3):
-            series = R_arr[:, j, k]
-            deriv = savgol_filter(
-                x=series,
-                window_length=neighbourhood_size,
-                polyorder=poly_degree,
-                deriv=1,
-                delta=dt,
+    for k in range(3):
+        series = r_vec_array[:, k]
+        deriv = savgol_filter(
+            x=series,
+            window_length=neighbourhood_size,
+            polyorder=poly_degree,
+            deriv=1,
+            delta=dt,
             )
-            dR_arr[:, j, k] = deriv
+        dr_vec_array[:, k] = deriv
 
     # Compute ang_vels
     ang_vels = {"x": [], "y": [], "z": []}
-    for k in range(R_arr.shape[0]):
-        R = R_arr[k]
-        dR = dR_arr[k]
-        omega_hat = R.T @ dR
+    for k in range(r_vec_array.shape[0]):
+        ang_vels["x"].append(dr_vec_array[k,0])
+        ang_vels["y"].append(dr_vec_array[k,1])
+        ang_vels["z"].append(dr_vec_array[k,2])
 
-        ang_vels["x"].append(omega_hat[2, 1])
-        ang_vels["y"].append(omega_hat[0, 2])
-        ang_vels["z"].append(omega_hat[1, 0])
 
     return ang_vels
 
@@ -183,9 +181,6 @@ def deriveDatasetAllDataPoints(
 
     tf_pool_lst: List[Dict[Any, Any]] = getTFList(dataset=dataset)
     tf_pool_lst_copy = deepcopy(tf_pool_lst)
-
-    # with open("test.json", "w") as f:
-    #     json.dump(tf_pool_lst_copy, f, indent=4)
 
     # Organize the data in lists for plotting and deriving
     data_dict = {
@@ -525,8 +520,6 @@ if __name__ == "__main__":
 
     # Add a grid in the background of the graphs
     sns.set_theme(style="whitegrid")
-
-    plotIMUData(dataset=input_dataset)
 
     dataset_ground_truth = deepcopy(x=input_dataset)
 
