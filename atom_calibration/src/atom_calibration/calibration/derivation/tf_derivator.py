@@ -2,12 +2,13 @@
 
 import argparse
 import json
+import os
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
-from atom_core.utilities import atomError
 import numpy as np
 import seaborn as sns
+import tf
 from atom_calibration.calibration.derivation.derivation_utils import (
     getTFList,
     plotDerivationResults,
@@ -19,9 +20,9 @@ from atom_core.geometry import (
     matrixToTranslationQuaternion,
     translationQuaternionToTransform,
 )
+from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from scipy.signal import savgol_filter
-import tf
 
 
 def deriveRotation(
@@ -164,49 +165,6 @@ def deriveTranslation(
     return lin_vel_arr, lin_accel_arr
 
 
-def deriveDatasetAtCollections(
-    dataset: dict,
-    from_frame: str,
-    to_frame: str,
-    sensor_name: str,
-    neighbourhood_size: int,
-    poly_degree: int,
-    visualization: bool,
-    transition_point_list: List,
-) -> dict:
-    """
-    Derive for all timestamps corresponding to collections in a dataset.
-    Return a dictionary containing the derivation results for each collection.
-    """
-
-    # Get list of timestamps to integrate for
-    derivation_results = {}
-    for collection_key, collection in dataset["collections"].items():
-        t = timeStampToFloat(collection["data"][sensor_name]["header"]["stamp"])
-
-        # Derive at each timestamp
-        lin_accel, ang_vel = deriveFromTF(
-            dataset=dataset,
-            from_frame=from_frame,
-            to_frame=to_frame,
-            t=t,
-            neighbourhood_size=neighbourhood_size,
-            poly_degree=poly_degree,
-            visualization=visualization,
-            transition_point_list=transition_point_list,
-        )
-
-        if lin_accel is None and ang_vel is None:
-            continue
-
-        derivation_results[collection_key] = {
-            "lin_accel": lin_accel,
-            "ang_vel": ang_vel,
-        }
-
-    return derivation_results
-
-
 def deriveDatasetAllDataPoints(
     dataset: dict,
     from_frame: str,
@@ -240,18 +198,25 @@ def deriveDatasetAllDataPoints(
     noise_rot = noise[1]
 
     for tf_pool_idx in range(len(tf_pool_lst_copy)):
-    # for tf_pool in tf_pool_lst_copy:
+        # for tf_pool in tf_pool_lst_copy:
         tf_pool = tf_pool_lst_copy[tf_pool_idx]
         data_dict["t"].append(timeStampToFloat(stamp=tf_pool.pop("stamp")))
-        
+
         # Calculate the new atomic tf with noise.
         if tf_pool_idx == 0:
             # Add noise to the atomic tf of the imu
             for tf_key, transform in tf_pool.items():
                 if transform["child"] == to_frame:
                     # Check if the transform is fixed. It should be, given how ATOM works, but it's better to check regardless.
-                    if dataset["transforms"][f"{transform['parent']}-{transform['child']}"]["type"] != "fixed":
-                        atomError("The TF you're trying to add noise to isn't fixed! Are you sure your dataset was correctly collected?")
+                    if (
+                        dataset["transforms"][
+                            f"{transform['parent']}-{transform['child']}"
+                        ]["type"]
+                        != "fixed"
+                    ):
+                        atomError(
+                            "The TF you're trying to add noise to isn't fixed! Are you sure your dataset was correctly collected?"
+                        )
 
                     quat = transform["quat"]
                     trans = transform["trans"]
@@ -268,7 +233,6 @@ def deriveDatasetAllDataPoints(
                     )
 
         # Now that we have the new translation and rotation values with noise, apply them to all datapoints
-        
         for tf_key, transform in tf_pool.items():
             if transform["child"] == to_frame:
                 transform["quat"] = new_quat
@@ -495,8 +459,6 @@ def calculateErrorsAllDataPoints(
     fig1.tight_layout()
     # fig2.tight_layout()
 
-    plt.show()
-
     # Error dict returned
     e = {"lin_accel": data_dict["e_lin_accel"]}
 
@@ -555,6 +517,9 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
     neighbourhood_size = args["neighbourhood_size"]
 
+    # Find dataset name for results saving purposes
+    dataset_name = args["json_file"].split("/")[-2]
+
     with open(args["json_file"]) as f:
         input_dataset = json.load(f)
 
@@ -584,6 +549,8 @@ if __name__ == "__main__":
         derivation_results=derivation_results,
         from_frame="world",
         to_frame="accelerometer",
+        noise=args["noisy_initial_guess"],
+        dataset_name=dataset_name,
     )
 
     e = calculateErrorsAllDataPoints(

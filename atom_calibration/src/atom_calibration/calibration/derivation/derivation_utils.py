@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
+import os
 from copy import deepcopy
 from math import floor
+from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
@@ -347,6 +350,8 @@ def plotDerivationResults(
     derivation_results: Dict,
     from_frame: str,
     to_frame: str,
+    noise: tuple,
+    dataset_name: str
 ) -> None:
 
     # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions
@@ -621,9 +626,20 @@ def plotDerivationResults(
         ax.set(ylabel=r"Angular Velocity $[rad/s]$")
         ax.set_ylim(-1.5, 1.5)
         ax.yaxis.label.set_color("r")
-    for fig in [fig1, fig2, fig3]:
+    for fig in [fig1, fig2, fig3, fig4, fig5, fig6]:
+        fig.set_size_inches(18.5, 10.5)
         fig.tight_layout()
-    plt.show()
+
+    results_folder = os.environ["DERIVATION_RESULTS"]
+    output_folder = Path(results_folder + "/" + dataset_name + "/" + "noise_" + str(noise[0]) + "_" + str(noise[1]))
+    output_folder.mkdir(exist_ok=True, parents=True)
+
+    fig1.savefig(str(output_folder) + "/x_trans.png")
+    fig2.savefig(str(output_folder) + "/y_trans.png")
+    fig3.savefig(str(output_folder) + "/z_trans.png")
+    fig4.savefig(str(output_folder) + "/x_rot.png")
+    fig5.savefig(str(output_folder) + "/y_rot.png")
+    fig6.savefig(str(output_folder) + "/z_rot.png")
 
 
 def inspectDerivatives(
@@ -805,4 +821,3 @@ def inspectDerivatives(
     cid = fig.canvas.mpl_connect("button_press_event", on_click_choose_closest_point)
 
     fig.tight_layout()
-    plt.show()
