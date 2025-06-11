@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from copy import deepcopy
+import pprint
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -59,8 +60,8 @@ def deriveRotation(
         # get tf matrix
         M = translationQuaternionToTransform(tvec, quat)
 
-        r = Rotation.from_matrix(M[:3,:3])
-        r_vec =r.as_rotvec()
+        r = Rotation.from_matrix(M[:3, :3])
+        r_vec = r.as_rotvec()
         r_vec_array.append(r_vec)
 
     r_vec_array = np.array(r_vec_array)
@@ -74,16 +75,15 @@ def deriveRotation(
             polyorder=poly_degree,
             deriv=1,
             delta=dt,
-            )
+        )
         dr_vec_array[:, k] = deriv
 
     # Compute ang_vels
     ang_vels = {"x": [], "y": [], "z": []}
     for k in range(r_vec_array.shape[0]):
-        ang_vels["x"].append(dr_vec_array[k,0])
-        ang_vels["y"].append(dr_vec_array[k,1])
-        ang_vels["z"].append(dr_vec_array[k,2])
-
+        ang_vels["x"].append(dr_vec_array[k, 0])
+        ang_vels["y"].append(dr_vec_array[k, 1])
+        ang_vels["z"].append(dr_vec_array[k, 2])
 
     return ang_vels
 
@@ -327,9 +327,10 @@ def calculateErrorsAllDataPoints(
     data_dict = {
         "t": [],
         "t_reparam": [],
-        "lin_accel": {"x": [], "y": [], "z": []},
         "lin_accel_imu": {"x": [], "y": [], "z": []},
+        "ang_vel_imu": {"x": [], "y": [], "z": []},
         "e_lin_accel": {"x": [], "y": [], "z": []},
+        "e_ang_vel": {"x": [], "y": [], "z": []},
     }
 
     for i in range(len(tf_list)):
@@ -358,7 +359,11 @@ def calculateErrorsAllDataPoints(
             closest_sensor_datapoint["linear_acceleration"]["y"],
             closest_sensor_datapoint["linear_acceleration"]["z"],
         ]
-        # imu_ang_vel = [*closest_sensor_datapoint["angular_velocity"].values()]
+        imu_ang_vel = [
+            closest_sensor_datapoint["angular_velocity"]["x"],
+            closest_sensor_datapoint["angular_velocity"]["y"],
+            closest_sensor_datapoint["angular_velocity"]["z"],
+        ]
 
         R = world_imu_tf[:3, :3]
 
@@ -378,84 +383,25 @@ def calculateErrorsAllDataPoints(
 
         # Calculate errors
         data_dict["e_lin_accel"]["x"].append(
-            imu_accel[0] - results["lin_accel"]["x"][i]
+            abs(imu_accel[0] - results["lin_accel"]["x"][i])
         )
         data_dict["e_lin_accel"]["y"].append(
-            imu_accel[1] - results["lin_accel"]["y"][i]
+            abs(imu_accel[1] - results["lin_accel"]["y"][i])
         )
         data_dict["e_lin_accel"]["z"].append(
-            imu_accel[2] - results["lin_accel"]["z"][i]
+            abs(imu_accel[2] - results["lin_accel"]["z"][i])
         )
-        # e["e_ang_vel"]["x"].append(
-        #     imu_ang_vel[0] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][0]
-        # )
-        # e["e_ang_vel"]["y"].append(
-        #     imu_ang_vel[1] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][1]
-        # )
-        # e["e_ang_vel"]["z"].append(
-        #     imu_ang_vel[2] - results[str(timeStampToFloat(tf_pool_stamp))]["ang_vel"][2]
-        # )
-
-    fig1, ax1 = plt.subplots()
-    sns.scatterplot(
-        x=data_dict["t_reparam"],
-        y=data_dict["e_lin_accel"]["x"],
-        marker="o",
-        color="r",
-        s=30,
-        label=r"$E_{a_x}$",
-        alpha=0.9,
-        ax=ax1,
-    )
-    fig2, ax2 = plt.subplots()
-    sns.scatterplot(
-        x=data_dict["t_reparam"],
-        y=data_dict["e_lin_accel"]["y"],
-        marker="o",
-        color="g",
-        s=30,
-        label=r"$E_{a_y}$",
-        alpha=0.9,
-        ax=ax2,
-    )
-    fig3, ax3 = plt.subplots()
-    sns.scatterplot(
-        x=data_dict["t_reparam"],
-        y=data_dict["e_lin_accel"]["z"],
-        marker="o",
-        color="b",
-        s=30,
-        label=r"$E_{a_z}$",
-        alpha=0.9,
-        ax=ax3,
-    )
-
-    # fig2, ax2 = plt.subplots()
-    # sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["x"], s=30, label="x", ax=ax2)
-    # sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["y"], s=30, label="y", ax=ax2)
-    # sns.scatterplot(x=t_vec_reparam, y=e["e_ang_vel"]["z"], s=30, label="z", ax=ax2)
-
-    plot_titles = [
-        r"$E_{a}(t)$",
-        r"$E_{a}(t)$",
-        r"$E_{a}(t)$",
-        # r"$E_{\omega}(t)$",
-    ]
-
-    for ax, title in zip([ax1, ax2, ax3], plot_titles):
-        # for ax, title in zip([ax1, ax2], plot_titles):
-        ax.set_title(title)
-        ax.set(
-            xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[ms^{-2}]$"
+        data_dict["e_ang_vel"]["x"].append(
+            abs(imu_ang_vel[0] - results["ang_vel"]["x"][i])
+        )
+        data_dict["e_ang_vel"]["y"].append(
+            abs(imu_ang_vel[1] - results["ang_vel"]["y"][i])
+        )
+        data_dict["e_ang_vel"]["z"].append(
+            abs(imu_ang_vel[2] - results["ang_vel"]["z"][i])
         )
 
-    # ax2.set(xlabel="Time since first datapoint, $t$ $[s]$", ylabel="Error $[rad/s]$")
-
-    fig1.tight_layout()
-    # fig2.tight_layout()
-
-    # Error dict returned
-    e = {"lin_accel": data_dict["e_lin_accel"]}
+    e = {"lin_accel": data_dict["e_lin_accel"], "ang_vel": data_dict["e_ang_vel"]}
 
     return e
 
@@ -536,15 +482,15 @@ if __name__ == "__main__":
         noise=args["noisy_initial_guess"],
     )
 
-    plotDerivationResults(
-        dataset=input_dataset,
-        tf_list=tf_lst,
-        derivation_results=derivation_results,
-        from_frame="world",
-        to_frame="accelerometer",
-        noise=args["noisy_initial_guess"],
-        dataset_name=dataset_name,
-    )
+    # plotDerivationResults(
+    #     dataset=input_dataset,
+    #     tf_list=tf_lst,
+    #     derivation_results=derivation_results,
+    #     from_frame="world",
+    #     to_frame="accelerometer",
+    #     noise=args["noisy_initial_guess"],
+    #     dataset_name=dataset_name,
+    # )
 
     e = calculateErrorsAllDataPoints(
         dataset=input_dataset,
