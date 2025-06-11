@@ -217,41 +217,47 @@ def printComparisonToGroundTruth(
     # --------------------------------------------------
     # Evaluate pattern transforms
     # --------------------------------------------------
-    for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+    only_imus = True
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["modality"] != "imu":
+            only_imus = False
 
-        print('pattern ' + pattern_key)
-        print(pattern)
-
-        transform_key = generateKey(pattern["parent_link"], pattern["link"])
-        row = [transform_key, Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
-
-        transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
-            transform_key]
-
-        if transform_key not in dataset_ground_truth['collections'][selected_collection_key][
-                'transforms']:
-            atomWarn('Cannot print comparison to ground truth for pattern ' +
-                     pattern_key + ' because there is no ground truth data.')
-            continue
-
-        transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key][
-            'transforms'][transform_key]
-        transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
-
-        translation_error_1, rotation_error_1 = compareAtomTransforms(
-            transform_initial, transform_ground_truth)
-        translation_error_2, rotation_error_2 = compareAtomTransforms(
-            transform_calibrated, transform_ground_truth)
-
-        row.append(getNumberQualifier(translation_error_1))
-        row.append(getNumberQualifier(translation_error_2))
-        row.append(getNumberQualifier(rotation_error_1, unit='rad'))
-        row.append(getNumberQualifier(rotation_error_2, unit='rad'))
-        table.add_row(row)
-
-        if args["save_file_results"]:
-            row_table_to_save = [transform_key, round(translation_error_2,6), round(rotation_error_2, 6)]
-            table_to_save.add_row(row_table_to_save)
+    if not only_imus:        
+        for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+        
+            print('pattern ' + pattern_key)
+            print(pattern)
+    
+            transform_key = generateKey(pattern["parent_link"], pattern["link"])
+            row = [transform_key, Fore.LIGHTCYAN_EX + pattern_key + Style.RESET_ALL]
+    
+            transform_calibrated = dataset['collections'][selected_collection_key]['transforms'][
+                transform_key]
+    
+            if transform_key not in dataset_ground_truth['collections'][selected_collection_key][
+                    'transforms']:
+                atomWarn('Cannot print comparison to ground truth for pattern ' +
+                         pattern_key + ' because there is no ground truth data.')
+                continue
+            
+            transform_ground_truth = dataset_ground_truth['collections'][selected_collection_key][
+                'transforms'][transform_key]
+            transform_initial = dataset_initial['collections'][selected_collection_key]['transforms'][transform_key]
+    
+            translation_error_1, rotation_error_1 = compareAtomTransforms(
+                transform_initial, transform_ground_truth)
+            translation_error_2, rotation_error_2 = compareAtomTransforms(
+                transform_calibrated, transform_ground_truth)
+    
+            row.append(getNumberQualifier(translation_error_1))
+            row.append(getNumberQualifier(translation_error_2))
+            row.append(getNumberQualifier(rotation_error_1, unit='rad'))
+            row.append(getNumberQualifier(rotation_error_2, unit='rad'))
+            table.add_row(row)
+    
+            if args["save_file_results"]:
+                row_table_to_save = [transform_key, round(translation_error_2,6), round(rotation_error_2, 6)]
+                table_to_save.add_row(row_table_to_save)
 
     # Add bottom row with averages
     table = addAveragesBottomRowToTable(table, header)

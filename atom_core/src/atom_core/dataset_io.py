@@ -524,6 +524,9 @@ def checkIfAtLeastOneLabeledCollectionPerSensor(dataset):
 
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
         for sensor_key in dataset['sensors']:
+            # Ignore if it's an IMU
+            if dataset["sensors"][sensor_key]["modality"] == "imu":
+                continue
             one_detection = False
             for collection_key in dataset['collections'].keys():
                 if dataset['collections'][collection_key]['labels'][pattern_key][sensor_key]['detected']:

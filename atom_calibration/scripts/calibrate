@@ -37,7 +37,7 @@ from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   filterAdditionalTfsFromDataset,
                                   filterPatternsFromDataset)
 from atom_core.naming import generateName, generateKey
-from atom_core.utilities import (atomError, createLambdaExpressionsForArgs,
+from atom_core.utilities import (atomError, atomWarn, createLambdaExpressionsForArgs,
                                  waitForKeyPress2,
                                  atomStartupPrint,
                                  verifyAnchoredSensor,
@@ -185,6 +185,20 @@ def main():
     ap.add_argument(
         "-max_nfev", "--optimization_max_nfev", help="max_nfev parameter for optimization.",
         type=int, required=False, default=None)
+    ap.add_argument(
+        "-ns",
+        "--neighbourhood_size",
+        type=int,
+        default=4,
+        help="Number of TF samples to use for curve-fitting at each datapoint during IMU calibration.",
+    )
+    ap.add_argument(
+        "-pd",
+        "--poly_degree",
+        type=int,
+        default=3,
+        help="Degree of polynomial to use for curve-fitting during IMU calibration.",
+    )
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
     ap.add_argument(
@@ -480,7 +494,13 @@ def main():
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add pattern(s) parameters
     # ---------------------------------------
-
+    
+    # Check if the only sensors involved are IMUs; if so, we don't need initial pattern pose estimates
+    only_imus = True
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["modality"] != "imu":
+            only_imus = False
+    
     # Each Pattern will have the position (tx,ty,tz) and rotation (r1,r2,r3)
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
 
@@ -503,9 +523,14 @@ def main():
                     collection_key]
                 if not initial_estimate["detected"] or not parent == initial_estimate["parent"] or \
                         not child == initial_estimate["child"]:
-                    atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key +
-                              Style.RESET_ALL + "at collection " + collection_key +
-                              '. You must run the calibration without this collection. Check how to use the csf flag.')
+                    
+                    if only_imus:
+                        atomWarn("Cannot set initial estimates for patterns, but since the only sensors are IMUs, this is not an issue...")
+                        continue
+                    else:    
+                        atomError("Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key +
+                                  Style.RESET_ALL + "at collection " + collection_key +
+                                  '. You must run the calibration without this collection. Check how to use the csf flag.')
 
                 if transform_key not in dataset_ground_truth['collections'][
                         selected_collection_key]['transforms'].keys():
@@ -555,8 +580,13 @@ def main():
                     break  # select the first available initial_estimate
 
             if flg_have_initial_estimate == False:
-                atomError(
-                    "Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL)
+                if only_imus:
+                    atomWarn("Cannot set initial estimates for patterns, but since the only sensors are IMUs, this is not an issue...")
+                    continue
+                else:
+                    atomError(
+                        "Cannot set initial estimate for pattern " + Fore.BLUE + pattern_key + Style.RESET_ALL)
+                
 
             # TODO not sure why this check is here ...
             if not parent == initial_estimate["parent"] or not child == initial_estimate["child"]:
@@ -640,6 +670,9 @@ def main():
     for collection_key, collection in dataset["collections"].items():
         for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
             for sensor_key, sensor in dataset["sensors"].items():
+                # Ignore if IMU
+                if sensor["modality"] == "imu":
+                    continue
                 # if pattern not detected by sensor in collection
                 if not collection["labels"][pattern_key][sensor_key]["detected"]:
                     continue
@@ -770,6 +803,30 @@ def main():
                 # print(opt.residuals.keys())
                 # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
                 #       ' affected by parameters:\n' + str(params))
+    
+    # Residuals based on coninuous data can't be defined for each collection; the errors are calculated for each /tf message (see tf_derivator.py)
+    for datapoint_idx in range(len(dataset["continuous_data"]["/tf"])):
+        for sensor_key, sensor in dataset["sensors"].items():
+            if sensor["modality"] == "imu":
+                params = []
+
+                # Only relevant params are the IMU extrinsics
+                transforms_list = list(sensors_transforms_set)
+                for transform_in_chain in sensor['chain']:
+                    transform_key = generateKey(
+                        transform_in_chain["parent"], transform_in_chain["child"])
+                    if transform_key in transforms_list:
+                        params.extend(opt.getParamsContainingPattern(transform_key))
+
+                # One residual for each axis and for lin accel and ang vel
+                for axis in ["x", "y", "z"]:
+                    rname = f"{sensor_key}_lin_accel_{axis}_{datapoint_idx}"
+                    opt.pushResidual(name=rname, params=params)
+
+                    rname= f"{sensor_key}_ang_vel_{axis}_{datapoint_idx}"
+                    opt.pushResidual(name=rname, params=params)
+                    
+
 
     # opt.printResiduals()
 
@@ -778,7 +835,7 @@ def main():
     # ---------------------------------------
     print("Computing sparse matrix ... ")
     opt.computeSparseMatrix()
-    # opt.printSparseMatrix()
+    opt.printSparseMatrix()
     # opt.printParameters()
 
     # ---------------------------------------
@@ -797,6 +854,7 @@ def main():
                 values += [residuals[k]
                            for k in residuals.keys() if sensor_key in k]
 
+        # NOTE: Normalizer for IMU?
         # If the normalizer is to big, the residuals may loose their influence when close to zero.
         if modality == 'rgb':
             normalizer[modality] = args['rgb_normalizer_multiplier'] * np.mean(values)
