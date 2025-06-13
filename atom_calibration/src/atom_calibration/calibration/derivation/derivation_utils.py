@@ -351,7 +351,7 @@ def plotDerivationResults(
     from_frame: str,
     to_frame: str,
     noise: tuple,
-    dataset_name: str
+    dataset_name: str,
 ) -> None:
 
     # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions
@@ -631,7 +631,16 @@ def plotDerivationResults(
         fig.tight_layout()
 
     results_folder = os.environ["DERIVATION_RESULTS"]
-    output_folder = Path(results_folder + "/" + dataset_name + "/" + "noise_" + str(noise[0]) + "_" + str(noise[1]))
+    output_folder = Path(
+        results_folder
+        + "/"
+        + dataset_name
+        + "/"
+        + "noise_"
+        + str(noise[0])
+        + "_"
+        + str(noise[1])
+    )
     output_folder.mkdir(exist_ok=True, parents=True)
 
     fig1.savefig(str(output_folder) + "/x_trans.png")

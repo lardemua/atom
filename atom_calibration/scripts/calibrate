@@ -826,8 +826,6 @@ def main():
                         opt.pushResidual(name=rname, params=params)                    
 
 
-    opt.printResiduals()
-
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
     # ---------------------------------------
@@ -889,8 +887,6 @@ def main():
     # Final error report
     errorReport(dataset=dataset, residuals=objectiveFunction(
         opt.data_models), normalizer=normalizer, args=args)
-
-    # opt.printResiduals()
 
     # ---------------------------------------
     # --- Print Results

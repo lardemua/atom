@@ -1141,13 +1141,9 @@ def objectiveFunction(data):
 
     for sensor_key, sensor in dataset["sensors"].items():
         if sensor["modality"] == "imu":
-            # Derivate expected tfs from dataset
-            # Compare with actual imu data
-
             selected_collection_key = list(dataset["collections"].keys())[0]
-
+            
             # Update continuous /tf_static messages with the the new values
-
             transform_key = generateKey(
                 sensor["calibration_parent"], sensor["calibration_child"]
             )
@@ -1185,7 +1181,6 @@ def objectiveFunction(data):
                     sensor_name=sensor_key,
                     neighbourhood_size=args["neighbourhood_size"],
                     poly_degree=args["poly_degree"],
-                    noise=args["noisy_initial_guess"],
                     mode="collections",
                 )
 
@@ -1201,7 +1196,7 @@ def objectiveFunction(data):
                 for error_type in ["lin_accel", "ang_vel"]:
                     for axis in ["x", "y", "z"]:
                         rname = f"c{collection_key}_{sensor_key}_{error_type}_{axis}"
-                        r[rname] = e[collection_key][error_type][axis]
+                        r[rname] = e[collection_key][error_type][axis] / normalizer["imu"]
 
     if args["verbose"] and data["status"]["is_iteration"]:
         errorReport(dataset=dataset, residuals=r, normalizer=normalizer, args=args)

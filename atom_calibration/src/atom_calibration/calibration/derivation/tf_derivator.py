@@ -14,10 +14,12 @@ from atom_calibration.calibration.derivation.derivation_utils import (
     timeStampToFloat,
 )
 from atom_core.atom import getTransform
+from atom_core.dataset_io import addNoiseToInitialGuess
 from atom_core.geometry import (
     matrixToTranslationQuaternion,
     translationQuaternionToTransform,
 )
+from atom_core.naming import generateKey
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 import numpy as np
@@ -165,12 +167,9 @@ def deriveTranslation(
 
 def deriveDataset(
     dataset: dict,
-    # from_frame: str,
-    # to_frame: str,
     sensor_name: str,
     neighbourhood_size: int,
     poly_degree: int,
-    noise: tuple,
     mode: str,
 ) -> dict:
     """
@@ -195,43 +194,25 @@ def deriveDataset(
         "quat": {"x": [], "y": [], "z": [], "w": []},
     }
 
-    noise_trans = noise[0]
-    noise_rot = noise[1]
+    # To account for noise being input from the calibrate script, the sensor tfs must be replaced by those from a given collection (since they are static, this should not be an issue)
 
     for tf_pool_idx in range(len(tf_pool_lst_copy)):
         # for tf_pool in tf_pool_lst_copy:
         tf_pool = tf_pool_lst_copy[tf_pool_idx]
         data_dict["t"].append(timeStampToFloat(stamp=tf_pool.pop("stamp")))
 
-        # Calculate the new atomic tf with noise.
-        if tf_pool_idx == 0:
-            # Add noise to the atomic tf of the imu
-            for tf_key, transform in tf_pool.items():
-                if transform["child"] == to_frame:
-                    # Check if the transform is fixed. It should be, given how ATOM works, but it's better to check regardless.
-                    if (
-                        dataset["transforms"][
-                            f"{transform['parent']}-{transform['child']}"
-                        ]["type"]
-                        != "fixed"
-                    ):
-                        atomError(
-                            "The TF you're trying to add noise to isn't fixed! Are you sure your dataset was correctly collected?"
-                        )
+        selected_collection_key = list(dataset["collections"].keys())[0]
+        transform_key = generateKey(
+            parent=dataset["sensors"][sensor_name]["calibration_parent"],
+            child=dataset["sensors"][sensor_name]["calibration_child"],
+        )
 
-                    quat = transform["quat"]
-                    trans = transform["trans"]
-
-                    v = np.random.uniform(-1.0, 1.0, 3)
-                    v = v / np.linalg.norm(v)
-                    new_trans = trans + v * noise_trans
-
-                    v = np.random.choice([-1.0, 1.0], 3) * noise_rot
-                    euler_angles = tf.transformations.euler_from_quaternion(quat)
-                    new_angles = euler_angles + v
-                    new_quat = tf.transformations.quaternion_from_euler(
-                        new_angles[0], new_angles[1], new_angles[2]
-                    )
+        new_quat = dataset["collections"][selected_collection_key]["transforms"][
+            transform_key
+        ]["quat"]
+        new_trans = dataset["collections"][selected_collection_key]["transforms"][
+            transform_key
+        ]["trans"]
 
         # Now that we have the new translation and rotation values with noise, apply them to all datapoints
         for tf_key, transform in tf_pool.items():
@@ -277,7 +258,7 @@ def deriveDataset(
         }
 
     elif mode == "collections":
-        
+
         derivation_results = {}
 
         for collection_key, collection in dataset["collections"].items():
@@ -291,7 +272,7 @@ def deriveDataset(
             )
 
             closest_t_idx = data_dict["t"].index(closest_t)
-            
+
             derivation_results[collection_key] = {
                 "lin_accel": {
                     "x": lin_accels["x"][closest_t_idx],
@@ -358,10 +339,10 @@ def calculateErrorsAtCollections(
 
         R = world_imu_tf[:3, :3]
 
-        imu_accel = R @ imu_lin_accel
+        imu_lin_accel = R @ imu_lin_accel
 
         # Remove gravity
-        imu_accel[2] -= 9.81
+        imu_lin_accel[2] -= 9.81
 
         e[collection_key] = {
             "lin_accel": {
@@ -551,6 +532,8 @@ if __name__ == "__main__":
 
     selected_collection_key = list(input_dataset["collections"].keys())[0]
 
+    addNoiseToInitialGuess(input_dataset, args, selected_collection_key)
+
     tf_lst = getTFList(input_dataset)
 
     derivation_results = deriveDataset(
@@ -558,36 +541,35 @@ if __name__ == "__main__":
         sensor_name="imu_chassis",
         neighbourhood_size=neighbourhood_size,
         poly_degree=args["poly_degree"],
-        noise=args["noisy_initial_guess"],
         mode=args["derivation_mode"],
     )
 
-    # plotDerivationResults(
-    #     dataset=input_dataset,
-    #     tf_list=tf_lst,
-    #     derivation_results=derivation_results,
-    #     from_frame="world",
-    #     to_frame="accelerometer",
-    #     noise=args["noisy_initial_guess"],
-    #     dataset_name=dataset_name,
-    # )
 
-    e = calculateErrorsAtCollections(
-        dataset=input_dataset,
-        results=derivation_results,
-        sensor_name="imu_chassis",
-        from_frame="world",
-        to_frame="accelerometer",
-    )
+    if args["derivation_mode"] == "collections":
+        e = calculateErrorsAtCollections(
+            dataset=input_dataset,
+            results=derivation_results,
+            sensor_name="imu_chassis",
+            from_frame="world",
+            to_frame="accelerometer",
+        )
 
-
-
-    # e = calculateErrorsAllDataPoints(
-    # dataset=input_dataset,
-    # tf_list=tf_lst,
-    # results=derivation_results,
-    # sensor_topic="/imu",
-    # from_frame="world",
-    # to_frame="accelerometer",
-    # )
-#
+    elif args["derivation_mode"] == "continuous":
+        plotDerivationResults(
+            dataset=input_dataset,
+            tf_list=tf_lst,
+            derivation_results=derivation_results,
+            from_frame="world",
+            to_frame="accelerometer",
+            noise=args["noisy_initial_guess"],
+            dataset_name=dataset_name,
+        )
+        e = calculateErrorsAllDataPoints(
+            dataset=input_dataset,
+            tf_list=tf_lst,
+            results=derivation_results,
+            sensor_topic="/imu",
+            from_frame="world",
+            to_frame="accelerometer",
+        )
+    
