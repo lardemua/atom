@@ -227,7 +227,7 @@ def main():
     dataset, _ = loadResultsJSON(args["json_file"], args["collection_selection_function"])
 
     if float(dataset['_metadata']['version']) < 3.0:
-        atomError('Your dataset not version 3.0. Before running a calibration, you need to update it first with:\nrosrun atom_calibration update_dataset_from_version_2_to_3.')
+        atomError('Your dataset is not version 3.0. Before running a calibration, you need to update it first with:\nrosrun atom_calibration update_dataset_from_version_2_to_3.')
 
     # make a copy before filtering out collections and sensors
     dataset_original = copy.deepcopy(dataset)
@@ -804,8 +804,9 @@ def main():
                 # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
                 #       ' affected by parameters:\n' + str(params))
     
-    # Residuals based on coninuous data can't be defined for each collection; the errors are calculated for each /tf message (see tf_derivator.py)
-    for datapoint_idx in range(len(dataset["continuous_data"]["/tf"])):
+    # IMU-related residuals aren't pattern-related, so we calculate them in a different for loop 
+    
+    for collection_key, collection in dataset["collections"].items():
         for sensor_key, sensor in dataset["sensors"].items():
             if sensor["modality"] == "imu":
                 params = []
@@ -819,16 +820,13 @@ def main():
                         params.extend(opt.getParamsContainingPattern(transform_key))
 
                 # One residual for each axis and for lin accel and ang vel
-                for axis in ["x", "y", "z"]:
-                    rname = f"{sensor_key}_lin_accel_{axis}_{datapoint_idx}"
-                    opt.pushResidual(name=rname, params=params)
-
-                    rname= f"{sensor_key}_ang_vel_{axis}_{datapoint_idx}"
-                    opt.pushResidual(name=rname, params=params)
-                    
+                for error_type in ["lin_accel", "ang_vel"]:
+                    for axis in ["x", "y", "z"]:
+                        rname = f"c{collection_key}_{sensor_key}_{error_type}_{axis}"
+                        opt.pushResidual(name=rname, params=params)                    
 
 
-    # opt.printResiduals()
+    opt.printResiduals()
 
     # ---------------------------------------
     # --- Compute the SPARSE MATRIX
@@ -836,7 +834,7 @@ def main():
     print("Computing sparse matrix ... ")
     opt.computeSparseMatrix()
     opt.printSparseMatrix()
-    # opt.printParameters()
+    opt.printParameters()
 
     # ---------------------------------------
     # --- Get a normalizer for each residual type
@@ -855,8 +853,8 @@ def main():
                            for k in residuals.keys() if sensor_key in k]
 
         # NOTE: Normalizer for IMU?
-        # If the normalizer is to big, the residuals may loose their influence when close to zero.
         if modality == 'rgb':
+        # If the normalizer is to big, the residuals may loose their influence when close to zero.
             normalizer[modality] = args['rgb_normalizer_multiplier'] * np.mean(values)
         else:
             normalizer[modality] = np.mean(values)
@@ -892,9 +890,12 @@ def main():
     errorReport(dataset=dataset, residuals=objectiveFunction(
         opt.data_models), normalizer=normalizer, args=args)
 
+    # opt.printResiduals()
+
     # ---------------------------------------
     # --- Print Results
     # ---------------------------------------
+
     if args['comparison_to_ground_truth']:
         # opt.printParametersErrors() # only if we want to see the value of each parameter
         printComparisonToGroundTruth(dataset, dataset_initial, dataset_ground_truth,

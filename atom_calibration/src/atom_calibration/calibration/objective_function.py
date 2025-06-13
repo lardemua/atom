@@ -14,9 +14,11 @@ from datetime import datetime
 import re
 from atom_calibration.calibration.derivation.tf_derivator import (
     calculateErrorsAllDataPoints,
-    deriveDatasetAllDataPoints,
+    calculateErrorsAtCollections,
+    deriveDataset,
 )
 from atom_calibration.calibration.derivation.derivation_utils import getTFList
+from atom_core.naming import generateKey
 import numpy as np
 from atom_core.joint_models import (
     getTransformationFromJoint,
@@ -24,6 +26,7 @@ from atom_core.joint_models import (
 )
 import atom_core.ros_numpy
 from colorama import Fore, Style
+from rosgraph.network import ROS_HOSTNAME
 from scipy.spatial import distance
 
 # ROS imports
@@ -481,6 +484,8 @@ def objectiveFunction(data):
     dataset = data["dataset"]
     patterns = data["dataset"]["patterns"]
     args = data["args"]
+    status = data["status"]
+
     if args["view_optimization"] or args["ros_visualization"]:
         dataset_graphics = data["graphics"]
 
@@ -496,8 +501,8 @@ def objectiveFunction(data):
             "calibration_patterns"
         ].items():
             for sensor_key, sensor in dataset["sensors"].items():  # iterate all sensors
-                
-                # Ignore if cololection-by-collection residuals if it's an IMU
+
+                # Ignore residuals if it's an IMU, since we don't need to iterate through the patterns
                 if sensor["modality"] == "imu":
                     continue
 
@@ -1130,47 +1135,73 @@ def objectiveFunction(data):
                         collection["labels"][pattern_key][sensor_key][
                             "idxs_initial"
                         ] = copy.deepcopy(idxs_projected)
-            
+
                 else:
                     raise ValueError("Unknown sensor msg_type or modality")
-                
 
     for sensor_key, sensor in dataset["sensors"].items():
         if sensor["modality"] == "imu":
             # Derivate expected tfs from dataset
             # Compare with actual imu data
 
-            # Derive using the functions from the tf_derivator module
-            derivation_results = deriveDatasetAllDataPoints(
-                dataset=dataset,
-                from_frame=dataset["calibration_config"]["world_link"],
-                to_frame=sensor["calibration_child"],
-                neighbourhood_size=args["neighbourhood_size"],
-                poly_degree=args["poly_degree"],
-                noise=args["noisy_initial_guess"],
+            selected_collection_key = list(dataset["collections"].keys())[0]
+
+            # Update continuous /tf_static messages with the the new values
+
+            transform_key = generateKey(
+                sensor["calibration_parent"], sensor["calibration_child"]
             )
 
-            e = calculateErrorsAllDataPoints(
-                dataset=dataset,
-                tf_list=getTFList(dataset),
-                results=derivation_results,
-                sensor_topic=sensor["topic"],
-                from_frame=dataset["calibration_config"]["world_link"],
-                to_frame=sensor["calibration_child"],
-            )
+            for tf_msg in dataset["continuous_data"]["/tf_static"][0]["transforms"]:
+                tf_msg["transform"]["rotation"]["x"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["quat"][0]
+                tf_msg["transform"]["rotation"]["y"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["quat"][1]
+                tf_msg["transform"]["rotation"]["z"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["quat"][2]
+                tf_msg["transform"]["rotation"]["w"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["quat"][3]
 
-            for idx in range(len(e["lin_accel"]["x"])):
-                # Add a residual for each datapoint in the error lists and for each axis
-                for axis in ["x", "y", "z"]:
-                    # Linear acceleration residual
-                    rname = f"{sensor_key}_lin_accel_{axis}_{idx}"
-                    r[rname] = e["lin_accel"][axis][idx] / normalizer["imu"]
-                    # print(rname)
-                    # exit(0)
-                    # Angular velocity residual
-                    rname = f"{sensor_key}_ang_vel_{axis}_{idx}"
-                    r[rname] = e["ang_vel"][axis][idx] / normalizer["imu"]
-                
+                tf_msg["transform"]["translation"]["x"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["trans"][0]
+                tf_msg["transform"]["translation"]["y"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["trans"][1]
+                tf_msg["transform"]["translation"]["z"] = dataset["collections"][
+                    selected_collection_key
+                ]["transforms"][transform_key]["trans"][2]
+
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["modality"] == "imu":
+
+            for collection_key, collection in dataset["collections"].items():
+                derivation_results = deriveDataset(
+                    dataset=dataset,
+                    sensor_name=sensor_key,
+                    neighbourhood_size=args["neighbourhood_size"],
+                    poly_degree=args["poly_degree"],
+                    noise=args["noisy_initial_guess"],
+                    mode="collections",
+                )
+
+                e = calculateErrorsAtCollections(
+                    dataset=dataset,
+                    results=derivation_results,
+                    sensor_name=sensor_key,
+                    from_frame=dataset["calibration_config"]["world_link"],
+                    to_frame=sensor["calibration_child"],
+                )
+
+                # For each collection, add a lin_accel and ang_vel residual for each axis
+                for error_type in ["lin_accel", "ang_vel"]:
+                    for axis in ["x", "y", "z"]:
+                        rname = f"c{collection_key}_{sensor_key}_{error_type}_{axis}"
+                        r[rname] = e[collection_key][error_type][axis]
 
     if args["verbose"] and data["status"]["is_iteration"]:
         errorReport(dataset=dataset, residuals=r, normalizer=normalizer, args=args)

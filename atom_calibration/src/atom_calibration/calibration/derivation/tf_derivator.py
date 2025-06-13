@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+from copy import deepcopy
 import json
 import os
-from copy import deepcopy
 import pprint
 from typing import Any, Dict, List, Tuple
 
-import numpy as np
-import seaborn as sns
-import tf
 from atom_calibration.calibration.derivation.derivation_utils import (
     getTFList,
     plotDerivationResults,
@@ -23,8 +20,11 @@ from atom_core.geometry import (
 )
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
+import numpy as np
 from scipy.signal import savgol_filter
 from scipy.spatial.transform import Rotation
+import seaborn as sns
+import tf
 
 
 def deriveRotation(
@@ -153,28 +153,34 @@ def deriveTranslation(
         deriv=2,
         delta=dt,
     )
-    lin_vel_arr: dict[str, Any] = {"x": lin_vel_x, "y": lin_vel_y, "z": lin_vel_z}
-    lin_accel_arr: dict[str, Any] = {
+    lin_vels: dict[str, Any] = {"x": lin_vel_x, "y": lin_vel_y, "z": lin_vel_z}
+    lin_accels: dict[str, Any] = {
         "x": lin_accel_x,
         "y": lin_accel_y,
         "z": lin_accel_z,
     }
 
-    return lin_vel_arr, lin_accel_arr
+    return lin_vels, lin_accels
 
 
-def deriveDatasetAllDataPoints(
+def deriveDataset(
     dataset: dict,
-    from_frame: str,
-    to_frame: str,
+    # from_frame: str,
+    # to_frame: str,
+    sensor_name: str,
     neighbourhood_size: int,
     poly_degree: int,
     noise: tuple,
+    mode: str,
 ) -> dict:
     """
-    Derive for all timestamps corresponding to collections in a dataset.
-    Return a dictionary containing the derivation results for each collection.
+    Derive for all timestamps corresponding to /tf messages in a dataset.
+    Return a dictionary containing the derivation results for each datapoint (mode="continuous") or for each collection (mode="collections").
     """
+
+    # Define from_frame and to_frame, typically "world" and the IMU frame
+    from_frame = dataset["calibration_config"]["world_link"]
+    to_frame = dataset["sensors"][sensor_name]["calibration_child"]
 
     # Get list of timestamps to integrate for
     derivation_results = {}
@@ -249,7 +255,9 @@ def deriveDatasetAllDataPoints(
         data_dict["quat"]["y"].append(quat[2])
         data_dict["quat"]["z"].append(quat[3])
 
-    lin_vel_arr, lin_accel_arr = deriveTranslation(
+    # print(f"source_target_tf_trans_x: {data_dict['trans']['x'][700]}")
+
+    lin_vels, lin_accels = deriveTranslation(
         tf_data_dict=data_dict,
         poly_degree=poly_degree,
         neighbourhood_size=neighbourhood_size,
@@ -261,11 +269,46 @@ def deriveDatasetAllDataPoints(
         neighbourhood_size=neighbourhood_size,
     )
 
-    derivation_results = {
-        "lin_accel": lin_accel_arr,
-        "lin_vel": lin_vel_arr,
-        "ang_vel": ang_vels,
-    }
+    if mode == "continuous":
+        derivation_results = {
+            "lin_accel": lin_accels,
+            "lin_vel": lin_vels,
+            "ang_vel": ang_vels,
+        }
+
+    elif mode == "collections":
+        
+        derivation_results = {}
+
+        for collection_key, collection in dataset["collections"].items():
+            # Need to match the collection with the correspondent lin_accel, lin_vel and ang_vel values from the derivation. Use the closest datapoint to make the matching.
+            collection_stamp = collection["data"][sensor_name]["header"]["stamp"]
+            collection_t = timeStampToFloat(collection_stamp)
+
+            closest_t = min(
+                data_dict["t"],
+                key=lambda t: abs(t - collection_t),
+            )
+
+            closest_t_idx = data_dict["t"].index(closest_t)
+            
+            derivation_results[collection_key] = {
+                "lin_accel": {
+                    "x": lin_accels["x"][closest_t_idx],
+                    "y": lin_accels["y"][closest_t_idx],
+                    "z": lin_accels["z"][closest_t_idx],
+                },
+                "lin_vel": {
+                    "x": lin_vels["x"][closest_t_idx],
+                    "y": lin_vels["y"][closest_t_idx],
+                    "z": lin_vels["z"][closest_t_idx],
+                },
+                "ang_vel": {
+                    "x": ang_vels["x"][closest_t_idx],
+                    "y": ang_vels["y"][closest_t_idx],
+                    "z": ang_vels["z"][closest_t_idx],
+                },
+            }
 
     return derivation_results
 
@@ -282,33 +325,55 @@ def calculateErrorsAtCollections(
 
         # Calculate IMU data
         # I need to apply the rotation from the IMU to the world frame to the data from the IMU to compare correctly
-        imu_accel = [
-            *dataset["collections"][collection_key]["data"][sensor_name][
+
+        imu_lin_accel = [
+            dataset["collections"][collection_key]["data"][sensor_name][
                 "linear_acceleration"
-            ].values()
-        ]
-        imu_ang_vel = [
-            *dataset["collections"][collection_key]["data"][sensor_name][
-                "angular_velocity"
-            ].values()
+            ]["x"],
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "linear_acceleration"
+            ]["y"],
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "linear_acceleration"
+            ]["z"],
         ]
 
-        world_T_imu = getTransform(
+        imu_ang_vel = [
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "angular_velocity"
+            ]["x"],
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "angular_velocity"
+            ]["y"],
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "angular_velocity"
+            ]["z"],
+        ]
+
+        world_imu_tf = getTransform(
             from_frame=from_frame,
             to_frame=to_frame,
             transforms=dataset["collections"][collection_key]["transforms"],
         )
 
-        R = world_T_imu[:3, :3]
+        R = world_imu_tf[:3, :3]
 
-        imu_accel = R @ imu_accel
+        imu_accel = R @ imu_lin_accel
 
         # Remove gravity
         imu_accel[2] -= 9.81
 
         e[collection_key] = {
-            "e_lin_accel": np.linalg.norm(np.array(imu_accel) - result["lin_accel"]),
-            "e_ang_vel": np.linalg.norm(np.array(imu_ang_vel) - result["ang_vel"]),
+            "lin_accel": {
+                "x": abs(imu_lin_accel[0] - result["lin_accel"]["x"]),
+                "y": abs(imu_lin_accel[1] - result["lin_accel"]["y"]),
+                "z": abs(imu_lin_accel[2] - result["lin_accel"]["z"]),
+            },
+            "ang_vel": {
+                "x": abs(imu_ang_vel[0] - result["ang_vel"]["x"]),
+                "y": abs(imu_ang_vel[1] - result["ang_vel"]["y"]),
+                "z": abs(imu_ang_vel[2] - result["ang_vel"]["z"]),
+            },
         }
 
     return e
@@ -453,10 +518,25 @@ if __name__ == "__main__":
         type=float,
         default=[0.0, 0.0],
     )
+    ap.add_argument(
+        "-dm",
+        "--derivation_mode",
+        type=str,
+        required=False,
+        default="collections",
+        help="Decides whether derivation errors are calculated at each collection or in a continuous manner, throughout the dataset.",
+    )
     ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
 
     args = vars(ap.parse_args())
     neighbourhood_size = args["neighbourhood_size"]
+
+    # Verify that "mode" is valid
+    if (
+        args["derivation_mode"] != "continuous"
+        and args["derivation_mode"] != "collections"
+    ):
+        atomError(message="Invalid value for derivation mode!")
 
     # Find dataset name for results saving purposes
     dataset_name = args["json_file"].split("/")[-2]
@@ -473,13 +553,13 @@ if __name__ == "__main__":
 
     tf_lst = getTFList(input_dataset)
 
-    derivation_results = deriveDatasetAllDataPoints(
+    derivation_results = deriveDataset(
         dataset=input_dataset,
-        from_frame="world",
-        to_frame="accelerometer",
+        sensor_name="imu_chassis",
         neighbourhood_size=neighbourhood_size,
         poly_degree=args["poly_degree"],
         noise=args["noisy_initial_guess"],
+        mode=args["derivation_mode"],
     )
 
     # plotDerivationResults(
@@ -492,11 +572,22 @@ if __name__ == "__main__":
     #     dataset_name=dataset_name,
     # )
 
-    e = calculateErrorsAllDataPoints(
+    e = calculateErrorsAtCollections(
         dataset=input_dataset,
-        tf_list=tf_lst,
         results=derivation_results,
-        sensor_topic="/imu",
+        sensor_name="imu_chassis",
         from_frame="world",
         to_frame="accelerometer",
     )
+
+
+
+    # e = calculateErrorsAllDataPoints(
+    # dataset=input_dataset,
+    # tf_list=tf_lst,
+    # results=derivation_results,
+    # sensor_topic="/imu",
+    # from_frame="world",
+    # to_frame="accelerometer",
+    # )
+#
