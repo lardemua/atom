@@ -225,7 +225,10 @@ def setupVisualization(dataset, args, selected_collection_key):
     # ----------------------------------------------------------------------------------------
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
-
+            # Ignore if IMU
+            if sensor["modality"] == "imu":
+                continue
+            
             # check if sensor detects and of the patterns
             flag_detects_at_least_one_pattern = False
             for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
@@ -260,6 +263,11 @@ def setupVisualization(dataset, args, selected_collection_key):
     # Create 3D Labels  (only for lidar2d, lidar3d and depth)
     # ----------------------------------------------------------------------------------------
     for sensor_key, sensor in dataset['sensors'].items():
+        
+        # Ignore if IMU
+        if sensor["modality"] == "imu":
+            continue
+
         markers = MarkerArray()
         for collection_key, collection in dataset['collections'].items():
 

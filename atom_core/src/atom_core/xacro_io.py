@@ -37,6 +37,12 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list, verbose=
     description_file, _, _ = uriReader(dataset["calibration_config"]["description_file"])
     xml_robot = readXacroFile(description_file)
 
+    # Find out if there are only imus; if so, there is no need to save pattern data
+    only_imus = True
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["modality"] != "imu":
+            only_imus = False
+
     # Put transformations from sensors and additional_tfs into the urdf
     for transform_key in transforms_list:
 
@@ -120,6 +126,8 @@ def saveResultsXacro(dataset, selected_collection_key, transforms_list, verbose=
 
     # Save optimized xacro with patterns
     for pattern_key, pattern in dataset['calibration_config']['calibration_patterns'].items():
+        if only_imus:
+            continue
         if not pattern['fixed']:
             continue
         pattern_mesh = Mesh(filename=pattern['mesh_file'])

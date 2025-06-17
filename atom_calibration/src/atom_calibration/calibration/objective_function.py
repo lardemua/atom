@@ -1196,7 +1196,11 @@ def objectiveFunction(data):
                 for error_type in ["lin_accel", "ang_vel"]:
                     for axis in ["x", "y", "z"]:
                         rname = f"c{collection_key}_{sensor_key}_{error_type}_{axis}"
-                        r[rname] = e[collection_key][error_type][axis] / normalizer["imu"]
+                        
+                        if error_type == "lin_accel":
+                            r[rname] = e[collection_key][error_type][axis] / normalizer["imu"]
+                        elif error_type == "ang_vel": 
+                            r[rname] = e[collection_key][error_type][axis] / (normalizer["imu"])
 
     if args["verbose"] and data["status"]["is_iteration"]:
         errorReport(dataset=dataset, residuals=r, normalizer=normalizer, args=args)

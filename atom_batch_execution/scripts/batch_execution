@@ -43,6 +43,8 @@ def generateClasses(dataset):
         class_name = ''
         for pattern_key in dataset['patterns'].keys():
             for sensor_key in dataset['sensors'].keys():
+                if dataset["sensors"][sensor_key]["modality"]:
+                    continue
                 if dataset['collections'][collection_key]['labels'][pattern_key][sensor_key]['detected']:
                     detected_sensors.append(sensor_key)
             detected_pattern_and_sensors = pattern_key + '--' + '-'.join(detected_sensors)
