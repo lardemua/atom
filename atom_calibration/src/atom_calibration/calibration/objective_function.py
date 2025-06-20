@@ -1175,23 +1175,23 @@ def objectiveFunction(data):
     for sensor_key, sensor in dataset["sensors"].items():
         if sensor["modality"] == "imu":
 
+            derivation_results = deriveDataset(
+                dataset=dataset,
+                sensor_name=sensor_key,
+                neighbourhood_size=args["neighbourhood_size"],
+                poly_degree=args["poly_degree"],
+                mode="collections",
+            )
+
+            e = calculateErrorsAtCollections(
+                dataset=dataset,
+                results=derivation_results,
+                sensor_name=sensor_key,
+                from_frame=dataset["calibration_config"]["world_link"],
+                to_frame=sensor["calibration_child"],
+            )
+
             for collection_key, collection in dataset["collections"].items():
-                derivation_results = deriveDataset(
-                    dataset=dataset,
-                    sensor_name=sensor_key,
-                    neighbourhood_size=args["neighbourhood_size"],
-                    poly_degree=args["poly_degree"],
-                    mode="collections",
-                )
-
-                e = calculateErrorsAtCollections(
-                    dataset=dataset,
-                    results=derivation_results,
-                    sensor_name=sensor_key,
-                    from_frame=dataset["calibration_config"]["world_link"],
-                    to_frame=sensor["calibration_child"],
-                )
-
                 # For each collection, add a lin_accel and ang_vel residual for each axis
                 for error_type in ["lin_accel", "ang_vel"]:
                     for axis in ["x", "y", "z"]:
