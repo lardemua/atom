@@ -20,7 +20,7 @@ from atom_core.geometry import (
     translationQuaternionToTransform,
 )
 from atom_core.naming import generateKey
-from atom_core.utilities import atomError
+from atom_core.utilities import atomError, atomWarn
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.signal import savgol_filter
@@ -238,19 +238,19 @@ def deriveDataset(
 
     # print(f"source_target_tf_trans_x: {data_dict['trans']['x'][700]}")
 
-    lin_vels, lin_accels = deriveTranslation(
-        tf_data_dict=data_dict,
-        poly_degree=poly_degree,
-        neighbourhood_size=neighbourhood_size,
-    )
-
-    ang_vels = deriveRotation(
-        tf_data_dict=data_dict,
-        poly_degree=poly_degree,
-        neighbourhood_size=neighbourhood_size,
-    )
 
     if mode == "continuous":
+        lin_vels, lin_accels = deriveTranslation(
+            tf_data_dict=data_dict,
+            poly_degree=poly_degree,
+            neighbourhood_size=neighbourhood_size,
+        )
+
+        ang_vels = deriveRotation(
+            tf_data_dict=data_dict,
+            poly_degree=poly_degree,
+            neighbourhood_size=neighbourhood_size,
+        )
         derivation_results = {
             "lin_accel": lin_accels,
             "lin_vel": lin_vels,
@@ -273,21 +273,55 @@ def deriveDataset(
 
             closest_t_idx = data_dict["t"].index(closest_t)
 
+            if neighbourhood_size // 2 == 0:
+                atomWarn("Neighbourhood size must be odd if deriving at collections! Using the default value of 75")
+                neighbourhood_size = 75
+
+            # Get segment of data (around the collection timestamp) to derive
+            half_neighbourhood = neighbourhood_size // 2
+
+            data_segment_dict = {
+                "t": data_dict["t"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                "trans": {
+                    "x": data_dict["trans"]["x"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "y": data_dict["trans"]["y"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "z": data_dict["trans"]["z"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                },
+                "quat": {
+                    "w": data_dict["quat"]["w"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "x": data_dict["quat"]["x"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "y": data_dict["quat"]["y"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "z": data_dict["quat"]["z"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                },
+            }
+
+            lin_vels, lin_accels = deriveTranslation(
+                tf_data_dict=data_segment_dict,
+                poly_degree=poly_degree,
+                neighbourhood_size=neighbourhood_size
+            )
+
+            ang_vels = deriveRotation(
+                tf_data_dict=data_segment_dict,
+                poly_degree=poly_degree,
+                neighbourhood_size=neighbourhood_size
+            )
+
             derivation_results[collection_key] = {
                 "lin_accel": {
-                    "x": lin_accels["x"][closest_t_idx],
-                    "y": lin_accels["y"][closest_t_idx],
-                    "z": lin_accels["z"][closest_t_idx],
+                    "x": lin_accels["x"][half_neighbourhood],
+                    "y": lin_accels["y"][half_neighbourhood],
+                    "z": lin_accels["z"][half_neighbourhood],
                 },
                 "lin_vel": {
-                    "x": lin_vels["x"][closest_t_idx],
-                    "y": lin_vels["y"][closest_t_idx],
-                    "z": lin_vels["z"][closest_t_idx],
+                    "x": lin_vels["x"][half_neighbourhood],
+                    "y": lin_vels["y"][half_neighbourhood],
+                    "z": lin_vels["z"][half_neighbourhood],
                 },
                 "ang_vel": {
-                    "x": ang_vels["x"][closest_t_idx],
-                    "y": ang_vels["y"][closest_t_idx],
-                    "z": ang_vels["z"][closest_t_idx],
+                    "x": ang_vels["x"][half_neighbourhood],
+                    "y": ang_vels["y"][half_neighbourhood],
+                    "z": ang_vels["z"][half_neighbourhood],
                 },
             }
 
