@@ -851,7 +851,7 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
             calibration_child = additional_tf['child_link']
             calibration_parent = additional_tf['parent_link']
             addNoiseToTF(dataset, selected_collection_key, calibration_parent,
-                         calibration_child, nig_trans, nig_rot)
+                         calibration_child, nig_trans, nig_rot, args)
 
     # add noise to sensors tfs for simulation
     for sensor_key, sensor in dataset['sensors'].items():
@@ -862,10 +862,10 @@ def addNoiseToInitialGuess(dataset, args, selected_collection_key):
             calibration_child = sensor['calibration_child']
             calibration_parent = sensor['calibration_parent']
             addNoiseToTF(dataset, selected_collection_key, calibration_parent,
-                         calibration_child, nig_trans, nig_rot)
+                         calibration_child, nig_trans, nig_rot, args)
 
 
-def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot):
+def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibration_child, nig_trans, nig_rot, args):
 
     transform_key = generateKey(calibration_parent, calibration_child, suffix='')
 
@@ -875,8 +875,23 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
         # Get original transformation
         quat = dataset['collections'][selected_collection_key]['transforms'][transform_key]['quat']
+        euler_angles = tf.transformations.euler_from_quaternion(quat)
         translation = dataset['collections'][selected_collection_key]['transforms'][
             transform_key]['trans']
+
+        # Parameters to keep (fixed_transform_parameters)
+        trans_params_to_keep = euler_params_to_keep = [None] * 3
+        if args['fixed_transform_parameters'] is not None:
+            fixed_transform_parameters = [key for key in args['fixed_transform_parameters']]
+            for transform_param_key in fixed_transform_parameters:
+                param_str = transform_param_key.split('_')[-1]
+                tf_key_from_param = transform_param_key.replace("_" + param_str, "")
+                if tf_key_from_param == transform_key:
+                    param_idx = ["x", "y", "z", "r1", "r2", "r3"].index(param_str)
+                    if param_idx in [0, 1, 2]:
+                        trans_params_to_keep[param_idx] = translation[param_idx]
+                    elif param_idx in [3, 4, 5]:
+                        euler_params_to_keep[param_idx - 3] = euler_angles[param_idx - 3]
 
         # Add noise to the 6 pose parameters
         v = np.random.uniform(-1.0, 1.0, 3)
@@ -884,8 +899,15 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
         new_translation = translation + v * nig_trans
 
         v = np.random.choice([-1.0, 1.0], 3) * nig_rot
-        euler_angles = tf.transformations.euler_from_quaternion(quat)
         new_angles = euler_angles + v
+
+        # Re-replace with parameters to keep from fixed_transform_parameters argument
+        for i in range(3):
+            if trans_params_to_keep[i] is not None:
+                new_translation[i] = trans_params_to_keep[i]
+            if euler_params_to_keep[i] is not None:
+                new_angles[i] = euler_params_to_keep[i]
+
 
         # Replace the original atomic transformations by the new noisy ones
         new_quat = tf.transformations.quaternion_from_euler(

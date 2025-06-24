@@ -199,6 +199,10 @@ def main():
         default=3,
         help="Degree of polynomial to use for curve-fitting during IMU calibration.",
     )
+    ap.add_argument(
+        "-ftp", "--fixed_transform_parameters", nargs='+',
+        help='Transform parameters which are to remain fixed during optimization (uses ground truth values).',
+        type=str, required=False)
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
     ap.add_argument(
@@ -338,7 +342,7 @@ def main():
         else:
             atomError('Anchored sensor ' + dataset["calibration_config"]
                       ["anchored_sensor"] + ' does not exist in dataset.')
-
+    
     # TODO If we want an anchored sensor we should search (and fix) all the transforms in its chain that are
     #  being optimized
 
@@ -353,6 +357,11 @@ def main():
 
     if anchored_transform_keys:
         print("These transform_keys are anchored: " + str(anchored_transform_keys))
+
+    if args['fixed_transform_parameters'] is not None:
+        fixed_transform_parameters = [key for key in args['fixed_transform_parameters']]
+    else:
+        fixed_transform_parameters = []
 
     # ---------------------------------------
     # --- SETUP OPTIMIZER: Add sensor parameters
@@ -381,6 +390,14 @@ def main():
         else:
             bound_max = [+np.inf for x in initial_transform]
             bound_min = [-np.inf for x in initial_transform]
+
+        for transform_param_key in fixed_transform_parameters:
+            param_str = transform_param_key.split('_')[-1]
+            tf_key_from_param = transform_param_key.replace("_" + param_str, "")
+            if tf_key_from_param == transform_key:
+                params_idx = ["x", "y", "z", "r1", "r2", "r3"].index(param_str)
+                bound_max[params_idx] = ground_truth_transform[params_idx] + 2 * sys.float_info.epsilon
+                bound_min[params_idx] = ground_truth_transform[params_idx] - 2 * sys.float_info.epsilon
 
         opt.pushParamVector(
             group_name=transform_key, data_key="dataset", bound_max=bound_max, bound_min=bound_min,

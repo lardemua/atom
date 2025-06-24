@@ -588,6 +588,8 @@ if __name__ == "__main__":
             to_frame="accelerometer",
         )
 
+        pprint.pprint(e)
+
     elif args["derivation_mode"] == "continuous":
         plotDerivationResults(
             dataset=input_dataset,

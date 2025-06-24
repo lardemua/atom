@@ -144,9 +144,9 @@ def printComparisonToGroundTruth(
     # --------------------------------------------------
     # Evaluate sensor poses
     # --------------------------------------------------
+    header = ['Transform', 'Description', 'Et0 [m]', 'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
+    table = PrettyTable(header)
     for sensor_key, sensor in dataset["sensors"].items():
-        header = ['Transform', 'Description', 'Et0 [m]', 'Et [m]', 'Rrot0 [rad]', 'Erot [rad]']
-        table = PrettyTable(header)
 
         # Create a table_to_save to be output as a csv file (#977) 
         if args["save_file_results"]:
