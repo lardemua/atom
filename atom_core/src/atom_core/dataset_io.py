@@ -881,6 +881,11 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
 
         # Parameters to keep (fixed_transform_parameters)
         trans_params_to_keep = euler_params_to_keep = [None] * 3
+        
+        # If this function is called from someplace not in calibrate, it will not have this argument 
+        if 'fixed_transform_parameters' not in args.keys():
+            args['fixed_transform_parameters'] = None
+        
         if args['fixed_transform_parameters'] is not None:
             fixed_transform_parameters = [key for key in args['fixed_transform_parameters']]
             for transform_param_key in fixed_transform_parameters:

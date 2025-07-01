@@ -202,7 +202,7 @@ def main():
     ap.add_argument(
         "-ftp", "--fixed_transform_parameters", nargs='+',
         help='Transform parameters which are to remain fixed during optimization (uses ground truth values).',
-        type=str, required=False)
+        type=str, required=False, default=None)
     ap.add_argument("-sfr", "--save_file_results", help="Store the results",
                     action='store_true', default=False)
     ap.add_argument(
