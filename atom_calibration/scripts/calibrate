@@ -193,6 +193,13 @@ def main():
         help="Number of TF samples to use for curve-fitting at each datapoint during IMU calibration.",
     )
     ap.add_argument(
+        "-pparams",
+        "--print_parameters",
+        action="store_true",
+        default=False,
+        help="Print optimization parameters after the process.",
+    )
+    ap.add_argument(
         "-pd",
         "--poly_degree",
         type=int,
@@ -904,6 +911,9 @@ def main():
     # Final error report
     errorReport(dataset=dataset, residuals=objectiveFunction(
         opt.data_models), normalizer=normalizer, args=args)
+
+    if args["print_parameters"]:
+        opt.printParameters()
 
     # ---------------------------------------
     # --- Print Results

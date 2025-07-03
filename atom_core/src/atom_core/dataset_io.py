@@ -880,7 +880,8 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
             transform_key]['trans']
 
         # Parameters to keep (fixed_transform_parameters)
-        trans_params_to_keep = euler_params_to_keep = [None] * 3
+        trans_params_to_keep = [None] * 3
+        euler_params_to_keep = [None] * 3
         
         # If this function is called from someplace not in calibrate, it will not have this argument 
         if 'fixed_transform_parameters' not in args.keys():
@@ -912,7 +913,6 @@ def addNoiseToTF(dataset, selected_collection_key, calibration_parent, calibrati
                 new_translation[i] = trans_params_to_keep[i]
             if euler_params_to_keep[i] is not None:
                 new_angles[i] = euler_params_to_keep[i]
-
 
         # Replace the original atomic transformations by the new noisy ones
         new_quat = tf.transformations.quaternion_from_euler(

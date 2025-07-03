@@ -25,7 +25,7 @@ from rospy_message_converter import message_converter
 from pynput import keyboard
 import yaml
 
-from tf.transformations import quaternion_matrix, euler_from_matrix
+from tf.transformations import euler_from_quaternion, quaternion_matrix, euler_from_matrix
 
 from atom_core.naming import generateKey
 from atom_core.system import execute, removeColorsFromText
@@ -45,13 +45,13 @@ def assertSensorModality(dataset, sensor, modality):
                   dataset['sensors'][sensor]['modality'] + Style.RESET_ALL + ' (it should be ' +
                   Fore.GREEN + modality + Style.RESET_ALL + ')')
 
-
 def compareAtomTransforms(transform_1, transform_2):
     """Compares two different transformations and returns the following metrics:
     Args:
         transform_1: transformation 1
         transform_2: transformation 2
     """
+
 
     # Create a 4x4 transformation for transform_1
     t1 = quaternion_matrix(transform_1['quat'])
@@ -61,21 +61,33 @@ def compareAtomTransforms(transform_1, transform_2):
     t2 = quaternion_matrix(transform_2['quat'])
     t2[0:3, 3] = transform_2['trans']
 
-    # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation the amount of rotation and translation in the resulting matrix.
+    v = t2[0:3, 3] - t1[0:3, 3]
+
+    # Method: We will use the following method. If T1 and T2 are the same, then multiplying one by the inverse of the other will produce and identity matrix, with zero translation and rotation. So we will do the multiplication and then evaluation of the amount of rotation and translation in the resulting matrix.
     # print('Comparing \nt1= ' + str(t1) + ' \n\nt2=' + str(t2))
 
     t_delta = np.dot(np.linalg.inv(t1), t2)
     # print('t_delta = ' + str(t_delta))
 
     rotation_delta = t_delta[0:3, 0:3]
-    roll, pitch, yaw = euler_from_matrix(rotation_delta)
-
+    # roll, pitch, yaw = euler_from_matrix(rotation_delta)
     translation_delta = t_delta[0:3, 3]
-    # print('translation_delta = ' + str(translation_delta))
+
+    euler_angles_init = euler_from_quaternion(transform_1['quat'])
+    euler_angles_final = euler_from_quaternion(transform_2['quat'])
+
+
+    deuler = np.subtract(euler_angles_final,euler_angles_init)
+    rotation_error = np.linalg.norm(deuler)
 
     # global metrics
-    translation_error = float(abs(np.average(translation_delta)))
-    rotation_error = float(np.average([abs(roll), abs(pitch), abs(yaw)]))
+    # translation_error = float(abs(np.average(translation_delta)))
+    translation_error = np.linalg.norm(translation_delta)
+    # rotation_error = np.linalg.norm([roll, pitch, yaw])
+
+
+    # print('translation error = ' + str(translation_error))
+    # print('rotation error = ' + str(rotation_error))
 
     return translation_error, rotation_error
 

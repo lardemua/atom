@@ -572,7 +572,7 @@ if __name__ == "__main__":
 
     derivation_results = deriveDataset(
         dataset=input_dataset,
-        sensor_name="imu_chassis",
+        sensor_name="imu_hand",
         neighbourhood_size=neighbourhood_size,
         poly_degree=args["poly_degree"],
         mode=args["derivation_mode"],
@@ -583,9 +583,9 @@ if __name__ == "__main__":
         e = calculateErrorsAtCollections(
             dataset=input_dataset,
             results=derivation_results,
-            sensor_name="imu_chassis",
-            from_frame="world",
-            to_frame="accelerometer",
+            sensor_name="imu_hand",
+            from_frame=input_dataset["calibration_config"]["world_link"],
+            to_frame="imu_link",
         )
 
         pprint.pprint(e)
@@ -595,8 +595,8 @@ if __name__ == "__main__":
             dataset=input_dataset,
             tf_list=tf_lst,
             derivation_results=derivation_results,
-            from_frame="world",
-            to_frame="accelerometer",
+            from_frame=input_dataset["calibration_config"]["world_link"],
+            to_frame="imu_link",
             noise=args["noisy_initial_guess"],
             dataset_name=dataset_name,
         )
@@ -605,7 +605,7 @@ if __name__ == "__main__":
             tf_list=tf_lst,
             results=derivation_results,
             sensor_topic="/imu",
-            from_frame="world",
-            to_frame="accelerometer",
+            from_frame=input_dataset["calibration_config"]["world_link"],
+            to_frame="imu_link",
         )
     
