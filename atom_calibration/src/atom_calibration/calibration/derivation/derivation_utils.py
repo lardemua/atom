@@ -352,6 +352,7 @@ def plotDerivationResults(
     to_frame: str,
     noise: tuple,
     dataset_name: str,
+    ignore_gravity: bool,
 ) -> None:
 
     # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions
@@ -403,7 +404,8 @@ def plotDerivationResults(
 
         R = world_imu_tf[:3, :3]
         imu_accel = R @ imu_accel
-        imu_accel[2] -= 9.81
+        if not ignore_gravity:
+            imu_accel[2] -= 9.81
 
         # For plotting
         data_dict["t"].append(tf_pool_t)

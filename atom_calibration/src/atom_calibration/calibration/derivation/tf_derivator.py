@@ -238,7 +238,6 @@ def deriveDataset(
 
     # print(f"source_target_tf_trans_x: {data_dict['trans']['x'][700]}")
 
-
     if mode == "continuous":
         lin_vels, lin_accels = deriveTranslation(
             tf_data_dict=data_dict,
@@ -274,37 +273,79 @@ def deriveDataset(
             closest_t_idx = data_dict["t"].index(closest_t)
 
             if neighbourhood_size // 2 == 0:
-                atomWarn("Neighbourhood size must be odd if deriving at collections! Using the default value of 75")
+                atomWarn(
+                    "Neighbourhood size must be odd if deriving at collections! Using the default value of 75"
+                )
                 neighbourhood_size = 75
 
             # Get segment of data (around the collection timestamp) to derive
             half_neighbourhood = neighbourhood_size // 2
 
             data_segment_dict = {
-                "t": data_dict["t"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                "t": data_dict["t"][
+                    closest_t_idx
+                    - half_neighbourhood : closest_t_idx
+                    + half_neighbourhood
+                    + 1
+                ],
                 "trans": {
-                    "x": data_dict["trans"]["x"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
-                    "y": data_dict["trans"]["y"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
-                    "z": data_dict["trans"]["z"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "x": data_dict["trans"]["x"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
+                    "y": data_dict["trans"]["y"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
+                    "z": data_dict["trans"]["z"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
                 },
                 "quat": {
-                    "w": data_dict["quat"]["w"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
-                    "x": data_dict["quat"]["x"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
-                    "y": data_dict["quat"]["y"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
-                    "z": data_dict["quat"]["z"][closest_t_idx - half_neighbourhood : closest_t_idx + half_neighbourhood + 1],
+                    "w": data_dict["quat"]["w"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
+                    "x": data_dict["quat"]["x"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
+                    "y": data_dict["quat"]["y"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
+                    "z": data_dict["quat"]["z"][
+                        closest_t_idx
+                        - half_neighbourhood : closest_t_idx
+                        + half_neighbourhood
+                        + 1
+                    ],
                 },
             }
 
             lin_vels, lin_accels = deriveTranslation(
                 tf_data_dict=data_segment_dict,
                 poly_degree=poly_degree,
-                neighbourhood_size=neighbourhood_size
+                neighbourhood_size=neighbourhood_size,
             )
 
             ang_vels = deriveRotation(
                 tf_data_dict=data_segment_dict,
                 poly_degree=poly_degree,
-                neighbourhood_size=neighbourhood_size
+                neighbourhood_size=neighbourhood_size,
             )
 
             derivation_results[collection_key] = {
@@ -329,7 +370,12 @@ def deriveDataset(
 
 
 def calculateErrorsAtCollections(
-    dataset: dict, results: dict, sensor_name: str, from_frame: str, to_frame: str
+    dataset: dict,
+    results: dict,
+    sensor_name: str,
+    from_frame: str,
+    to_frame: str,
+    ignore_gravity: bool,
 ) -> dict:
     """Calculate the errors in the derivation at each collection's timestamp by comparing the derivation results to the sensor data."""
 
@@ -376,7 +422,8 @@ def calculateErrorsAtCollections(
         imu_lin_accel = R @ imu_lin_accel
 
         # Remove gravity
-        imu_lin_accel[2] -= 9.81
+        if not ignore_gravity:
+            imu_lin_accel[2] -= 9.81
 
         e[collection_key] = {
             "lin_accel": {
@@ -401,6 +448,7 @@ def calculateErrorsAllDataPoints(
     sensor_topic: str,
     from_frame: str,
     to_frame: str,
+    ignore_gravity: bool,
 ) -> dict:
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
@@ -450,7 +498,8 @@ def calculateErrorsAllDataPoints(
         imu_accel = R @ imu_accel
 
         # Remove gravity
-        imu_accel[2] -= 9.81
+        if not ignore_gravity:
+            imu_accel[2] -= 9.81
 
         # For plotting
         data_dict["t"].append(tf_pool_t)
@@ -489,19 +538,19 @@ def calculateErrorsAllDataPoints(
 if __name__ == "__main__":
 
     ap = argparse.ArgumentParser()
-    # ap.add_argument(
-    #     "-m",
-    #     "--mode",
-    #     type=str,
-    #     default="collections",
-    #     help="Choose whether to plot out the errors align the entire dataset or only calculate the errors at each collection. Accepted modes are: ['dataset', 'collections']",
-    # )
     ap.add_argument(
         "-json",
         "--json_file",
         type=str,
         required=True,
         help="Json file containing input dataset.",
+    )
+    ap.add_argument(
+        "-sn",
+        "--sensor_name",
+        type=str,
+        required=True,
+        help="name of IMU sensor.",
     )
     ap.add_argument(
         "-ns",
@@ -521,6 +570,13 @@ if __name__ == "__main__":
         "-sdp",
         "--save_derivation_plot",
         help="Store the results in a plot when deriving the entire dataset",
+        action="store_true",
+        default=False,
+    )
+    ap.add_argument(
+        "-ig",
+        "--ignore_gravity",
+        help="Don't compensate for gravitational acceleration in the derivation",
         action="store_true",
         default=False,
     )
@@ -556,6 +612,8 @@ if __name__ == "__main__":
     # Find dataset name for results saving purposes
     dataset_name = args["json_file"].split("/")[-2]
 
+    sensor_name = args["sensor_name"]
+
     with open(args["json_file"]) as f:
         input_dataset = json.load(f)
 
@@ -572,20 +630,20 @@ if __name__ == "__main__":
 
     derivation_results = deriveDataset(
         dataset=input_dataset,
-        sensor_name="imu_hand",
+        sensor_name=sensor_name,
         neighbourhood_size=neighbourhood_size,
         poly_degree=args["poly_degree"],
         mode=args["derivation_mode"],
     )
 
-
     if args["derivation_mode"] == "collections":
         e = calculateErrorsAtCollections(
             dataset=input_dataset,
             results=derivation_results,
-            sensor_name="imu_hand",
+            sensor_name=sensor_name,
             from_frame=input_dataset["calibration_config"]["world_link"],
-            to_frame="imu_link",
+            to_frame="accelerometer",
+            ignore_gravity=args["ignore_gravity"],
         )
 
         pprint.pprint(e)
@@ -596,9 +654,10 @@ if __name__ == "__main__":
             tf_list=tf_lst,
             derivation_results=derivation_results,
             from_frame=input_dataset["calibration_config"]["world_link"],
-            to_frame="imu_link",
+            to_frame="accelerometer",
             noise=args["noisy_initial_guess"],
             dataset_name=dataset_name,
+            ignore_gravity=args["ignore_gravity"]
         )
         e = calculateErrorsAllDataPoints(
             dataset=input_dataset,
@@ -606,6 +665,6 @@ if __name__ == "__main__":
             results=derivation_results,
             sensor_topic="/imu",
             from_frame=input_dataset["calibration_config"]["world_link"],
-            to_frame="imu_link",
+            to_frame="accelerometer",
+            ignore_gravity=args["ignore_gravity"]
         )
-    
