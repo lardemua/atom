@@ -54,7 +54,11 @@ def deriveRotation(
     """
 
     # Get time values
-    dt = tf_data_dict["t"][1] - tf_data_dict["t"][0]
+    dt = 0
+    k = 0
+    while dt == 0:
+        dt = tf_data_dict["t"][k+1] - tf_data_dict["t"][k]
+        k += 1
 
     r_vec_array = []
 
@@ -71,7 +75,7 @@ def deriveRotation(
         r_vec = r.as_rotvec()
 
         if r_vec_prev is not None:
-            if np.dot(r_vec, r_vec_prev) < 0:
+            if np.linalg.norm(r_vec - r_vec_prev) > 2.0:
                 r_vec = -1 * r_vec
 
         r_vec_array.append(r_vec)
@@ -128,7 +132,12 @@ def deriveTranslation(
         - lin_accel: A list of 3 arrays of linear acceleration at each datapoint.
     """
 
-    dt = tf_data_dict["t"][1] - tf_data_dict["t"][0]
+    dt = 0
+    k = 0
+    while dt == 0:
+        dt = tf_data_dict["t"][k+1] - tf_data_dict["t"][k]
+        k += 1
+
 
     lin_vel_x = savgol_filter(
         x=tf_data_dict["trans"]["x"],
