@@ -72,7 +72,6 @@ def deriveRotation(
 
         if r_vec_prev is not None:
             if np.dot(r_vec, r_vec_prev) < 0:
-                print(np.linalg.norm(r_vec))
                 r_vec = -1 * r_vec
 
         r_vec_array.append(r_vec)
