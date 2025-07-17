@@ -3,6 +3,7 @@
 import argparse
 from copy import deepcopy
 import json
+from operator import index
 import os
 import pprint
 from typing import Any, Dict, List, Tuple
@@ -16,12 +17,15 @@ from atom_calibration.calibration.derivation.derivation_utils import (
 from atom_core.atom import getTransform
 from atom_core.dataset_io import addNoiseToInitialGuess
 from atom_core.geometry import (
+    matrixToRodrigues,
     matrixToTranslationQuaternion,
     translationQuaternionToTransform,
 )
 from atom_core.naming import generateKey
 from atom_core.utilities import atomError, atomWarn
 from matplotlib import pyplot as plt
+import networkx
+from networkx.exception import NodeNotFound
 import numpy as np
 from scipy.signal import savgol_filter
 from scipy.spatial.transform import Rotation
@@ -52,21 +56,31 @@ def deriveRotation(
     # Get time values
     dt = tf_data_dict["t"][1] - tf_data_dict["t"][0]
 
-    # R_arr = []
     r_vec_array = []
+
     # For each datapoint
+    quat_array = []
+    
+    r_vec_prev = None
+    
     for i in range(len(tf_data_dict["t"])):
         quat = [tf_data_dict["quat"][var][i] for var in ["x", "y", "z", "w"]]
         tvec = [tf_data_dict["trans"][var][i] for var in ["x", "y", "z"]]
 
-        # get tf matrix
-        M = translationQuaternionToTransform(tvec, quat)
-
-        r = Rotation.from_matrix(M[:3, :3])
+        r = Rotation.from_quat(quat)
         r_vec = r.as_rotvec()
+
+        if r_vec_prev is not None:
+            if np.dot(r_vec, r_vec_prev) < 0:
+                print(np.linalg.norm(r_vec))
+                r_vec = -1 * r_vec
+
         r_vec_array.append(r_vec)
 
+        r_vec_prev = r_vec
+
     r_vec_array = np.array(r_vec_array)
+
     dr_vec_array = np.zeros_like(r_vec_array)
 
     for k in range(3):
@@ -82,12 +96,16 @@ def deriveRotation(
 
     # Compute ang_vels
     ang_vels = {"x": [], "y": [], "z": []}
+    angs = {"x": [], "y": [], "z": []}
     for k in range(r_vec_array.shape[0]):
         ang_vels["x"].append(dr_vec_array[k, 0])
         ang_vels["y"].append(dr_vec_array[k, 1])
         ang_vels["z"].append(dr_vec_array[k, 2])
-
-    return ang_vels
+        angs["x"].append(r_vec_array[k, 0])
+        angs["y"].append(r_vec_array[k, 1])
+        angs["z"].append(r_vec_array[k, 2])
+    
+    return angs, ang_vels
 
 
 def deriveTranslation(
@@ -236,7 +254,6 @@ def deriveDataset(
         data_dict["quat"]["y"].append(quat[2])
         data_dict["quat"]["z"].append(quat[3])
 
-    # print(f"source_target_tf_trans_x: {data_dict['trans']['x'][700]}")
 
     if mode == "continuous":
         lin_vels, lin_accels = deriveTranslation(
@@ -245,7 +262,7 @@ def deriveDataset(
             neighbourhood_size=neighbourhood_size,
         )
 
-        ang_vels = deriveRotation(
+        angs, ang_vels = deriveRotation(
             tf_data_dict=data_dict,
             poly_degree=poly_degree,
             neighbourhood_size=neighbourhood_size,
@@ -253,6 +270,7 @@ def deriveDataset(
         derivation_results = {
             "lin_accel": lin_accels,
             "lin_vel": lin_vels,
+            "angs": angs,
             "ang_vel": ang_vels,
         }
 
@@ -342,7 +360,7 @@ def deriveDataset(
                 neighbourhood_size=neighbourhood_size,
             )
 
-            ang_vels = deriveRotation(
+            angs, ang_vels = deriveRotation(
                 tf_data_dict=data_segment_dict,
                 poly_degree=poly_degree,
                 neighbourhood_size=neighbourhood_size,

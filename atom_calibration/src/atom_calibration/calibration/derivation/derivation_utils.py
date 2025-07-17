@@ -363,6 +363,7 @@ def plotDerivationResults(
         "lin_vel": {"x": [], "y": [], "z": []},
         "lin_accel": {"x": [], "y": [], "z": []},
         "lin_accel_imu": {"x": [], "y": [], "z": []},
+        "angs": {"x": [], "y": [], "z": []},
         "ang_vel": {"x": [], "y": [], "z": []},
         "ang_vel_imu": {"x": [], "y": [], "z": []},
     }
@@ -436,6 +437,11 @@ def plotDerivationResults(
     data_dict["lin_accel"]["y"] = derivation_results["lin_accel"]["y"]
     data_dict["lin_accel"]["z"] = derivation_results["lin_accel"]["z"]
 
+    # Orientation Data
+    data_dict["angs"]["x"] = derivation_results["angs"]["x"]
+    data_dict["angs"]["y"] = derivation_results["angs"]["y"]
+    data_dict["angs"]["z"] = derivation_results["angs"]["z"]
+    
     # Angular Velocity Data
     data_dict["ang_vel"]["x"] = derivation_results["ang_vel"]["x"]
     data_dict["ang_vel"]["y"] = derivation_results["ang_vel"]["y"]
@@ -551,13 +557,21 @@ def plotDerivationResults(
 
     # Angular Velocity Plots
     fig4, ax10 = plt.subplots()
+    ax11 = ax10.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["angs"]["x"],
+        marker="o",
+        color="r",
+        ax=ax10,
+    )
     sns.scatterplot(
         x=data_dict["t_reparam"],
         y=data_dict["ang_vel"]["x"],
-        marker="o",
-        color="r",
+        marker="s",
+        color="g",
         label="Derivation Results",
-        ax=ax10,
+        ax=ax11,
     )
     sns.scatterplot(
         x=data_dict["t_reparam"],
@@ -565,17 +579,25 @@ def plotDerivationResults(
         marker="*",
         color="orange",
         label="IMU Angular Velocity Data",
-        ax=ax10,
+        ax=ax11,
     )
 
-    fig5, ax11 = plt.subplots()
+    fig5, ax12 = plt.subplots()
+    ax13 = ax12.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["angs"]["y"],
+        marker="o",
+        color="r",
+        ax=ax12,
+    )
     sns.scatterplot(
         x=data_dict["t_reparam"],
         y=data_dict["ang_vel"]["y"],
-        marker="o",
-        color="r",
+        marker="s",
+        color="g",
         label="Derivation Results",
-        ax=ax11,
+        ax=ax13,
     )
     sns.scatterplot(
         x=data_dict["t_reparam"],
@@ -583,16 +605,24 @@ def plotDerivationResults(
         marker="*",
         color="orange",
         label="IMU Angular Velocity Data",
-        ax=ax11,
+        ax=ax13,
     )
-    fig6, ax12 = plt.subplots()
+    fig6, ax14 = plt.subplots()
+    ax15 = ax14.twinx()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["angs"]["z"],
+        marker="o",
+        color="r",
+        ax=ax14,
+    )
     sns.scatterplot(
         x=data_dict["t_reparam"],
         y=data_dict["ang_vel"]["z"],
-        marker="o",
-        color="r",
+        marker="s",
+        color="g",
         label="Derivation Results",
-        ax=ax12,
+        ax=ax15,
     )
     sns.scatterplot(
         x=data_dict["t_reparam"],
@@ -600,15 +630,15 @@ def plotDerivationResults(
         marker="*",
         color="orange",
         label="IMU Angular Velocity Data",
-        ax=ax12,
+        ax=ax15,
     )
     # Some plot formatting
     ax1.set_title(r"Translation Data ($x$)")
     ax4.set_title(r"Translation Data ($y$)")
     ax7.set_title(r"Translation Data ($z$)")
     ax10.set_title(r"Angular Velocity Data ($\omega_x$)")
-    ax11.set_title(r"Angular Velocity Data ($\omega_y$)")
-    ax12.set_title(r"Angular Velocity Data ($\omega_z$)")
+    ax12.set_title(r"Angular Velocity Data ($\omega_y$)")
+    ax14.set_title(r"Angular Velocity Data ($\omega_z$)")
 
     for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10]:
         ax.set(xlabel=r"Time since first datapoint, $t$ $[s]$")
@@ -624,10 +654,14 @@ def plotDerivationResults(
         ax.set(ylabel=r"Acceleration $[m/s^2]$")
         ax.set_ylim(-1, 1)
         ax.yaxis.label.set_color("b")
-    for ax in [ax10, ax11, ax12]:
+    for ax in [ax10, ax12, ax14]:
+        ax.set(ylabel=r"Orientation $[rad]$")
+        ax.set_ylim(-3, 3)
+        ax.yaxis.label.set_color("r")
+    for ax in [ax11, ax13, ax15]:
         ax.set(ylabel=r"Angular Velocity $[rad/s]$")
         ax.set_ylim(-1.5, 1.5)
-        ax.yaxis.label.set_color("r")
+        ax.yaxis.label.set_color("g")
     for fig in [fig1, fig2, fig3, fig4, fig5, fig6]:
         fig.set_size_inches(18.5, 10.5)
         fig.tight_layout()
