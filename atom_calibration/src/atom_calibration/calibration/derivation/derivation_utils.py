@@ -125,7 +125,7 @@ def getTFList(dataset: Dict) -> List[Dict]:
             }
 
         # Include transforms from /tf_static. Only consider the last message.
-        for tf in dataset["continuous_data"]["/tf_static"][0]["transforms"]:
+        for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
             child_frame = tf["child_frame_id"]
             parent_frame = tf["header"]["frame_id"]
             key = f"{parent_frame}-{child_frame}"
@@ -417,6 +417,8 @@ def plotDerivationResults(
 
         R = world_imu_tf[:3, :3]
         imu_accel = R @ imu_accel
+        imu_ang_vel = R @ imu_ang_vel # TESTING
+        
         if not ignore_gravity:
             imu_accel[2] -= 9.81
 

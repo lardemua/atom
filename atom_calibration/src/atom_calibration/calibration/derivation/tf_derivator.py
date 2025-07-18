@@ -2,6 +2,7 @@
 
 import argparse
 from copy import deepcopy
+from curses import window
 import json
 from operator import index
 import os
@@ -35,7 +36,7 @@ import tf
 
 def deriveRotation(
     tf_data_dict: Dict[str, Any], poly_degree: int, neighbourhood_size: int
-) -> Dict:
+) -> Tuple[dict, dict, list]:
     """
     Angular velocities are calculated from the temporal derivatives of the rotation matrix
 
@@ -57,16 +58,12 @@ def deriveRotation(
     dt = 0
     k = 0
     while dt == 0:
-        dt = tf_data_dict["t"][k+1] - tf_data_dict["t"][k]
+        dt = tf_data_dict["t"][k + 1] - tf_data_dict["t"][k]
         k += 1
 
     r_vec_array = []
 
-    # For each datapoint
-    quat_array = []
-    
     r_vec_prev = None
-    
     for i in range(len(tf_data_dict["t"])):
         quat = [tf_data_dict["quat"][var][i] for var in ["x", "y", "z", "w"]]
         tvec = [tf_data_dict["trans"][var][i] for var in ["x", "y", "z"]]
@@ -78,9 +75,8 @@ def deriveRotation(
             if np.linalg.norm(r_vec - r_vec_prev) > 2.0:
                 r_vec = -1 * r_vec
 
-        r_vec_array.append(r_vec)
-
         r_vec_prev = r_vec
+        r_vec_array.append(r_vec)
 
     r_vec_array = np.array(r_vec_array)
 
@@ -110,7 +106,6 @@ def deriveRotation(
         angs["z"].append(r_vec_array[k, 2])
         ang_speeds.append(np.linalg.norm(dr_vec_array[k]))
 
-    
     return angs, ang_vels, ang_speeds
 
 
@@ -138,9 +133,8 @@ def deriveTranslation(
     dt = 0
     k = 0
     while dt == 0:
-        dt = tf_data_dict["t"][k+1] - tf_data_dict["t"][k]
+        dt = tf_data_dict["t"][k + 1] - tf_data_dict["t"][k]
         k += 1
-
 
     lin_vel_x = savgol_filter(
         x=tf_data_dict["trans"]["x"],
@@ -265,7 +259,6 @@ def deriveDataset(
         data_dict["quat"]["y"].append(quat[2])
         data_dict["quat"]["z"].append(quat[3])
 
-
     if mode == "continuous":
         lin_vels, lin_accels = deriveTranslation(
             tf_data_dict=data_dict,
@@ -284,9 +277,8 @@ def deriveDataset(
             "lin_vel": lin_vels,
             "angs": angs,
             "ang_vel": ang_vels,
-            "ang_speed": ang_speeds
+            "ang_speed": ang_speeds,
         }
-
 
     elif mode == "collections":
 
@@ -529,6 +521,8 @@ def calculateErrorsAllDataPoints(
 
         imu_accel = R @ imu_accel
 
+        # imu_ang_vel = R @ imu_ang_vel
+
         # Remove gravity
         if not ignore_gravity:
             imu_accel[2] -= 9.81
@@ -689,7 +683,7 @@ if __name__ == "__main__":
             to_frame="accelerometer",
             noise=args["noisy_initial_guess"],
             dataset_name=dataset_name,
-            ignore_gravity=args["ignore_gravity"]
+            ignore_gravity=args["ignore_gravity"],
         )
         e = calculateErrorsAllDataPoints(
             dataset=input_dataset,
@@ -698,5 +692,5 @@ if __name__ == "__main__":
             sensor_topic="/imu",
             from_frame=input_dataset["calibration_config"]["world_link"],
             to_frame="accelerometer",
-            ignore_gravity=args["ignore_gravity"]
+            ignore_gravity=args["ignore_gravity"],
         )
