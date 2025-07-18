@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
+import scipy
 import seaborn as sns
 from atom_core.atom import getTransform
 from atom_core.geometry import matrixToTranslationQuaternion
@@ -366,6 +367,8 @@ def plotDerivationResults(
         "angs": {"x": [], "y": [], "z": []},
         "ang_vel": {"x": [], "y": [], "z": []},
         "ang_vel_imu": {"x": [], "y": [], "z": []},
+        "ang_speed": [],
+        "ang_speed_imu": [],
     }
 
     # Copy it so the original keeps the timestamps
@@ -403,6 +406,15 @@ def plotDerivationResults(
             closest_imu_datapoint["angular_velocity"]["z"],
         ]
 
+        # Norm of velocity vectors
+        imu_ang_speed = np.linalg.norm(imu_ang_vel)
+
+        # Convert to Rotation instance and re-convert to match to derivative
+        imu_ang_vel_r = Rotation.from_rotvec(imu_ang_vel)
+        imu_ang_vel = imu_ang_vel_r.as_matrix()
+        imu_ang_vel_r = Rotation.from_matrix(imu_ang_vel)
+        imu_ang_vel = imu_ang_vel_r.as_rotvec()
+
         R = world_imu_tf[:3, :3]
         imu_accel = R @ imu_accel
         if not ignore_gravity:
@@ -427,6 +439,8 @@ def plotDerivationResults(
         data_dict["ang_vel_imu"]["y"].append(imu_ang_vel[1])
         data_dict["ang_vel_imu"]["z"].append(imu_ang_vel[2])
 
+        data_dict["ang_speed_imu"].append(imu_ang_speed)
+
     # Linear Velocity Data
     data_dict["lin_vel"]["x"] = derivation_results["lin_vel"]["x"]
     data_dict["lin_vel"]["y"] = derivation_results["lin_vel"]["y"]
@@ -441,11 +455,13 @@ def plotDerivationResults(
     data_dict["angs"]["x"] = derivation_results["angs"]["x"]
     data_dict["angs"]["y"] = derivation_results["angs"]["y"]
     data_dict["angs"]["z"] = derivation_results["angs"]["z"]
-    
+
     # Angular Velocity Data
     data_dict["ang_vel"]["x"] = derivation_results["ang_vel"]["x"]
     data_dict["ang_vel"]["y"] = derivation_results["ang_vel"]["y"]
     data_dict["ang_vel"]["z"] = derivation_results["ang_vel"]["z"]
+
+    data_dict["ang_speed"] = derivation_results["ang_speed"]
 
     # Plot x data
     fig1, ax1 = plt.subplots()
@@ -632,6 +648,24 @@ def plotDerivationResults(
         label="IMU Angular Velocity Data",
         ax=ax15,
     )
+    fig7, ax16 = plt.subplots()
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_speed"],
+        marker="o",
+        color="r",
+        label="Angular speed (derived)",
+        ax=ax16,
+    )
+    sns.scatterplot(
+        x=data_dict["t_reparam"],
+        y=data_dict["ang_speed_imu"],
+        marker="*",
+        color="orange",
+        label="Angular speed (IMU)",
+        ax=ax16,
+    )
+    
     # Some plot formatting
     ax1.set_title(r"Translation Data ($x$)")
     ax4.set_title(r"Translation Data ($y$)")
@@ -662,7 +696,11 @@ def plotDerivationResults(
         ax.set(ylabel=r"Angular Velocity $[rad/s]$")
         ax.set_ylim(-1.5, 1.5)
         ax.yaxis.label.set_color("g")
-    for fig in [fig1, fig2, fig3, fig4, fig5, fig6]:
+
+    ax16.set(ylabel=r"Angular Speed $[rad/s]$")
+    ax16.set_ylim(-1,5)
+
+    for fig in [fig1, fig2, fig3, fig4, fig5, fig6, fig7]:
         fig.set_size_inches(18.5, 10.5)
         fig.tight_layout()
 
@@ -685,6 +723,7 @@ def plotDerivationResults(
     fig4.savefig(str(output_folder) + "/x_rot.png")
     fig5.savefig(str(output_folder) + "/y_rot.png")
     fig6.savefig(str(output_folder) + "/z_rot.png")
+    fig7.savefig(str(output_folder) + "/ang_speed.png")
 
 
 def inspectDerivatives(

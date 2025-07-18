@@ -98,6 +98,7 @@ def deriveRotation(
         dr_vec_array[:, k] = deriv
 
     # Compute ang_vels
+    ang_speeds = []
     ang_vels = {"x": [], "y": [], "z": []}
     angs = {"x": [], "y": [], "z": []}
     for k in range(r_vec_array.shape[0]):
@@ -107,8 +108,10 @@ def deriveRotation(
         angs["x"].append(r_vec_array[k, 0])
         angs["y"].append(r_vec_array[k, 1])
         angs["z"].append(r_vec_array[k, 2])
+        ang_speeds.append(np.linalg.norm(dr_vec_array[k]))
+
     
-    return angs, ang_vels
+    return angs, ang_vels, ang_speeds
 
 
 def deriveTranslation(
@@ -270,17 +273,20 @@ def deriveDataset(
             neighbourhood_size=neighbourhood_size,
         )
 
-        angs, ang_vels = deriveRotation(
+        angs, ang_vels, ang_speeds = deriveRotation(
             tf_data_dict=data_dict,
             poly_degree=poly_degree,
             neighbourhood_size=neighbourhood_size,
         )
+
         derivation_results = {
             "lin_accel": lin_accels,
             "lin_vel": lin_vels,
             "angs": angs,
             "ang_vel": ang_vels,
+            "ang_speed": ang_speeds
         }
+
 
     elif mode == "collections":
 
@@ -368,7 +374,7 @@ def deriveDataset(
                 neighbourhood_size=neighbourhood_size,
             )
 
-            angs, ang_vels = deriveRotation(
+            angs, ang_vels, _ = deriveRotation(
                 tf_data_dict=data_segment_dict,
                 poly_degree=poly_degree,
                 neighbourhood_size=neighbourhood_size,
