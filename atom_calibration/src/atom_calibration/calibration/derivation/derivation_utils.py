@@ -125,7 +125,13 @@ def getTFList(dataset: Dict) -> List[Dict]:
             }
 
         # Include transforms from /tf_static. Only consider the last message.
-        for tf in dataset["continuous_data"]["/tf_static"][-1]["transforms"]:
+        chosen_idx = 0
+        for idx in range(len(dataset["continuous_data"]["/tf_static"])):
+            if dataset["continuous_data"]["/tf_static"][idx]["transforms"] != []:
+                chosen_idx = idx
+                break
+
+        for tf in dataset["continuous_data"]["/tf_static"][chosen_idx]["transforms"]:
             child_frame = tf["child_frame_id"]
             parent_frame = tf["header"]["frame_id"]
             key = f"{parent_frame}-{child_frame}"
