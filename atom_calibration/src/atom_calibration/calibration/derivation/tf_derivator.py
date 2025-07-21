@@ -2,7 +2,6 @@
 
 import argparse
 from copy import deepcopy
-from curses import window
 import json
 from operator import index
 import os
@@ -36,7 +35,7 @@ import tf
 
 def deriveRotation(
     tf_data_dict: Dict[str, Any], poly_degree: int, neighbourhood_size: int
-) -> Tuple[dict, dict, list]:
+) -> Dict:
     """
     Angular velocities are calculated from the temporal derivatives of the rotation matrix
 
@@ -58,54 +57,95 @@ def deriveRotation(
     dt = 0
     k = 0
     while dt == 0:
-        dt = tf_data_dict["t"][k + 1] - tf_data_dict["t"][k]
+        dt = tf_data_dict["t"][k+1] - tf_data_dict["t"][k]
         k += 1
 
     r_vec_array = []
+    r_mat_array = []
 
+    # For each datapoint
+    quat_array = []
+    
     r_vec_prev = None
+    
     for i in range(len(tf_data_dict["t"])):
         quat = [tf_data_dict["quat"][var][i] for var in ["x", "y", "z", "w"]]
         tvec = [tf_data_dict["trans"][var][i] for var in ["x", "y", "z"]]
 
         r = Rotation.from_quat(quat)
         r_vec = r.as_rotvec()
+        r_mat = r.as_matrix()
 
         if r_vec_prev is not None:
             if np.linalg.norm(r_vec - r_vec_prev) > 2.0:
                 r_vec = -1 * r_vec
 
-        r_vec_prev = r_vec
         r_vec_array.append(r_vec)
+        r_mat_array.append(r_mat)
+
+        r_vec_prev = r_vec
 
     r_vec_array = np.array(r_vec_array)
+    r_mat_array = np.array(r_mat_array)
 
     dr_vec_array = np.zeros_like(r_vec_array)
+    dr_mat_array = np.zeros_like(r_mat_array)
 
     for k in range(3):
-        series = r_vec_array[:, k]
-        deriv = savgol_filter(
-            x=series,
-            window_length=neighbourhood_size,
-            polyorder=poly_degree,
-            deriv=1,
-            delta=dt,
-        )
-        dr_vec_array[:, k] = deriv
+        for j in range(3):
+            series = r_mat_array[:, k, j]
+            deriv = savgol_filter(
+                x=series,
+                window_length=neighbourhood_size,
+                polyorder=poly_degree,
+                deriv=1,
+                delta=dt,
+            )
+            dr_mat_array[:, k, j] = deriv
+
+
+    # for k in range(3):
+        # series = r_vec_array[:, k]
+        # deriv = savgol_filter(
+            # x=series,
+            # window_length=neighbourhood_size,
+            # polyorder=poly_degree,
+            # deriv=1,
+            # delta=dt,
+        # )
+        # dr_vec_array[:, k] = deriv
 
     # Compute ang_vels
     ang_speeds = []
     ang_vels = {"x": [], "y": [], "z": []}
     angs = {"x": [], "y": [], "z": []}
-    for k in range(r_vec_array.shape[0]):
-        ang_vels["x"].append(dr_vec_array[k, 0])
-        ang_vels["y"].append(dr_vec_array[k, 1])
-        ang_vels["z"].append(dr_vec_array[k, 2])
+    
+    for k in range(r_mat_array.shape[0]):
+
+        skew_sym_w = dr_mat_array[k] @ r_mat_array[k].T
+        w_vec = [
+            skew_sym_w[2, 1], 
+            skew_sym_w[0, 2],
+            skew_sym_w[1, 0],
+        ]        
+        ang_vels["x"].append(w_vec[0])
+        ang_vels["y"].append(w_vec[1])
+        ang_vels["z"].append(w_vec[2])
         angs["x"].append(r_vec_array[k, 0])
         angs["y"].append(r_vec_array[k, 1])
         angs["z"].append(r_vec_array[k, 2])
-        ang_speeds.append(np.linalg.norm(dr_vec_array[k]))
+        ang_speeds.append(np.linalg.norm(w_vec))
+    
+    # for k in range(r_vec_array.shape[0]):
+    #     ang_vels["x"].append(dr_vec_array[k, 0])
+    #     ang_vels["y"].append(dr_vec_array[k, 1])
+    #     ang_vels["z"].append(dr_vec_array[k, 2])
+    #     angs["x"].append(r_vec_array[k, 0])
+    #     angs["y"].append(r_vec_array[k, 1])
+    #     angs["z"].append(r_vec_array[k, 2])
+    #     ang_speeds.append(np.linalg.norm(dr_vec_array[k]))
 
+    
     return angs, ang_vels, ang_speeds
 
 
@@ -133,8 +173,9 @@ def deriveTranslation(
     dt = 0
     k = 0
     while dt == 0:
-        dt = tf_data_dict["t"][k + 1] - tf_data_dict["t"][k]
+        dt = tf_data_dict["t"][k+1] - tf_data_dict["t"][k]
         k += 1
+
 
     lin_vel_x = savgol_filter(
         x=tf_data_dict["trans"]["x"],
@@ -259,6 +300,7 @@ def deriveDataset(
         data_dict["quat"]["y"].append(quat[2])
         data_dict["quat"]["z"].append(quat[3])
 
+
     if mode == "continuous":
         lin_vels, lin_accels = deriveTranslation(
             tf_data_dict=data_dict,
@@ -277,8 +319,9 @@ def deriveDataset(
             "lin_vel": lin_vels,
             "angs": angs,
             "ang_vel": ang_vels,
-            "ang_speed": ang_speeds,
+            "ang_speed": ang_speeds
         }
+
 
     elif mode == "collections":
 
@@ -521,8 +564,6 @@ def calculateErrorsAllDataPoints(
 
         imu_accel = R @ imu_accel
 
-        # imu_ang_vel = R @ imu_ang_vel
-
         # Remove gravity
         if not ignore_gravity:
             imu_accel[2] -= 9.81
@@ -683,7 +724,7 @@ if __name__ == "__main__":
             to_frame="accelerometer",
             noise=args["noisy_initial_guess"],
             dataset_name=dataset_name,
-            ignore_gravity=args["ignore_gravity"],
+            ignore_gravity=args["ignore_gravity"]
         )
         e = calculateErrorsAllDataPoints(
             dataset=input_dataset,
@@ -692,5 +733,5 @@ if __name__ == "__main__":
             sensor_topic="/imu",
             from_frame=input_dataset["calibration_config"]["world_link"],
             to_frame="accelerometer",
-            ignore_gravity=args["ignore_gravity"],
+            ignore_gravity=args["ignore_gravity"]
         )
