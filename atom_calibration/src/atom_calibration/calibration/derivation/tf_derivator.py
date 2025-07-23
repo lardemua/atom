@@ -477,6 +477,7 @@ def calculateErrorsAtCollections(
         R = world_imu_tf[:3, :3]
 
         imu_lin_accel = R @ imu_lin_accel
+        imu_ang_vel = R @ imu_ang_vel
 
         # Remove gravity
         if not ignore_gravity:
@@ -553,6 +554,7 @@ def calculateErrorsAllDataPoints(
         R = world_imu_tf[:3, :3]
 
         imu_accel = R @ imu_accel
+        imu_ang_vel = R @ imu_ang_vel
 
         # Remove gravity
         if not ignore_gravity:

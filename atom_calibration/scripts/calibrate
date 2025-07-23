@@ -217,7 +217,14 @@ def main():
         help="Name of csv file to save the results."
         "Default: -test_json/results/{name_of_dataset}_{sensor_source}_to_{sensor_target}_results.csv",
         type=str, required=False)
-
+    ap.add_argument(
+        "-ig",
+        "--ignore_gravity",
+        help="Don't compensate for gravitational acceleration in the derivation when calibrating IMUs.",
+        action="store_true",
+        default=False,
+    )
+    
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
     # these args have the selection functions as strings
