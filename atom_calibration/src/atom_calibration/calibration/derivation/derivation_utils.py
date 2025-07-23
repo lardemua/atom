@@ -423,7 +423,7 @@ def plotDerivationResults(
 
         R = world_imu_tf[:3, :3]
         imu_accel = R @ imu_accel
-        imu_ang_vel = R @ imu_ang_vel # TESTING
+        imu_ang_vel = R @ imu_ang_vel
         
         if not ignore_gravity:
             imu_accel[2] -= 9.81

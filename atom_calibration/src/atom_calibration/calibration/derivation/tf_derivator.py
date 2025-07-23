@@ -35,7 +35,7 @@ import tf
 
 def deriveRotation(
     tf_data_dict: Dict[str, Any], poly_degree: int, neighbourhood_size: int
-) -> Dict:
+) -> Tuple:
     """
     Angular velocities are calculated from the temporal derivatives of the rotation matrix
 
@@ -135,16 +135,6 @@ def deriveRotation(
         angs["y"].append(r_vec_array[k, 1])
         angs["z"].append(r_vec_array[k, 2])
         ang_speeds.append(np.linalg.norm(w_vec))
-    
-    # for k in range(r_vec_array.shape[0]):
-    #     ang_vels["x"].append(dr_vec_array[k, 0])
-    #     ang_vels["y"].append(dr_vec_array[k, 1])
-    #     ang_vels["z"].append(dr_vec_array[k, 2])
-    #     angs["x"].append(r_vec_array[k, 0])
-    #     angs["y"].append(r_vec_array[k, 1])
-    #     angs["z"].append(r_vec_array[k, 2])
-    #     ang_speeds.append(np.linalg.norm(dr_vec_array[k]))
-
     
     return angs, ang_vels, ang_speeds
 
