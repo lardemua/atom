@@ -478,6 +478,7 @@ def plotDerivationResults(
         y=data_dict["position"]["x"],
         marker="o",
         color="r",
+        label="TF Position",
         ax=ax1,
     )
     ax2 = ax1.twinx()
@@ -486,6 +487,7 @@ def plotDerivationResults(
         y=data_dict["lin_vel"]["x"],
         marker="s",
         color="g",
+        label="TF Velocity",
         ax=ax2,
     )
     ax3 = ax1.twinx()
@@ -496,6 +498,7 @@ def plotDerivationResults(
         marker="D",
         color="b",
         alpha=0.8,
+        label="TF Acceleration",
         ax=ax3,
     )
     sns.scatterplot(
@@ -503,9 +506,20 @@ def plotDerivationResults(
         y=data_dict["lin_accel_imu"]["x"],
         marker="*",
         color="orange",
-        label="IMU Acceleration data",
+        label="IMU Acceleration",
         ax=ax3,
     )
+
+    # Label Handling
+    scatter_1, labels_1 = ax1.get_legend_handles_labels()
+    scatter_2, labels_2 = ax2.get_legend_handles_labels()
+    scatter_3, labels_3 = ax3.get_legend_handles_labels()
+
+    for ax in [ax1, ax2, ax3]:
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+    ax1.legend(scatter_1 + scatter_2 + scatter_3, labels_1 + labels_2 + labels_3, loc="upper right")
 
     # Plot y data
     fig2, ax4 = plt.subplots()
@@ -514,6 +528,7 @@ def plotDerivationResults(
         y=data_dict["position"]["y"],
         marker="o",
         color="r",
+        label="TF Position",
         ax=ax4,
     )
     ax5 = ax4.twinx()
@@ -522,6 +537,7 @@ def plotDerivationResults(
         y=data_dict["lin_vel"]["y"],
         marker="s",
         color="g",
+        label="TF Velocity",
         ax=ax5,
     )
     ax6 = ax4.twinx()
@@ -532,6 +548,7 @@ def plotDerivationResults(
         marker="D",
         color="b",
         alpha=0.8,
+        label="TF Acceleration",
         ax=ax6,
     )
     sns.scatterplot(
@@ -539,10 +556,21 @@ def plotDerivationResults(
         y=data_dict["lin_accel_imu"]["y"],
         marker="*",
         color="orange",
-        label="IMU Acceleration data",
+        label="IMU Acceleration",
         ax=ax6,
     )
 
+    # Label Handling
+    scatter_4, labels_4 = ax4.get_legend_handles_labels()
+    scatter_5, labels_5 = ax5.get_legend_handles_labels()
+    scatter_6, labels_6 = ax6.get_legend_handles_labels()
+
+    for ax in [ax4, ax5, ax6]:
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+    ax4.legend(scatter_4 + scatter_5 + scatter_6, labels_4 + labels_5 + labels_6, loc="upper right")
+    
     # Plot z data
     fig3, ax7 = plt.subplots()
     sns.scatterplot(
@@ -550,6 +578,7 @@ def plotDerivationResults(
         y=data_dict["position"]["z"],
         marker="o",
         color="r",
+        label="TF Position",
         ax=ax7,
     )
     ax8 = ax7.twinx()
@@ -558,6 +587,7 @@ def plotDerivationResults(
         y=data_dict["lin_vel"]["z"],
         marker="s",
         color="g",
+        label="TF Velocity",
         ax=ax8,
     )
     ax9 = ax7.twinx()
@@ -568,6 +598,7 @@ def plotDerivationResults(
         marker="D",
         alpha=0.8,
         color="b",
+        label="TF Acceleration",
         ax=ax9,
     )
     sns.scatterplot(
@@ -575,9 +606,20 @@ def plotDerivationResults(
         y=data_dict["lin_accel_imu"]["z"],
         marker="*",
         color="orange",
-        label="IMU Acceleration data",
+        label="IMU Acceleration",
         ax=ax9,
     )
+
+    # Label Handling
+    scatter_7, labels_7 = ax7.get_legend_handles_labels()
+    scatter_8, labels_8 = ax8.get_legend_handles_labels()
+    scatter_9, labels_9 = ax9.get_legend_handles_labels()
+
+    for ax in [ax7, ax8, ax9]:
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+    ax7.legend(scatter_7 + scatter_8 + scatter_9, labels_7 + labels_8 + labels_9, loc="upper right")
 
     # Angular Velocity Plots
     fig4, ax10 = plt.subplots()
@@ -587,6 +629,7 @@ def plotDerivationResults(
         y=data_dict["angs"]["x"],
         marker="o",
         color="r",
+        label="TF Angle",
         ax=ax10,
     )
     sns.scatterplot(
@@ -594,7 +637,7 @@ def plotDerivationResults(
         y=data_dict["ang_vel"]["x"],
         marker="s",
         color="g",
-        label="Derivation Results",
+        label="TF Angular Velocity",
         ax=ax11,
     )
     sns.scatterplot(
@@ -602,10 +645,20 @@ def plotDerivationResults(
         y=data_dict["ang_vel_imu"]["x"],
         marker="*",
         color="orange",
-        label="IMU Angular Velocity Data",
+        label="IMU Angular Velocity",
         ax=ax11,
     )
+    
+    # Label Handling
+    scatter_10, labels_10 = ax10.get_legend_handles_labels()
+    scatter_11, labels_11 = ax11.get_legend_handles_labels()
 
+    for ax in [ax10, ax11]:
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+    ax10.legend(scatter_10 + scatter_11, labels_10 + labels_11, loc="upper right")
+    
     fig5, ax12 = plt.subplots()
     ax13 = ax12.twinx()
     sns.scatterplot(
@@ -613,6 +666,7 @@ def plotDerivationResults(
         y=data_dict["angs"]["y"],
         marker="o",
         color="r",
+        label="TF Angle",
         ax=ax12,
     )
     sns.scatterplot(
@@ -620,7 +674,7 @@ def plotDerivationResults(
         y=data_dict["ang_vel"]["y"],
         marker="s",
         color="g",
-        label="Derivation Results",
+        label="TF Angular Velocity",
         ax=ax13,
     )
     sns.scatterplot(
@@ -628,9 +682,20 @@ def plotDerivationResults(
         y=data_dict["ang_vel_imu"]["y"],
         marker="*",
         color="orange",
-        label="IMU Angular Velocity Data",
+        label="IMU Angular Velocity",
         ax=ax13,
     )
+
+    # Label Handling
+    scatter_12, labels_12 = ax12.get_legend_handles_labels()
+    scatter_13, labels_13 = ax13.get_legend_handles_labels()
+
+    for ax in [ax12, ax13]:
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+    ax12.legend(scatter_12 + scatter_13, labels_12 + labels_13, loc="upper right")
+    
     fig6, ax14 = plt.subplots()
     ax15 = ax14.twinx()
     sns.scatterplot(
@@ -638,6 +703,7 @@ def plotDerivationResults(
         y=data_dict["angs"]["z"],
         marker="o",
         color="r",
+        label="TF Angle",
         ax=ax14,
     )
     sns.scatterplot(
@@ -645,7 +711,7 @@ def plotDerivationResults(
         y=data_dict["ang_vel"]["z"],
         marker="s",
         color="g",
-        label="Derivation Results",
+        label="TF Angular Velocity",
         ax=ax15,
     )
     sns.scatterplot(
@@ -653,9 +719,20 @@ def plotDerivationResults(
         y=data_dict["ang_vel_imu"]["z"],
         marker="*",
         color="orange",
-        label="IMU Angular Velocity Data",
+        label="IMU Angular Velocity",
         ax=ax15,
     )
+
+    # Label Handling
+    scatter_14, labels_14 = ax14.get_legend_handles_labels()
+    scatter_15, labels_15 = ax15.get_legend_handles_labels()
+
+    for ax in [ax14, ax15]:
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+    ax14.legend(scatter_14 + scatter_15, labels_14 + labels_15, loc="upper right")
+
     fig7, ax16 = plt.subplots()
     sns.scatterplot(
         x=data_dict["t_reparam"],
