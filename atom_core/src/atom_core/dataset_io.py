@@ -588,8 +588,7 @@ def filterCollectionsFromDataset(dataset, args):
     """
     Filters some collections from the dataset, using a couple of arguments in arg
     :param dataset:
-    :param args: Makes use of 'collection_selection_function', 'use_incomplete_collections' and
-                'remove_partial_detections'
+    :param args: Makes use of 'collection_selection_function', 'use_incomplete_collections', 'remove_partial_detections' and 'sensor_selection_function'
     """
 
     if not args['collection_selection_function'] is None:
@@ -644,12 +643,13 @@ def filterCollectionsFromDataset(dataset, args):
     # partial and have been removed, or just because no detection existed). Since we need at lease one camera sensor
     # detection of the pattern in a collection in order initialize the parameters (check calibrate line 133),
     # we will remove collections which do not have at least one detection by a camera.
+    # However, we need to check first which sensors are used in the calibration and which are filtered by the '--sensor_selection_function' argument. If all of the cameras are excluded from calibration, then the collections which don't have a detection should still be used.
     flag_has_rgb_modality = False  # do this only if we have at least one camera in the sensor list.
     for sensor_key, sensor_label in dataset['sensors'].items():
-        if sensor_label['modality'] == 'rgb':
+        if sensor_label['modality'] == 'rgb' and args['sensor_selection_function'](sensor_key):
             flag_has_rgb_modality = True
             break
-
+    
     if flag_has_rgb_modality:
         deleted = []
 
