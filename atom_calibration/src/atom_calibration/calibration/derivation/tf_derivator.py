@@ -722,7 +722,7 @@ if __name__ == "__main__":
             dataset=input_dataset,
             tf_list=tf_lst,
             results=derivation_results,
-            sensor_topic="/accelerometer/values",
+            sensor_topic="/imu",
             from_frame=input_dataset["calibration_config"]["world_link"],
             to_frame="accelerometer",
             ignore_gravity=args["ignore_gravity"]

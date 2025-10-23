@@ -366,6 +366,7 @@ def plotDerivationResults(
     data_dict = {
         "t": [],
         "t_reparam": [],
+        "collection_times": [],
         "position": {"x": [], "y": [], "z": []},
         "lin_vel": {"x": [], "y": [], "z": []},
         "lin_accel": {"x": [], "y": [], "z": []},
@@ -393,7 +394,7 @@ def plotDerivationResults(
 
         # Get closest acceleration data
         closest_imu_datapoint = min(
-            dataset["continuous_data"]["/accelerometer/values"],
+            dataset["continuous_data"]["/imu"],
             key=lambda datapoint: abs(
                 timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
             ),
@@ -471,44 +472,54 @@ def plotDerivationResults(
 
     data_dict["ang_speed"] = derivation_results["ang_speed"]
 
+    selected_sensor = None
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["topic"] == '/imu':
+            selected_sensor = sensor_key
+
+    # get collection times to mark on the plots when the collections were taken
+    for _, collection in dataset["collections"].items():
+        collection_t = timeStampToFloat(stamp=collection["data"][selected_sensor]["header"]["stamp"])
+        data_dict["collection_times"].append(collection_t - data_dict["t"][0])
+
     # Plot x data
-    fig1, ax1 = plt.subplots()
-    # sns.scatterplot(
-    #     x=data_dict["t_reparam"],
-    #     y=data_dict["position"]["x"],
-    #     marker="-",
-    #     color="r",
-    #     label="TF Position",
-    #     ax=ax1,
-    # )
+    fig_transx, ax_transx = plt.subplots(
+        nrows=3,
+        ncols=1,
+        sharex=True,
+    )
+
+    fig_transx.supxlabel(r"Time $[s]$")
+    
+    # add vertical lines for the collection times
+    # for collection_t in data_dict["collection_times"]:
+    #     plt.axvline(
+    #         x=collection_t,
+    #         ymin=0,
+    #         ymax=1,
+    #         color="tab:orange",
+    #         linestyle='--',
+    #     )
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["position"]["x"],
-        # marker="-",
         color="r",
         linewidth=3,
-        label="TF Position",
-        ax=ax1,
+        # label="TF Position",
+        ax=ax_transx[0],
     )
-    ax2 = ax1.twinx()
-    # sns.scatterplot(
-    #     x=data_dict["t_reparam"],
-    #     y=data_dict["lin_vel"]["x"],
-    #     marker="s",
-    #     color="g",
-    #     label="TF Velocity",
-    #     ax=ax2,
-    # )
+    # ax2 = ax1.twinx()
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["lin_vel"]["x"],
         color="g",
         linewidth=3,
-        label="TF Velocity",
-        ax=ax2,
+        # label="TF Velocity",
+        ax=ax_transx[1],
     )
-    ax3 = ax1.twinx()
-    ax3.spines.right.set_position(("axes", 1.1))
+    # ax3 = ax1.twinx()
+    # ax3.spines.right.set_position(("axes", 1.1))
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["lin_accel"]["x"],
@@ -516,7 +527,7 @@ def plotDerivationResults(
         linewidth=3,
         alpha=0.8,
         label="TF Acceleration",
-        ax=ax3,
+        ax=ax_transx[2],
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
@@ -525,42 +536,41 @@ def plotDerivationResults(
         color="black",
         s=70,
         label="IMU Acceleration",
-        ax=ax3,
+        ax=ax_transx[2],
     )
 
-    
     # Label Handling
-    scatter_1, labels_1 = ax1.get_legend_handles_labels()
-    scatter_2, labels_2 = ax2.get_legend_handles_labels()
-    scatter_3, labels_3 = ax3.get_legend_handles_labels()
+    # scatter_1, labels_1 = ax_transx[0].get_legend_handles_labels()
+    # scatter_2, labels_2 = ax_transx[1].get_legend_handles_labels()
+    # scatter_3, labels_3 = ax_transx[2].get_legend_handles_labels()
 
-    for ax in [ax1, ax2, ax3]:
-        if ax.get_legend():
-            ax.get_legend().remove()
+    # for i in range(3):
+    #     if ax[i].get_legend():
+    #         ax[i].get_legend().remove()
 
-    ax1.legend(scatter_1 + scatter_2 + scatter_3, labels_1 + labels_2 + labels_3, loc="upper right")
+    # ax_trans[2].legend(scatter_1 + scatter_2 + scatter_3, labels_1 + labels_2 + labels_3, loc="upper right")
 
     # Plot y data
-    fig2, ax4 = plt.subplots()
+    fig_transy, ax_transy = plt.subplots(
+        nrows=3,
+        ncols=1,
+        sharex=True
+    )
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["position"]["y"],
         color="r",
         linewidth=3,
-        label="TF Position",
-        ax=ax4,
+        ax=ax_transy[0],
     )
-    ax5 = ax4.twinx()
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["lin_vel"]["y"],
         color="g",
         linewidth=3,
-        label="TF Velocity",
-        ax=ax5,
+        ax=ax_transy[1],
     )
-    ax6 = ax4.twinx()
-    ax6.spines.right.set_position(("axes", 1.1))
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["lin_accel"]["y"],
@@ -568,7 +578,7 @@ def plotDerivationResults(
         linewidth=3,
         alpha=0.8,
         label="TF Acceleration",
-        ax=ax6,
+        ax=ax_transy[2],
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
@@ -577,41 +587,33 @@ def plotDerivationResults(
         color="black",
         s=70,
         label="IMU Acceleration",
-        ax=ax6,
+        ax=ax_transy[2],
     )
 
-    # Label Handling
-    scatter_4, labels_4 = ax4.get_legend_handles_labels()
-    scatter_5, labels_5 = ax5.get_legend_handles_labels()
-    scatter_6, labels_6 = ax6.get_legend_handles_labels()
-
-    for ax in [ax4, ax5, ax6]:
-        if ax.get_legend():
-            ax.get_legend().remove()
-
-    ax4.legend(scatter_4 + scatter_5 + scatter_6, labels_4 + labels_5 + labels_6, loc="upper right")
-    
+   
     # Plot z data
-    fig3, ax7 = plt.subplots()
+    fig_transz, ax_transz = plt.subplots(
+        nrows=3,
+        ncols=1,
+        sharex=True,
+    )
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["position"]["z"],
         color="r",
         linewidth=3,
-        label="TF Position",
-        ax=ax7,
+        ax=ax_transz[0],
     )
-    ax8 = ax7.twinx()
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["lin_vel"]["z"],
         color="g",
         linewidth=3,
-        label="TF Velocity",
-        ax=ax8,
+        ax=ax_transz[1],
     )
-    ax9 = ax7.twinx()
-    ax9.spines.right.set_position(("axes", 1.1))
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["lin_accel"]["z"],
@@ -619,7 +621,7 @@ def plotDerivationResults(
         color="b",
         linewidth=3,
         label="TF Acceleration",
-        ax=ax9,
+        ax=ax_transz[2],
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
@@ -627,30 +629,21 @@ def plotDerivationResults(
         marker="o",
         color="black",
         label="IMU Acceleration",
-        ax=ax9,
+        ax=ax_transz[2],
     )
 
-    # Label Handling
-    scatter_7, labels_7 = ax7.get_legend_handles_labels()
-    scatter_8, labels_8 = ax8.get_legend_handles_labels()
-    scatter_9, labels_9 = ax9.get_legend_handles_labels()
-
-    for ax in [ax7, ax8, ax9]:
-        if ax.get_legend():
-            ax.get_legend().remove()
-
-    ax7.legend(scatter_7 + scatter_8 + scatter_9, labels_7 + labels_8 + labels_9, loc="upper right")
-
     # Angular Velocity Plots
-    fig4, ax10 = plt.subplots()
-    ax11 = ax10.twinx()
+    fig_rotx, ax_rotx = plt.subplots(
+        nrows=2,
+        ncols=1,
+        sharex=True,
+    )
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["angs"]["x"],
         color="r",
         linewidth=3,
-        label="TF Angle",
-        ax=ax10,
+        ax=ax_rotx[0],
     )
     sns.lineplot(
         x=data_dict["t_reparam"],
@@ -658,7 +651,7 @@ def plotDerivationResults(
         color="g",
         linewidth=3,
         label="TF Angular Velocity",
-        ax=ax11,
+        ax=ax_rotx[1],
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
@@ -666,28 +659,31 @@ def plotDerivationResults(
         marker="o",
         color="black",
         label="IMU Angular Velocity",
-        ax=ax11,
+        ax=ax_rotx[1],
     )
     
     # Label Handling
-    scatter_10, labels_10 = ax10.get_legend_handles_labels()
-    scatter_11, labels_11 = ax11.get_legend_handles_labels()
+    # scatter_10, labels_10 = ax10.get_legend_handles_labels()
+    # scatter_11, labels_11 = ax11.get_legend_handles_labels()
 
-    for ax in [ax10, ax11]:
-        if ax.get_legend():
-            ax.get_legend().remove()
+    # for ax in [ax10, ax11]:
+    #     if ax.get_legend():
+    #         ax.get_legend().remove()
 
-    ax10.legend(scatter_10 + scatter_11, labels_10 + labels_11, loc="upper right")
+    # ax10.legend(scatter_10 + scatter_11, labels_10 + labels_11, loc="upper right")
     
-    fig5, ax12 = plt.subplots()
-    ax13 = ax12.twinx()
+    fig_roty, ax_roty = plt.subplots(
+        nrows=2,
+        ncols=1,
+        sharex=True,
+    )
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["angs"]["y"],
         color="r",
         linewidth=3,
-        label="TF Angle",
-        ax=ax12,
+        ax=ax_roty[0],
     )
     sns.lineplot(
         x=data_dict["t_reparam"],
@@ -695,7 +691,7 @@ def plotDerivationResults(
         color="g",
         linewidth=3,
         label="TF Angular Velocity",
-        ax=ax13,
+        ax=ax_roty[1],
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
@@ -703,28 +699,32 @@ def plotDerivationResults(
         marker="o",
         color="black",
         label="IMU Angular Velocity",
-        ax=ax13,
+        ax=ax_roty[1],
     )
 
     # Label Handling
-    scatter_12, labels_12 = ax12.get_legend_handles_labels()
-    scatter_13, labels_13 = ax13.get_legend_handles_labels()
+    # scatter_12, labels_12 = ax12.get_legend_handles_labels()
+    # scatter_13, labels_13 = ax13.get_legend_handles_labels()
 
-    for ax in [ax12, ax13]:
-        if ax.get_legend():
-            ax.get_legend().remove()
+    # for ax in [ax12, ax13]:
+    #     if ax.get_legend():
+    #         ax.get_legend().remove()
 
-    ax12.legend(scatter_12 + scatter_13, labels_12 + labels_13, loc="upper right")
+    # ax12.legend(scatter_12 + scatter_13, labels_12 + labels_13, loc="upper right")
     
-    fig6, ax14 = plt.subplots()
-    ax15 = ax14.twinx()
+    fig_rotz, ax_rotz = plt.subplots(
+        nrows=2,
+        ncols=1,
+        sharex=True,
+    )
+
     sns.lineplot(
         x=data_dict["t_reparam"],
         y=data_dict["angs"]["z"],
         color="r",
         linewidth=3,
         label="TF Angle",
-        ax=ax14,
+        ax=ax_rotz[0],
     )
     sns.lineplot(
         x=data_dict["t_reparam"],
@@ -732,7 +732,7 @@ def plotDerivationResults(
         color="g",
         linewidth=3,
         label="TF Angular Velocity",
-        ax=ax15,
+        ax=ax_rotz[1],
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
@@ -740,27 +740,27 @@ def plotDerivationResults(
         marker="o",
         color="black",
         label="IMU Angular Velocity",
-        ax=ax15,
+        ax=ax_rotz[1],
     )
 
     # Label Handling
-    scatter_14, labels_14 = ax14.get_legend_handles_labels()
-    scatter_15, labels_15 = ax15.get_legend_handles_labels()
+    # scatter_14, labels_14 = ax14.get_legend_handles_labels()
+    # scatter_15, labels_15 = ax15.get_legend_handles_labels()
+    #
+    # for ax in [ax14, ax15]:
+    #     if ax.get_legend():
+    #         ax.get_legend().remove()
 
-    for ax in [ax14, ax15]:
-        if ax.get_legend():
-            ax.get_legend().remove()
+    # ax14.legend(scatter_14 + scatter_15, labels_14 + labels_15, loc="upper right")
 
-    ax14.legend(scatter_14 + scatter_15, labels_14 + labels_15, loc="upper right")
-
-    fig7, ax16 = plt.subplots()
+    fig_angspeed, ax_angspeed = plt.subplots()
     sns.scatterplot(
         x=data_dict["t_reparam"],
         y=data_dict["ang_speed"],
         marker="o",
         color="r",
         label="Angular speed (derived)",
-        ax=ax16,
+        ax=ax_angspeed,
     )
     sns.scatterplot(
         x=data_dict["t_reparam"],
@@ -768,54 +768,60 @@ def plotDerivationResults(
         marker="*",
         color="orange",
         label="Angular speed (IMU)",
-        ax=ax16,
+        ax=ax_angspeed,
     )
-    
+
+
+    # Add vertical lines showing when the collections were gathered 
+    for ax in [ax_transx, ax_transy, ax_transz]:
+        for collection_t in data_dict["collection_times"]:
+            ax[2].axvline(
+                x=collection_t,
+                ymin=0,
+                ymax=1,
+                color="tab:orange",
+                linestyle='--',
+            ) 
+    for ax in [ax_rotx, ax_roty, ax_rotz]:
+        for collection_t in data_dict["collection_times"]:
+            ax[1].axvline(
+                x=collection_t,
+                ymin=0,
+                ymax=1,
+                color="tab:orange",
+                linestyle='--',
+            ) 
+
     # Some plot formatting
-    ax1.set_title(r"Translation ($x$)", fontsize=20)
-    ax4.set_title(r"Translation ($y$)", fontsize=20)
-    ax7.set_title(r"Translation ($z$)", fontsize=20)
-    ax10.set_title(r"Angular Velocity Data ($\omega_x$)", fontsize=20)
-    ax12.set_title(r"Angular Velocity Data ($\omega_y$)", fontsize=20)
-    ax14.set_title(r"Angular Velocity Data ($\omega_z$)", fontsize=20)
+    fig_transx.suptitle(r"Translation ($x$)", fontsize=20)
+    fig_transy.suptitle(r"Translation ($y$)", fontsize=20)
+    fig_transz.suptitle(r"Translation ($z$)", fontsize=20)
+    fig_rotx.suptitle(r"Angular Velocity Data ($\omega_x$)", fontsize=20)
+    fig_roty.suptitle(r"Angular Velocity Data ($\omega_y$)", fontsize=20)
+    fig_rotz.suptitle(r"Angular Velocity Data ($\omega_z$)", fontsize=20)
 
-    for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10]:
-        ax.set_xlabel(xlabel=r"Time $[s]$", fontsize=16)
-    for ax in [ax1, ax4, ax7]:
-        # ax.set(ylabel=r"Position $[m]$")
-        ax.set_ylabel(ylabel=r"Position $[m]$", color="r", fontsize=16)
-        ax.set_ylim(-1.5, 1.5)
-        # ax.yaxis.label.set_color("r")
-        ax.tick_params(axis="y", colors="r")
-    for ax in [ax2, ax5, ax8]:
-        # ax.set(ylabel=r"Velocity $[m/s]$")
-        ax.set_ylabel(ylabel=r"Velocity $[m/s]$", color="g", fontsize=16)
-        ax.set_ylim(-0.5, 0.5)
-        # ax.yaxis.label.set_color("g")
-        ax.tick_params(axis="y", colors="g")
-    for ax in [ax3, ax6, ax9]:
-        # ax.set(ylabel=r"Acceleration $[m/s^2]$")
-        ax.set_ylabel(ylabel=r"Acceleration $[m/s^2]$", color="b", fontsize=16)
-        ax.set_ylim(-0.25, 0.25)
-        # ax.yaxis.label.set_color("b")
-        ax.tick_params(axis="y", colors="b")
-    for ax in [ax10, ax12, ax14]:
-        # ax.set(ylabel=r"Orientation $[rad]$")
-        ax.set_ylabel(ylabel=r"Orientation $[rad]$", color="r", fontsize=16)
-        ax.set_ylim(-3, 3)
-        ax.yaxis.label.set_color("r")
-        ax.tick_params(axis="y", colors="r")
-    for ax in [ax11, ax13, ax15]:
-        # ax.set(ylabel=r"Angular Velocity $[rad/s]$")
-        ax.set_ylabel(ylabel=r"Angular Velocity $[rad/s]$", color="g", fontsize=16)
-        ax.set_ylim(-1.5, 1.5)
-        ax.yaxis.label.set_color("g")
-        ax.tick_params(axis="y", colors="g")
+    for ax in [ax_transx, ax_transy, ax_transz]:
+        ax[0].set_ylabel(ylabel=r"Position $[m]$", color="r", fontsize=16)
+        ax[0].set_ylim(-1.5, 1.5)
+        ax[1].set_ylabel(ylabel=r"Velocity $[m/s]$", color="g", fontsize=16)
+        ax[1].set_ylim(-0.5, 0.5)
+        ax[2].set_ylabel(ylabel=r"Acceleration $[m/s^2]$", color="b", fontsize=16)
+        ax[2].set_ylim(-0.25, 0.25)
+       
+    for ax in [ax_rotx, ax_roty, ax_rotz]:
+        ax[0].set_ylabel(ylabel=r"Orientation $[rad]$", color="r", fontsize=16)
+        ax[0].set_ylim(-3, 3)
+        ax[0].yaxis.label.set_color("r")
+        # ax.tick_params(axis="y", colors="r")
+        ax[1].set_ylabel(ylabel=r"Angular Velocity $[rad/s]$", color="g", fontsize=16)
+        ax[1].set_ylim(-1.5, 1.5)
+        ax[1].yaxis.label.set_color("g")
+        ax[1].tick_params(axis="y", colors="g")
 
-    ax16.set(ylabel=r"Angular Speed $[rad/s]$")
-    ax16.set_ylim(-1,5)
+    ax_angspeed.set(ylabel=r"Angular Speed $[rad/s]$")
+    ax_angspeed.set_ylim(-1,5)
 
-    for fig in [fig1, fig2, fig3, fig4, fig5, fig6, fig7]:
+    for fig in [fig_transx, fig_transy, fig_transz, fig_rotx, fig_roty, fig_rotz, fig_angspeed]:
         fig.set_size_inches(18.5, 10.5)
         fig.tight_layout()
 
@@ -832,13 +838,13 @@ def plotDerivationResults(
     )
     output_folder.mkdir(exist_ok=True, parents=True)
 
-    fig1.savefig(str(output_folder) + "/x_trans.png")
-    fig2.savefig(str(output_folder) + "/y_trans.png")
-    fig3.savefig(str(output_folder) + "/z_trans.png")
-    fig4.savefig(str(output_folder) + "/x_rot.png")
-    fig5.savefig(str(output_folder) + "/y_rot.png")
-    fig6.savefig(str(output_folder) + "/z_rot.png")
-    fig7.savefig(str(output_folder) + "/ang_speed.png")
+    fig_transx.savefig(str(output_folder) + "/x_trans.png")
+    fig_transy.savefig(str(output_folder) + "/y_trans.png")
+    fig_transz.savefig(str(output_folder) + "/z_trans.png")
+    fig_rotx.savefig(str(output_folder) + "/x_rot.png")
+    fig_roty.savefig(str(output_folder) + "/y_rot.png")
+    fig_rotz.savefig(str(output_folder) + "/z_rot.png")
+    fig_angspeed.savefig(str(output_folder) + "/ang_speed.png")
 
 
 def inspectDerivatives(
