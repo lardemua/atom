@@ -225,6 +225,9 @@ def main() -> None:
     ap.add_argument(
         "-c", "--camera", help="Camera sensor name.", type=str, required=True
     )
+    ap.add_argument(
+        "-p", "--pattern", help="Calibration pattern name.", type=str, required=True
+    )
 
     # - Save args
     # args = vars(ap.parse_known_args()[0])
@@ -311,8 +314,6 @@ def main() -> None:
             ignore_gravity=False,
         )
 
-        print("quat: " + str(end_quat))
-        print("pos: " + str(end_pos))
 
 
 
