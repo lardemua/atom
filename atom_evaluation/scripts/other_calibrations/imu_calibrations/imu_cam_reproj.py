@@ -9,6 +9,7 @@ import argparse
 import sys
 from typing import List, Tuple, Dict
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 from atom_calibration.calibration.derivation.derivation_utils import timeStampToFloat
 from atom_core.atom import getTransform
@@ -28,6 +29,7 @@ from atom_core.utilities import (
     atomError,
 )
 from atom_core.vision import projectToCamera
+from numpy._typing import NDArray
 
 
 def skew(vec):
@@ -61,12 +63,17 @@ def getIMUData(
     return imu_continuous_data_start_to_end
 
 
-def integrateOrientation(imu_data: List):
+def integrate(
+        imu_data: List,
+        start_quat: NDArray,
+        start_pos: NDArray,
+        ignore_gravity: bool
+) -> Tuple:
 
     # quaternion structure is x,y,z,w
-
-    quat1 = np.array([0, 0, 0, 1])
-    quat_current = quat1
+    quat_current = start_quat
+    pos_current = start_pos
+    lin_vel_current = np.array([0, 0 ,0]) 
 
     for i in range(len(imu_data) - 1):
         # To do RK4 integration, we need, for each step:
@@ -80,8 +87,15 @@ def integrateOrientation(imu_data: List):
         ang_vel_current = np.array(
             [
                 imu_data[i]["angular_velocity"]["x"],
-                imu_data[i]["angular_velocity"]["y"],
+                imu_data[i]["angular_velocity"]["y"],   
                 imu_data[i]["angular_velocity"]["z"],
+            ]
+        )
+        lin_accel_current = np.array(
+            [
+                imu_data[i]["linear_acceleration"]["x"],
+                imu_data[i]["linear_acceleration"]["y"],
+                imu_data[i]["linear_acceleration"]["z"],
             ]
         )
         ang_vel_next = np.array(
@@ -89,6 +103,13 @@ def integrateOrientation(imu_data: List):
                 imu_data[i + 1]["angular_velocity"]["x"],
                 imu_data[i + 1]["angular_velocity"]["y"],
                 imu_data[i + 1]["angular_velocity"]["z"],
+            ]
+        )
+        lin_accel_next = np.array(
+            [
+                imu_data[i +1]["linear_acceleration"]["x"],
+                imu_data[i +1]["linear_acceleration"]["y"],
+                imu_data[i +1]["linear_acceleration"]["z"],
             ]
         )
 
@@ -107,9 +128,30 @@ def integrateOrientation(imu_data: List):
         new_quat = quat_current + dt * (k1 / 6 + k2 / 3 + k3 / 3 + k4 / 6)
         new_quat = new_quat / np.linalg.norm(new_quat)
 
-        quat_current = new_quat
+        # Now integrate translation
+        r_current = Rotation.from_quat(quat_current)
+        r_next = Rotation.from_quat(new_quat)
 
-    return quat_current
+        lin_accel_current = r_current.as_matrix() @ lin_accel_current
+        lin_accel_next = r_next.as_matrix() @ lin_accel_next
+
+        if not ignore_gravity:
+            lin_accel_current[2] -= 9.81
+            lin_accel_next[2] -= 9.81
+
+        lin_vel_next = lin_vel_current + ((lin_accel_current + lin_accel_next) * dt/2)
+
+        # Velocity correction
+        delta_s = lin_vel_next / (i+2)
+        lin_vel_next_corrected = lin_vel_next - delta_s
+
+        pos_next = pos_current + ((lin_vel_current + lin_vel_next_corrected) * dt/2)
+
+        quat_current = new_quat
+        lin_vel_current = lin_vel_next_corrected
+        pos_current = pos_next
+
+    return quat_current, pos_current
 
 
 def main() -> None:
@@ -257,11 +299,21 @@ def main() -> None:
             start_time=start_time,
             end_time=end_time,
         )
+        
+        imu_R = Rotation.from_matrix(start_world_imu_tf[:3,:3])
+        start_imu_quat = imu_R.as_quat()
+        start_imu_pos = start_world_imu_tf[:3, 3].T
 
-        d_quat = integrateOrientation(imu_data)
-        d_trans = integrateTranslation(imu_data)
+        end_quat, end_pos = integrate(
+            imu_data=imu_data,
+            start_quat=start_imu_quat,
+            start_pos=start_imu_pos,
+            ignore_gravity=False,
+        )
 
-        print(d_quat)
+        print("quat: " + str(end_quat))
+        print("pos: " + str(end_pos))
+
 
 
 if __name__ == "__main__":
