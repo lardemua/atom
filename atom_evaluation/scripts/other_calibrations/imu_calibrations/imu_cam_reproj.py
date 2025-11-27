@@ -64,16 +64,13 @@ def getIMUData(
 
 
 def integrate(
-        imu_data: List,
-        start_quat: NDArray,
-        start_pos: NDArray,
-        ignore_gravity: bool
+    imu_data: List, start_quat: NDArray, start_pos: NDArray, ignore_gravity: bool
 ) -> Tuple:
 
     # quaternion structure is x,y,z,w
     quat_current = start_quat
     pos_current = start_pos
-    lin_vel_current = np.array([0, 0 ,0]) 
+    lin_vel_current = np.array([0, 0, 0])
 
     for i in range(len(imu_data) - 1):
         # To do RK4 integration, we need, for each step:
@@ -87,7 +84,7 @@ def integrate(
         ang_vel_current = np.array(
             [
                 imu_data[i]["angular_velocity"]["x"],
-                imu_data[i]["angular_velocity"]["y"],   
+                imu_data[i]["angular_velocity"]["y"],
                 imu_data[i]["angular_velocity"]["z"],
             ]
         )
@@ -107,9 +104,9 @@ def integrate(
         )
         lin_accel_next = np.array(
             [
-                imu_data[i +1]["linear_acceleration"]["x"],
-                imu_data[i +1]["linear_acceleration"]["y"],
-                imu_data[i +1]["linear_acceleration"]["z"],
+                imu_data[i + 1]["linear_acceleration"]["x"],
+                imu_data[i + 1]["linear_acceleration"]["y"],
+                imu_data[i + 1]["linear_acceleration"]["z"],
             ]
         )
 
@@ -139,13 +136,13 @@ def integrate(
             lin_accel_current[2] -= 9.81
             lin_accel_next[2] -= 9.81
 
-        lin_vel_next = lin_vel_current + ((lin_accel_current + lin_accel_next) * dt/2)
+        lin_vel_next = lin_vel_current + ((lin_accel_current + lin_accel_next) * dt / 2)
 
         # Velocity correction
-        delta_s = lin_vel_next / (i+2)
+        delta_s = lin_vel_next / (i + 2)
         lin_vel_next_corrected = lin_vel_next - delta_s
 
-        pos_next = pos_current + ((lin_vel_current + lin_vel_next_corrected) * dt/2)
+        pos_next = pos_current + ((lin_vel_current + lin_vel_next_corrected) * dt / 2)
 
         quat_current = new_quat
         lin_vel_current = lin_vel_next_corrected
@@ -266,6 +263,8 @@ def main() -> None:
     # Get world frame
     world_link = dataset["calibration_config"]["world_link"]
 
+    # Create error dictionary. Each collection pair will have a corresponding error.
+    e = {}
     # Now calculate error for each collection pair
     for collection_pair in collection_pairs:
         start_collection = collection_pair[0]
@@ -302,8 +301,8 @@ def main() -> None:
             start_time=start_time,
             end_time=end_time,
         )
-        
-        imu_R = Rotation.from_matrix(start_world_imu_tf[:3,:3])
+
+        imu_R = Rotation.from_matrix(start_world_imu_tf[:3, :3])
         start_imu_quat = imu_R.as_quat()
         start_imu_pos = start_world_imu_tf[:3, 3].T
 
@@ -314,7 +313,39 @@ def main() -> None:
             ignore_gravity=False,
         )
 
+        # For ease of use
+        start_collection_key = collection_pair[0]
+        end_collection_key = collection_pair[1]
+        end_collection = dataset["collections"][end_collection_key]
 
+        # Check if collection B has label information
+        if "labels" not in end_collection:
+            print(
+                f"Collection {end_collection_key} does not have labels information. Skipping..."
+            )
+            continue
+
+        # Create error dict for A-B collection pair
+        e[f"{start_collection_key}-{end_collection_key}"] = {}
+
+        for pattern_key, pattern in dataset["calibration_config"][
+            "calibration_patterns"
+        ].items():
+            e[f"{start_collection_key}-{end_collection_key}"][pattern_key] = {}
+
+            # Get number of pattern corners
+            nx = dataset["calibration_config"]["calibration_patterns"][pattern_key][
+                "dimension"
+            ]["x"]
+            ny = dataset["calibration_config"]["calibration_patterns"][pattern_key][
+                "dimension"
+            ]["y"]
+
+            # Check if pattern is detected by camera
+            if not end_collection["labels"][pattern_key][camera_sensor_name][
+                "detected"
+            ]:
+                continue
 
 
 if __name__ == "__main__":
