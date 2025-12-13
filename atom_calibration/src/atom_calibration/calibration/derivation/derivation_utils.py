@@ -92,7 +92,11 @@ def getTFList(dataset: Dict) -> List[Dict]:
     tf_list = []
 
     # Create transforms list of dict with data from /tf and /tf_static
+    # tmp_i = 0
     for tf_msg in dataset["continuous_data"]["/tf"]:
+        
+        if len(tf_msg["transforms"]) == 0:
+            continue
 
         if len(tf_msg["transforms"]) == 0:
             continue
@@ -101,6 +105,8 @@ def getTFList(dataset: Dict) -> List[Dict]:
 
         # Get stamp from one of the transforms in the tf_msg
         # NOTE: Since all of the TFs in the same "transforms" field have the same stamp, I can just access the first one
+        # print(tmp_i)
+        # tmp_i += 1
         tf_dict_to_append["stamp"] = tf_msg["transforms"][0]["header"]["stamp"]
 
         for tf in tf_msg["transforms"]:
@@ -434,7 +440,7 @@ def plotDerivationResults(
         imu_ang_vel = R @ imu_ang_vel
         
         if not ignore_gravity:
-            imu_accel[2] -= 9.81
+            imu_accel[2] -= gravity
 
         # For plotting
         data_dict["t"].append(tf_pool_t)

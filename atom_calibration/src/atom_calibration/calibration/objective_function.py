@@ -1189,7 +1189,8 @@ def objectiveFunction(data):
                 sensor_name=sensor_key,
                 from_frame=dataset["calibration_config"]["world_link"],
                 to_frame=sensor["calibration_child"],
-                ignore_gravity=args["ignore_gravity"]
+                ignore_gravity=args["ignore_gravity"],
+                gravity=args["gravity"],
             )
 
             for collection_key, collection in dataset["collections"].items():

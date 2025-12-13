@@ -351,8 +351,11 @@ class DataCollector:
             
 
     def callbackContinuousData(self, msg, topic):
-        self.continuous_data_buffer[topic].append(message_converter.convert_ros_message_to_dictionary(msg))
-
+        if topic == '/tf':
+            if len(msg.transforms) != 0:
+                self.continuous_data_buffer[topic].append(message_converter.convert_ros_message_to_dictionary(msg))
+        else:
+            self.continuous_data_buffer[topic].append(message_converter.convert_ros_message_to_dictionary(msg))
 
     def callbackReceivedAdditionalDataMsg(self, msg, additional_data_key):
         self.additional_data_msgs[additional_data_key] = msg
@@ -445,6 +448,7 @@ class DataCollector:
 
         for ab in abstract_transforms:  # Update all transformations
 
+            buffer.can_transform(ab['parent'], ab['child'], time, rospy.Duration(0.5))
             transf = buffer.lookup_transform(ab['parent'], ab['child'], time)
             trans = [transf.transform.translation.x,
                      transf.transform.translation.y, transf.transform.translation.z]

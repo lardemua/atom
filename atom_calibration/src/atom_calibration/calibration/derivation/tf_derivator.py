@@ -275,9 +275,13 @@ def deriveDataset(
                 transform["trans"] = list(new_trans)
 
         # Get source-target tf
-        source_target_tf = getTransform(
-            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
-        )
+        try:
+            source_target_tf = getTransform(
+                from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+            )
+        except:
+            print(tf_pool.keys())
+            exit(0)
 
         tvec, quat = matrixToTranslationQuaternion(matrix=source_target_tf)
 
@@ -433,6 +437,7 @@ def calculateErrorsAtCollections(
     from_frame: str,
     to_frame: str,
     ignore_gravity: bool,
+    gravity: float,
 ) -> dict:
     """Calculate the errors in the derivation at each collection's timestamp by comparing the derivation results to the sensor data."""
 
@@ -481,7 +486,7 @@ def calculateErrorsAtCollections(
 
         # Remove gravity
         if not ignore_gravity:
-            imu_lin_accel[2] -= 9.81
+            imu_lin_accel[2] -= gravity
 
         e[collection_key] = {
             "lin_accel": {
@@ -507,6 +512,7 @@ def calculateErrorsAllDataPoints(
     from_frame: str,
     to_frame: str,
     ignore_gravity: bool,
+    gravity:float,
 ) -> dict:
     """Calculate the errors in the derivation at each tf message timestamp by comparing the derivation results to the closest IMU datapoint. Plot them out."""
 
@@ -558,7 +564,7 @@ def calculateErrorsAllDataPoints(
 
         # Remove gravity
         if not ignore_gravity:
-            imu_accel[2] -= 9.81
+            imu_accel[2] -= gravity
 
         # For plotting
         data_dict["t"].append(tf_pool_t)
@@ -640,6 +646,12 @@ if __name__ == "__main__":
         default=False,
     )
     ap.add_argument(
+        "-g",
+        "--gravity",
+        type=float,
+        default=9.81,
+    )
+    ap.add_argument(
         "-nig",
         "--noisy_initial_guess",
         nargs=2,
@@ -703,6 +715,7 @@ if __name__ == "__main__":
             from_frame=input_dataset["calibration_config"]["world_link"],
             to_frame=input_dataset["sensors"][sensor_name]["calibration_child"],
             ignore_gravity=args["ignore_gravity"],
+            gravity=args["gravity"],
         )
 
         pprint.pprint(e)
