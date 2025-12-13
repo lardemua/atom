@@ -94,6 +94,9 @@ def getTFList(dataset: Dict) -> List[Dict]:
     # Create transforms list of dict with data from /tf and /tf_static
     for tf_msg in dataset["continuous_data"]["/tf"]:
 
+        if len(tf_msg["transforms"]) == 0:
+            continue
+
         tf_dict_to_append = {}
 
         # Get stamp from one of the transforms in the tf_msg
@@ -360,6 +363,9 @@ def plotDerivationResults(
     noise: tuple,
     dataset_name: str,
     ignore_gravity: bool,
+    sensor_name: str,
+    neighbourhood_size: int,
+    poly_degree: int,
 ) -> None:
 
     # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions
@@ -392,9 +398,10 @@ def plotDerivationResults(
             from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
         )
 
+        sensor_topic = dataset["sensors"][sensor_name]["topic"]
         # Get closest acceleration data
         closest_imu_datapoint = min(
-            dataset["continuous_data"]["/imu"],
+            dataset["continuous_data"][sensor_topic],
             key=lambda datapoint: abs(
                 timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
             ),
@@ -474,7 +481,7 @@ def plotDerivationResults(
 
     selected_sensor = None
     for sensor_key, sensor in dataset["sensors"].items():
-        if sensor["topic"] == '/imu':
+        if sensor["topic"] == sensor_topic:
             selected_sensor = sensor_key
 
     # get collection times to mark on the plots when the collections were taken
@@ -829,14 +836,22 @@ def plotDerivationResults(
     output_folder = Path(
         results_folder
         + "/"
+        + dataset["_metadata"]["package_name"]
+        + "/"
         + dataset_name
         + "/"
         + "noise_"
         + str(noise[0])
         + "_"
         + str(noise[1])
+        + "/ns_"
+        + str(neighbourhood_size)
+        + "_pd_"
+        + str(poly_degree)
     )
     output_folder.mkdir(exist_ok=True, parents=True)
+
+    plt.show()
 
     fig_transx.savefig(str(output_folder) + "/x_trans.png")
     fig_transy.savefig(str(output_folder) + "/y_trans.png")

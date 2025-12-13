@@ -701,7 +701,7 @@ if __name__ == "__main__":
             results=derivation_results,
             sensor_name=sensor_name,
             from_frame=input_dataset["calibration_config"]["world_link"],
-            to_frame="accelerometer",
+            to_frame=input_dataset["sensors"][sensor_name]["calibration_child"],
             ignore_gravity=args["ignore_gravity"],
         )
 
@@ -713,17 +713,20 @@ if __name__ == "__main__":
             tf_list=tf_lst,
             derivation_results=derivation_results,
             from_frame=input_dataset["calibration_config"]["world_link"],
-            to_frame="accelerometer",
+            to_frame=input_dataset["sensors"][sensor_name]["calibration_child"],
             noise=args["noisy_initial_guess"],
             dataset_name=dataset_name,
-            ignore_gravity=args["ignore_gravity"]
+            ignore_gravity=args["ignore_gravity"],
+            sensor_name=sensor_name,
+            neighbourhood_size=neighbourhood_size,
+            poly_degree=args["poly_degree"],
         )
         e = calculateErrorsAllDataPoints(
             dataset=input_dataset,
             tf_list=tf_lst,
             results=derivation_results,
-            sensor_topic="/imu",
+            sensor_topic=input_dataset["sensors"][sensor_name]["topic"],
             from_frame=input_dataset["calibration_config"]["world_link"],
-            to_frame="accelerometer",
+            to_frame=input_dataset["sensors"][sensor_name]["calibration_child"],
             ignore_gravity=args["ignore_gravity"]
         )
