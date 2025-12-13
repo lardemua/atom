@@ -92,12 +92,18 @@ def getTFList(dataset: Dict) -> List[Dict]:
     tf_list = []
 
     # Create transforms list of dict with data from /tf and /tf_static
+    # tmp_i = 0
     for tf_msg in dataset["continuous_data"]["/tf"]:
+        
+        if len(tf_msg["transforms"]) == 0:
+            continue
 
         tf_dict_to_append = {}
 
         # Get stamp from one of the transforms in the tf_msg
         # NOTE: Since all of the TFs in the same "transforms" field have the same stamp, I can just access the first one
+        # print(tmp_i)
+        # tmp_i += 1
         tf_dict_to_append["stamp"] = tf_msg["transforms"][0]["header"]["stamp"]
 
         for tf in tf_msg["transforms"]:
@@ -360,6 +366,7 @@ def plotDerivationResults(
     noise: tuple,
     dataset_name: str,
     ignore_gravity: bool,
+    gravity: float,
 ) -> None:
 
     # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions
@@ -394,7 +401,7 @@ def plotDerivationResults(
 
         # Get closest acceleration data
         closest_imu_datapoint = min(
-            dataset["continuous_data"]["/imu"],
+            dataset["continuous_data"]["/intel_t265/imu"],
             key=lambda datapoint: abs(
                 timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
             ),
@@ -427,7 +434,7 @@ def plotDerivationResults(
         imu_ang_vel = R @ imu_ang_vel
         
         if not ignore_gravity:
-            imu_accel[2] -= 9.81
+            imu_accel[2] -= gravity
 
         # For plotting
         data_dict["t"].append(tf_pool_t)
@@ -474,7 +481,7 @@ def plotDerivationResults(
 
     selected_sensor = None
     for sensor_key, sensor in dataset["sensors"].items():
-        if sensor["topic"] == '/imu':
+        if sensor["topic"] == '/intel_t265/imu':
             selected_sensor = sensor_key
 
     # get collection times to mark on the plots when the collections were taken
@@ -837,6 +844,8 @@ def plotDerivationResults(
         + str(noise[1])
     )
     output_folder.mkdir(exist_ok=True, parents=True)
+
+    plt.show()
 
     fig_transx.savefig(str(output_folder) + "/x_trans.png")
     fig_transy.savefig(str(output_folder) + "/y_trans.png")

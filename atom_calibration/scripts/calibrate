@@ -224,7 +224,13 @@ def main():
         action="store_true",
         default=False,
     )
-    
+    ap.add_argument(
+        "-g",
+        "--gravity",
+        type=float,
+        default=9.81,
+    )
+
     # Roslaunch adds two arguments (__name and __log) that break our parser. Lets remove those.
     arglist = [x for x in sys.argv[1:] if not x.startswith("__")]
     # these args have the selection functions as strings
