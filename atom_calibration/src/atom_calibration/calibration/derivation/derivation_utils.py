@@ -372,6 +372,7 @@ def plotDerivationResults(
     sensor_name: str,
     neighbourhood_size: int,
     poly_degree: int,
+    gravity: float,
 ) -> None:
 
     # NOTE: It doesn't make sense to plot out orientation since it's expressed in quaternions

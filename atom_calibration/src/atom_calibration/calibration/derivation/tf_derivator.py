@@ -733,6 +733,7 @@ if __name__ == "__main__":
             sensor_name=sensor_name,
             neighbourhood_size=neighbourhood_size,
             poly_degree=args["poly_degree"],
+            gravity=args["gravity"],
         )
         e = calculateErrorsAllDataPoints(
             dataset=input_dataset,
@@ -741,5 +742,6 @@ if __name__ == "__main__":
             sensor_topic=input_dataset["sensors"][sensor_name]["topic"],
             from_frame=input_dataset["calibration_config"]["world_link"],
             to_frame=input_dataset["sensors"][sensor_name]["calibration_child"],
-            ignore_gravity=args["ignore_gravity"]
+            ignore_gravity=args["ignore_gravity"],
+            gravity=args["gravity"],
         )

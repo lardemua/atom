@@ -6,11 +6,14 @@ The idea is to calculate the reprojection error of the camera in collection B by
 """
 
 import argparse
+import pprint
+from copy import deepcopy
 import sys
 from typing import List, Tuple, Dict
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from copy import deepcopy
 from atom_calibration.calibration.derivation.derivation_utils import timeStampToFloat
 from atom_core.atom import getTransform
 from atom_core.dataset_io import (
@@ -30,6 +33,30 @@ from atom_core.utilities import (
 )
 from atom_core.vision import projectToCamera
 from numpy._typing import NDArray
+
+
+def getPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key, _dataset):
+    pts_in_pattern_list = []  # collect the points
+    for pt_detected in _dataset["collections"][_collection_key]["labels"][_pattern_key][
+        _sensor_key
+    ]["idxs"]:
+        id_detected = pt_detected["id"]
+        point = [
+            item
+            for item in _dataset["patterns"][_pattern_key]["corners"]
+            if item["id"] == id_detected
+        ][0]
+        pts_in_pattern_list.append(point)
+
+    return np.array(
+        [
+            [item["x"] for item in pts_in_pattern_list],  # convert list to np array
+            [item["y"] for item in pts_in_pattern_list],
+            [0 for _ in pts_in_pattern_list],
+            [1 for _ in pts_in_pattern_list],
+        ],
+        float,
+    )
 
 
 def skew(vec):
@@ -316,7 +343,11 @@ def main() -> None:
         # For ease of use
         start_collection_key = collection_pair[0]
         end_collection_key = collection_pair[1]
-        end_collection = dataset["collections"][end_collection_key]
+        end_collection = deepcopy(dataset["collections"][end_collection_key])
+
+        # Replace end tf to end_collection object
+        pprint.pp(end_collection["transforms"])
+        exit(0)
 
         # Check if collection B has label information
         if "labels" not in end_collection:
@@ -346,6 +377,37 @@ def main() -> None:
                 "detected"
             ]:
                 continue
+
+            # Get the pattern corners in the local pattern frame. Must use only corners which have -----------------
+            # correspondence to the detected points stored in collection['labels'][sensor_key]['idxs'] -------------
+            pts_in_pattern = getPointsInPatternAsNPArray(
+                end_collection_key, pattern_key, camera_sensor_name, dataset
+            )
+
+            # Transform the pts from the pattern's reference frame to the sensor's reference frame -----------------
+            from_frame = dataset["sensors"][camera_sensor_name]["parent"]
+            to_frame = dataset["calibration_config"]["calibration_patterns"][
+                pattern_key
+            ]["link"]
+            sensor_to_pattern = getTransform(
+                from_frame, to_frame, end_collection["transforms"]
+            )
+            pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
+
+            # Project points to the image of the sensor ------------------------------------------------------------
+            w, h = (
+                end_collection["data"][camera_sensor_name]["width"],
+                end_collection["data"][camera_sensor_name]["height"],
+            )
+            sensor = dataset["sensors"][camera_sensor_name]
+            K = np.ndarray(
+                (3, 3), buffer=np.array(sensor["camera_info"]["K"]), dtype=float
+            )
+            D = np.ndarray(
+                (5, 1), buffer=np.array(sensor["camera_info"]["D"]), dtype=float
+            )
+
+            pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
 
 
 if __name__ == "__main__":
