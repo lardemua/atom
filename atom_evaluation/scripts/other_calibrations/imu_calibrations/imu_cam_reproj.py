@@ -189,6 +189,13 @@ def main() -> None:
         required=True,
     )
     ap.add_argument(
+        "-ptff",
+        "--pattern_tf_from_atom_dataset",
+        default=None,
+        type=str,
+        help="ATOM calibrated dataset file name from which to copy the calibrated world-pattern transform. Useful for when using non-ATOM calibrated datasets which do not estimate this TF, which is needed for evaluation."
+    )
+    ap.add_argument(
         "-csf",
         "--collection_selection_function",
         default=None,
@@ -294,22 +301,22 @@ def main() -> None:
     e = {}
     # Now calculate error for each collection pair
     for collection_pair in collection_pairs:
-        start_collection = collection_pair[0]
+        start_collection_key = collection_pair[0]
         start_time = timeStampToFloat(
-            dataset["collections"][start_collection]["data"][imu_sensor_name]["header"][
+            dataset["collections"][start_collection_key]["data"][imu_sensor_name]["header"][
                 "stamp"
             ]
         )
 
-        end_collection = collection_pair[1]
+        end_collection_key = collection_pair[1]
         end_time = timeStampToFloat(
-            dataset["collections"][end_collection]["data"][imu_sensor_name]["header"][
+            dataset["collections"][end_collection_key]["data"][imu_sensor_name]["header"][
                 "stamp"
             ]
         )
 
         # Get world-camera pose in start collection
-        start_tf_pool = dataset["collections"][start_collection]["transforms"]
+        start_tf_pool = dataset["collections"][start_collection_key]["transforms"]
         start_world_cam_tf = getTransform(
             from_frame=world_link,
             to_frame=dataset["sensors"][camera_sensor_name]["parent"],
@@ -341,9 +348,11 @@ def main() -> None:
         )
 
         # For ease of use
-        start_collection_key = collection_pair[0]
-        end_collection_key = collection_pair[1]
+        # start_collection_key = collection_pair[0]
+        # end_collection_key = collection_pair[1]
+        start_collection = deepcopy(dataset["collections"][start_collection_key])
         end_collection = deepcopy(dataset["collections"][end_collection_key])
+
 
         # Replace end tf to end_collection object
         pprint.pp(end_collection["transforms"])
