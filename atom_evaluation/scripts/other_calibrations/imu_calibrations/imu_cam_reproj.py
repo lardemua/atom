@@ -9,9 +9,11 @@ import argparse
 import pprint
 from copy import deepcopy
 import sys
-from typing import List, Tuple, Dict
+from typing import List, OrderedDict, Tuple, Dict
 import numpy as np
+from prettytable import PrettyTable
 from scipy.spatial.transform import Rotation
+from colorama import Style, Fore
 
 from copy import deepcopy
 from atom_calibration.calibration.derivation.derivation_utils import timeStampToFloat
@@ -56,6 +58,28 @@ def getPointsInPatternAsNPArray(_collection_key, _pattern_key, _sensor_key, _dat
             [1 for _ in pts_in_pattern_list],
         ],
         float,
+    )
+
+
+def getPointsDetectedInImageAsNPArray(
+    _collection_key, _pattern_key, _sensor_key, _dataset
+):
+    return np.array(
+        [
+            [
+                item["x"]
+                for item in _dataset["collections"][_collection_key]["labels"][
+                    _pattern_key
+                ][_sensor_key]["idxs"]
+            ],
+            [
+                item["y"]
+                for item in _dataset["collections"][_collection_key]["labels"][
+                    _pattern_key
+                ][_sensor_key]["idxs"]
+            ],
+        ],
+        dtype=float,
     )
 
 
@@ -193,7 +217,7 @@ def main() -> None:
         "--pattern_tf_from_atom_dataset",
         default=None,
         type=str,
-        help="ATOM calibrated dataset file name from which to copy the calibrated world-pattern transform. Useful for when using non-ATOM calibrated datasets which do not estimate this TF, which is needed for evaluation."
+        help="ATOM calibrated dataset file name from which to copy the calibrated world-pattern transform. Useful for when using non-ATOM calibrated datasets which do not estimate this TF, which is needed for evaluation.",
     )
     ap.add_argument(
         "-csf",
@@ -303,16 +327,16 @@ def main() -> None:
     for collection_pair in collection_pairs:
         start_collection_key = collection_pair[0]
         start_time = timeStampToFloat(
-            dataset["collections"][start_collection_key]["data"][imu_sensor_name]["header"][
-                "stamp"
-            ]
+            dataset["collections"][start_collection_key]["data"][imu_sensor_name][
+                "header"
+            ]["stamp"]
         )
 
         end_collection_key = collection_pair[1]
         end_time = timeStampToFloat(
-            dataset["collections"][end_collection_key]["data"][imu_sensor_name]["header"][
-                "stamp"
-            ]
+            dataset["collections"][end_collection_key]["data"][imu_sensor_name][
+                "header"
+            ]["stamp"]
         )
 
         # Get world-camera pose in start collection
@@ -353,10 +377,52 @@ def main() -> None:
         start_collection = deepcopy(dataset["collections"][start_collection_key])
         end_collection = deepcopy(dataset["collections"][end_collection_key])
 
+        # Now we need the new sensor_to_pattern tf
+        # To get that, we need to first get imu_T_cam and imu_T_ee from, for example the start_collection. These should be static tfs, so it really doesn't matter which collection they're from.
+        imu_T_cam = getTransform(
+            from_frame=dataset["sensors"][imu_sensor_name]["parent"],
+            to_frame=dataset["sensors"][camera_sensor_name]["parent"],
+            transforms=start_collection["transforms"],
+        )
+        imu_T_ee = getTransform(
+            from_frame=dataset["sensors"][imu_sensor_name]["parent"],
+            to_frame=dataset["sensors"][imu_sensor_name]["calibration_parent"],
+            transforms=start_collection["transforms"],
+        )
 
-        # Replace end tf to end_collection object
-        pprint.pp(end_collection["transforms"])
-        exit(0)
+        # Get homogenous tf matrix for world_T_imu in the end collection, from the integration
+
+        world_T_imu_end = np.zeros((4, 4))
+        world_T_imu_end[:3, :3] = Rotation.from_quat(end_quat).as_matrix()
+        world_T_imu_end[:3, 3] = end_pos.T
+        world_T_imu_end[3, 3] = 1
+
+        # now we can calculate w_T_ee
+        world_T_ee_end = world_T_imu_end @ imu_T_ee
+
+        # Now, if the calibrated dataset was from ATOM, then we can just use ee_T_camera to calculate sensor_to_pattern
+        if not args["pattern_tf_from_atom_dataset"]:
+            ee_T_camera = getTransform(
+                from_frame=dataset["sensors"][camera_sensor_name]["parent"],
+                to_frame=dataset["sensors"][camera_sensor_name]["calibration_parent"],
+                transforms=start_collection["transforms"],
+            )
+
+        else:
+            # TODO: for alternate methods, which return imu_T_camera tf, do ee_T_camera = ee_T_imu @ imu_T_camera
+            pass
+
+        world_T_camera_end = world_T_ee_end @ ee_T_camera
+
+        world_T_pattern = getTransform(
+            from_frame=world_link,
+            to_frame=dataset["calibration_config"]["calibration_patterns"][
+                args["pattern"]
+            ]["link"],
+            transforms=end_collection["transforms"],
+        )
+
+        sensor_to_pattern = np.linalg.inv(world_T_camera_end) @ world_T_pattern
 
         # Check if collection B has label information
         if "labels" not in end_collection:
@@ -398,9 +464,9 @@ def main() -> None:
             to_frame = dataset["calibration_config"]["calibration_patterns"][
                 pattern_key
             ]["link"]
-            sensor_to_pattern = getTransform(
-                from_frame, to_frame, end_collection["transforms"]
-            )
+            # sensor_to_pattern = getTransform(
+            #     from_frame, to_frame, end_collection["transforms"]
+            # )
             pts_in_sensor = np.dot(sensor_to_pattern, pts_in_pattern)
 
             # Project points to the image of the sensor ------------------------------------------------------------
@@ -417,6 +483,122 @@ def main() -> None:
             )
 
             pts_in_image, _, _ = projectToCamera(K, D, w, h, pts_in_sensor[0:3, :])
+
+            # Get the detected points of the end_collection to use as ground truth--------------------------------------------------------
+            pts_detected_in_image = getPointsDetectedInImageAsNPArray(
+                end_collection_key, pattern_key, camera_sensor_name, dataset
+            )
+            corners_errors = []
+            for idx, label_idx in enumerate(
+                end_collection["labels"][pattern_key][camera_sensor_name]["idxs"]
+            ):
+                corners_errors.append(
+                    np.sqrt(
+                        (pts_in_image[0, idx] - pts_detected_in_image[0, idx]) ** 2
+                        + (pts_in_image[1, idx] - pts_detected_in_image[1, idx]) ** 2
+                    )
+                )
+            e[f"{start_collection_key}-{end_collection_key}"][pattern_key][
+                camera_sensor_name
+            ] = np.mean(corners_errors)
+
+    # -------------------------------------------------------------
+    # Print output table
+    # -------------------------------------------------------------
+    table_header = ["Collection Pair"]
+
+    for pattern_key, pattern in dataset["calibration_config"][
+        "calibration_patterns"
+    ].items():
+        column_name = f"{camera_sensor_name}-{pattern_key}"
+        table_header.append(f"{column_name} [px]")
+
+    table_header.append("all [px]")
+
+    table = PrettyTable(table_header)
+    table_to_save = PrettyTable(table_header)
+
+    for collection_pair in collection_pairs:
+
+        start_collection_key = collection_pair[0]
+        end_collection_key = collection_pair[1]
+
+        row = [f"{start_collection_key}-{end_collection_key}"]
+        row_save = [f"{start_collection_key}-{end_collection_key}"]
+
+        errors = []
+        for pattern_key, pattern in dataset["calibration_config"][
+            "calibration_patterns"
+        ].items():
+            if (
+                camera_sensor_name
+                in e[f"{start_collection_key}-{end_collection_key}"][pattern_key]
+            ):
+                value = (
+                    "%.4f"
+                    % e[f"{start_collection_key}-{end_collection_key}"][pattern_key][
+                        camera_sensor_name
+                    ]
+                )
+                row.append(value)
+                row_save.append(value)
+                errors.append(
+                    float(
+                        e[f"{start_collection_key}-{end_collection_key}"][pattern_key][
+                            camera_sensor_name
+                        ]
+                    )
+                )
+            else:
+                row.append(Fore.LIGHTBLACK_EX + "---" + Style.RESET_ALL)
+                row_save.append("---")
+
+        # Add all as an average of the errors for this row
+        if errors:
+            average = sum(errors) / len(errors)
+            average = "%.4f" % average
+            row.append(average)
+            row_save.append(average)
+        else:
+            row.append("---")
+            row_save.append("---")
+        table.add_row(row)
+        table_to_save.add_row(row_save)
+
+    # Compute averages and add a bottom row
+    bottom_row = []  # Compute averages and add bottom row to table
+    bottom_row_save = []
+    for col_idx, _ in enumerate(table_header):
+        if col_idx == 0:
+            bottom_row.append(Fore.BLUE + Style.BRIGHT + "Averages" + Style.RESET_ALL)
+            bottom_row_save.append("Averages")
+            continue
+
+        total = 0
+        count = 0
+        for row in table.rows:
+            # if row[col_idx].isnumeric():
+            try:
+                value = float(row[col_idx])
+                total += float(value)
+                count += 1
+            except:
+                pass
+
+        if count == 0:
+            value = "---"
+        else:
+            value = "%.4f" % (total / count)
+        bottom_row.append(Fore.BLUE + value + Style.RESET_ALL)
+        bottom_row_save.append(value)
+
+    table.add_row(bottom_row)
+    table_to_save.add_row(bottom_row_save)
+
+    table.align = "c"
+    table_to_save.align = "c"
+    print(Style.BRIGHT + "Errors per collection" + Style.RESET_ALL)
+    print(table)
 
 
 if __name__ == "__main__":
