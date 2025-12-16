@@ -414,13 +414,27 @@ def main() -> None:
 
         world_T_camera_end = world_T_ee_end @ ee_T_camera
 
-        world_T_pattern = getTransform(
-            from_frame=world_link,
-            to_frame=dataset["calibration_config"]["calibration_patterns"][
-                args["pattern"]
-            ]["link"],
-            transforms=end_collection["transforms"],
-        )
+        try:
+            world_T_pattern = getTransform(
+                from_frame=world_link,
+                to_frame=dataset["calibration_config"]["calibration_patterns"][
+                    args["pattern"]
+                ]["link"],
+                transforms=end_collection["transforms"],
+            )
+        except:
+            world_T_pattern = np.zeros((4, 4))
+            world_T_pattern[:3, :3] = Rotation.from_quat(
+                dataset["patterns"][args["pattern"]]["transforms_initial"][
+                    end_collection_key
+                ]["quat"]
+            ).as_matrix()
+            world_T_pattern[:3, 3] = np.array(
+                dataset["patterns"][args["pattern"]]["transforms_initial"][
+                    end_collection_key
+                ]["trans"]
+            ).T
+            world_T_pattern[3, 3] = 1
 
         sensor_to_pattern = np.linalg.inv(world_T_camera_end) @ world_T_pattern
 
