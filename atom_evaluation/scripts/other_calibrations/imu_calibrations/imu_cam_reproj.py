@@ -352,6 +352,19 @@ def main() -> None:
             transforms=start_tf_pool,
         )
 
+        # For debugging, get world-imu pose in end collection
+        end_tf_pool = dataset["collections"][end_collection_key]["transforms"]
+        end_world_cam_tf = getTransform(
+            from_frame=world_link,
+            to_frame=dataset["sensors"][camera_sensor_name]["parent"],
+            transforms=end_tf_pool,
+        )
+        end_world_imu_tf = getTransform(
+            from_frame=world_link,
+            to_frame=dataset["sensors"][imu_sensor_name]["parent"],
+            transforms=end_tf_pool,
+        )
+
         # Now get IMU data from the start collection until end collection
         imu_data = getIMUData(
             dataset=dataset,
@@ -369,6 +382,11 @@ def main() -> None:
             start_quat=start_imu_quat,
             start_pos=start_imu_pos,
             ignore_gravity=False,
+        )
+
+        print(f"end_quat: {end_quat}\nend_trans: {end_pos}")
+        print(
+            f"end_tf_quat: {Rotation.from_matrix(end_world_imu_tf[:3,:3]).as_quat()}\nend_tf_trans: {end_world_imu_tf[:3,3].T}"
         )
 
         # For ease of use
