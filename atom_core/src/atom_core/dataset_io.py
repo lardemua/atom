@@ -790,6 +790,86 @@ def filterAdditionalTfsFromDataset(dataset, args):
     return dataset
 
 
+def addNoiseToImuData(dataset, args):
+    """
+    Adds noise, defined by a normal distribution, to a set of IMU data. Also adds a bias to that data.
+    :param dataset:
+    :param args: Makes use of 'anb' and 'gnb'
+    """
+    if not ("accelerometer_noise_bias" in args or "gyro_noise_bias" in args):
+        return
+    if args["accelerometer_noise_bias"] == [0.0, 0.0] and args["gyro_noise_bias"] == [
+        0.0,
+        0.0,
+    ]:
+        return
+
+    accel_noise_magnitude, accel_bias = args["accelerometer_noise_bias"]
+    gyro_noise_magnitude, gyro_bias = args["gyro_noise_bias"]
+
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["modality"] != "imu":
+            continue
+
+        # First, add noise and bias to continuous data if the topic is in continuous data
+        sensor_topic = sensor["topic"]
+
+        if not sensor_topic in list(dataset["continuous_data"].keys()):
+            continue
+
+        # Find timestamps of IMU data from collections
+        timestamps = []
+        for collection_key, collection in dataset["collections"].items():
+            timestamps.append(
+                (collection_key, collection["data"][sensor_key]["header"]["stamp"])
+            )
+
+        for i in range(len(dataset["continuous_data"][sensor_topic])):
+            for axis in ["x", "y", "z"]:
+                s = np.random.normal()
+                accel_noise = accel_noise_magnitude * s
+                dataset["continuous_data"][sensor_topic][i]["linear_acceleration"][
+                    axis
+                ] += (accel_noise + accel_bias)
+
+                s = np.random.normal()
+                gyro_noise = gyro_noise_magnitude * s
+                dataset["continuous_data"][sensor_topic][i]["angular_velocity"][
+                    axis
+                ] += (gyro_noise + gyro_bias)
+
+            # Now, if the datapoint matches any of the collections, replace the values in the collections as well
+            check_list = [
+                x
+                for x in timestamps
+                if x[1]
+                == dataset["continuous_data"][sensor_topic][i]["header"]["stamp"]
+            ]
+
+            if check_list == []:
+                continue
+
+            collection_key = check_list[0][0]
+
+            for axis in ["x", "y", "z"]:
+                dataset["collections"][collection_key]["data"][sensor_key][
+                    "linear_acceleration"
+                ][axis] = dataset["continuous_data"][sensor_topic][i][
+                    "linear_acceleration"
+                ][
+                    axis
+                ]
+                dataset["collections"][collection_key]["data"][sensor_key][
+                    "angular_velocity"
+                ][axis] = dataset["continuous_data"][sensor_topic][i][
+                    "angular_velocity"
+                ][
+                    axis
+                ]
+
+    return
+
+
 def addNoiseToJointParameters(dataset, args):
     """
     Adds noise

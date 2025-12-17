@@ -15,7 +15,7 @@ from atom_calibration.calibration.derivation.derivation_utils import (
     timeStampToFloat,
 )
 from atom_core.atom import getTransform
-from atom_core.dataset_io import addNoiseToInitialGuess
+from atom_core.dataset_io import addNoiseToInitialGuess, addNoiseToImuData
 from atom_core.geometry import (
     matrixToRodrigues,
     matrixToTranslationQuaternion,
@@ -275,13 +275,9 @@ def deriveDataset(
                 transform["trans"] = list(new_trans)
 
         # Get source-target tf
-        try:
-            source_target_tf = getTransform(
-                from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
-            )
-        except:
-            print(tf_pool.keys())
-            exit(0)
+        source_target_tf = getTransform(
+            from_frame=from_frame, to_frame=to_frame, transforms=tf_pool
+        )
 
         tvec, quat = matrixToTranslationQuaternion(matrix=source_target_tf)
 
@@ -668,6 +664,22 @@ if __name__ == "__main__":
         default="collections",
         help="Decides whether derivation errors are calculated at each collection or in a continuous manner, throughout the dataset.",
     )
+    ap.add_argument(
+        "-anb",
+        "--accelerometer_noise_bias",
+        nargs=2,
+        help="Two values which define the magnitude and bias of the noise applied to the IMU data in a given dataset. Default values are null.",
+        type=float,
+        default=[0.0, 0.0],
+    )
+    ap.add_argument(
+        "-gnb",
+        "--gyro_noise_bias",
+        nargs=2,
+        help="Two values which define the magnitude and bias of the noise applied to the IMU data in a given dataset. Default values are null.",
+        type=float,
+        default=[0.0, 0.0],
+    )
     ap.add_argument("-ss", "--sample_seed", help="Sampling seed", type=int)
 
     args = vars(ap.parse_args())
@@ -696,6 +708,7 @@ if __name__ == "__main__":
     selected_collection_key = list(input_dataset["collections"].keys())[0]
 
     addNoiseToInitialGuess(input_dataset, args, selected_collection_key)
+    addNoiseToImuData(input_dataset, args)
 
     tf_lst = getTFList(input_dataset)
 

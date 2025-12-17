@@ -27,6 +27,7 @@ from atom_calibration.calibration.objective_function import errorReport, objecti
 from atom_calibration.calibration.visualization import setupVisualization, visualizationFunction
 from atom_core.dataset_io import (addNoiseToInitialGuess,
                                   addNoiseToJointParameters,
+                                  addNoiseToImuData,
                                   checkIfAtLeastOneLabeledCollectionPerSensor,
                                   filterCollectionsFromDataset,
                                   filterSensorsFromDataset,
@@ -193,6 +194,22 @@ def main():
         help="Number of TF samples to use for curve-fitting at each datapoint during IMU calibration.",
     )
     ap.add_argument(
+        "-anb",
+        "--accelerometer_noise_bias",
+        nargs=2,
+        help="Two values which define the magnitude and bias of the noise applied to the IMU data in a given dataset. Default values are null.",
+        type=float,
+        default=[0.0, 0.0],
+    )
+    ap.add_argument(
+        "-gnb",
+        "--gyro_noise_bias",
+        nargs=2,
+        help="Two values which define the magnitude and bias of the noise applied to the IMU data in a given dataset. Default values are null.",
+        type=float,
+        default=[0.0, 0.0],
+    )
+    ap.add_argument(
         "-pparams",
         "--print_parameters",
         action="store_true",
@@ -298,6 +315,7 @@ def main():
     dataset_ground_truth = deepcopy(dataset)  # make a copy before adding noise
 
     addNoiseToInitialGuess(dataset, args, selected_collection_key)
+    addNoiseToImuData(dataset, args)
 
     # Must add noise, transfer new joints to transforms, and only after remove unselected joints
     addNoiseToJointParameters(dataset, args)
