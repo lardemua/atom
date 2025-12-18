@@ -12,6 +12,7 @@ from atom_calibration.calibration.derivation.derivation_utils import (
     getTFList,
     plotDerivationResults,
     plotIMUData,
+    smoothImuData,
     timeStampToFloat,
 )
 from atom_core.atom import getTransform
@@ -709,6 +710,7 @@ if __name__ == "__main__":
 
     addNoiseToInitialGuess(input_dataset, args, selected_collection_key)
     addNoiseToImuData(input_dataset, args)
+    smoothImuData(input_dataset, args)
 
     tf_lst = getTFList(input_dataset)
 

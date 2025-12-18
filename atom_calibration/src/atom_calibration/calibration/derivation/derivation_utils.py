@@ -15,6 +15,7 @@ from atom_core.geometry import matrixToTranslationQuaternion
 from atom_core.utilities import atomError
 from matplotlib import pyplot as plt
 from scipy.spatial.transform import Rotation
+from scipy.signal import savgol_filter
 
 
 def plotIMUData(dataset: Dict) -> None:
@@ -94,7 +95,7 @@ def getTFList(dataset: Dict) -> List[Dict]:
     # Create transforms list of dict with data from /tf and /tf_static
     # tmp_i = 0
     for tf_msg in dataset["continuous_data"]["/tf"]:
-        
+
         if len(tf_msg["transforms"]) == 0:
             continue
 
@@ -360,6 +361,144 @@ def convertRotationsInTFToEuler(tf_list: List[Dict]) -> List[Dict]:
     return tf_list
 
 
+def smoothImuData(dataset, args) -> None:
+    """
+    Applies Savitzky-Golay filter to IMU data for smoothing.
+    """
+
+    data_dict = {
+        "t": [],
+        "lin_accel_imu": {"x": [], "y": [], "z": []},
+        "ang_vel_imu": {"x": [], "y": [], "z": []},
+    }
+
+    for sensor_key, sensor in dataset["sensors"].items():
+        if sensor["modality"] != "imu":
+            continue
+        sensor_name = sensor_key
+
+    sensor_topic = dataset["sensors"][sensor_name]["topic"]
+
+    for datapoint in dataset["continuous_data"][sensor_topic]:
+        data_dict["t"].append(timeStampToFloat(datapoint["header"]["stamp"]))
+        data_dict["lin_accel_imu"]["x"].append(datapoint["linear_acceleration"]["x"])
+        data_dict["lin_accel_imu"]["y"].append(datapoint["linear_acceleration"]["y"])
+        data_dict["lin_accel_imu"]["z"].append(datapoint["linear_acceleration"]["z"])
+        data_dict["ang_vel_imu"]["x"].append(datapoint["angular_velocity"]["x"])
+        data_dict["ang_vel_imu"]["y"].append(datapoint["angular_velocity"]["y"])
+        data_dict["ang_vel_imu"]["z"].append(datapoint["angular_velocity"]["z"])
+
+    dt = 0
+    k = 0
+    while dt == 0:
+        dt = data_dict["t"][k + 1] - data_dict["t"][k]
+        k += 1
+
+    lin_accel_x_smooth = savgol_filter(
+        x=data_dict["lin_accel_imu"]["x"],
+        window_length=args["neighbourhood_size"],
+        polyorder=args["poly_degree"],
+        deriv=0,
+        delta=dt,
+    )
+    lin_accel_y_smooth = savgol_filter(
+        x=data_dict["lin_accel_imu"]["y"],
+        window_length=args["neighbourhood_size"],
+        polyorder=args["poly_degree"],
+        deriv=0,
+        delta=dt,
+    )
+    lin_accel_z_smooth = savgol_filter(
+        x=data_dict["lin_accel_imu"]["z"],
+        window_length=args["neighbourhood_size"],
+        polyorder=args["poly_degree"],
+        deriv=0,
+        delta=dt,
+    )
+    ang_vel_x_smooth = savgol_filter(
+        x=data_dict["ang_vel_imu"]["x"],
+        window_length=args["neighbourhood_size"],
+        polyorder=args["poly_degree"],
+        deriv=0,
+        delta=dt,
+    )
+    ang_vel_y_smooth = savgol_filter(
+        x=data_dict["ang_vel_imu"]["y"],
+        window_length=args["neighbourhood_size"],
+        polyorder=args["poly_degree"],
+        deriv=0,
+        delta=dt,
+    )
+    ang_vel_z_smooth = savgol_filter(
+        x=data_dict["ang_vel_imu"]["z"],
+        window_length=args["neighbourhood_size"],
+        polyorder=args["poly_degree"],
+        deriv=0,
+        delta=dt,
+    )
+
+    # Find timestamps of IMU data from collections
+    timestamps = []
+    for collection_key, collection in dataset["collections"].items():
+        timestamps.append(
+            (collection_key, collection["data"][sensor_name]["header"]["stamp"])
+        )
+
+    dataset["continuous_data"][f"{sensor_topic}_original"] = []
+    for i in range(len(dataset["continuous_data"][sensor_topic])):
+        # Copy to "sensor_topic_original"
+        dataset["continuous_data"][f"{sensor_topic}_original"].append(
+            dataset["continuous_data"][sensor_topic][i]
+        )
+        # Replace datapoint for smoothed value in sensor_topic
+        dataset["continuous_data"][sensor_topic][i]["linear_acceleration"]["x"] = (
+            lin_accel_x_smooth[i]
+        )
+        dataset["continuous_data"][sensor_topic][i]["linear_acceleration"]["y"] = (
+            lin_accel_y_smooth[i]
+        )
+        dataset["continuous_data"][sensor_topic][i]["linear_acceleration"]["z"] = (
+            lin_accel_z_smooth[i]
+        )
+        dataset["continuous_data"][sensor_topic][i]["angular_velocity"]["x"] = (
+            ang_vel_x_smooth[i]
+        )
+        dataset["continuous_data"][sensor_topic][i]["angular_velocity"]["y"] = (
+            ang_vel_y_smooth[i]
+        )
+        dataset["continuous_data"][sensor_topic][i]["angular_velocity"]["z"] = (
+            ang_vel_z_smooth[i]
+        )
+
+        # Now, if the datapoint matches any of the collections, replace the values in the collections as well
+        check_list = [
+            x
+            for x in timestamps
+            if x[1] == dataset["continuous_data"][sensor_topic][i]["header"]["stamp"]
+        ]
+
+        if check_list == []:
+            continue
+
+        collection_key = check_list[0][0]
+
+        for axis in ["x", "y", "z"]:
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "linear_acceleration"
+            ][axis] = dataset["continuous_data"][sensor_topic][i][
+                "linear_acceleration"
+            ][
+                axis
+            ]
+            dataset["collections"][collection_key]["data"][sensor_name][
+                "angular_velocity"
+            ][axis] = dataset["continuous_data"][sensor_topic][i]["angular_velocity"][
+                axis
+            ]
+
+    return
+
+
 def plotDerivationResults(
     dataset: Dict,
     tf_list: List,
@@ -384,9 +523,11 @@ def plotDerivationResults(
         "lin_vel": {"x": [], "y": [], "z": []},
         "lin_accel": {"x": [], "y": [], "z": []},
         "lin_accel_imu": {"x": [], "y": [], "z": []},
+        "lin_accel_imu_original": {"x": [], "y": [], "z": []},
         "angs": {"x": [], "y": [], "z": []},
         "ang_vel": {"x": [], "y": [], "z": []},
         "ang_vel_imu": {"x": [], "y": [], "z": []},
+        "ang_vel_imu_original": {"x": [], "y": [], "z": []},
         "ang_speed": [],
         "ang_speed_imu": [],
     }
@@ -427,6 +568,27 @@ def plotDerivationResults(
             closest_imu_datapoint["angular_velocity"]["z"],
         ]
 
+        # For plotting pre-smoothing IMU data...
+        closest_imu_datapoint_original = min(
+            dataset["continuous_data"][f"{sensor_topic}_original"],
+            key=lambda datapoint: abs(
+                timeStampToFloat(datapoint["header"]["stamp"]) - tf_pool_t
+            ),
+        )
+
+        # Get data from IMU
+        imu_accel_original = [
+            closest_imu_datapoint_original["linear_acceleration"]["x"],
+            closest_imu_datapoint_original["linear_acceleration"]["y"],
+            closest_imu_datapoint_original["linear_acceleration"]["z"],
+        ]
+
+        imu_ang_vel_original = [
+            closest_imu_datapoint_original["angular_velocity"]["x"],
+            closest_imu_datapoint_original["angular_velocity"]["y"],
+            closest_imu_datapoint_original["angular_velocity"]["z"],
+        ]
+
         # Norm of velocity vectors
         imu_ang_speed = np.linalg.norm(imu_ang_vel)
 
@@ -436,12 +598,20 @@ def plotDerivationResults(
         imu_ang_vel_r = Rotation.from_matrix(imu_ang_vel)
         imu_ang_vel = imu_ang_vel_r.as_rotvec()
 
+        imu_ang_vel_original_r = Rotation.from_rotvec(imu_ang_vel_original)
+        imu_ang_vel_original = imu_ang_vel_r.as_matrix()
+        imu_ang_vel_original_r = Rotation.from_matrix(imu_ang_vel_original)
+        imu_ang_vel_original = imu_ang_vel_r.as_rotvec()
+
         R = world_imu_tf[:3, :3]
         imu_accel = R @ imu_accel
         imu_ang_vel = R @ imu_ang_vel
-        
+        imu_accel_original = R @ imu_accel_original
+        imu_ang_vel_original = R @ imu_ang_vel_original
+
         if not ignore_gravity:
             imu_accel[2] -= gravity
+            imu_accel_original[2] -= gravity
 
         # For plotting
         data_dict["t"].append(tf_pool_t)
@@ -461,6 +631,14 @@ def plotDerivationResults(
         data_dict["ang_vel_imu"]["x"].append(imu_ang_vel[0])
         data_dict["ang_vel_imu"]["y"].append(imu_ang_vel[1])
         data_dict["ang_vel_imu"]["z"].append(imu_ang_vel[2])
+
+        data_dict["lin_accel_imu_original"]["x"].append(imu_accel_original[0])
+        data_dict["lin_accel_imu_original"]["y"].append(imu_accel_original[1])
+        data_dict["lin_accel_imu_original"]["z"].append(imu_accel_original[2])
+
+        data_dict["ang_vel_imu_original"]["x"].append(imu_ang_vel_original[0])
+        data_dict["ang_vel_imu_original"]["y"].append(imu_ang_vel_original[1])
+        data_dict["ang_vel_imu_original"]["z"].append(imu_ang_vel_original[2])
 
         data_dict["ang_speed_imu"].append(imu_ang_speed)
 
@@ -493,7 +671,9 @@ def plotDerivationResults(
 
     # get collection times to mark on the plots when the collections were taken
     for _, collection in dataset["collections"].items():
-        collection_t = timeStampToFloat(stamp=collection["data"][selected_sensor]["header"]["stamp"])
+        collection_t = timeStampToFloat(
+            stamp=collection["data"][selected_sensor]["header"]["stamp"]
+        )
         data_dict["collection_times"].append(collection_t - data_dict["t"][0])
 
     # Plot x data
@@ -504,7 +684,7 @@ def plotDerivationResults(
     )
 
     fig_transx.supxlabel(r"Time $[s]$")
-    
+
     # add vertical lines for the collection times
     # for collection_t in data_dict["collection_times"]:
     #     plt.axvline(
@@ -545,11 +725,20 @@ def plotDerivationResults(
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu"]["x"][0::10],
+        y=data_dict["lin_accel_imu_original"]["x"][0::10],
         marker="o",
         color="black",
         s=70,
         label="IMU Acceleration",
+        ax=ax_transx[2],
+    )
+    sns.lineplot(
+        x=data_dict["t_reparam"][0::10],
+        y=data_dict["lin_accel_imu"]["x"][0::10],
+        color="black",
+        linewidth=3,
+        alpha=0.7,
+        label="IMU Acceleration (smoothed)",
         ax=ax_transx[2],
     )
 
@@ -565,11 +754,7 @@ def plotDerivationResults(
     # ax_trans[2].legend(scatter_1 + scatter_2 + scatter_3, labels_1 + labels_2 + labels_3, loc="upper right")
 
     # Plot y data
-    fig_transy, ax_transy = plt.subplots(
-        nrows=3,
-        ncols=1,
-        sharex=True
-    )
+    fig_transy, ax_transy = plt.subplots(nrows=3, ncols=1, sharex=True)
 
     sns.lineplot(
         x=data_dict["t_reparam"],
@@ -603,8 +788,16 @@ def plotDerivationResults(
         label="IMU Acceleration",
         ax=ax_transy[2],
     )
+    sns.lineplot(
+        x=data_dict["t_reparam"][0::10],
+        y=data_dict["lin_accel_imu"]["y"][0::10],
+        color="black",
+        linewidth=3,
+        alpha=0.7,
+        label="IMU Acceleration (smoothed)",
+        ax=ax_transy[2],
+    )
 
-   
     # Plot z data
     fig_transz, ax_transz = plt.subplots(
         nrows=3,
@@ -645,6 +838,15 @@ def plotDerivationResults(
         label="IMU Acceleration",
         ax=ax_transz[2],
     )
+    sns.lineplot(
+        x=data_dict["t_reparam"][0::10],
+        y=data_dict["lin_accel_imu"]["z"][0::10],
+        color="black",
+        linewidth=3,
+        alpha=0.7,
+        label="IMU Acceleration (smoothed)",
+        ax=ax_transz[2],
+    )
 
     # Angular Velocity Plots
     fig_rotx, ax_rotx = plt.subplots(
@@ -669,10 +871,19 @@ def plotDerivationResults(
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu"]["x"][0::10],
+        y=data_dict["ang_vel_imu_original"]["x"][0::10],
         marker="o",
         color="black",
         label="IMU Angular Velocity",
+        ax=ax_rotx[1],
+    )
+    sns.lineplot(
+        x=data_dict["t_reparam"][0::10],
+        y=data_dict["ang_vel_imu"]["x"][0::10],
+        color="black",
+        linewidth=3,
+        alpha=0.7,
+        label="IMU Angular Velocity (smoothed)",
         ax=ax_rotx[1],
     )
     
@@ -685,7 +896,7 @@ def plotDerivationResults(
     #         ax.get_legend().remove()
 
     # ax10.legend(scatter_10 + scatter_11, labels_10 + labels_11, loc="upper right")
-    
+
     fig_roty, ax_roty = plt.subplots(
         nrows=2,
         ncols=1,
@@ -709,10 +920,19 @@ def plotDerivationResults(
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu"]["y"][0::10],
+        y=data_dict["ang_vel_imu_original"]["y"][0::10],
         marker="o",
         color="black",
         label="IMU Angular Velocity",
+        ax=ax_roty[1],
+    )
+    sns.lineplot(
+        x=data_dict["t_reparam"][0::10],
+        y=data_dict["ang_vel_imu"]["y"][0::10],
+        color="black",
+        linewidth=3,
+        alpha=0.7,
+        label="IMU Angular Velocity (smoothed)",
         ax=ax_roty[1],
     )
 
@@ -721,11 +941,11 @@ def plotDerivationResults(
     # scatter_13, labels_13 = ax13.get_legend_handles_labels()
 
     # for ax in [ax12, ax13]:
-    #     if ax.get_legend():
+    #   if ax.get_legend():
     #         ax.get_legend().remove()
 
     # ax12.legend(scatter_12 + scatter_13, labels_12 + labels_13, loc="upper right")
-    
+
     fig_rotz, ax_rotz = plt.subplots(
         nrows=2,
         ncols=1,
@@ -750,10 +970,19 @@ def plotDerivationResults(
     )
     sns.scatterplot(
         x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu"]["z"][0::10],
+        y=data_dict["ang_vel_imu_original"]["z"][0::10],
         marker="o",
         color="black",
         label="IMU Angular Velocity",
+        ax=ax_rotz[1],
+    )
+    sns.lineplot(
+        x=data_dict["t_reparam"][0::10],
+        y=data_dict["ang_vel_imu"]["z"][0::10],
+        color="black",
+        linewidth=3,
+        alpha=0.7,
+        label="IMU Angular Velocity (smoothed)",
         ax=ax_rotz[1],
     )
 
@@ -785,8 +1014,7 @@ def plotDerivationResults(
         ax=ax_angspeed,
     )
 
-
-    # Add vertical lines showing when the collections were gathered 
+    # Add vertical lines showing when the collections were gathered
     for ax in [ax_transx, ax_transy, ax_transz]:
         for collection_t in data_dict["collection_times"]:
             ax[2].axvline(
@@ -794,8 +1022,8 @@ def plotDerivationResults(
                 ymin=0,
                 ymax=1,
                 color="tab:orange",
-                linestyle='--',
-            ) 
+                linestyle="--",
+            )
     for ax in [ax_rotx, ax_roty, ax_rotz]:
         for collection_t in data_dict["collection_times"]:
             ax[1].axvline(
@@ -803,8 +1031,8 @@ def plotDerivationResults(
                 ymin=0,
                 ymax=1,
                 color="tab:orange",
-                linestyle='--',
-            ) 
+                linestyle="--",
+            )
 
     # Some plot formatting
     fig_transx.suptitle(r"Translation ($x$)", fontsize=20)
@@ -821,7 +1049,7 @@ def plotDerivationResults(
         ax[1].set_ylim(-0.5, 0.5)
         ax[2].set_ylabel(ylabel=r"Acceleration $[m/s^2]$", color="b", fontsize=16)
         ax[2].set_ylim(-0.25, 0.25)
-       
+
     for ax in [ax_rotx, ax_roty, ax_rotz]:
         ax[0].set_ylabel(ylabel=r"Orientation $[rad]$", color="r", fontsize=16)
         ax[0].set_ylim(-3, 3)
@@ -833,9 +1061,17 @@ def plotDerivationResults(
         ax[1].tick_params(axis="y", colors="g")
 
     ax_angspeed.set(ylabel=r"Angular Speed $[rad/s]$")
-    ax_angspeed.set_ylim(-1,5)
+    ax_angspeed.set_ylim(-1, 5)
 
-    for fig in [fig_transx, fig_transy, fig_transz, fig_rotx, fig_roty, fig_rotz, fig_angspeed]:
+    for fig in [
+        fig_transx,
+        fig_transy,
+        fig_transz,
+        fig_rotx,
+        fig_roty,
+        fig_rotz,
+        fig_angspeed,
+    ]:
         fig.set_size_inches(18.5, 10.5)
         fig.tight_layout()
 
