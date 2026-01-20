@@ -611,6 +611,9 @@ def setupVisualization(dataset, args, selected_collection_key):
 
     for collection_key, collection in dataset['collections'].items():
         for sensor_key, sensor in dataset['sensors'].items():
+            
+            if sensor['modality'] == 'imu':
+                continue
 
             # check if sensor detects and of the patterns
             flag_detects_at_least_one_pattern = False
@@ -774,6 +777,8 @@ def visualizationFunction(models):
     # TODO update markers
     # Publish Labelled Data
     for sensor_key, sensor in sensors.items():
+        if sensor['modality'] == 'imu':
+            continue
         for marker in graphics['ros']['sensors'][sensor_key]['MarkersLabeled'].markers:
             marker.header.stamp = now
         graphics['ros']['sensors'][sensor_key]['PubLabeled'].publish(
