@@ -724,23 +724,23 @@ def plotDerivationResults(
         ax=ax_transx[2],
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu_original"]["x"][0::10],
+        x=data_dict["t_reparam"][0::30],
+        y=data_dict["lin_accel_imu"]["x"][0::30],
         marker="o",
         color="black",
         s=70,
         label="IMU Acceleration",
         ax=ax_transx[2],
     )
-    sns.lineplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu"]["x"][0::10],
-        color="black",
-        linewidth=3,
-        alpha=0.7,
-        label="IMU Acceleration (smoothed)",
-        ax=ax_transx[2],
-    )
+    # sns.lineplot(
+    #     x=data_dict["t_reparam"],
+    #     y=data_dict["lin_accel_imu"]["x"],
+    #     color="black",
+    #     linewidth=2,
+    #     alpha=0.4,
+    #     label="IMU Acceleration (smoothed)",
+    #     ax=ax_transx[2],
+    # )
 
     # Label Handling
     # scatter_1, labels_1 = ax_transx[0].get_legend_handles_labels()
@@ -780,23 +780,23 @@ def plotDerivationResults(
         ax=ax_transy[2],
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu"]["y"][0::10],
+        x=data_dict["t_reparam"][0::30],
+        y=data_dict["lin_accel_imu"]["y"][0::30],
         marker="o",
         color="black",
         s=70,
         label="IMU Acceleration",
         ax=ax_transy[2],
     )
-    sns.lineplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu"]["y"][0::10],
-        color="black",
-        linewidth=3,
-        alpha=0.7,
-        label="IMU Acceleration (smoothed)",
-        ax=ax_transy[2],
-    )
+    # sns.lineplot(
+    #     x=data_dict["t_reparam"][0::20],
+    #     y=data_dict["lin_accel_imu"]["y"][0::20],
+    #     color="black",
+    #     linewidth=3,
+    #     alpha=0.7,
+    #     label="IMU Acceleration (smoothed)",
+    #     ax=ax_transy[2],
+    # )
 
     # Plot z data
     fig_transz, ax_transz = plt.subplots(
@@ -831,22 +831,22 @@ def plotDerivationResults(
         ax=ax_transz[2],
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu"]["z"][0::10],
+        x=data_dict["t_reparam"][0::30],
+        y=data_dict["lin_accel_imu"]["z"][0::30],
         marker="o",
         color="black",
         label="IMU Acceleration",
         ax=ax_transz[2],
     )
-    sns.lineplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["lin_accel_imu"]["z"][0::10],
-        color="black",
-        linewidth=3,
-        alpha=0.7,
-        label="IMU Acceleration (smoothed)",
-        ax=ax_transz[2],
-    )
+    # sns.lineplot(
+    #     x=data_dict["t_reparam"][0::20],
+    #     y=data_dict["lin_accel_imu"]["z"][0::20],
+    #     color="black",
+    #     linewidth=3,
+    #     alpha=0.7,
+    #     label="IMU Acceleration (smoothed)",
+    #     ax=ax_transz[2],
+    # )
 
     # Angular Velocity Plots
     fig_rotx, ax_rotx = plt.subplots(
@@ -870,22 +870,22 @@ def plotDerivationResults(
         ax=ax_rotx[1],
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu_original"]["x"][0::10],
+        x=data_dict["t_reparam"][0::30],
+        y=data_dict["ang_vel_imu"]["x"][0::30],
         marker="o",
         color="black",
         label="IMU Angular Velocity",
         ax=ax_rotx[1],
     )
-    sns.lineplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu"]["x"][0::10],
-        color="black",
-        linewidth=3,
-        alpha=0.7,
-        label="IMU Angular Velocity (smoothed)",
-        ax=ax_rotx[1],
-    )
+    # sns.lineplot(
+    #     x=data_dict["t_reparam"][0::20],
+    #     y=data_dict["ang_vel_imu"]["x"][0::20],
+    #     color="black",
+    #     linewidth=3,
+    #     alpha=0.7,
+    #     label="IMU Angular Velocity (smoothed)",
+    #     ax=ax_rotx[1],
+    # )
     
     # Label Handling
     # scatter_10, labels_10 = ax10.get_legend_handles_labels()
@@ -919,22 +919,22 @@ def plotDerivationResults(
         ax=ax_roty[1],
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu_original"]["y"][0::10],
+        x=data_dict["t_reparam"][0::30],
+        y=data_dict["ang_vel_imu"]["y"][0::30],
         marker="o",
         color="black",
         label="IMU Angular Velocity",
         ax=ax_roty[1],
     )
-    sns.lineplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu"]["y"][0::10],
-        color="black",
-        linewidth=3,
-        alpha=0.7,
-        label="IMU Angular Velocity (smoothed)",
-        ax=ax_roty[1],
-    )
+    # sns.lineplot(
+    #     x=data_dict["t_reparam"][0::20],
+    #     y=data_dict["ang_vel_imu"]["y"][0::20],
+    #     color="black",
+    #     linewidth=3,
+    #     alpha=0.7,
+    #     label="IMU Angular Velocity (smoothed)",
+    #     ax=ax_roty[1],
+    # )
 
     # Label Handling
     # scatter_12, labels_12 = ax12.get_legend_handles_labels()
@@ -969,22 +969,22 @@ def plotDerivationResults(
         ax=ax_rotz[1],
     )
     sns.scatterplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu_original"]["z"][0::10],
+        x=data_dict["t_reparam"][0::30],
+        y=data_dict["ang_vel_imu"]["z"][0::30],
         marker="o",
         color="black",
         label="IMU Angular Velocity",
         ax=ax_rotz[1],
     )
-    sns.lineplot(
-        x=data_dict["t_reparam"][0::10],
-        y=data_dict["ang_vel_imu"]["z"][0::10],
-        color="black",
-        linewidth=3,
-        alpha=0.7,
-        label="IMU Angular Velocity (smoothed)",
-        ax=ax_rotz[1],
-    )
+    # sns.lineplot(
+    #     x=data_dict["t_reparam"][0::20],
+    #     y=data_dict["ang_vel_imu"]["z"][0::20],
+    #     color="black",
+    #     linewidth=3,
+    #     alpha=0.7,
+    #     label="IMU Angular Velocity (smoothed)",
+    #     ax=ax_rotz[1],
+    # )
 
     # Label Handling
     # scatter_14, labels_14 = ax14.get_legend_handles_labels()
@@ -1015,24 +1015,24 @@ def plotDerivationResults(
     )
 
     # Add vertical lines showing when the collections were gathered
-    for ax in [ax_transx, ax_transy, ax_transz]:
-        for collection_t in data_dict["collection_times"]:
-            ax[2].axvline(
-                x=collection_t,
-                ymin=0,
-                ymax=1,
-                color="tab:orange",
-                linestyle="--",
-            )
-    for ax in [ax_rotx, ax_roty, ax_rotz]:
-        for collection_t in data_dict["collection_times"]:
-            ax[1].axvline(
-                x=collection_t,
-                ymin=0,
-                ymax=1,
-                color="tab:orange",
-                linestyle="--",
-            )
+    # for ax in [ax_transx, ax_transy, ax_transz]:
+    #     for collection_t in data_dict["collection_times"]:
+    #         ax[2].axvline(
+    #             x=collection_t,
+    #             ymin=0,
+    #             ymax=1,
+    #             color="tab:orange",
+    #             linestyle="--",
+    #         )
+    # for ax in [ax_rotx, ax_roty, ax_rotz]:
+    #     for collection_t in data_dict["collection_times"]:
+    #         ax[1].axvline(
+    #             x=collection_t,
+    #             ymin=0,
+    #             ymax=1,
+    #             color="tab:orange",
+    #             linestyle="--",
+    #         )
 
     # Some plot formatting
     fig_transx.suptitle(r"Translation ($x$)", fontsize=20)
