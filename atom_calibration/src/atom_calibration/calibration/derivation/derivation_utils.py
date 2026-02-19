@@ -372,10 +372,15 @@ def smoothImuData(dataset, args) -> None:
         "ang_vel_imu": {"x": [], "y": [], "z": []},
     }
 
+    no_imu = True
     for sensor_key, sensor in dataset["sensors"].items():
         if sensor["modality"] != "imu":
             continue
+        no_imu = False
         sensor_name = sensor_key
+
+    if no_imu:
+        return
 
     sensor_topic = dataset["sensors"][sensor_name]["topic"]
 
@@ -886,7 +891,7 @@ def plotDerivationResults(
     #     label="IMU Angular Velocity (smoothed)",
     #     ax=ax_rotx[1],
     # )
-    
+
     # Label Handling
     # scatter_10, labels_10 = ax10.get_legend_handles_labels()
     # scatter_11, labels_11 = ax11.get_legend_handles_labels()
