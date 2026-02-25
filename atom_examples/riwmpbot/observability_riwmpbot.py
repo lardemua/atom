@@ -207,7 +207,7 @@ def main():
         help="Magnitude of noise to add to the initial guess atomic transformations set before starting optimization [meters, radians].",
         type=float,
         default=[0.0, 0.0],
-    ),
+    )
     ap.add_argument(
         "-jbn",
         "--joint_bias_names",
@@ -1046,8 +1046,432 @@ def main():
     # ---------------------------------------
     opt.setObjectiveFunction(objectiveFunction)
 
+    # ---------------------------------------
+    # --- Define THE RESIDUALS
+    # ---------------------------------------
+    # Each residual is computed after the sensor and the pattern of a collection. Thus, each error will be affected
+    # by the parameters tx,ty,tz,r1,r2,r3 of the sensor and the pattern
+
+    print("Creating residuals ... ")
+
+    if args["sample_seed"] is None:
+        seed = random.randrange(sys.maxsize)
+    else:
+        seed = args["sample_seed"]
+
+    rng = random.Random(seed)
+    # print("RNG Seed: " + str(seed))
+
+    for collection_key, collection in dataset["collections"].items():
+        for pattern_key, pattern in dataset["calibration_config"][
+            "calibration_patterns"
+        ].items():
+            for sensor_key, sensor in dataset["sensors"].items():
+                # Ignore if IMU
+                if sensor["modality"] == "imu":
+                    continue
+                # if pattern not detected by sensor in collection
+                if not collection["labels"][pattern_key][sensor_key]["detected"]:
+                    continue
+
+                # Sensor related parameters
+                # sensors_transform_key = generateKey(
+                #     sensor["calibration_parent"], sensor["calibration_child"])
+                # params = opt.getParamsContainingPattern(sensors_transform_key)
+
+                # Issue #543: Create the list of transformations that influence this residual by analyzing the transformation chain.
+                params = []
+
+                # Sensor based residuals
+                transforms_list = list(sensors_transforms_set)
+                for transform_in_chain in sensor["chain"]:
+                    transform_key = generateKey(
+                        transform_in_chain["parent"], transform_in_chain["child"]
+                    )
+                    if transform_key in transforms_list:
+                        params.extend(opt.getParamsContainingPattern(transform_key))
+
+                # Additional_tf based residuals
+                if dataset["calibration_config"]["additional_tfs"] is not None:
+                    for _, additional_tf in dataset["calibration_config"][
+                        "additional_tfs"
+                    ].items():
+                        transform_key = generateKey(
+                            additional_tf["parent_link"], additional_tf["child_link"]
+                        )
+                        if dataset["transforms"][transform_key]["type"] == "fixed":
+                            params.extend(opt.getParamsContainingPattern(transform_key))
+                        elif dataset["transforms"][transform_key]["type"] == "multiple":
+                            params.extend(
+                                opt.getParamsContainingPattern(
+                                    "c" + collection_key + "_" + transform_key
+                                )
+                            )
+
+                # Intrinsics parameters
+                if sensor["modality"] == "rgb" and args["optimize_intrinsics"]:
+                    params.extend(
+                        opt.getParamsContainingPattern(sensor_key + "_intrinsics")
+                    )
+
+                # Pattern related parameters
+                if pattern["fixed"]:
+                    pattern_transform_key = generateKey(
+                        pattern["parent_link"], pattern["link"]
+                    )
+                else:
+                    pattern_transform_key = (
+                        "c"
+                        + collection_key
+                        + "_"
+                        + generateKey(pattern["parent_link"], pattern["link"])
+                    )
+
+                params.extend(
+                    opt.getParamsContainingPattern(pattern_transform_key)
+                )  # pattern related params
+
+                # TODO Append joint params. Right now appending all joint params. Should be clever and know, from residual, which will affect
+                if not dataset["calibration_config"]["joints"] == "":
+                    for joint_key, joint in dataset["collections"][
+                        selected_collection_key
+                    ]["joints"].items():
+                        pattern_joint = "joint-" + joint_key
+                        params.extend(
+                            opt.getParamsContainingPattern(pattern_joint)
+                        )  # pattern related params
+
+                if sensor["modality"] == "rgb":
+                    # Compute step as a function of residual sampling factor
+                    # using all pattern corners
+                    for idx in collection["labels"][pattern_key][sensor_key]["idxs"]:
+                        rname = (
+                            "c"
+                            + str(collection_key)
+                            + "_"
+                            + "p_"
+                            + pattern_key
+                            + "_"
+                            + str(sensor_key)
+                            + "_corner"
+                            + str(idx["id"])
+                        )
+                        opt.pushResidual(name=rname, params=params)
+
+                elif sensor["modality"] == "lidar3d":
+
+                    # Laser beam error (or orthogonal error) ==
+
+                    # The number of residuals for this error can be huge.
+                    # Therefore, we do a random sample to reduce the number.
+                    # The sample percentage has the interval [0.1, 1.0]
+                    population = range(
+                        0, len(collection["labels"][pattern_key][sensor_key]["idxs"])
+                    )
+                    number_of_samples = int(
+                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population)
+                    )
+                    samples = rng.sample(population, number_of_samples)
+
+                    # Save it to be used in the objective function.
+                    collection["labels"][pattern_key][sensor_key]["samples"] = samples
+
+                    for idx in samples:
+                        rname = (
+                            "c"
+                            + collection_key
+                            + "_p_"
+                            + pattern_key
+                            + "_"
+                            + sensor_key
+                            + "_oe_"
+                            + str(idx)
+                        )
+                        opt.pushResidual(name=rname, params=params)
+
+                    # Extrema (limits) displacement error
+                    for idx in range(
+                        0,
+                        len(
+                            collection["labels"][pattern_key][sensor_key][
+                                "idxs_limit_points"
+                            ]
+                        ),
+                    ):
+                        rname = (
+                            "c"
+                            + collection_key
+                            + "_"
+                            + "p_"
+                            + pattern_key
+                            + "_"
+                            + sensor_key
+                            + "_ld_"
+                            + str(idx)
+                        )
+                        opt.pushResidual(name=rname, params=params)
+
+                elif sensor["modality"] == "depth":
+
+                    population = range(
+                        0, len(collection["labels"][pattern_key][sensor_key]["idxs"])
+                    )
+                    number_of_samples = int(
+                        max(0.1, min(args["sample_residuals"], 1.0)) * len(population)
+                    )
+                    samples = rng.sample(population, number_of_samples)
+
+                    # Save it to be used in the objective function.
+                    collection["labels"][pattern_key][sensor_key]["samples"] = samples
+
+                    for idx in samples:
+                        opt.pushResidual(
+                            name="c"
+                            + collection_key
+                            + "_"
+                            + "p_"
+                            + pattern_key
+                            + "_"
+                            + sensor_key
+                            + "_oe_"
+                            + str(idx),
+                            params=params,
+                        )
+
+                    population_longitudinal = range(
+                        0,
+                        len(
+                            collection["labels"][pattern_key][sensor_key][
+                                "idxs_limit_points"
+                            ]
+                        ),
+                    )
+                    number_of_samples_longitudinal = int(
+                        max(0.1, min(args["sample_longitudinal_residuals"], 1.0))
+                        * len(population_longitudinal)
+                    )
+                    samples_longitudinal = rng.sample(
+                        population_longitudinal, number_of_samples_longitudinal
+                    )
+
+                    # Save it to be used in the objective function.
+                    collection["labels"][pattern_key][sensor_key][
+                        "samples_longitudinal"
+                    ] = samples_longitudinal
+
+                    # Extrema displacement error
+                    for idx in samples_longitudinal:
+                        opt.pushResidual(
+                            name="c"
+                            + collection_key
+                            + "_"
+                            + "p_"
+                            + pattern_key
+                            + "_"
+                            + sensor_key
+                            + "_ld_"
+                            + str(idx),
+                            params=params,
+                        )
+
+                # print(opt.residuals.keys())
+                # print('Adding residuals for sensor ' + sensor_key + ' with msg_type ' + sensor['msg_type'] +
+                #       ' affected by parameters:\n' + str(params))
+
+    # IMU-related residuals aren't pattern-related, so we calculate them in a different for loop
+
+    for collection_key, collection in dataset["collections"].items():
+        for sensor_key, sensor in dataset["sensors"].items():
+            if sensor["modality"] == "imu":
+                params = []
+
+                # Only relevant params are the IMU extrinsics
+                transforms_list = list(sensors_transforms_set)
+                for transform_in_chain in sensor["chain"]:
+                    transform_key = generateKey(
+                        transform_in_chain["parent"], transform_in_chain["child"]
+                    )
+                    if transform_key in transforms_list:
+                        params.extend(opt.getParamsContainingPattern(transform_key))
+
+                # One residual for each axis and for lin accel and ang vel
+                for error_type in ["lin_accel", "ang_vel"]:
+                    for axis in ["x", "y", "z"]:
+                        rname = f"c{collection_key}_{sensor_key}_{error_type}_{axis}"
+                        opt.pushResidual(name=rname, params=params)
+
+    # ---------------------------------------
+    # --- Compute the SPARSE MATRIX
+    # ---------------------------------------
+    print("Computing sparse matrix ... ")
+    opt.computeSparseMatrix()
+    opt.printSparseMatrix()
+    opt.printParameters()
+
+    # ---------------------------------------
+    # --- Get a normalizer for each residual type
+    # ---------------------------------------
+    modalities = set([s["modality"] for s in dataset["sensors"].values()])
+    normalizer = {k: 1.0 for k in modalities}
+    opt.addDataModel("normalizer", normalizer)
+
+    residuals = objectiveFunction(opt.data_models)
+    opt.callObjectiveFunction()
+    for modality in modalities:
+        values = []
+        for sensor_key, sensor in dataset["sensors"].items():
+            if sensor["modality"] == modality:
+                values += [residuals[k] for k in residuals.keys() if sensor_key in k]
+
+        # NOTE: Normalizer for IMU?
+        if modality == "rgb":
+            # If the normalizer is to big, the residuals may loose their influence when close to zero.
+            normalizer[modality] = args["rgb_normalizer_multiplier"] * np.mean(values)
+        else:
+            normalizer[modality] = np.mean(values)
+
+        print("Normalizer for " + str(modality) + ": " + str(normalizer[modality]))
+
     ######################################################
-    opt.printX()
+
+    params = np.array(opt.getParameters())
+    params_values = np.zeros_like(params)
+
+    opt.fromDataToX(x=params_values)
+    params_values = [float(x) for x in params_values]
+
+    # Get residuals without delta_param
+    residuals = objectiveFunction(opt.data_models)
+    res_vec = np.array([residuals[x] for x in [*residuals]])
+
+    scales = np.ones(params.size)
+    scales[0:3] = 0.01
+    scales[6:9] = 0.01
+    scales[12:15] = 0.01
+    scales[12:15] = 0.01
+
+    # Initialize jacobian vector
+    jac = np.zeros(
+        (res_vec.size, params.size)
+    )  # res_vec is an np array and params is a list
+
+    for params_idx in range(params.size):
+        delta = np.sqrt(np.finfo(float).eps) * (
+            abs(params_values[params_idx]) + scales[params_idx]
+        )
+        delta_params = np.zeros_like(params, dtype=np.float64)
+        delta_params[params_idx] = delta
+
+        params_plus = params_values + delta_params
+        print(params_values)
+        print(params_plus)
+        opt.fromXToData(x=params_plus)
+        # Calculate residuals with params + delta_params
+        # perturbParams(
+        #     dataset=dataset,
+        #     delta_params=delta_params,
+        #     mode="add",
+        #     selected_collection_key=selected_collection_key,
+        # )
+        
+        # Update data model dataset for optimizer
+        # opt.data_models["dataset"] = dataset
+
+        res_plus = objectiveFunction(opt.data_models)
+        res_plus_vec = np.array(
+            [residuals[x] for x in [*res_plus]]
+        )
+
+        print(res_plus_vec)
+
+        # reset original dataset
+        dataset = deepcopy(dataset_ground_truth)
+
+        params_minus = params_values - delta_params
+        opt.fromXToData(x=params_minus)
+        # Calculate residuals with params - delta_params
+        # perturbParams(
+        #     dataset=dataset,
+        #     delta_params=delta_params,
+        #     mode="subtract",
+        #     selected_collection_key=selected_collection_key,
+        # )
+
+        # opt.data_models["dataset"] = dataset
+
+        res_minus = objectiveFunction(opt.data_models)
+        res_minus_vec = np.array(
+            [residuals[x] for x in [*res_minus]]
+        )
+
+        print(res_minus_vec)
+
+        dataset = deepcopy(dataset_ground_truth)
+        opt.data_models["dataset"] = dataset
+
+        jac[:, params_idx] = (res_plus_vec - res_minus_vec) / (2.0 * delta)
+
+    print(jac)
+
+    # opt.printResiduals()
+
+
+def perturbParams(dataset, delta_params, mode, selected_collection_key):
+
+    if mode not in ["add", "subtract"]:
+        exit(0)
+
+    if mode == "subtract":
+        delta_params = delta_params * (-1)
+
+    # Update transform params
+    i = 0
+    for tf_name in [
+        "tripod_center_support-rgb_world_link",
+        "forearm_link-charuco_170x100_3x6",
+        "flange-charuco_200x200_8x8",
+        "upper_arm_link-charuco_200x120_3x6",
+    ]:
+        delta_value = delta_params[i : i + 6]
+        old_value = getterTransform(
+            dataset=dataset,
+            transform_key=tf_name,
+            collection_name=selected_collection_key,
+        )
+        new_value = old_value + delta_value
+        setterTransform(
+            dataset=dataset,
+            values=new_value,
+            transform_key=tf_name,
+        )
+        i += 6
+
+    # Update joint params
+    for collection_key, collection in dataset["collections"].items():
+        i = 0
+        for joint_key in [
+            "elbow_joint",
+            "shoulder_lift_joint",
+            "shoulder_pan_joint",
+            "wrist_1_joint",
+            "wrist_2_joint",
+            "wrist_3_joint",
+        ]:
+            old_value = getterJointParam(
+                dataset=dataset,
+                joint_key=joint_key,
+                param_key="origin_yaw",
+                collection_name=collection_key,
+            )
+            new_value = old_value + delta_params[i + 24]
+            setterJointParam(
+                dataset=dataset,
+                value=new_value,
+                joint_key=joint_key,
+                param_key="origin_yaw",
+                collection_name=collection_key,
+            )
+            i += 1
 
 
 if __name__ == "__main__":
