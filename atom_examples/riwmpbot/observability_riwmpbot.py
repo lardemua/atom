@@ -1332,146 +1332,52 @@ def main():
 
         print("Normalizer for " + str(modality) + ": " + str(normalizer[modality]))
 
-    ######################################################
+    print("Initializing optimization ...")
+    options = {
+        "ftol": args["optimization_ftol"],
+        "xtol": args["optimization_xtol"],
+        "gtol": args["optimization_gtol"],
+        "diff_step": args["optimization_diff_step"],
+        "max_nfev": args["optimization_max_nfev"],
+        "x_scale": "jac",
+    }
+    opt.startOptimization(optimization_options=options)
 
-    params = np.array(opt.getParameters())
-    params_values = np.zeros_like(params)
+    j = opt.result.jac.toarray()
 
-    opt.fromDataToX(x=params_values)
-    params_values = [float(x) for x in params_values]
+    print(type(j))
 
-    # Get residuals without delta_param
-    residuals = objectiveFunction(opt.data_models)
-    res_vec = np.array([residuals[x] for x in [*residuals]])
+    # Normalize jacobian matrix
+    scales = np.linalg.norm(j, axis=0)
+    scales[scales == 0] = 1
 
-    scales = np.ones(params.size)
-    scales[0:3] = 0.01
-    scales[6:9] = 0.01
-    scales[12:15] = 0.01
-    scales[12:15] = 0.01
+    j = j/scales
 
-    # Initialize jacobian vector
-    jac = np.zeros(
-        (res_vec.size, params.size)
-    )  # res_vec is an np array and params is a list
+    results = {}
 
-    for params_idx in range(params.size):
-        delta = np.sqrt(np.finfo(float).eps) * (
-            abs(params_values[params_idx]) + scales[params_idx]
-        )
-        delta_params = np.zeros_like(params, dtype=np.float64)
-        delta_params[params_idx] = delta
+    ##################################################
+    # SVD
+    ##################################################
 
-        params_plus = params_values + delta_params
-        print(params_values)
-        print(params_plus)
-        opt.fromXToData(x=params_plus)
-        # Calculate residuals with params + delta_params
-        # perturbParams(
-        #     dataset=dataset,
-        #     delta_params=delta_params,
-        #     mode="add",
-        #     selected_collection_key=selected_collection_key,
-        # )
-        
-        # Update data model dataset for optimizer
-        # opt.data_models["dataset"] = dataset
+    U, s, Vt = np.linalg.svd(j, full_matrices=False)
+    V = Vt.T
 
-        res_plus = objectiveFunction(opt.data_models)
-        res_plus_vec = np.array(
-            [residuals[x] for x in [*res_plus]]
-        )
+    results["singular_values"] = s
+    results["V"] = V
+    results["U"] = U
 
-        print(res_plus_vec)
+    # Condition Number
+    cond = s[0] / s[-1] if s[-1] > 0 else np.inf
+    results["condition_number"] = cond
 
-        # reset original dataset
-        dataset = deepcopy(dataset_ground_truth)
+    # Parameter sensitivity norms
+    sensitivity = np.linalg.norm(j, axis = 0)
+    results["sensitivity_norms"] = sensitivity
 
-        params_minus = params_values - delta_params
-        opt.fromXToData(x=params_minus)
-        # Calculate residuals with params - delta_params
-        # perturbParams(
-        #     dataset=dataset,
-        #     delta_params=delta_params,
-        #     mode="subtract",
-        #     selected_collection_key=selected_collection_key,
-        # )
-
-        # opt.data_models["dataset"] = dataset
-
-        res_minus = objectiveFunction(opt.data_models)
-        res_minus_vec = np.array(
-            [residuals[x] for x in [*res_minus]]
-        )
-
-        print(res_minus_vec)
-
-        dataset = deepcopy(dataset_ground_truth)
-        opt.data_models["dataset"] = dataset
-
-        jac[:, params_idx] = (res_plus_vec - res_minus_vec) / (2.0 * delta)
-
-    print(jac)
-
-    # opt.printResiduals()
-
-
-def perturbParams(dataset, delta_params, mode, selected_collection_key):
-
-    if mode not in ["add", "subtract"]:
-        exit(0)
-
-    if mode == "subtract":
-        delta_params = delta_params * (-1)
-
-    # Update transform params
-    i = 0
-    for tf_name in [
-        "tripod_center_support-rgb_world_link",
-        "forearm_link-charuco_170x100_3x6",
-        "flange-charuco_200x200_8x8",
-        "upper_arm_link-charuco_200x120_3x6",
-    ]:
-        delta_value = delta_params[i : i + 6]
-        old_value = getterTransform(
-            dataset=dataset,
-            transform_key=tf_name,
-            collection_name=selected_collection_key,
-        )
-        new_value = old_value + delta_value
-        setterTransform(
-            dataset=dataset,
-            values=new_value,
-            transform_key=tf_name,
-        )
-        i += 6
-
-    # Update joint params
-    for collection_key, collection in dataset["collections"].items():
-        i = 0
-        for joint_key in [
-            "elbow_joint",
-            "shoulder_lift_joint",
-            "shoulder_pan_joint",
-            "wrist_1_joint",
-            "wrist_2_joint",
-            "wrist_3_joint",
-        ]:
-            old_value = getterJointParam(
-                dataset=dataset,
-                joint_key=joint_key,
-                param_key="origin_yaw",
-                collection_name=collection_key,
-            )
-            new_value = old_value + delta_params[i + 24]
-            setterJointParam(
-                dataset=dataset,
-                value=new_value,
-                joint_key=joint_key,
-                param_key="origin_yaw",
-                collection_name=collection_key,
-            )
-            i += 1
+    print(f"\\n--- Singular Values ---")
+    for i, si in enumerate(s):
+        flag = " ← near zero" if si < 1e-06 else ""
+        print(f"  σ_{i+1:02d} = {si:.4e}{flag}")
 
 
 if __name__ == "__main__":
