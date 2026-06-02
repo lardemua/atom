@@ -58,9 +58,9 @@ or any other that is more adequate:
 * Tiago Madeira - University of Aveiro (2019-2021)
 * André Aguiar - INESC TEC (2019-2020)
 * Daniela Rato - University of Aveiro (2021-2023)
-* Manuel Gomes - University of Aveiro (2021-present)
+* Manuel Gomes - University of Aveiro (2021-2025)
 * Diogo Vieira - University of Aveiro (2023-present)
-* Bruno Silva - University of Aveiro (2024-present)
+* Bruno Silva - University of Aveiro (2024-2025)
 
 ## Maintainers
 
